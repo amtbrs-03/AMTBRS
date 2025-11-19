@@ -443,6 +443,9 @@
                 <li><a href="#products">Ürünler</a></li>
                 <li><a href="#about">Hakkında</a></li>
                 <li><a href="#contact">İletişim</a></li>
+                <li id="mainAdminLink" style="display:none;">
+                    <a class="auth-btn" href="https://ern-cicek.com.tr/admin.html" target="_blank" rel="noopener" style="background:#3b7d3b;">Yönetici</a>
+                </li>
                 <li id="authContainer">
                     <button class="auth-btn" onclick="openAuthModal()">Giriş / Kayıt</button>
                 </li>
@@ -954,6 +957,23 @@
 
         // Expose small helper for admin page
         window.__siteProducts = { get: getProducts, save: saveProducts };
+
+        // Show admin nav link only for a specific admin user (checks localStorage flag set by admin.html)
+        function updateAdminLinkVisibility(){
+            try{
+                const el = document.getElementById('mainAdminLink');
+                if (!el) return;
+                const isFlagSet = localStorage.getItem('admin_logged_in') === '1';
+                const user = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+                const allowedEmail = 'amtbrs@icloud.com';
+                const isAdmin = isFlagSet && user && user.email === allowedEmail;
+                el.style.display = isAdmin ? '' : 'none';
+            }catch(e){ /* ignore */ }
+        }
+        // run on load
+        updateAdminLinkVisibility();
+        // listen for storage changes (e.g., admin login or user change in another tab)
+        window.addEventListener('storage', function(e){ if (e.key === 'admin_logged_in' || e.key === 'currentUser' || e.key === null) updateAdminLinkVisibility(); });
 
         /* --- Bank transfer (IBAN) --- */
         function openBank() {

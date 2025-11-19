@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <!-- Ensure older browsers / viewers explicitly get UTF-8; this helps when files are served with wrong headers -->
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin - ERN-ÇİÇEK</title>
+  <style>
+    :root{--accent:#6b46c1;--danger:#e53e3e;--muted:#6b7280}
+  body{font-family:'Segoe UI', 'Inter', 'Noto Sans', Tahoma, Arial, sans-serif; padding:2rem; background:#f7fafc; color:#0b1220}
+    .page{max-width:1100px;margin:0 auto}
+    h1{margin-bottom:1rem;font-size:1.4rem}
+    .card{background:white;padding:1rem;border-radius:10px;box-shadow:0 8px 24px rgba(2,6,23,0.06);margin-bottom:1rem}
+    label{display:block;font-weight:700;margin-bottom:0.35rem;color:#0b1220}
+    input[type=text], input[type=number], input[type=email], input[type=file]{width:100%;padding:0.5rem;border:1px solid #e6e6e6;border-radius:8px}
+    .controls-row{display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap}
+    .products-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:0.9rem}
+    .prod-item{border:1px solid rgba(14,20,30,0.06);padding:0.9rem;border-radius:10px;background:linear-gradient(180deg,#ffffff,#fbfbfd)}
+    .actions{display:flex;gap:0.5rem;margin-top:0.5rem}
+    .btn{cursor:pointer;padding:0.5rem 0.75rem;border-radius:8px;border:none;background:var(--accent);color:white}
+    .btn.ghost{background:transparent;color:var(--accent);border:1px solid rgba(107,70,193,0.12)}
+    .danger{background:var(--danger)}
+    .meta{font-size:0.9rem;color:#475569}
+    .thumb{width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid #eee;margin-right:0.6rem}
+    .prod-row{display:flex;align-items:center;gap:0.6rem}
+    .file-preview{width:72px;height:72px;display:inline-block;vertical-align:middle}
+    .small{font-size:0.9rem;color:#475569}
+  </style>
+</head>
+<body>
+  <h1>Yönetici Paneli — Ürün Yönetimi</h1>
+
+  <!-- Simple admin auth (client-side) -->
+  <div id="authCard" class="card">
+    <div id="authContent"></div>
+  </div>
+
+  <div id="adminUI">
+  <div class="card">
+    <div style="margin-bottom:.5rem">Bu panel, tarayıcıda çalışan basit bir yönetim arayüzüdür. Ürünleriniz yalnızca sizin tarayıcınızda (localStorage) saklanır. Canlı/üretim ortamı için sunucu tarafı kimlik doğrulama ve güvenli depolama gereklidir.</div>
+    <div class="controls-row">
+      <input id="newName" type="text" placeholder="Yeni ürün adı" aria-label="Yeni ürün adı" style="flex:1;min-width:200px" />
+      <input id="newPrice" type="number" placeholder="Fiyat (TL)" step="0.01" aria-label="Fiyat (TL)" style="width:120px" />
+  <input id="newEmoji" type="text" placeholder="Emoji (örn. 🌹) veya boş" style="width:120px" aria-label="Emoji" />
+      <div style="display:flex;flex-direction:column;gap:0.4rem;">
+        <input id="newImage" type="file" accept="image/*" />
+        <div id="newPreview" class="file-preview small" aria-hidden="true"></div>
+      </div>
+      <button id="addBtn" class="btn">Ürün Ekle</button>
+    </div>
+    <div class="small meta">Not: Resim yüklenirse tarayıcıda (data URL) saklanır; büyük resimlerden kaçının.</div>
+  </div>
+
+  <div class="card">
+    <h2>Kayıtlı Ürünler</h2>
+    <div id="products" class="products-list"></div>
+  </div>
+
+    <div style="display:flex; gap:0.5rem; align-items:center;">
+      <button id="saveAll" class="btn">Değişiklikleri Kaydet</button>
+      <button id="exportJson" class="btn btn-ghost">JSON Dışa Aktar</button>
+      <button id="exportCsv" class="btn btn-ghost">CSV Dışa Aktar</button>
+      <label for="importFile" class="btn btn-ghost" style="margin-left:0; cursor:pointer;">İçe Aktar</label>
+      <input id="importFile" type="file" accept="application/json,text/csv" style="display:none" />
+      <button id="runSelfTest" class="btn btn-ghost">Otomatik Testi Çalıştır</button>
+      <button id="resetDefault" class="danger">Varsayılanları Geri Yükle</button>
+      <a href="denme.html" style="margin-left:auto; align-self:center" class="btn btn-ghost">Siteyi Aç</a>
+    </div>
+  </div>
+
+  <script>
+    // Client-side admin auth: set password first time, then login.
+    (function(){
+      const AUTH_KEY = 'admin_pass_hash_v1';
+      const authContent = document.getElementById('authContent');
+      const adminUI = document.getElementById('adminUI');
+
+      adminUI.style.display = 'none';
+
+      function toHex(buffer){
+        return Array.from(new Uint8Array(buffer)).map(b=>b.toString(16).padStart(2,'0')).join('');
+      }
+
+      async function hashPassword(pw){
+        const enc = new TextEncoder();
+        const data = enc.encode(pw);
+        const hash = await crypto.subtle.digest('SHA-256', data);
+        return toHex(hash);
+      }
+
+      function showSetPassword(){
+        authContent.innerHTML = `<div style="margin-bottom:.5rem">Henüz bir yönetici parolası ayarlanmadı. Güçlü bir parola belirleyin (yalnızca tarayıcıda).</div>
+          <input id="pw1" type="password" placeholder="Yeni parola" style="width:60%; padding:0.5rem;" />
+          <input id="pw2" type="password" placeholder="Parolayı tekrar girin" style="width:60%; padding:0.5rem; margin-top:0.5rem;" />
+          <div style="margin-top:0.5rem;"><button id="setPwBtn">Parolayı Kaydet</button></div>`;
+        document.getElementById('setPwBtn').onclick = async ()=>{
+          const a = document.getElementById('pw1').value;
+          const b = document.getElementById('pw2').value;
+          if (!a || a.length < 4) return alert('Parola en az 4 karakter olmalı');
+          if (a !== b) return alert('Parolalar eşleşmiyor');
+          const h = await hashPassword(a);
+          localStorage.setItem(AUTH_KEY, h);
+          alert('Parola kaydedildi. Lütfen giriş yapın.');
+          renderAuth();
+        };
+      }
+
+      function showLogin(){
+        authContent.innerHTML = `<div style="margin-bottom:.5rem">Yönetici girişi</div>
+          <input id="loginPw" type="password" placeholder="Parola" style="width:60%; padding:0.5rem;" />
+          <div style="margin-top:0.5rem;"><button id="loginBtn">Giriş Yap</button></div>`;
+        document.getElementById('loginBtn').onclick = async ()=>{
+          const pw = document.getElementById('loginPw').value;
+          const h = await hashPassword(pw);
+          if (h === localStorage.getItem(AUTH_KEY)){
+            localStorage.setItem('admin_logged_in', '1');
+              authContent.innerHTML = '<div style="color:green">Giriş başarılı — yönetici arayüzü yükleniyor...</div>';
+            setTimeout(()=>{ renderAuth(); renderAdmin(); }, 400);
+          } else alert('Parola yanlış');
+        };
+      }
+
+      function renderAuth(){
+        const has = !!localStorage.getItem(AUTH_KEY);
+        const logged = !!localStorage.getItem('admin_logged_in');
+        if (!has) showSetPassword();
+        else if (!logged) showLogin();
+        else { authContent.innerHTML = `<div style="color:green;">Zaten giriş yaptınız. <button id="logoutBtn">Çıkış</button></div>`; document.getElementById('logoutBtn').onclick = ()=>{ localStorage.removeItem('admin_logged_in'); renderAuth(); adminUI.style.display='none'; } ; adminUI.style.display='block'; }
+      }
+
+      function renderAdmin(){
+        // show admin UI
+        adminUI.style.display = 'block';
+      }
+
+      renderAuth();
+    })();
+  </script>
+
+  <script>
+    // Automated self-test for admin UI (runs in-browser when user clicks the test button)
+  async function runAdminSelfTest(){
+      const out = document.getElementById('selfTestResults') || (function(){
+        const el = document.createElement('div'); el.id='selfTestResults'; el.className='card'; el.style.marginTop='1rem'; el.innerHTML = '<h3>Otomatik Test Sonuçları</h3><div id="selfTestLog"></div>'; document.querySelector('.page')?.appendChild(el) || document.body.appendChild(el); return el; })();
+      const log = out.querySelector('#selfTestLog'); log.innerHTML = '';
+      function append(msg, ok){ const p = document.createElement('div'); p.style.padding='.35rem 0'; p.textContent = (ok? '✅ ':'❌ ') + msg; log.appendChild(p); }
+
+      try{
+        // basic element checks
+        const ids = ['saveAll','exportJson','exportCsv','importFile','addBtn','newImage','newPreview','products'];
+        ids.forEach(id=> append(id + ' bulundu', !!document.getElementById(id)) );
+
+        // localStorage get/set
+        const PRODUCTS_KEY = 'products_v1';
+        const before = (function(){ try{ return JSON.parse(localStorage.getItem(PRODUCTS_KEY))||[] }catch(e){return []}})();
+        append('localStorage okunabildi', true);
+
+        // add a temporary test product and save via existing flow
+        const temp = { id: ('t_'+Math.random().toString(36).slice(2,8)), name: '__selftest__', price: 1.23, image: '' };
+        const cur = getProducts();
+        setProducts(cur.concat([temp]));
+        render();
+        append('Geçici ürün eklendi ve render edildi', true);
+
+        // trigger saveAll which updates localStorage from DOM
+        document.getElementById('saveAll').click();
+        await new Promise(r=>setTimeout(r,250));
+        const after = getProducts();
+        const found = after.some(p=>p.name === '__selftest__');
+        append('saveAll ile ürün kaydedildi', found);
+
+        // restore original
+        setProducts(before);
+        render();
+        append('localStorage geri yüklendi', true);
+
+  // JSON export test
+  try{ const json = JSON.stringify(getProducts()); append('JSON dışa aktarımı oluşturuldu', !!json); }catch(e){ append('JSON dışa aktarımı başarısız: '+e.message,false); }
+
+        // basic API availability
+  append('FileReader ve toDataURL mevcut', (typeof FileReader !== 'undefined' && typeof toDataURL === 'function'));
+
+        append('Test tamamlandı — detaylar yukarıda', true);
+      }catch(err){ append('Test çalıştırırken hata: '+err.message, false); }
+      out.scrollIntoView({behavior:'smooth'});
+    }
+
+    document.getElementById('runSelfTest').addEventListener('click', ()=>{ runAdminSelfTest(); });
+  </script>
+
+  <script>
+    // simple lightweight admin - client-side only
+    (function(){
+      const PRODUCTS_KEY = 'products_v1';
+      function uid(){return 'p_' + Math.random().toString(36).slice(2,9)}
+
+      function getProducts(){
+        try{return JSON.parse(localStorage.getItem(PRODUCTS_KEY)) || []}catch(e){return []}
+      }
+      function setProducts(v){localStorage.setItem(PRODUCTS_KEY, JSON.stringify(v))}
+
+      const listEl = document.getElementById('products');
+      function render(){
+        const products = getProducts();
+        listEl.innerHTML = '';
+        products.forEach((p, idx)=>{
+          const div = document.createElement('div'); div.className='prod-item';
+          // show thumbnail if image is data URL or emoji
+          const imgHtml = (p.image && p.image.startsWith && p.image.startsWith('data:'))
+            ? `<img src="${p.image}" class="thumb" alt="küçük resim"/>`
+            : `<div class="thumb" style="display:flex;align-items:center;justify-content:center;font-size:1.6rem">${escapeHtml(p.image||'🌸')}</div>`;
+
+          div.innerHTML = `
+            <div class="prod-row">${imgHtml}<div style="flex:1">
+              <label>Ürün adı</label>
+              <input data-idx="${idx}" class="pname" type="text" value="${escapeHtml(p.name)}" placeholder="Ürün adı" />
+              <label>Fiyat (TL)</label>
+              <input data-idx="${idx}" class="pprice" type="number" step="0.01" value="${(p.price||0).toFixed(2)}" placeholder="0.00" />
+            </div></div>
+            <label>Emoji (isteğe bağlı)</label>
+            <input data-idx="${idx}" class="pemoji" type="text" value="${escapeHtml(p.image||'')}" placeholder="🌹 veya boş" />
+            <label>Resim (yeni yükle)</label>
+            <input data-idx="${idx}" class="pimage" type="file" accept="image/*" />
+            <div class="actions">
+              <button data-idx="${idx}" class="remove">Ürünü Sil</button>
+            </div>
+          `;
+          listEl.appendChild(div);
+        })
+        attachHandlers();
+      }
+
+      function escapeHtml(s){ return (s||'').replace(/[&<>\"']/g, function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]}) }
+
+      function attachHandlers(){
+        document.querySelectorAll('.remove').forEach(btn=>{
+          btn.onclick = ()=>{
+            const idx = parseInt(btn.getAttribute('data-idx'),10);
+            const ps = getProducts(); ps.splice(idx,1); setProducts(ps); render();
+          }
+        });
+
+        // Preview selected file for existing items
+        document.querySelectorAll('.pimage').forEach(inp=>{
+          inp.onchange = async (e)=>{
+            const f = inp.files && inp.files[0];
+            if (!f) return;
+            const data = await toDataURL(f);
+            // show preview in this prod-item (replace or insert img.thumb)
+            const container = inp.closest('.prod-item');
+            if (!container) return;
+            let imgEl = container.querySelector('img.thumb');
+            if (!imgEl){
+              imgEl = document.createElement('img'); imgEl.className='thumb';
+              const row = container.querySelector('.prod-row');
+              if (row) row.insertBefore(imgEl, row.firstChild);
+            }
+            imgEl.src = data;
+            // Also set hidden emoji field so saveAll picks it up (we reuse .pemoji to store image if chosen)
+            const emojiField = container.querySelector('.pemoji');
+            if (emojiField) emojiField.value = data;
+          };
+        });
+      }
+
+      document.getElementById('addBtn').addEventListener('click', async ()=>{
+        const name = document.getElementById('newName').value.trim();
+        const price = parseFloat(document.getElementById('newPrice').value) || 0;
+        const emoji = document.getElementById('newEmoji').value.trim();
+        const file = document.getElementById('newImage').files[0];
+        let img = emoji || '';
+        if (file){ img = await toDataURL(file); }
+        const products = getProducts();
+        products.push({ id: uid(), name, price, image: img });
+        setProducts(products); render();
+        document.getElementById('newName').value=''; document.getElementById('newPrice').value=''; document.getElementById('newEmoji').value=''; document.getElementById('newImage').value='';
+      });
+
+      document.getElementById('saveAll').addEventListener('click', async ()=>{
+        // gather edited fields and file uploads
+        const products = getProducts();
+        const items = Array.from(document.querySelectorAll('.prod-item'));
+        for (let i=0;i<items.length;i++){
+          const el = items[i];
+          const idx = i;
+          const name = el.querySelector('.pname').value.trim();
+          const price = parseFloat(el.querySelector('.pprice').value) || 0;
+          const emoji = el.querySelector('.pemoji').value.trim();
+          const file = el.querySelector('.pimage').files[0];
+          let img = emoji || '';
+          if (file){ img = await toDataURL(file); }
+          products[idx].name = name; products[idx].price = price; products[idx].image = img;
+        }
+        setProducts(products);
+        alert('Ürünler kaydedildi. Lütfen siteyi yenileyin.');
+      });
+
+      document.getElementById('resetDefault').addEventListener('click', ()=>{
+        if (!confirm('Varsayılan ürünlere geri dönülsün mü?')) return;
+        const defaults = [
+          { id: uid(), name: 'Kırmızı Gül Buketi', price: 149.00, image: '🌹' },
+          { id: uid(), name: 'Beyaz Lilyum', price: 129.00, image: '🌸' },
+          { id: uid(), name: 'Mevsim Buketi', price: 99.00, image: '💐' }
+        ];
+        setProducts(defaults);
+        alert('Varsayılan ürünler yüklendi.');
+        render();
+      });
+
+      // Export JSON
+      document.getElementById('exportJson').addEventListener('click', ()=>{
+        const data = JSON.stringify(getProducts(), null, 2);
+        const blob = new Blob([data], {type:'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'products.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      });
+
+      // Export CSV (simple)
+      document.getElementById('exportCsv').addEventListener('click', ()=>{
+        const prods = getProducts();
+        const esc = v => '"' + (''+ (v==null ? '' : v)).replace(/"/g,'""') + '"';
+        const rows = [ ['id','name','price','image'].map(esc).join(',') ];
+        prods.forEach(p=> rows.push([p.id, p.name, (p.price||0).toFixed(2), p.image||''].map(esc).join(',')));
+        const blob = new Blob([rows.join('\n')], {type:'text/csv;charset=utf-8;'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'products.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      });
+
+      // Import (JSON or CSV)
+      document.getElementById('importFile').addEventListener('change', async (e)=>{
+        const f = e.target.files && e.target.files[0];
+        if (!f) return;
+        const txt = await f.text();
+        let parsed = null;
+        try{
+          if (f.type === 'application/json' || f.name.endsWith('.json')){
+            parsed = JSON.parse(txt);
+          } else {
+            // basic CSV parser supporting quoted fields
+            const lines = txt.split(/\r?\n/).filter(l=>l.trim()!=='');
+            if (!lines.length) throw new Error('CSV boş');
+            const parseLine = (line)=>{
+              const out=[]; let cur='', inQuotes=false;
+              for (let i=0;i<line.length;i++){ const ch=line[i];
+                if (ch==='"'){ if (inQuotes && line[i+1]==='"'){ cur+='"'; i++; } else inQuotes=!inQuotes; }
+                else if (ch===',' && !inQuotes){ out.push(cur); cur=''; }
+                else cur+=ch;
+              }
+              out.push(cur);
+              return out.map(s => s.replace(/^\s+|\s+$/g, ''));
+            };
+            const header = parseLine(lines[0]).map(h=>h.replace(/^"|"$/g,''));
+            const arr = [];
+            for (let i=1;i<lines.length;i++){
+              const vals = parseLine(lines[i]).map(v=>v.replace(/^"|"$/g,''));
+              const obj = {};
+              header.forEach((h, idx)=>{ obj[h]=vals[idx]===undefined? '': vals[idx]; });
+              // convert price
+              if (obj.price) obj.price = parseFloat(obj.price)||0;
+              if (!obj.id) obj.id = uid();
+              arr.push({ id: obj.id, name: obj.name||'', price: obj.price||0, image: obj.image||'' });
+            }
+            parsed = arr;
+          }
+        }catch(err){ alert('Dosya okunamadı: ' + err.message); return; }
+
+        if (!Array.isArray(parsed)) return alert('Beklenen format: ürünlerin dizi halinde JSON veya CSV');
+        if (!confirm('İçe aktar: mevcut ürünlerin üzerine yazılsın mı? (İptal = birleştir)')){
+          // merge
+          const cur = getProducts();
+          const merged = cur.concat(parsed.map(p=>({ id: p.id||uid(), name: p.name||'', price: Number(p.price)||0, image: p.image||'' })));
+          setProducts(merged);
+        } else {
+          // replace
+          const replaced = parsed.map(p=>({ id: p.id||uid(), name: p.name||'', price: Number(p.price)||0, image: p.image||'' }));
+          setProducts(replaced);
+        }
+        alert('İçe aktarma tamamlandı.');
+        e.target.value = '';
+        render();
+      });
+
+      // preview for new image
+      document.getElementById('newImage').addEventListener('change', async (e)=>{
+        const f = e.target.files && e.target.files[0];
+        const preview = document.getElementById('newPreview');
+        preview.innerHTML = '';
+        if (!f) return;
+        try{
+          const data = await toDataURL(f);
+          const img = document.createElement('img'); img.src = data; img.className='thumb'; img.style.width='72px'; img.style.height='72px'; img.style.objectFit='cover';
+          preview.appendChild(img);
+        }catch(err){ preview.textContent = 'Önizleme yüklenemedi'; }
+      });
+
+      function toDataURL(file){
+        return new Promise((res, rej)=>{
+          const r = new FileReader(); r.onload = ()=>res(r.result); r.onerror = rej; r.readAsDataURL(file);
+        });
+      }
+
+      // initial render
+      // if no products in localStorage, try to read from site page by opening denme.html and reading DOM - but we are client-only here, so just render current localStorage or empty
+      if (!localStorage.getItem(PRODUCTS_KEY)){
+        // try to read from opener window (if admin opened from site)
+        try{
+          if (window.opener && window.opener.__siteProducts){
+            const p = window.opener.__siteProducts.get();
+            if (p && p.length) { setProducts(p); }
+          }
+        }catch(e){}
+      }
+
+      render();
+    })();
+  </script>
+</body>
+</html>
