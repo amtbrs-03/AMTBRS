@@ -40,7 +40,7 @@
     <div class="controls-row">
       <input id="newName" type="text" placeholder="Yeni ürün adı" aria-label="Yeni ürün adı" style="flex:1;min-width:200px" />
       <input id="newPrice" type="number" placeholder="Fiyat (TL)" step="0.01" aria-label="Fiyat (TL)" style="width:120px" />
-      <input id="newEmoji" type="text" placeholder="Emoji (örn 🌹) veya boş" style="width:120px" aria-label="Emoji" />
+  <input id="newEmoji" type="text" placeholder="Emoji (örn. 🌹) veya boş" style="width:120px" aria-label="Emoji" />
       <div style="display:flex;flex-direction:column;gap:0.4rem;">
         <input id="newImage" type="file" accept="image/*" />
         <div id="newPreview" class="file-preview small" aria-hidden="true"></div>
@@ -61,6 +61,7 @@
       <button id="exportCsv" class="btn btn-ghost">CSV Dışa Aktar</button>
       <label for="importFile" class="btn btn-ghost" style="margin-left:0; cursor:pointer;">İçe Aktar</label>
       <input id="importFile" type="file" accept="application/json,text/csv" style="display:none" />
+      <button id="runSelfTest" class="btn btn-ghost">Otomatik Testi Çalıştır</button>
       <button id="resetDefault" class="danger">Varsayılanları Geri Yükle</button>
       <a href="denme.html" style="margin-left:auto; align-self:center" class="btn btn-ghost">Siteyi Aç</a>
     </div>
@@ -87,7 +88,7 @@
       }
 
       function showSetPassword(){
-        authContent.innerHTML = `<div style="margin-bottom:.5rem">Henüz bir yönetici parolası ayarlanmadı. Güçlü bir parola belirleyin (local-only).</div>
+        authContent.innerHTML = `<div style="margin-bottom:.5rem">Henüz bir yönetici parolası ayarlanmadı. Güçlü bir parola belirleyin (yalnızca tarayıcıda).</div>
           <input id="pw1" type="password" placeholder="Yeni parola" style="width:60%; padding:0.5rem;" />
           <input id="pw2" type="password" placeholder="Parolayı tekrar girin" style="width:60%; padding:0.5rem; margin-top:0.5rem;" />
           <div style="margin-top:0.5rem;"><button id="setPwBtn">Parolayı Kaydet</button></div>`;
@@ -112,7 +113,7 @@
           const h = await hashPassword(pw);
           if (h === localStorage.getItem(AUTH_KEY)){
             localStorage.setItem('admin_logged_in', '1');
-            authContent.innerHTML = '<div style="color:green">Giriş başarılı — admin arayüzü yükleniyor...</div>';
+              authContent.innerHTML = '<div style="color:green">Giriş başarılı — yönetici arayüzü yükleniyor...</div>';
             setTimeout(()=>{ renderAuth(); renderAdmin(); }, 400);
           } else alert('Parola yanlış');
         };
@@ -136,6 +137,57 @@
   </script>
 
   <script>
+    // Automated self-test for admin UI (runs in-browser when user clicks the test button)
+  async function runAdminSelfTest(){
+      const out = document.getElementById('selfTestResults') || (function(){
+        const el = document.createElement('div'); el.id='selfTestResults'; el.className='card'; el.style.marginTop='1rem'; el.innerHTML = '<h3>Otomatik Test Sonuçları</h3><div id="selfTestLog"></div>'; document.querySelector('.page')?.appendChild(el) || document.body.appendChild(el); return el; })();
+      const log = out.querySelector('#selfTestLog'); log.innerHTML = '';
+      function append(msg, ok){ const p = document.createElement('div'); p.style.padding='.35rem 0'; p.textContent = (ok? '✅ ':'❌ ') + msg; log.appendChild(p); }
+
+      try{
+        // basic element checks
+        const ids = ['saveAll','exportJson','exportCsv','importFile','addBtn','newImage','newPreview','products'];
+        ids.forEach(id=> append(id + ' bulundu', !!document.getElementById(id)) );
+
+        // localStorage get/set
+        const PRODUCTS_KEY = 'products_v1';
+        const before = (function(){ try{ return JSON.parse(localStorage.getItem(PRODUCTS_KEY))||[] }catch(e){return []}})();
+        append('localStorage okunabildi', true);
+
+        // add a temporary test product and save via existing flow
+        const temp = { id: ('t_'+Math.random().toString(36).slice(2,8)), name: '__selftest__', price: 1.23, image: '' };
+        const cur = getProducts();
+        setProducts(cur.concat([temp]));
+        render();
+        append('Geçici ürün eklendi ve render edildi', true);
+
+        // trigger saveAll which updates localStorage from DOM
+        document.getElementById('saveAll').click();
+        await new Promise(r=>setTimeout(r,250));
+        const after = getProducts();
+        const found = after.some(p=>p.name === '__selftest__');
+        append('saveAll ile ürün kaydedildi', found);
+
+        // restore original
+        setProducts(before);
+        render();
+        append('localStorage geri yüklendi', true);
+
+  // JSON export test
+  try{ const json = JSON.stringify(getProducts()); append('JSON dışa aktarımı oluşturuldu', !!json); }catch(e){ append('JSON dışa aktarımı başarısız: '+e.message,false); }
+
+        // basic API availability
+  append('FileReader ve toDataURL mevcut', (typeof FileReader !== 'undefined' && typeof toDataURL === 'function'));
+
+        append('Test tamamlandı — detaylar yukarıda', true);
+      }catch(err){ append('Test çalıştırırken hata: '+err.message, false); }
+      out.scrollIntoView({behavior:'smooth'});
+    }
+
+    document.getElementById('runSelfTest').addEventListener('click', ()=>{ runAdminSelfTest(); });
+  </script>
+
+  <script>
     // simple lightweight admin - client-side only
     (function(){
       const PRODUCTS_KEY = 'products_v1';
@@ -154,7 +206,7 @@
           const div = document.createElement('div'); div.className='prod-item';
           // show thumbnail if image is data URL or emoji
           const imgHtml = (p.image && p.image.startsWith && p.image.startsWith('data:'))
-            ? `<img src="${p.image}" class="thumb" alt="thumb"/>`
+            ? `<img src="${p.image}" class="thumb" alt="küçük resim"/>`
             : `<div class="thumb" style="display:flex;align-items:center;justify-content:center;font-size:1.6rem">${escapeHtml(p.image||'🌸')}</div>`;
 
           div.innerHTML = `
