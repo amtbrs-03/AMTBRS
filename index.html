@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <!-- Redirect root index to denme.html so the published site shows the storefront entry page -->
+    <meta http-equiv="refresh" content="0; url=/denme.html">
+    <script>if(location.pathname === '/' || location.pathname === '/index.html'){ try{ location.replace('/denme.html'); }catch(e){} }</script>
     <title>[ERN-ÇİÇEK]</title>
     <script>
         // Eğer kullanıcı www ile geldiyse, kök domaine (non-www) yönlendir
