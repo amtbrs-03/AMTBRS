@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin - ERN-ÇİÇEK</title>
+  <style>
+    body{font-family:Segoe UI, Tahoma, Arial; padding:2rem; background:#f7fafc}
+    h1{margin-bottom:1rem}
+    .card{background:white;padding:1rem;border-radius:8px;box-shadow:0 6px 18px rgba(2,6,23,0.06);margin-bottom:1rem}
+    label{display:block;font-weight:600;margin-bottom:0.25rem}
+    input[type=text], input[type=number], input[type=email]{width:100%;padding:0.5rem;border:1px solid #ddd;border-radius:6px}
+    .products-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:0.75rem}
+    .prod-item{border:1px dashed #e6e6e6;padding:0.75rem;border-radius:8px}
+    .actions{display:flex;gap:0.5rem;margin-top:0.5rem}
+    button{cursor:pointer;padding:0.5rem 0.75rem;border-radius:6px;border:none;background:#6b46c1;color:white}
+    .danger{background:#e53e3e}
+  </style>
+</head>
+<body>
+  <h1>Admin Panel - Ürün Yönetimi</h1>
+
+  <!-- Simple admin auth (client-side) -->
+  <div id="authCard" class="card">
+    <div id="authContent"></div>
+  </div>
+
+  <div id="adminUI">
+  <div class="card">
+    <div style="margin-bottom:.5rem">Bu panel basit bir istemci tarafı yönetim arayüzüdür. Ürünler tarayıcıda saklanır (localStorage). Gerçek bir admin gereksinimi için sunucu tarafı ve yetkilendirme gerekir.</div>
+    <div style="display:flex; gap:0.75rem; align-items:center;">
+      <input id="newName" type="text" placeholder="Yeni ürün adı" />
+      <input id="newPrice" type="number" placeholder="Fiyat" step="0.01" />
+      <input id="newEmoji" type="text" placeholder="Emoji veya boş (örn 🌹)" style="width:120px" />
+      <input id="newImage" type="file" accept="image/*" />
+      <button id="addBtn">Ürün Ekle</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Mevcut Ürünler</h2>
+    <div id="products" class="products-list"></div>
+  </div>
+
+  <div style="display:flex; gap:0.5rem;">
+    <button id="saveAll">Değişiklikleri Kaydet</button>
+    <button id="resetDefault" class="danger">Varsayılanları Geri Yükle</button>
+    <a href="denme.html" style="margin-left:auto; align-self:center">Siteye Dön</a>
+  </div>
+  </div>
+
+  <script>
+    // Client-side admin auth: set password first time, then login.
+    (function(){
+      const AUTH_KEY = 'admin_pass_hash_v1';
+      const authContent = document.getElementById('authContent');
+      const adminUI = document.getElementById('adminUI');
+
+      adminUI.style.display = 'none';
+
+      function toHex(buffer){
+        return Array.from(new Uint8Array(buffer)).map(b=>b.toString(16).padStart(2,'0')).join('');
+      }
+
+      async function hashPassword(pw){
+        const enc = new TextEncoder();
+        const data = enc.encode(pw);
+        const hash = await crypto.subtle.digest('SHA-256', data);
+        return toHex(hash);
+      }
+
+      function showSetPassword(){
+        authContent.innerHTML = `<div style="margin-bottom:.5rem">Henüz bir yönetici parolası ayarlanmadı. Güçlü bir parola belirleyin (local-only).</div>
+          <input id="pw1" type="password" placeholder="Yeni parola" style="width:60%; padding:0.5rem;" />
+          <input id="pw2" type="password" placeholder="Parolayı tekrar girin" style="width:60%; padding:0.5rem; margin-top:0.5rem;" />
+          <div style="margin-top:0.5rem;"><button id="setPwBtn">Parolayı Kaydet</button></div>`;
+        document.getElementById('setPwBtn').onclick = async ()=>{
+          const a = document.getElementById('pw1').value;
+          const b = document.getElementById('pw2').value;
+          if (!a || a.length < 4) return alert('Parola en az 4 karakter olmalı');
+          if (a !== b) return alert('Parolalar eşleşmiyor');
+          const h = await hashPassword(a);
+          localStorage.setItem(AUTH_KEY, h);
+          alert('Parola kaydedildi. Lütfen giriş yapın.');
+          renderAuth();
+        };
+      }
+
+      function showLogin(){
+        authContent.innerHTML = `<div style="margin-bottom:.5rem">Yönetici girişi</div>
+          <input id="loginPw" type="password" placeholder="Parola" style="width:60%; padding:0.5rem;" />
+          <div style="margin-top:0.5rem;"><button id="loginBtn">Giriş Yap</button></div>`;
+        document.getElementById('loginBtn').onclick = async ()=>{
+          const pw = document.getElementById('loginPw').value;
+          const h = await hashPassword(pw);
+          if (h === localStorage.getItem(AUTH_KEY)){
+            localStorage.setItem('admin_logged_in', '1');
+            authContent.innerHTML = '<div style="color:green">Giriş başarılı — admin arayüzü yükleniyor...</div>';
+            setTimeout(()=>{ renderAuth(); renderAdmin(); }, 400);
+          } else alert('Parola yanlış');
+        };
+      }
+
+      function renderAuth(){
+        const has = !!localStorage.getItem(AUTH_KEY);
+        const logged = !!localStorage.getItem('admin_logged_in');
+        if (!has) showSetPassword();
+        else if (!logged) showLogin();
+        else { authContent.innerHTML = `<div style="color:green;">Zaten giriş yaptınız. <button id="logoutBtn">Çıkış</button></div>`; document.getElementById('logoutBtn').onclick = ()=>{ localStorage.removeItem('admin_logged_in'); renderAuth(); adminUI.style.display='none'; } ; adminUI.style.display='block'; }
+      }
+
+      function renderAdmin(){
+        // show admin UI
+        adminUI.style.display = 'block';
+      }
+
+      renderAuth();
+    })();
+  </script>
+
+  <script>
+    // simple lightweight admin - client-side only
+    (function(){
+      const PRODUCTS_KEY = 'products_v1';
+      function uid(){return 'p_' + Math.random().toString(36).slice(2,9)}
+
+      function getProducts(){
+        try{return JSON.parse(localStorage.getItem(PRODUCTS_KEY)) || []}catch(e){return []}
+      }
+      function setProducts(v){localStorage.setItem(PRODUCTS_KEY, JSON.stringify(v))}
+
+      const listEl = document.getElementById('products');
+      function render(){
+        const products = getProducts();
+        listEl.innerHTML = '';
+        products.forEach((p, idx)=>{
+          const div = document.createElement('div'); div.className='prod-item';
+          div.innerHTML = `
+            <label>Ürün adı</label>
+            <input data-idx="${idx}" class="pname" type="text" value="${escapeHtml(p.name)}" />
+            <label>Fiyat (TL)</label>
+            <input data-idx="${idx}" class="pprice" type="number" step="0.01" value="${(p.price||0).toFixed(2)}" />
+            <label>Emoji (veya boş)</label>
+            <input data-idx="${idx}" class="pemoji" type="text" value="${escapeHtml(p.image||'')}" />
+            <label>Veya resim (yükle yeni)</label>
+            <input data-idx="${idx}" class="pimage" type="file" accept="image/*" />
+            <div class="actions">
+              <button data-idx="${idx}" class="remove">Sil</button>
+            </div>
+          `;
+          listEl.appendChild(div);
+        })
+        attachHandlers();
+      }
+
+      function escapeHtml(s){ return (s||'').replace(/[&<>\"']/g, function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]}) }
+
+      function attachHandlers(){
+        document.querySelectorAll('.remove').forEach(btn=>{
+          btn.onclick = ()=>{
+            const idx = parseInt(btn.getAttribute('data-idx'),10);
+            const ps = getProducts(); ps.splice(idx,1); setProducts(ps); render();
+          }
+        });
+      }
+
+      document.getElementById('addBtn').addEventListener('click', async ()=>{
+        const name = document.getElementById('newName').value.trim();
+        const price = parseFloat(document.getElementById('newPrice').value) || 0;
+        const emoji = document.getElementById('newEmoji').value.trim();
+        const file = document.getElementById('newImage').files[0];
+        let img = emoji || '';
+        if (file){ img = await toDataURL(file); }
+        const products = getProducts();
+        products.push({ id: uid(), name, price, image: img });
+        setProducts(products); render();
+        document.getElementById('newName').value=''; document.getElementById('newPrice').value=''; document.getElementById('newEmoji').value=''; document.getElementById('newImage').value='';
+      });
+
+      document.getElementById('saveAll').addEventListener('click', async ()=>{
+        // gather edited fields and file uploads
+        const products = getProducts();
+        const items = Array.from(document.querySelectorAll('.prod-item'));
+        for (let i=0;i<items.length;i++){
+          const el = items[i];
+          const idx = i;
+          const name = el.querySelector('.pname').value.trim();
+          const price = parseFloat(el.querySelector('.pprice').value) || 0;
+          const emoji = el.querySelector('.pemoji').value.trim();
+          const file = el.querySelector('.pimage').files[0];
+          let img = emoji || '';
+          if (file){ img = await toDataURL(file); }
+          products[idx].name = name; products[idx].price = price; products[idx].image = img;
+        }
+        setProducts(products);
+        alert('Ürünler kaydedildi. Siteyi yenileyin.');
+      });
+
+      document.getElementById('resetDefault').addEventListener('click', ()=>{
+        if (!confirm('Varsayılan ürünlere geri dönülsün mü?')) return;
+        localStorage.removeItem(PRODUCTS_KEY);
+        alert('Varsayılan ürünler geri yüklenecek. Siteyi yenileyin.');
+        render();
+      });
+
+      function toDataURL(file){
+        return new Promise((res, rej)=>{
+          const r = new FileReader(); r.onload = ()=>res(r.result); r.onerror = rej; r.readAsDataURL(file);
+        });
+      }
+
+      // initial render
+      // if no products in localStorage, try to read from site page by opening denme.html and reading DOM - but we are client-only here, so just render current localStorage or empty
+      if (!localStorage.getItem(PRODUCTS_KEY)){
+        // try to read from opener window (if admin opened from site)
+        try{
+          if (window.opener && window.opener.__siteProducts){
+            const p = window.opener.__siteProducts.get();
+            if (p && p.length) { setProducts(p); }
+          }
+        }catch(e){}
+      }
+
+      render();
+    })();
+  </script>
+</body>
+</html>
