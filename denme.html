@@ -533,7 +533,7 @@
                             <div id="siteIban" style="font-family:monospace; font-size:1.05rem; margin-top:0.5rem;">xxxxxxxxxxxxxxx</div>
                             <div style="margin-top:0.5rem; display:flex; gap:0.5rem;">
                                 <button onclick="copyIban()">IBAN'ı Kopyala</button>
-                                <button onclick="viewIban()" style="background:#2563eb; color:#fff;">IBAN'e Git</button>
+                                <button onclick="openPaymentPage()" style="background:#2563eb; color:#fff;">IBAN'e Git</button>
                             </div>
                         </div>
 
@@ -1042,6 +1042,27 @@
             }
             win.document.write(html);
             win.document.close();
+        }
+
+        // Yeni: Ödeme sayfasını (odeme.html) yeni sekmede açar. Popup bloklanırsa eski inline viewIban() çağrılır.
+        function openPaymentPage() {
+            try {
+                const ibanEl = document.getElementById('siteIban');
+                const iban = ibanEl ? ibanEl.textContent.trim() : '';
+                const cart = loadCart() || [];
+                let total = 0;
+                cart.forEach(item => { total += (item.price || 0) * (item.qty || 0); });
+                const url = '/odeme.html?iban=' + encodeURIComponent(iban) + '&total=' + encodeURIComponent(total.toFixed(2));
+                const win = window.open(url, '_blank');
+                if (!win) {
+                    // Popup bloklandıysa inline gösterim
+                    alert('Yeni sekme açılamadı; ödeme bilgilerini modalde görüntülüyorum.');
+                    viewIban();
+                }
+            } catch (e) {
+                console.warn('openPaymentPage hata:', e);
+                viewIban();
+            }
         }
 
         function sendBankNotification() {
