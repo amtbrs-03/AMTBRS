@@ -2,11 +2,13 @@
 <html lang="tr">
 <head>
   <meta charset="utf-8" />
+  <!-- Ensure older browsers / viewers explicitly get UTF-8; this helps when files are served with wrong headers -->
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Admin - ERN-ÇİÇEK</title>
   <style>
     :root{--accent:#6b46c1;--danger:#e53e3e;--muted:#6b7280}
-    body{font-family:Segoe UI, Tahoma, Arial; padding:2rem; background:#f7fafc; color:#0b1220}
+  body{font-family:'Segoe UI', 'Inter', 'Noto Sans', Tahoma, Arial, sans-serif; padding:2rem; background:#f7fafc; color:#0b1220}
     .page{max-width:1100px;margin:0 auto}
     h1{margin-bottom:1rem;font-size:1.4rem}
     .card{background:white;padding:1rem;border-radius:10px;box-shadow:0 8px 24px rgba(2,6,23,0.06);margin-bottom:1rem}

@@ -802,13 +802,57 @@
             }
             // Örnek: basit onay ve temizleme
             if (confirm('Satın almayı onaylıyor musunuz?')) {
-                // Burada gerçek ödeme/işlem mantığı eklenir
-                localStorage.removeItem(cartKeyForUser(getCurrentUser().email));
+                    // Kredi kartı akışı (demo): kredi kartı modalını açıyoruz
+                    openCard();
+            }
+        }
+
+        /* --- Demo credit card modal & processing (client-side only, NOT PCI compliant) --- */
+        function openCard() {
+            document.getElementById('cardModal').style.display = 'block';
+        }
+        function closeCard() {
+            document.getElementById('cardModal').style.display = 'none';
+        }
+
+        function validCardNumberLuhn(num) {
+            const s = num.replace(/\s+/g, '');
+            if (!/^[0-9]{12,19}$/.test(s)) return false;
+            let sum = 0, alt = false;
+            for (let i = s.length - 1; i >= 0; i--) {
+                let n = parseInt(s.charAt(i), 10);
+                if (alt) { n *= 2; if (n > 9) n -= 9; }
+                sum += n; alt = !alt;
+            }
+            return sum % 10 === 0;
+        }
+
+        function processCardPayment() {
+            const cardNumber = (document.getElementById('ccNumber').value || '').replace(/\D/g,'');
+            const name = (document.getElementById('ccName').value || '').trim();
+            const exp = (document.getElementById('ccExp').value || '').trim();
+            const cvc = (document.getElementById('ccCvc').value || '').trim();
+
+            if (!name) return alert('Kart üzerindeki isim gerekli.');
+            if (!validCardNumberLuhn(cardNumber)) return alert('Geçersiz kart numarası (demo doğrulama).');
+            if (!/^(0[1-9]|1[0-2])\/(\d{2}|\d{4})$/.test(exp)) return alert('Son kullanma tarihi MM/YY veya MM/YYYY formatında olmalı.');
+            if (!/^\d{3,4}$/.test(cvc)) return alert('CVC 3 veya 4 haneli olmalı.');
+
+            document.getElementById('cardPayBtn').disabled = true;
+            document.getElementById('cardPayBtn').textContent = 'Ödeniyor...';
+            setTimeout(()=>{
+                const user = getCurrentUser();
+                if (user) {
+                    localStorage.removeItem(cartKeyForUser(user.email));
+                }
                 renderCart();
                 updateCartCount();
-                alert('Satın alma başarılı. Teşekkürler!');
+                closeCard();
                 closeCart();
-            }
+                alert('Ödeme (demo) başarılı. Teşekkürler! Sepetiniz temizlendi.');
+                document.getElementById('cardPayBtn').disabled = false;
+                document.getElementById('cardPayBtn').textContent = 'Ödeme Yap';
+            }, 1200);
         }
 
         /* --- Utilities --- */
