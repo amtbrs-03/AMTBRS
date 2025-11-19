@@ -871,11 +871,33 @@
                 alert('Sepetiniz boş.');
                 return;
             }
-            // Örnek: basit onay ve temizleme
-            if (confirm('Satın almayı onaylıyor musunuz?')) {
-                // Havale/EFT akışı: IBAN modalını açıyoruz
-                openBank();
+            // Hesapla
+            let total = 0;
+            cart.forEach(item => { total += (item.price || 0) * (item.qty || 0); });
+
+            if (!confirm('Satın almayı onaylıyor musunuz?')) return;
+
+            // Öncelikle tam sayfa ödeme sayfasını açmaya çalış (popup bloklanmaya karşı modal fallback'i olacak)
+            try {
+                const iban = (document.getElementById('siteIban') && document.getElementById('siteIban').textContent) ? document.getElementById('siteIban').textContent.trim() : '';
+                const url = '/odeme.html?iban=' + encodeURIComponent(iban) + '&total=' + encodeURIComponent(total.toFixed(2));
+                const win = window.open(url, '_blank');
+                if (win) {
+                    // Tarayıcı yeni sekme açtı; temizleme ve yönlendirme işlemleri modal yerine burada yapılabilir
+                    const user = getCurrentUser();
+                    if (user) localStorage.removeItem(cartKeyForUser(user.email));
+                    renderCart();
+                    updateCartCount();
+                    closeCart();
+                    alert('Ödeme sayfası yeni sekmede açıldı. Lütfen işlemi tamamladıktan sonra siteden "Siparişi Bildir" butonunu kullanın.');
+                    return;
+                }
+            } catch (e) {
+                console.warn('Popup açma denemesi başarısız veya hata oluştu', e);
             }
+
+            // Eğer popup bloklandıysa veya açma başarısızsa modal ile devam et
+            openBank();
         }
 
         /* --- Utilities --- */
