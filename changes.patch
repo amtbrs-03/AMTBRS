@@ -1,0 +1,590 @@
+diff --git a/admin.html b/admin.html
+index 6655a71..9868157 100644
+--- a/admin.html
++++ b/admin.html
+@@ -5,20 +5,29 @@
+   <meta name="viewport" content="width=device-width,initial-scale=1" />
+   <title>Admin - ERN-ÇİÇEK</title>
+   <style>
+-    body{font-family:Segoe UI, Tahoma, Arial; padding:2rem; background:#f7fafc}
+-    h1{margin-bottom:1rem}
+-    .card{background:white;padding:1rem;border-radius:8px;box-shadow:0 6px 18px rgba(2,6,23,0.06);margin-bottom:1rem}
+-    label{display:block;font-weight:600;margin-bottom:0.25rem}
+-    input[type=text], input[type=number], input[type=email]{width:100%;padding:0.5rem;border:1px solid #ddd;border-radius:6px}
+-    .products-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:0.75rem}
+-    .prod-item{border:1px dashed #e6e6e6;padding:0.75rem;border-radius:8px}
++    :root{--accent:#6b46c1;--danger:#e53e3e;--muted:#6b7280}
++    body{font-family:Segoe UI, Tahoma, Arial; padding:2rem; background:#f7fafc; color:#0b1220}
++    .page{max-width:1100px;margin:0 auto}
++    h1{margin-bottom:1rem;font-size:1.4rem}
++    .card{background:white;padding:1rem;border-radius:10px;box-shadow:0 8px 24px rgba(2,6,23,0.06);margin-bottom:1rem}
++    label{display:block;font-weight:700;margin-bottom:0.35rem;color:#0b1220}
++    input[type=text], input[type=number], input[type=email], input[type=file]{width:100%;padding:0.5rem;border:1px solid #e6e6e6;border-radius:8px}
++    .controls-row{display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap}
++    .products-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:0.9rem}
++    .prod-item{border:1px solid rgba(14,20,30,0.06);padding:0.9rem;border-radius:10px;background:linear-gradient(180deg,#ffffff,#fbfbfd)}
+     .actions{display:flex;gap:0.5rem;margin-top:0.5rem}
+-    button{cursor:pointer;padding:0.5rem 0.75rem;border-radius:6px;border:none;background:#6b46c1;color:white}
+-    .danger{background:#e53e3e}
++    .btn{cursor:pointer;padding:0.5rem 0.75rem;border-radius:8px;border:none;background:var(--accent);color:white}
++    .btn.ghost{background:transparent;color:var(--accent);border:1px solid rgba(107,70,193,0.12)}
++    .danger{background:var(--danger)}
++    .meta{font-size:0.9rem;color:#475569}
++    .thumb{width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid #eee;margin-right:0.6rem}
++    .prod-row{display:flex;align-items:center;gap:0.6rem}
++    .file-preview{width:72px;height:72px;display:inline-block;vertical-align:middle}
++    .small{font-size:0.9rem;color:#475569}
+   </style>
+ </head>
+ <body>
+-  <h1>Admin Panel - Ürün Yönetimi</h1>
++  <h1>Yönetici Paneli — Ürün Yönetimi</h1>
+ 
+   <!-- Simple admin auth (client-side) -->
+   <div id="authCard" class="card">
+@@ -27,26 +36,34 @@
+ 
+   <div id="adminUI">
+   <div class="card">
+-    <div style="margin-bottom:.5rem">Bu panel basit bir istemci tarafı yönetim arayüzüdür. Ürünler tarayıcıda saklanır (localStorage). Gerçek bir admin gereksinimi için sunucu tarafı ve yetkilendirme gerekir.</div>
+-    <div style="display:flex; gap:0.75rem; align-items:center;">
+-      <input id="newName" type="text" placeholder="Yeni ürün adı" />
+-      <input id="newPrice" type="number" placeholder="Fiyat" step="0.01" />
+-      <input id="newEmoji" type="text" placeholder="Emoji veya boş (örn 🌹)" style="width:120px" />
+-      <input id="newImage" type="file" accept="image/*" />
+-      <button id="addBtn">Ürün Ekle</button>
++    <div style="margin-bottom:.5rem">Bu panel, tarayıcıda çalışan basit bir yönetim arayüzüdür. Ürünleriniz yalnızca sizin tarayıcınızda (localStorage) saklanır. Canlı/üretim ortamı için sunucu tarafı kimlik doğrulama ve güvenli depolama gereklidir.</div>
++    <div class="controls-row">
++      <input id="newName" type="text" placeholder="Yeni ürün adı" aria-label="Yeni ürün adı" style="flex:1;min-width:200px" />
++      <input id="newPrice" type="number" placeholder="Fiyat (TL)" step="0.01" aria-label="Fiyat (TL)" style="width:120px" />
++      <input id="newEmoji" type="text" placeholder="Emoji (örn 🌹) veya boş" style="width:120px" aria-label="Emoji" />
++      <div style="display:flex;flex-direction:column;gap:0.4rem;">
++        <input id="newImage" type="file" accept="image/*" />
++        <div id="newPreview" class="file-preview small" aria-hidden="true"></div>
++      </div>
++      <button id="addBtn" class="btn">Ürün Ekle</button>
+     </div>
++    <div class="small meta">Not: Resim yüklenirse tarayıcıda (data URL) saklanır; büyük resimlerden kaçının.</div>
+   </div>
+ 
+   <div class="card">
+-    <h2>Mevcut Ürünler</h2>
++    <h2>Kayıtlı Ürünler</h2>
+     <div id="products" class="products-list"></div>
+   </div>
+ 
+-  <div style="display:flex; gap:0.5rem;">
+-    <button id="saveAll">Değişiklikleri Kaydet</button>
+-    <button id="resetDefault" class="danger">Varsayılanları Geri Yükle</button>
+-    <a href="denme.html" style="margin-left:auto; align-self:center">Siteye Dön</a>
+-  </div>
++    <div style="display:flex; gap:0.5rem; align-items:center;">
++      <button id="saveAll" class="btn">Değişiklikleri Kaydet</button>
++      <button id="exportJson" class="btn btn-ghost">JSON Dışa Aktar</button>
++      <button id="exportCsv" class="btn btn-ghost">CSV Dışa Aktar</button>
++      <label for="importFile" class="btn btn-ghost" style="margin-left:0; cursor:pointer;">İçe Aktar</label>
++      <input id="importFile" type="file" accept="application/json,text/csv" style="display:none" />
++      <button id="resetDefault" class="danger">Varsayılanları Geri Yükle</button>
++      <a href="denme.html" style="margin-left:auto; align-self:center" class="btn btn-ghost">Siteyi Aç</a>
++    </div>
+   </div>
+ 
+   <script>
+@@ -135,17 +152,24 @@
+         listEl.innerHTML = '';
+         products.forEach((p, idx)=>{
+           const div = document.createElement('div'); div.className='prod-item';
++          // show thumbnail if image is data URL or emoji
++          const imgHtml = (p.image && p.image.startsWith && p.image.startsWith('data:'))
++            ? `<img src="${p.image}" class="thumb" alt="thumb"/>`
++            : `<div class="thumb" style="display:flex;align-items:center;justify-content:center;font-size:1.6rem">${escapeHtml(p.image||'🌸')}</div>`;
++
+           div.innerHTML = `
+-            <label>Ürün adı</label>
+-            <input data-idx="${idx}" class="pname" type="text" value="${escapeHtml(p.name)}" />
+-            <label>Fiyat (TL)</label>
+-            <input data-idx="${idx}" class="pprice" type="number" step="0.01" value="${(p.price||0).toFixed(2)}" />
+-            <label>Emoji (veya boş)</label>
+-            <input data-idx="${idx}" class="pemoji" type="text" value="${escapeHtml(p.image||'')}" />
+-            <label>Veya resim (yükle yeni)</label>
++            <div class="prod-row">${imgHtml}<div style="flex:1">
++              <label>Ürün adı</label>
++              <input data-idx="${idx}" class="pname" type="text" value="${escapeHtml(p.name)}" placeholder="Ürün adı" />
++              <label>Fiyat (TL)</label>
++              <input data-idx="${idx}" class="pprice" type="number" step="0.01" value="${(p.price||0).toFixed(2)}" placeholder="0.00" />
++            </div></div>
++            <label>Emoji (isteğe bağlı)</label>
++            <input data-idx="${idx}" class="pemoji" type="text" value="${escapeHtml(p.image||'')}" placeholder="🌹 veya boş" />
++            <label>Resim (yeni yükle)</label>
+             <input data-idx="${idx}" class="pimage" type="file" accept="image/*" />
+             <div class="actions">
+-              <button data-idx="${idx}" class="remove">Sil</button>
++              <button data-idx="${idx}" class="remove">Ürünü Sil</button>
+             </div>
+           `;
+           listEl.appendChild(div);
+@@ -162,6 +186,28 @@
+             const ps = getProducts(); ps.splice(idx,1); setProducts(ps); render();
+           }
+         });
++
++        // Preview selected file for existing items
++        document.querySelectorAll('.pimage').forEach(inp=>{
++          inp.onchange = async (e)=>{
++            const f = inp.files && inp.files[0];
++            if (!f) return;
++            const data = await toDataURL(f);
++            // show preview in this prod-item (replace or insert img.thumb)
++            const container = inp.closest('.prod-item');
++            if (!container) return;
++            let imgEl = container.querySelector('img.thumb');
++            if (!imgEl){
++              imgEl = document.createElement('img'); imgEl.className='thumb';
++              const row = container.querySelector('.prod-row');
++              if (row) row.insertBefore(imgEl, row.firstChild);
++            }
++            imgEl.src = data;
++            // Also set hidden emoji field so saveAll picks it up (we reuse .pemoji to store image if chosen)
++            const emojiField = container.querySelector('.pemoji');
++            if (emojiField) emojiField.value = data;
++          };
++        });
+       }
+ 
+       document.getElementById('addBtn').addEventListener('click', async ()=>{
+@@ -193,16 +239,107 @@
+           products[idx].name = name; products[idx].price = price; products[idx].image = img;
+         }
+         setProducts(products);
+-        alert('Ürünler kaydedildi. Siteyi yenileyin.');
++        alert('Ürünler kaydedildi. Lütfen siteyi yenileyin.');
+       });
+ 
+       document.getElementById('resetDefault').addEventListener('click', ()=>{
+         if (!confirm('Varsayılan ürünlere geri dönülsün mü?')) return;
+-        localStorage.removeItem(PRODUCTS_KEY);
+-        alert('Varsayılan ürünler geri yüklenecek. Siteyi yenileyin.');
++        const defaults = [
++          { id: uid(), name: 'Kırmızı Gül Buketi', price: 149.00, image: '🌹' },
++          { id: uid(), name: 'Beyaz Lilyum', price: 129.00, image: '🌸' },
++          { id: uid(), name: 'Mevsim Buketi', price: 99.00, image: '💐' }
++        ];
++        setProducts(defaults);
++        alert('Varsayılan ürünler yüklendi.');
+         render();
+       });
+ 
++      // Export JSON
++      document.getElementById('exportJson').addEventListener('click', ()=>{
++        const data = JSON.stringify(getProducts(), null, 2);
++        const blob = new Blob([data], {type:'application/json'});
++        const url = URL.createObjectURL(blob);
++        const a = document.createElement('a'); a.href = url; a.download = 'products.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
++      });
++
++      // Export CSV (simple)
++      document.getElementById('exportCsv').addEventListener('click', ()=>{
++        const prods = getProducts();
++        const esc = v => '"' + (''+ (v==null ? '' : v)).replace(/"/g,'""') + '"';
++        const rows = [ ['id','name','price','image'].map(esc).join(',') ];
++        prods.forEach(p=> rows.push([p.id, p.name, (p.price||0).toFixed(2), p.image||''].map(esc).join(',')));
++        const blob = new Blob([rows.join('\n')], {type:'text/csv;charset=utf-8;'});
++        const url = URL.createObjectURL(blob);
++        const a = document.createElement('a'); a.href = url; a.download = 'products.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
++      });
++
++      // Import (JSON or CSV)
++      document.getElementById('importFile').addEventListener('change', async (e)=>{
++        const f = e.target.files && e.target.files[0];
++        if (!f) return;
++        const txt = await f.text();
++        let parsed = null;
++        try{
++          if (f.type === 'application/json' || f.name.endsWith('.json')){
++            parsed = JSON.parse(txt);
++          } else {
++            // basic CSV parser supporting quoted fields
++            const lines = txt.split(/\r?\n/).filter(l=>l.trim()!=='');
++            if (!lines.length) throw new Error('CSV boş');
++            const parseLine = (line)=>{
++              const out=[]; let cur='', inQuotes=false;
++              for (let i=0;i<line.length;i++){ const ch=line[i];
++                if (ch==='"'){ if (inQuotes && line[i+1]==='"'){ cur+='"'; i++; } else inQuotes=!inQuotes; }
++                else if (ch===',' && !inQuotes){ out.push(cur); cur=''; }
++                else cur+=ch;
++              }
++              out.push(cur);
++              return out.map(s => s.replace(/^\s+|\s+$/g, ''));
++            };
++            const header = parseLine(lines[0]).map(h=>h.replace(/^"|"$/g,''));
++            const arr = [];
++            for (let i=1;i<lines.length;i++){
++              const vals = parseLine(lines[i]).map(v=>v.replace(/^"|"$/g,''));
++              const obj = {};
++              header.forEach((h, idx)=>{ obj[h]=vals[idx]===undefined? '': vals[idx]; });
++              // convert price
++              if (obj.price) obj.price = parseFloat(obj.price)||0;
++              if (!obj.id) obj.id = uid();
++              arr.push({ id: obj.id, name: obj.name||'', price: obj.price||0, image: obj.image||'' });
++            }
++            parsed = arr;
++          }
++        }catch(err){ alert('Dosya okunamadı: ' + err.message); return; }
++
++        if (!Array.isArray(parsed)) return alert('Beklenen format: ürünlerin dizi halinde JSON veya CSV');
++        if (!confirm('İçe aktar: mevcut ürünlerin üzerine yazılsın mı? (İptal = birleştir)')){
++          // merge
++          const cur = getProducts();
++          const merged = cur.concat(parsed.map(p=>({ id: p.id||uid(), name: p.name||'', price: Number(p.price)||0, image: p.image||'' })));
++          setProducts(merged);
++        } else {
++          // replace
++          const replaced = parsed.map(p=>({ id: p.id||uid(), name: p.name||'', price: Number(p.price)||0, image: p.image||'' }));
++          setProducts(replaced);
++        }
++        alert('İçe aktarma tamamlandı.');
++        e.target.value = '';
++        render();
++      });
++
++      // preview for new image
++      document.getElementById('newImage').addEventListener('change', async (e)=>{
++        const f = e.target.files && e.target.files[0];
++        const preview = document.getElementById('newPreview');
++        preview.innerHTML = '';
++        if (!f) return;
++        try{
++          const data = await toDataURL(f);
++          const img = document.createElement('img'); img.src = data; img.className='thumb'; img.style.width='72px'; img.style.height='72px'; img.style.objectFit='cover';
++          preview.appendChild(img);
++        }catch(err){ preview.textContent = 'Önizleme yüklenemedi'; }
++      });
++
+       function toDataURL(file){
+         return new Promise((res, rej)=>{
+           const r = new FileReader(); r.onload = ()=>res(r.result); r.onerror = rej; r.readAsDataURL(file);
+diff --git a/denme.html b/denme.html
+index cfda997..1ffc342 100644
+--- a/denme.html
++++ b/denme.html
+@@ -21,10 +21,11 @@
+         body {
+             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+             line-height: 1.6;
+-            color: #222;
+-            background: radial-gradient(1200px 600px at 10% 10%, rgba(102,126,234,0.12), transparent),
+-                        radial-gradient(800px 400px at 90% 90%, rgba(118,75,162,0.10), transparent),
+-                        linear-gradient(180deg, #0f1724 0%, #071025 100%);
++            color: #0b2f1f;
++            /* Yeşil tema: yumuşak yeşil arka plan + hafif vinyet efektleri */
++            background: radial-gradient(1200px 600px at 10% 10%, rgba(34,197,94,0.10), transparent),
++                        radial-gradient(800px 400px at 90% 90%, rgba(16,185,129,0.08), transparent),
++                        linear-gradient(180deg, #e6f7ec 0%, #064e3b 100%);
+             -webkit-font-smoothing: antialiased;
+             -moz-osx-font-smoothing: grayscale;
+             min-height: 100%;
+@@ -149,7 +150,8 @@
+         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+         
+         .modal-content {
+-            background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(245,245,255,0.95));
++            /* Arka fonu yeşile dönük gradient ile güncellendi */
++            background: linear-gradient(180deg, #e6f7ec 0%, #c2e9c7 100%);
+             margin: 6% auto;
+             padding: 2rem;
+             border-radius: 16px;
+@@ -436,7 +438,7 @@
+     <header>
+         <nav>
+             <div class="logo">[ERN-ÇİÇEK]</div>
+-            <ul class="nav-links"></ul>
++            <ul class="nav-links">
+                 <li><a href="#home">Ana Sayfa</a></li>
+                 <li><a href="#products">Ürünler</a></li>
+                 <li><a href="#about">Hakkında</a></li>
+@@ -464,10 +466,13 @@
+             <span class="close" onclick="closeAuthModal()">&times;</span>
+             <h2 style="margin-bottom: 1.5rem; color: #0b1220;">Hoşgeldiniz</h2>
+             
+-            <div class="form-tabs"></div>
++            <div class="form-tabs">
+                 <button class="form-tab active" onclick="switchTab('login', this)">Giriş</button>
+                 <button class="form-tab" onclick="switchTab('register', this)">Kayıt</button>
+             </div>
++            <div id="adminBtnRow" style="text-align:right; margin-bottom:1rem;">
++                <button class="auth-btn" style="background:#2e7d32; margin-top:0.5rem;" onclick="window.open('admin.html','_blank')">Admin Girişi</button>
++            </div>
+ 
+             <!-- Giriş Formu -->
+             <div id="login" class="form-content active">
+@@ -475,6 +480,10 @@
+                     <label>Email</label>
+                     <input type="email" id="loginEmail" placeholder="Email adresiniz">
+                 </div>
++                <div class="form-group">
++                    <label>Telefon</label>
++                    <input type="tel" id="loginPhone" placeholder="Telefon numaranız" pattern="[0-9]{10,15}">
++                </div>
+                 <div class="form-group">
+                     <label>Şifre</label>
+                     <input type="password" id="loginPassword" placeholder="Şifreniz">
+@@ -492,13 +501,17 @@
+                     <label>Email</label>
+                     <input type="email" id="registerEmail" placeholder="Email adresiniz">
+                 </div>
++                <div class="form-group">
++                    <label>Telefon</label>
++                    <input type="tel" id="registerPhone" placeholder="Telefon numaranız" pattern="[0-9]{10,15}">
++                </div>
+                 <div class="form-group">
+                     <label>Şifre</label>
+                     <input type="password" id="registerPassword" placeholder="Şifreniz">
+                 </div>
+-                <div class="form-group"></div>
++                <div class="form-group">
+                     <label>Şifre Tekrar</label>
+-                    <input type="password" id="registerPassword2" placeholder="Şifreniz tekrar">
++                    <input type="password" id="registerPassword2" placeholder="Şifreniz tekrar" style="width:100%; padding:0.8rem; border:1px solid rgba(10,12,30,0.1); border-radius:8px; font-size:1rem; transition:0.25s;">
+                 </div>
+                 <button onclick="registerUser()" style="width: 100%; margin-top: 1rem;">Kayıt Ol</button>
+             </div>
+@@ -611,34 +624,45 @@
+         function registerUser() {
+             const name = document.getElementById('registerName').value.trim();
+             const email = document.getElementById('registerEmail').value.trim();
++            const phone = document.getElementById('registerPhone').value.trim();
+             const password = document.getElementById('registerPassword').value;
+             const password2 = document.getElementById('registerPassword2').value;
+ 
+-            if (!name || !email || !password || !password2) {
++            if (!name || !email || !phone || !password || !password2) {
+                 alert('Lütfen tüm alanları doldurunuz!');
+                 return;
+             }
++            if (!/^\d{10,15}$/.test(phone)) {
++                alert('Telefon numarası 10-15 rakam olmalı.');
++                return;
++            }
+             if (password !== password2) {
+                 alert('Şifreler eşleşmiyor!');
+                 return;
+             }
+ 
+-            const user = { name, email, password };
++            // Basit telefon doğrulama kodu üretimi
++            const verifyCode = Math.floor(100000 + Math.random() * 900000).toString();
++            alert('Telefon doğrulama kodunuz: ' + verifyCode + '\nLütfen kodu bir yere not edin ve girişte girin. (Demo)');
++
++            const user = { name, email, phone, password, verifyCode };
+             localStorage.setItem('user_' + email, JSON.stringify(user));
+             alert('Kayıt başarılı! Giriş yapabilirsiniz.');
+             switchTab('login', document.querySelector('.form-tab'));
+             document.getElementById('registerName').value = '';
+             document.getElementById('registerEmail').value = '';
++            document.getElementById('registerPhone').value = '';
+             document.getElementById('registerPassword').value = '';
+             document.getElementById('registerPassword2').value = '';
+         }
+ 
+         function loginUser() {
+             const email = document.getElementById('loginEmail').value.trim();
++            const phone = document.getElementById('loginPhone').value.trim();
+             const password = document.getElementById('loginPassword').value;
+ 
+-            if (!email || !password) {
+-                alert('Lütfen email ve şifre giriniz!');
++            if (!email || !phone || !password) {
++                alert('Lütfen email, telefon ve şifre giriniz!');
+                 return;
+             }
+ 
+@@ -653,12 +677,23 @@
+                 alert('Şifre yanlış!');
+                 return;
+             }
++            if (userData.phone !== phone) {
++                alert('Telefon numarası eşleşmiyor!');
++                return;
++            }
++            // Demo: telefon doğrulama kodu sorulsun
++            const inputCode = prompt('Telefon doğrulama kodunuzu girin:');
++            if (inputCode !== userData.verifyCode) {
++                alert('Doğrulama kodu yanlış!');
++                return;
++            }
+ 
+             localStorage.setItem('currentUser', JSON.stringify(userData));
+             closeAuthModal();
+             updateUIAfterLogin(userData.name);
+             updateCartCount();
+             document.getElementById('loginEmail').value = '';
++            document.getElementById('loginPhone').value = '';
+             document.getElementById('loginPassword').value = '';
+         }
+ 
+@@ -836,9 +871,10 @@
+         }
+ 
+         /* --- Utilities --- */
+-        // Basit HTML escape
++        // Basit HTML escape (güvenli string dönüşümü)
+         function escapeHtml(text) {
+-            return text.replace(/[&<>\"']/g, function(m) {
++            const s = String(text === undefined || text === null ? '' : text);
++            return s.replace(/[&<>\"']/g, function(m) {
+                 return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];
+             });
+         }
+@@ -938,8 +974,6 @@
+         }
+ 
+         function sendBankNotification() {
+-            // Site sahibi e-posta adresi (lütfen gerektiğinde değiştirin)
+-            // Güncellendi: kullanıcı talebi ile amtbrs@icloud.com kullanılıyor
+             const ownerEmail = 'amtbrs@icloud.com';
+ 
+             const payerEmail = (document.getElementById('payerEmail').value || '').trim();
+@@ -948,50 +982,52 @@
+                 return;
+             }
+ 
+-            // Hazırla: sepet özeti
+-            const cart = loadCart();
+-            let body = 'Merhaba,%0D%0A%0D%0A';
+-            body += 'Aşağıdaki kullanıcı havale/eft yaptığını bildirdi ve sipariş onayı bekliyor:%0D%0A%0D%0A';
+-            body += 'Gönderen e-posta: ' + encodeURIComponent(payerEmail) + '%0D%0A%0D%0A';
+-            if (!cart || !cart.length) {
+-                body += 'Sepet: (boş)%0D%0A';
++            // Sepet özetini satır satır oluştur
++            const cart = loadCart() || [];
++            const lines = [];
++            lines.push('Merhaba', '');
++            lines.push('Aşağıdaki kullanıcı havale/eft yaptığını bildirdi ve sipariş onayı bekliyor:', '');
++            lines.push('Gönderen e-posta: ' + payerEmail, '');
++
++            if (!cart.length) {
++                lines.push('Sepet: (boş)');
+             } else {
+-                body += 'Sepet içerikleri:%0D%0A';
++                lines.push('Sepet içerikleri:');
+                 let total = 0;
+                 cart.forEach(item => {
+-                    body += '- ' + encodeURIComponent(item.name) + ' x' + (item.qty||1) + ' @ ₺' + (item.price||0).toFixed(2) + '%0D%0A';
+-                    total += (item.price||0) * (item.qty||0);
++                    lines.push('- ' + (item.name || '') + ' x' + (item.qty || 1) + ' @ ₺' + ((item.price || 0).toFixed(2)));
++                    total += (item.price || 0) * (item.qty || 0);
+                 });
+-                body += '%0D%0AToplam: ₺' + total.toFixed(2) + '%0D%0A';
++                lines.push('', 'Toplam: ₺' + total.toFixed(2));
+             }
+-            body += '%0D%0AIBAN: ' + encodeURIComponent(document.getElementById('siteIban').textContent.trim()) + '%0D%0A%0D%0A';
+-            body += 'Lütfen ödemenin alındığını teyit edin ve siparişi onaylayın.%0D%0A%0D%0Aİyi çalışmalar.';
+ 
+-            const subject = encodeURIComponent('Havale bildirimi - yeni sipariş');
+-            const mailto = 'mailto:' + ownerEmail + '?subject=' + subject + '&body=' + body;
++            lines.push('', 'IBAN: ' + (document.getElementById('siteIban').textContent || '').trim(), '', 'Lütfen ödemenin alındığını teyit edin ve siparişi onaylayın.', '', 'İyi çalışmalar.');
+ 
+-            // Aç ve sonra temizle
+-            window.location.href = mailto;
++            const subject = 'Havale bildirimi - yeni sipariş';
++            const body = lines.join('\n');
++            const mailto = 'mailto:' + ownerEmail + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+ 
+-            // Kullanıcı maili gönderdikten sonra manuel olarak sepeti temizlemesi beklenir,
+-            // ama UX için biz de local temizlik yapıyoruz (kullanıcının onayına bağlı olarak).
++            // Aç ve local sepeti temizle (kullanıcı deneyimi için)
++            window.location.href = mailto;
+             const user = getCurrentUser();
+-            if (user) {
+-                localStorage.removeItem(cartKeyForUser(user.email));
+-            }
++            if (user) localStorage.removeItem(cartKeyForUser(user.email));
+             renderCart();
+             updateCartCount();
+             closeBank();
+             closeCart();
+-            alert('E-posta istemciniz açıldı. Lütfen gönderimi tamamlayın. Sipetiniz temizlendi (yerel).');
++            alert('E-posta istemciniz açıldı. Lütfen gönderimi tamamlayın. Sepetiniz temizlendi.');
+         }
+ 
+         // Close modals when clicking outside
+         window.onclick = (event) => {
+             const authModal = document.getElementById('authModal');
+             const cartModal = document.getElementById('cartModal');
+-            if (event.target == authModal) authModal.style.display = 'none';
+-            if (event.target == cartModal) cartModal.style.display = 'none';
++            const bankModal = document.getElementById('bankModal');
++            const cardModal = document.getElementById('cardModal');
++            if (event.target === authModal) authModal.style.display = 'none';
++            if (event.target === cartModal) cartModal.style.display = 'none';
++            if (bankModal && event.target === bankModal) bankModal.style.display = 'none';
++            if (cardModal && event.target === cardModal) cardModal.style.display = 'none';
+         };
+ 
+         // Init on load
+diff --git a/index.html b/index.html
+index 6b14b4d..88df6c6 100644
+--- a/index.html
++++ b/index.html
+@@ -802,13 +802,57 @@
+             }
+             // Örnek: basit onay ve temizleme
+             if (confirm('Satın almayı onaylıyor musunuz?')) {
+-                // Burada gerçek ödeme/işlem mantığı eklenir
+-                localStorage.removeItem(cartKeyForUser(getCurrentUser().email));
++                    // Kredi kartı akışı (demo): kredi kartı modalını açıyoruz
++                    openCard();
++            }
++        }
++
++        /* --- Demo credit card modal & processing (client-side only, NOT PCI compliant) --- */
++        function openCard() {
++            document.getElementById('cardModal').style.display = 'block';
++        }
++        function closeCard() {
++            document.getElementById('cardModal').style.display = 'none';
++        }
++
++        function validCardNumberLuhn(num) {
++            const s = num.replace(/\s+/g, '');
++            if (!/^[0-9]{12,19}$/.test(s)) return false;
++            let sum = 0, alt = false;
++            for (let i = s.length - 1; i >= 0; i--) {
++                let n = parseInt(s.charAt(i), 10);
++                if (alt) { n *= 2; if (n > 9) n -= 9; }
++                sum += n; alt = !alt;
++            }
++            return sum % 10 === 0;
++        }
++
++        function processCardPayment() {
++            const cardNumber = (document.getElementById('ccNumber').value || '').replace(/\D/g,'');
++            const name = (document.getElementById('ccName').value || '').trim();
++            const exp = (document.getElementById('ccExp').value || '').trim();
++            const cvc = (document.getElementById('ccCvc').value || '').trim();
++
++            if (!name) return alert('Kart üzerindeki isim gerekli.');
++            if (!validCardNumberLuhn(cardNumber)) return alert('Geçersiz kart numarası (demo doğrulama).');
++            if (!/^(0[1-9]|1[0-2])\/(\d{2}|\d{4})$/.test(exp)) return alert('Son kullanma tarihi MM/YY veya MM/YYYY formatında olmalı.');
++            if (!/^\d{3,4}$/.test(cvc)) return alert('CVC 3 veya 4 haneli olmalı.');
++
++            document.getElementById('cardPayBtn').disabled = true;
++            document.getElementById('cardPayBtn').textContent = 'Ödeniyor...';
++            setTimeout(()=>{
++                const user = getCurrentUser();
++                if (user) {
++                    localStorage.removeItem(cartKeyForUser(user.email));
++                }
+                 renderCart();
+                 updateCartCount();
+-                alert('Satın alma başarılı. Teşekkürler!');
++                closeCard();
+                 closeCart();
+-            }
++                alert('Ödeme (demo) başarılı. Teşekkürler! Sepetiniz temizlendi.');
++                document.getElementById('cardPayBtn').disabled = false;
++                document.getElementById('cardPayBtn').textContent = 'Ödeme Yap';
++            }, 1200);
+         }
+ 
+         /* --- Utilities --- */
