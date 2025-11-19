@@ -530,14 +530,19 @@
                         <p>Lütfen aşağıdaki IBAN'a havale/eft yapınız. Ödeme yapıldıktan sonra siparişi manuel olarak onaylayacağız.</p>
                         <div style="background:#f7f7fb; padding:1rem; border-radius:8px; margin-top:0.75rem;">
                             <strong>IBAN:</strong>
-                            <div id="siteIban" style="font-family:monospace; font-size:1.05rem; margin-top:0.5rem;">TR00 0000 0000 0000 0000 0000 00</div>
-                            <button onclick="copyIban()" style="margin-top:0.5rem;">IBAN'ı Kopyala</button>
+                            <div id="siteIban" style="font-family:monospace; font-size:1.05rem; margin-top:0.5rem;">xxxxxxxxxxxxxxx</div>
+                            <div style="margin-top:0.5rem; display:flex; gap:0.5rem;">
+                                <button onclick="copyIban()">IBAN'ı Kopyala</button>
+                                <button onclick="viewIban()" style="background:#2563eb; color:#fff;">IBAN'e Git</button>
+                            </div>
                         </div>
 
                         <div style="margin-top:1rem;">
                             <label for="payerEmail" style="display:block; font-weight:600; margin-bottom:0.4rem;">E-posta Adresiniz (sipariş onayı için)</label>
                             <input id="payerEmail" type="email" placeholder="you@example.com" style="width:100%; padding:0.6rem; border:1px solid #ddd; border-radius:6px;" />
                         </div>
+
+                        <div id="bankAmount" style="margin-top:0.75rem; font-weight:700; color:#0b1220;">Toplam: ₺0.00</div>
 
                         <div style="margin-top:1rem; display:flex; gap:0.5rem;">
                             <button onclick="sendBankNotification()" style="flex:1;">Siparişi Bildir (E-posta Gönder)</button>
@@ -977,6 +982,13 @@
 
         /* --- Bank transfer (IBAN) --- */
         function openBank() {
+            // compute cart total and show it in the modal
+            const cart = loadCart() || [];
+            let total = 0;
+            cart.forEach(item => { total += (item.price || 0) * (item.qty || 0); });
+            const totalEl = document.getElementById('bankAmount');
+            if (totalEl) totalEl.textContent = 'Toplam: ₺' + total.toFixed(2);
+            // open modal
             document.getElementById('bankModal').style.display = 'block';
         }
 
@@ -991,6 +1003,23 @@
             }).catch(() => {
                 alert('IBAN kopyalanamadı. Lütfen elle seçip kopyalayın: ' + iban);
             });
+        }
+
+        // Open a small page/tab displaying the IBAN (serves as a redirect/view for the IBAN)
+        function viewIban() {
+            const iban = document.getElementById('siteIban').textContent.trim();
+            // compute total to show as context
+            const cart = loadCart() || [];
+            let total = 0;
+            cart.forEach(item => { total += (item.price || 0) * (item.qty || 0); });
+            const html = `<!doctype html><html><head><meta charset="utf-8"><title>IBAN</title><meta name="viewport" content="width=device-width,initial-scale=1" /><style>body{font-family:Arial,Helvetica,sans-serif;padding:2rem;background:#f7f7fb;color:#0b1220} .box{max-width:600px;margin:2rem auto;padding:1.5rem;border-radius:8px;background:#fff;border:1px solid #e6e6ee} .iban{font-family:monospace;font-size:1.25rem;margin-top:0.5rem}</style></head><body><div class="box"><h2>IBAN ile Ödeme</h2><p>Lütfen aşağıdaki IBAN'a ödeme yapınız.</p><div class="iban">${iban}</div><p style="margin-top:1rem;font-weight:700">Toplam: ₺${total.toFixed(2)}</p><p style="margin-top:1rem;color:#555">Ödemeyi gerçekleştirdikten sonra lütfen sitede 'Siparişi Bildir' butonunu kullanarak e-posta gönderin.</p></div></body></html>`;
+            const win = window.open();
+            if (!win) {
+                alert('Yeni sekme açılamadı; lütfen tarayıcı ayarlarını kontrol edin. IBAN: ' + iban);
+                return;
+            }
+            win.document.write(html);
+            win.document.close();
         }
 
         function sendBankNotification() {
