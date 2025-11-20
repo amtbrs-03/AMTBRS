@@ -3,19 +3,17 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-        <!-- Redirect root index to denme.html so the published site shows the storefront entry page -->
-        <meta http-equiv="refresh" content="0; url=/denme.html">
-        <script>
-            // Preserve any hash fragment when redirecting from root to /denme.html
-            (function(){
-                try{
-                    if(location.pathname === '/' || location.pathname === '/index.html'){
-                        var target = '/denme.html' + (location.hash || '');
-                        location.replace(target);
-                    }
-                }catch(e){ /* ignore */ }
-            })();
-        </script>
+            <!-- Redirect root index to denme.html via JS so we can preserve hash fragments (meta-refresh removed to avoid dropping fragments) -->
+            <script>
+                (function(){
+                    try{
+                        if(location.pathname === '/' || location.pathname === '/index.html'){
+                            var target = '/denme.html' + (location.hash || '');
+                            location.replace(target);
+                        }
+                    }catch(e){ /* ignore */ }
+                })();
+            </script>
     <title>[ERN-ÇİÇEK]</title>
     <script>
         // Eğer kullanıcı www ile geldiyse, kök domaine (non-www) yönlendir
