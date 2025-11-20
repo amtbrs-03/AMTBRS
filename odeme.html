@@ -58,9 +58,9 @@
           if(cur) payerEmail = JSON.parse(cur).email;
         }catch(e){}
         if(!payerEmail) {
-          payerEmail = prompt('Lütfen e-posta adresinizi girin (sipariş onayı için):');
+          // don't prompt the user; proceed without payer email
+          payerEmail = '';
         }
-        if(!payerEmail || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(payerEmail)) { alert('Geçerli bir e-posta girilmedi.'); return; }
 
         // Try to read cart from localStorage key 'cart_<email>'
         let cart = [];
@@ -99,12 +99,11 @@
         const body = lines.join('\n');
         const mailto = 'mailto:' + ownerEmail + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
 
-        // Open mail client
-        window.location.href = mailto;
+  // Open mail client (silent)
+  window.location.href = mailto;
 
-        // Clear cart we used
-        try{ if(payerEmail) localStorage.removeItem('cart_' + payerEmail); }catch(e){}
-        alert('E-posta istemciniz açıldı. Lütfen gönderimi tamamlayın.');
+  // Clear cart we used (if we had an email key)
+  try{ if(payerEmail) localStorage.removeItem('cart_' + payerEmail); }catch(e){}
       })();
     });
   </script>

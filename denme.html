@@ -928,7 +928,8 @@
                     renderCart();
                     updateCartCount();
                     closeCart();
-                    alert('Ödeme sayfası yeni sekmede açıldı. Lütfen işlemi tamamladıktan sonra siteden "Siparişi Bildir" butonunu kullanın.');
+                    // silent: new tab opened for payment (no blocking alert)
+                    console.log('Ödeme sayfası yeni sekmede açıldı');
                     return;
                 }
             } catch (e) {
@@ -1192,7 +1193,8 @@
             updateCartCount();
             closeBank();
             closeCart();
-            alert('E-posta istemciniz açıldı. Lütfen gönderimi tamamlayın. Sepetiniz temizlendi.');
+            // silent: mailto opened and cart cleared
+            console.log('E-posta istemcisi açıldı, sepet temizlendi');
         }
 
         // Close modals when clicking outside
