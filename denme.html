@@ -1151,50 +1151,86 @@
             closePaymentWidget();
         }
 
-        function sendBankNotification() {
+        async function sendBankNotification() {
             const ownerEmail = 'amtbrs@icloud.com';
 
-            const payerEmail = (document.getElementById('payerEmail').value || '').trim();
-            if (!payerEmail || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(payerEmail)) {
-                alert('Lütfen geçerli bir e-posta adresi girin.');
+            const inputEmail = (document.getElementById('payerEmail') && document.getElementById('payerEmail').value) ? document.getElementById('payerEmail').value.trim() : '';
+            const current = getCurrentUser();
+            const payerEmail = inputEmail || (current && current.email) || '';
+
+            const cart = loadCart() || [];
+
+            function showToast(msg){
+                try{
+                    let t = document.getElementById('siteToast');
+                    if(!t){ t = document.createElement('div'); t.id='siteToast'; t.style.position='fixed'; t.style.left='50%'; t.style.bottom='1.2rem'; t.style.transform='translateX(-50%)'; t.style.background='rgba(0,0,0,0.8)'; t.style.color='#fff'; t.style.padding='0.6rem 0.9rem'; t.style.borderRadius='8px'; t.style.zIndex=1200; t.style.fontSize='0.95rem'; document.body.appendChild(t); }
+                    t.textContent = msg;
+                    t.style.opacity = '1';
+                    clearTimeout(t._hideTimer);
+                    t._hideTimer = setTimeout(()=>{ t.style.transition='opacity 400ms'; t.style.opacity='0'; }, 3000);
+                }catch(e){ console.log('toast', msg); }
+            }
+
+            if (!payerEmail) {
+                // No payer email available; fallback to mailto (silent)
+                const lines = [];
+                lines.push('Merhaba', '');
+                lines.push('Aşağıdaki kullanıcı havale/eft yaptığını bildirdi ve sipariş onayı bekliyor:', '');
+                lines.push('Gönderen e-posta: ' + '', '');
+                if (!cart.length) {
+                    lines.push('Sepet: (boş)');
+                } else {
+                    lines.push('Sepet içerikleri:');
+                    let total = 0;
+                    cart.forEach(item => { lines.push('- ' + (item.name || '') + ' x' + (item.qty || 1) + ' @ ₺' + ((item.price || 0).toFixed(2))); total += (item.price || 0) * (item.qty || 0); });
+                    lines.push('', 'Toplam: ₺' + total.toFixed(2));
+                }
+                lines.push('', 'IBAN: ' + (document.getElementById('siteIban').textContent || '').trim());
+                const subject = 'Havale bildirimi - yeni sipariş';
+                const body = lines.join('\n');
+                const mailto = 'mailto:' + ownerEmail + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+                window.location.href = mailto;
+                // clear cart
+                const user = current;
+                if (user) localStorage.removeItem(cartKeyForUser(user.email));
+                renderCart(); updateCartCount(); closeBank(); closeCart();
+                showToast('E-posta istemciniz açıldı.');
                 return;
             }
 
-            // Sepet özetini satır satır oluştur
-            const cart = loadCart() || [];
-            const lines = [];
-            lines.push('Merhaba', '');
-            lines.push('Aşağıdaki kullanıcı havale/eft yaptığını bildirdi ve sipariş onayı bekliyor:', '');
-            lines.push('Gönderen e-posta: ' + payerEmail, '');
-
-            if (!cart.length) {
-                lines.push('Sepet: (boş)');
-            } else {
-                lines.push('Sepet içerikleri:');
-                let total = 0;
-                cart.forEach(item => {
-                    lines.push('- ' + (item.name || '') + ' x' + (item.qty || 1) + ' @ ₺' + ((item.price || 0).toFixed(2)));
-                    total += (item.price || 0) * (item.qty || 0);
-                });
-                lines.push('', 'Toplam: ₺' + total.toFixed(2));
+            // attempt serverless POST to known endpoints
+            const payload = { payerEmail, cart, iban: (document.getElementById('siteIban')?.textContent || '').trim() };
+            const endpoints = ['/.netlify/functions/send-order', '/api/send-order', '/functions/send-order'];
+            let sent = false;
+            for (let ep of endpoints){
+                try{
+                    const res = await fetch(ep, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+                    if (res.ok){ sent = true; break; }
+                }catch(e){ /* try next */ }
             }
 
-            lines.push('', 'IBAN: ' + (document.getElementById('siteIban').textContent || '').trim(), '', 'Lütfen ödemenin alındığını teyit edin ve siparişi onaylayın.', '', 'İyi çalışmalar.');
-
-            const subject = 'Havale bildirimi - yeni sipariş';
-            const body = lines.join('\n');
-            const mailto = 'mailto:' + ownerEmail + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
-
-            // Aç ve local sepeti temizle (kullanıcı deneyimi için)
-            window.location.href = mailto;
-            const user = getCurrentUser();
-            if (user) localStorage.removeItem(cartKeyForUser(user.email));
-            renderCart();
-            updateCartCount();
-            closeBank();
-            closeCart();
-            // silent: mailto opened and cart cleared
-            console.log('E-posta istemcisi açıldı, sepet temizlendi');
+            if (sent){
+                try{ if (payerEmail) localStorage.removeItem(cartKeyForUser(payerEmail)); }catch(e){}
+                renderCart(); updateCartCount(); closeBank(); closeCart();
+                showToast('Sipariş bildirimi gönderildi.');
+                return;
+            } else {
+                // fallback to mailto if serverless failed
+                const lines = [];
+                lines.push('Merhaba', '');
+                lines.push('Aşağıdaki kullanıcı havale/eft yaptığını bildirdi ve sipariş onayı bekliyor:', '');
+                lines.push('Gönderen e-posta: ' + payerEmail, '');
+                if (!cart.length) { lines.push('Sepet: (boş)'); } else { lines.push('Sepet içerikleri:'); let total = 0; cart.forEach(item => { lines.push('- ' + (item.name || '') + ' x' + (item.qty || 1) + ' @ ₺' + ((item.price || 0).toFixed(2))); total += (item.price || 0) * (item.qty || 0); }); lines.push('', 'Toplam: ₺' + total.toFixed(2)); }
+                lines.push('', 'IBAN: ' + (document.getElementById('siteIban').textContent || '').trim());
+                const subject = 'Havale bildirimi - yeni sipariş';
+                const body = lines.join('\n');
+                const mailto = 'mailto:' + ownerEmail + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+                window.location.href = mailto;
+                try{ if (payerEmail) localStorage.removeItem(cartKeyForUser(payerEmail)); }catch(e){}
+                renderCart(); updateCartCount(); closeBank(); closeCart();
+                showToast('E-posta istemciniz açıldı.');
+                return;
+            }
         }
 
         // Close modals when clicking outside
