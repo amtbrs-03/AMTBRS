@@ -372,6 +372,8 @@
             .product-image { height: 160px; font-size: 2.6rem; }
             .product-card { padding: .8rem; border-radius: 10px; }
             .modal-content { width: 95%; }
+            /* Mobile: make payment widget full width at bottom */
+            #paymentWidget { right: 0.5rem; left: 0.5rem; width: auto; bottom: 1rem; }
         }
     </style>
 </head>
@@ -517,6 +519,29 @@
                     <input type="password" id="registerPassword2" placeholder="Şifreniz tekrar" style="width:100%; padding:0.8rem; border:1px solid rgba(10,12,30,0.1); border-radius:8px; font-size:1rem; transition:0.25s;">
                 </div>
                 <button onclick="registerUser()" style="width: 100%; margin-top: 1rem;">Kayıt Ol</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom-right payment widget (compact, non-page) -->
+    <div id="paymentWidget" class="hidden" style="position:fixed; right:1rem; bottom:1rem; width:320px; max-width:92%; z-index:1100;">
+        <div style="background:#fff;border-radius:12px;box-shadow:0 18px 40px rgba(2,6,23,0.2);overflow:hidden;border:1px solid rgba(10,12,30,0.06);">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0.8rem;background:linear-gradient(90deg,#f7fafc,#eef2ff);border-bottom:1px solid rgba(0,0,0,0.04);">
+                <strong style="color:#0b1220">Ödeme (Havale/EFT)</strong>
+                <button onclick="closePaymentWidget()" style="background:transparent;border:none;font-size:1.1rem;cursor:pointer;padding:0 6px;">✕</button>
+            </div>
+            <div style="padding:0.85rem;">
+                <div style="font-size:0.95rem;color:#334155">Lütfen aşağıdaki IBAN'a ödeme yapınız. Ödeme sonrası 'Siparişi Bildir' butonunu kullanın.</div>
+                <div id="widgetIban" style="font-family:monospace;font-size:1rem;margin-top:0.6rem;color:#0b1220;word-break:break-all">xxxxxxxxxxxxxxx</div>
+                <div id="widgetTotal" style="margin-top:0.5rem;font-weight:700;color:#0b1220">Toplam: ₺0.00</div>
+                <div style="display:flex;gap:0.5rem;margin-top:0.8rem;">
+                    <button onclick="copyIbanFromWidget()" style="flex:1;background:#2563eb;color:#fff;padding:0.5rem;border-radius:8px;border:none;">IBAN'ı Kopyala</button>
+                    <button onclick="openFullPaymentPageFromWidget()" style="flex:1;background:#6b7280;color:#fff;padding:0.5rem;border-radius:8px;border:none;">Tam Sayfa</button>
+                </div>
+                <div style="display:flex;gap:0.5rem;margin-top:0.6rem;">
+                    <button onclick="sendBankNotificationFromWidget()" style="flex:1;background:#10b981;color:#fff;padding:0.55rem;border-radius:8px;border:none;font-weight:700;">Siparişi Bildir</button>
+                    <button onclick="closePaymentWidget()" style="flex:1;background:#e53e3e;color:#fff;padding:0.55rem;border-radius:8px;border:none;">İptal</button>
+                </div>
             </div>
         </div>
     </div>
@@ -1058,7 +1083,7 @@
             win.document.close();
         }
 
-        // Yeni: Ödeme sayfasını (odeme.html) yeni sekmede açar. Popup bloklanırsa eski inline viewIban() çağrılır.
+        // Yeni: Ödeme widget'ını sağ alt köşede aç (sayfa içinde küçük pencere)
         function openPaymentPage() {
             try {
                 const ibanEl = document.getElementById('siteIban');
@@ -1066,17 +1091,63 @@
                 const cart = loadCart() || [];
                 let total = 0;
                 cart.forEach(item => { total += (item.price || 0) * (item.qty || 0); });
-                const url = '/odeme.html?iban=' + encodeURIComponent(iban) + '&total=' + encodeURIComponent(total.toFixed(2));
-                const win = window.open(url, '_blank');
-                if (!win) {
-                    // Popup bloklandıysa inline gösterim
-                    alert('Yeni sekme açılamadı; ödeme bilgilerini modalde görüntülüyorum.');
-                    viewIban();
-                }
+                openPaymentWidget(iban, total);
             } catch (e) {
                 console.warn('openPaymentPage hata:', e);
                 viewIban();
             }
+        }
+
+        function openPaymentWidget(iban, total) {
+            const w = document.getElementById('paymentWidget');
+            if (!w) return viewIban();
+            document.getElementById('widgetIban').textContent = iban || (document.getElementById('siteIban')?.textContent || '');
+            document.getElementById('widgetTotal').textContent = 'Toplam: ₺' + (Number(total || 0).toFixed(2));
+            w.classList.remove('hidden');
+            // small entrance animation
+            w.style.opacity = 0;
+            w.style.transform = 'translateY(8px)';
+            setTimeout(()=>{ w.style.transition = 'all 220ms ease'; w.style.opacity = 1; w.style.transform = 'translateY(0)'; }, 10);
+        }
+
+        function closePaymentWidget(){
+            const w = document.getElementById('paymentWidget');
+            if (!w) return;
+            w.style.opacity = 0;
+            w.style.transform = 'translateY(8px)';
+            setTimeout(()=>{ w.classList.add('hidden'); w.style.transition=''; w.style.opacity=''; w.style.transform=''; }, 240);
+        }
+
+        function copyIbanFromWidget(){
+            const txt = document.getElementById('widgetIban').textContent.trim();
+            if (!txt) return alert('IBAN bulunamadı');
+            navigator.clipboard?.writeText(txt).then(()=>alert('IBAN kopyalandı: '+txt)).catch(()=>{ prompt('Lütfen kopyalayın:', txt); });
+        }
+
+        function openFullPaymentPageFromWidget(){
+            const iban = document.getElementById('widgetIban').textContent.trim();
+            const totalText = (document.getElementById('widgetTotal').textContent || '').replace(/[^0-9.,]/g,'').replace(',','.');
+            const total = Number(totalText) || 0;
+            const url = '/odeme.html?iban=' + encodeURIComponent(iban) + '&total=' + encodeURIComponent(total.toFixed(2));
+            window.open(url,'_blank');
+        }
+
+        function sendBankNotificationFromWidget(){
+            // Reuse existing sendBankNotification but set payerEmail from current user if available
+            const payerEmailInput = document.getElementById('payerEmail');
+            if (payerEmailInput && payerEmailInput.value) {
+                // leave as-is, existing sendBankNotification reads from payerEmail input inside bankModal
+            } else {
+                // if there's no input, set a temporary one so sendBankNotification finds an email
+                const cur = getCurrentUser();
+                if (cur && cur.email) {
+                    // temporarily set the modal input so sendBankNotification can read it
+                    if (document.getElementById('payerEmail')) document.getElementById('payerEmail').value = cur.email;
+                }
+            }
+            // Call the same function that builds mailto and clears cart
+            sendBankNotification();
+            closePaymentWidget();
         }
 
         function sendBankNotification() {
