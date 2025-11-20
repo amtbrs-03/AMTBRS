@@ -41,8 +41,8 @@
     document.getElementById('copyBtn').addEventListener('click', function(e){
       e.preventDefault();
       const txt = document.getElementById('iban').textContent.trim();
-      if(!txt || txt==='(IBAN yok)') return alert('IBAN bulunamadı');
-      navigator.clipboard?.writeText(txt).then(()=>alert('IBAN kopyalandı: '+txt)).catch(()=>{prompt('Lütfen kopyalayın:', txt)});
+  if(!txt || txt==='(IBAN yok)') { console.log('IBAN bulunamadı'); return; }
+  navigator.clipboard?.writeText(txt).then(()=>console.log('IBAN kopyalandı: '+txt)).catch(()=>{ console.log('Lütfen kopyalayın: '+txt); });
     });
   </script>
 </body>

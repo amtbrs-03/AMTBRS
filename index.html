@@ -598,17 +598,17 @@
             const password2 = document.getElementById('registerPassword2').value;
 
             if (!name || !email || !password || !password2) {
-                alert('Lütfen tüm alanları doldurunuz!');
+                console.log('Lütfen tüm alanları doldurunuz!');
                 return;
             }
             if (password !== password2) {
-                alert('Şifreler eşleşmiyor!');
+                console.log('Şifreler eşleşmiyor!');
                 return;
             }
 
             const user = { name, email, password };
             localStorage.setItem('user_' + email, JSON.stringify(user));
-            alert('Kayıt başarılı! Giriş yapabilirsiniz.');
+            console.log('Kayıt başarılı! Giriş yapabilirsiniz.');
             switchTab('login', document.querySelector('.form-tab'));
             document.getElementById('registerName').value = '';
             document.getElementById('registerEmail').value = '';
@@ -621,19 +621,19 @@
             const password = document.getElementById('loginPassword').value;
 
             if (!email || !password) {
-                alert('Lütfen email ve şifre giriniz!');
+                console.log('Lütfen email ve şifre giriniz!');
                 return;
             }
 
             const userStr = localStorage.getItem('user_' + email);
             if (!userStr) {
-                alert('Kullanıcı bulunamadı!');
+                console.log('Kullanıcı bulunamadı!');
                 return;
             }
 
             const userData = JSON.parse(userStr);
             if (userData.password !== password) {
-                alert('Şifre yanlış!');
+                console.log('Şifre yanlış!');
                 return;
             }
 
@@ -656,7 +656,7 @@
             document.getElementById('authContainer').classList.remove('hidden');
             document.getElementById('userContainer').classList.add('hidden');
             updateCartCount();
-            alert('Çıkış yapılmıştır.');
+            console.log('Çıkış yapılmıştır.');
         }
 
         /* --- Cart logic (user-specific) --- */
@@ -682,6 +682,9 @@
             localStorage.setItem(cartKeyForUser(user.email), JSON.stringify(cart));
         }
 
+        // showToast is suppressed (no-op) to avoid UI notifications
+        function showToast(msg){ /* suppressed */ }
+
         function addToCartFromBtn(btn) {
             const card = btn.closest('.product-card');
             const id = card.getAttribute('data-id');
@@ -694,7 +697,7 @@
             const user = getCurrentUser();
             if (!user) {
                 openAuthModal();
-                alert('Sepete eklemek için giriş yapınız.');
+                console.log('Sepete eklemek için giriş yapınız.');
                 return;
             }
             const cart = loadCart();
@@ -706,9 +709,9 @@
             }
             saveCart(cart);
             updateCartCount();
-            // Küçük bilgilendirme
+            // Küçük bilgilendirme (non-blocking)
             const count = cart.reduce((s,i)=>s+(i.qty||0),0);
-            alert(item.name + ' sepete eklendi. (Toplam: ' + count + ')');
+            try{ showToast(item.name + ' sepete eklendi. (Toplam: ' + count + ')'); }catch(e){}
         }
 
         function updateCartCount() {
@@ -799,7 +802,7 @@
         function clearCart() {
             const user = getCurrentUser();
             if (!user) return;
-            if (!confirm('Sepeti temizlemek istediğinize emin misiniz?')) return;
+            // confirmation suppressed; proceed with clearing
             localStorage.removeItem(cartKeyForUser(user.email));
             renderCart();
             updateCartCount();
@@ -808,14 +811,12 @@
         function checkout() {
             const cart = loadCart();
             if (!cart.length) {
-                alert('Sepetiniz boş.');
+                console.log('Sepetiniz boş.');
                 return;
             }
             // Örnek: basit onay ve temizleme
-            if (confirm('Satın almayı onaylıyor musunuz?')) {
-                    // Kredi kartı akışı (demo): kredi kartı modalını açıyoruz
-                    openCard();
-            }
+        // confirmation suppressed; proceed to payment flow
+        openCard();
         }
 
         /* --- Demo credit card modal & processing (client-side only, NOT PCI compliant) --- */
@@ -844,10 +845,10 @@
             const exp = (document.getElementById('ccExp').value || '').trim();
             const cvc = (document.getElementById('ccCvc').value || '').trim();
 
-            if (!name) return alert('Kart üzerindeki isim gerekli.');
-            if (!validCardNumberLuhn(cardNumber)) return alert('Geçersiz kart numarası (demo doğrulama).');
-            if (!/^(0[1-9]|1[0-2])\/(\d{2}|\d{4})$/.test(exp)) return alert('Son kullanma tarihi MM/YY veya MM/YYYY formatında olmalı.');
-            if (!/^\d{3,4}$/.test(cvc)) return alert('CVC 3 veya 4 haneli olmalı.');
+            if (!name) { console.log('Kart üzerindeki isim gerekli.'); return; }
+            if (!validCardNumberLuhn(cardNumber)) { console.log('Geçersiz kart numarası (demo doğrulama).'); return; }
+            if (!/^(0[1-9]|1[0-2])\/(\d{2}|\d{4})$/.test(exp)) { console.log('Son kullanma tarihi MM/YY veya MM/YYYY formatında olmalı.'); return; }
+            if (!/^\d{3,4}$/.test(cvc)) { console.log('CVC 3 veya 4 haneli olmalı.'); return; }
 
             document.getElementById('cardPayBtn').disabled = true;
             document.getElementById('cardPayBtn').textContent = 'Ödeniyor...';
@@ -860,7 +861,7 @@
                 updateCartCount();
                 closeCard();
                 closeCart();
-                alert('Ödeme (demo) başarılı. Teşekkürler! Sepetiniz temizlendi.');
+                console.log('Ödeme (demo) başarılı. Teşekkürler! Sepetiniz temizlendi.');
                 document.getElementById('cardPayBtn').disabled = false;
                 document.getElementById('cardPayBtn').textContent = 'Ödeme Yap';
             }, 1200);

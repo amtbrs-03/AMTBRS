@@ -1,0 +1,18 @@
+{
+  "name": "ern-cicek-site",
+  "version": "1.0.0",
+  "description": "Static storefront with a serverless function for order notifications",
+  "main": "index.js",
+  "license": "MIT",
+  "engines": {
+    "node": "16.x || 18.x || 20.x"
+  },
+  "scripts": {
+    "start": "netlify dev",
+    "test": "node -e \"console.log('no tests')\""
+  },
+  "dependencies": {
+    "nodemailer": "^6.9.4",
+    "googleapis": "^113.0.0"
+  }
+}

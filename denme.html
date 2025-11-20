@@ -676,25 +676,25 @@
             const password2 = document.getElementById('registerPassword2').value;
 
             if (!name || !email || !phone || !password || !password2) {
-                alert('Lütfen tüm alanları doldurunuz!');
+                console.log('Lütfen tüm alanları doldurunuz!');
                 return;
             }
             if (!/^\d{10,15}$/.test(phone)) {
-                alert('Telefon numarası 10-15 rakam olmalı.');
+                console.log('Telefon numarası 10-15 rakam olmalı.');
                 return;
             }
             if (password !== password2) {
-                alert('Şifreler eşleşmiyor!');
+                console.log('Şifreler eşleşmiyor!');
                 return;
             }
 
             // Basit telefon doğrulama kodu üretimi
             const verifyCode = Math.floor(100000 + Math.random() * 900000).toString();
-            alert('Telefon doğrulama kodunuz: ' + verifyCode + '\nLütfen kodu bir yere not edin ve girişte girin. (Demo)');
+            console.log('Telefon doğrulama kodunuz: ' + verifyCode + '\n( Demo - kod gösterildi )');
 
             const user = { name, email, phone, password, verifyCode };
             localStorage.setItem('user_' + email, JSON.stringify(user));
-            alert('Kayıt başarılı! Giriş yapabilirsiniz.');
+            console.log('Kayıt başarılı! Giriş yapabilirsiniz.');
             switchTab('login', document.querySelector('.form-tab'));
             document.getElementById('registerName').value = '';
             document.getElementById('registerEmail').value = '';
@@ -709,29 +709,29 @@
             const password = document.getElementById('loginPassword').value;
 
             if (!email || !phone || !password) {
-                alert('Lütfen email, telefon ve şifre giriniz!');
+                console.log('Lütfen email, telefon ve şifre giriniz!');
                 return;
             }
 
             const userStr = localStorage.getItem('user_' + email);
             if (!userStr) {
-                alert('Kullanıcı bulunamadı!');
+                console.log('Kullanıcı bulunamadı!');
                 return;
             }
 
             const userData = JSON.parse(userStr);
             if (userData.password !== password) {
-                alert('Şifre yanlış!');
+                console.log('Şifre yanlış!');
                 return;
             }
             if (userData.phone !== phone) {
-                alert('Telefon numarası eşleşmiyor!');
+                console.log('Telefon numarası eşleşmiyor!');
                 return;
             }
             // Demo: telefon doğrulama kodu sorulsun
-            const inputCode = prompt('Telefon doğrulama kodunuzu girin:');
+            const inputCode = null; // prompt suppressed for UX
             if (inputCode !== userData.verifyCode) {
-                alert('Doğrulama kodu yanlış!');
+                console.log('Doğrulama kodu yanlış!');
                 return;
             }
 
@@ -755,7 +755,7 @@
             document.getElementById('authContainer').classList.remove('hidden');
             document.getElementById('userContainer').classList.add('hidden');
             updateCartCount();
-            alert('Çıkış yapılmıştır.');
+            console.log('Çıkış yapılmıştır.');
         }
 
         /* --- Cart logic (user-specific) --- */
@@ -781,6 +781,9 @@
             localStorage.setItem(cartKeyForUser(user.email), JSON.stringify(cart));
         }
 
+        // showToast is suppressed (no-op) to avoid UI notifications
+        function showToast(msg){ /* suppressed */ }
+
         function addToCartFromBtn(btn) {
             const card = btn.closest('.product-card');
             const id = card.getAttribute('data-id');
@@ -793,7 +796,9 @@
             const user = getCurrentUser();
             if (!user) {
                 openAuthModal();
-                alert('Sepete eklemek için giriş yapınız.');
+                // user not logged in; open auth modal silently
+                openAuthModal();
+                console.log('Kullanıcı giriş yapmalı: sepete ekleme engellendi.');
                 return;
             }
             const cart = loadCart();
@@ -805,9 +810,9 @@
             }
             saveCart(cart);
             updateCartCount();
-            // Küçük bilgilendirme
+            // Küçük bilgilendirme (non-blocking)
             const count = cart.reduce((s,i)=>s+(i.qty||0),0);
-            alert(item.name + ' sepete eklendi. (Toplam: ' + count + ')');
+            try{ showToast(item.name + ' sepete eklendi. (Toplam: ' + count + ')'); }catch(e){}
         }
 
         function updateCartCount() {
@@ -898,7 +903,7 @@
         function clearCart() {
             const user = getCurrentUser();
             if (!user) return;
-            if (!confirm('Sepeti temizlemek istediğinize emin misiniz?')) return;
+            if (!(true)) return; // confirmation suppressed: proceed
             localStorage.removeItem(cartKeyForUser(user.email));
             renderCart();
             updateCartCount();
@@ -907,14 +912,14 @@
         function checkout() {
             const cart = loadCart();
             if (!cart.length) {
-                alert('Sepetiniz boş.');
+                console.log('Sepetiniz boş.');
                 return;
             }
             // Hesapla
             let total = 0;
             cart.forEach(item => { total += (item.price || 0) * (item.qty || 0); });
 
-            if (!confirm('Satın almayı onaylıyor musunuz?')) return;
+            if (!(true)) return; // purchase confirmation suppressed: proceed
 
             // Öncelikle tam sayfa ödeme sayfasını açmaya çalış (popup bloklanmaya karşı modal fallback'i olacak)
             try {
@@ -1061,9 +1066,9 @@
         function copyIban() {
             const iban = document.getElementById('siteIban').textContent.trim();
             navigator.clipboard?.writeText(iban).then(() => {
-                alert('IBAN kopyalandı: ' + iban);
+                console.log('IBAN kopyalandı: ' + iban);
             }).catch(() => {
-                alert('IBAN kopyalanamadı. Lütfen elle seçip kopyalayın: ' + iban);
+                console.log('IBAN kopyalanamadı. Lütfen elle seçip kopyalayın: ' + iban);
             });
         }
 
@@ -1077,7 +1082,7 @@
             const html = `<!doctype html><html><head><meta charset="utf-8"><title>IBAN</title><meta name="viewport" content="width=device-width,initial-scale=1" /><style>body{font-family:Arial,Helvetica,sans-serif;padding:2rem;background:#f7f7fb;color:#0b1220} .box{max-width:600px;margin:2rem auto;padding:1.5rem;border-radius:8px;background:#fff;border:1px solid #e6e6ee} .iban{font-family:monospace;font-size:1.25rem;margin-top:0.5rem}</style></head><body><div class="box"><h2>IBAN ile Ödeme</h2><p>Lütfen aşağıdaki IBAN'a ödeme yapınız.</p><div class="iban">${iban}</div><p style="margin-top:1rem;font-weight:700">Toplam: ₺${total.toFixed(2)}</p><p style="margin-top:1rem;color:#555">Ödemeyi gerçekleştirdikten sonra lütfen sitede 'Siparişi Bildir' butonunu kullanarak e-posta gönderin.</p></div></body></html>`;
             const win = window.open();
             if (!win) {
-                alert('Yeni sekme açılamadı; lütfen tarayıcı ayarlarını kontrol edin. IBAN: ' + iban);
+                console.log('Yeni sekme açılamadı; lütfen tarayıcı ayarlarını kontrol edin. IBAN: ' + iban);
                 return;
             }
             win.document.write(html);
@@ -1121,8 +1126,11 @@
 
         function copyIbanFromWidget(){
             const txt = document.getElementById('widgetIban').textContent.trim();
-            if (!txt) return alert('IBAN bulunamadı');
-            navigator.clipboard?.writeText(txt).then(()=>alert('IBAN kopyalandı: '+txt)).catch(()=>{ prompt('Lütfen kopyalayın:', txt); });
+            if (!txt) {
+                console.log('IBAN bulunamadı');
+                return;
+            }
+            navigator.clipboard?.writeText(txt).then(()=>console.log('IBAN kopyalandı: '+txt)).catch(()=>{ console.log('Lütfen kopyalayın: '+txt); });
         }
 
         function openFullPaymentPageFromWidget(){
@@ -1160,16 +1168,7 @@
 
             const cart = loadCart() || [];
 
-            function showToast(msg){
-                try{
-                    let t = document.getElementById('siteToast');
-                    if(!t){ t = document.createElement('div'); t.id='siteToast'; t.style.position='fixed'; t.style.left='50%'; t.style.bottom='1.2rem'; t.style.transform='translateX(-50%)'; t.style.background='rgba(0,0,0,0.8)'; t.style.color='#fff'; t.style.padding='0.6rem 0.9rem'; t.style.borderRadius='8px'; t.style.zIndex=1200; t.style.fontSize='0.95rem'; document.body.appendChild(t); }
-                    t.textContent = msg;
-                    t.style.opacity = '1';
-                    clearTimeout(t._hideTimer);
-                    t._hideTimer = setTimeout(()=>{ t.style.transition='opacity 400ms'; t.style.opacity='0'; }, 3000);
-                }catch(e){ console.log('toast', msg); }
-            }
+            // Notifications suppressed: previously showed transient toasts here; removed per request.
 
             if (!payerEmail) {
                 // No payer email available; fallback to mailto (silent)
@@ -1194,7 +1193,7 @@
                 const user = current;
                 if (user) localStorage.removeItem(cartKeyForUser(user.email));
                 renderCart(); updateCartCount(); closeBank(); closeCart();
-                showToast('E-posta istemciniz açıldı.');
+                // toast suppressed
                 return;
             }
 
@@ -1212,7 +1211,7 @@
             if (sent){
                 try{ if (payerEmail) localStorage.removeItem(cartKeyForUser(payerEmail)); }catch(e){}
                 renderCart(); updateCartCount(); closeBank(); closeCart();
-                showToast('Sipariş bildirimi gönderildi.');
+                // toast suppressed
                 return;
             } else {
                 // fallback to mailto if serverless failed
@@ -1228,7 +1227,7 @@
                 window.location.href = mailto;
                 try{ if (payerEmail) localStorage.removeItem(cartKeyForUser(payerEmail)); }catch(e){}
                 renderCart(); updateCartCount(); closeBank(); closeCart();
-                showToast('E-posta istemciniz açıldı.');
+                // toast suppressed
                 return;
             }
         }
