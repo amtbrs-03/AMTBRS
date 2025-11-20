@@ -20,6 +20,7 @@
     <div id="total" class="muted">Toplam: ₺0.00</div>
     <div style="margin-top:1rem;">
       <a id="copyBtn" class="btn" href="#">IBAN'ı Kopyala</a>
+      <a id="notifyBtn" class="btn" href="#" style="background:#10b981;margin-left:8px">Siparişi Bildir</a>
       <a id="backBtn" class="btn" href="/denme.html" style="background:#6b7280;margin-left:8px">Siteye Dön</a>
     </div>
   </div>
@@ -43,6 +44,68 @@
       const txt = document.getElementById('iban').textContent.trim();
       if(!txt || txt==='(IBAN yok)') return alert('IBAN bulunamadı');
       navigator.clipboard?.writeText(txt).then(()=>alert('IBAN kopyalandı: '+txt)).catch(()=>{prompt('Lütfen kopyalayın:', txt)});
+    });
+
+    // Siparişi Bildir - builds mailto body from localStorage cart and query params
+    document.getElementById('notifyBtn').addEventListener('click', function(e){
+      e.preventDefault();
+      (function(){
+        const ownerEmail = 'amtbrs@icloud.com';
+        // Determine payer email: prefer logged-in user
+        let payerEmail = null;
+        try{
+          const cur = localStorage.getItem('currentUser');
+          if(cur) payerEmail = JSON.parse(cur).email;
+        }catch(e){}
+        if(!payerEmail) {
+          payerEmail = prompt('Lütfen e-posta adresinizi girin (sipariş onayı için):');
+        }
+        if(!payerEmail || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(payerEmail)) { alert('Geçerli bir e-posta girilmedi.'); return; }
+
+        // Try to read cart from localStorage key 'cart_<email>'
+        let cart = [];
+        try{
+          const cartRaw = localStorage.getItem('cart_' + payerEmail);
+          if(cartRaw) cart = JSON.parse(cartRaw);
+          else {
+            // fallback: find any cart_ key
+            for(let i=0;i<localStorage.length;i++){
+              const k = localStorage.key(i);
+              if(k && k.indexOf('cart_')===0){ cart = JSON.parse(localStorage.getItem(k)); break; }
+            }
+          }
+        }catch(e){ cart = []; }
+
+        const lines = [];
+        lines.push('Merhaba', '');
+        lines.push('Aşağıdaki kullanıcı havale/eft yaptığını bildirdi ve sipariş onayı bekliyor:', '');
+        lines.push('Gönderen e-posta: ' + payerEmail, '');
+        if(!cart || !cart.length) {
+          lines.push('Sepet: (boş)');
+        } else {
+          lines.push('Sepet içerikleri:');
+          let totalCalc = 0;
+          cart.forEach(item=>{
+            lines.push('- ' + (item.name||'') + ' x' + (item.qty||1) + ' @ ₺' + ((item.price||0).toFixed(2)));
+            totalCalc += (item.price||0) * (item.qty||0);
+          });
+          lines.push('', 'Toplam: ₺' + totalCalc.toFixed(2));
+        }
+
+        const ibanText = document.getElementById('iban').textContent || '';
+        lines.push('', 'IBAN: ' + ibanText.trim(), '', 'Lütfen ödemenin alındığını teyit edin ve siparişi onaylayın.', '', 'İyi çalışmalar.');
+
+        const subject = 'Havale bildirimi - yeni sipariş';
+        const body = lines.join('\n');
+        const mailto = 'mailto:' + ownerEmail + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+
+        // Open mail client
+        window.location.href = mailto;
+
+        // Clear cart we used
+        try{ if(payerEmail) localStorage.removeItem('cart_' + payerEmail); }catch(e){}
+        alert('E-posta istemciniz açıldı. Lütfen gönderimi tamamlayın.');
+      })();
     });
   </script>
 </body>
