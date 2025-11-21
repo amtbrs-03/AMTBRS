@@ -59,6 +59,7 @@
 
     <div style="display:flex; gap:0.5rem; align-items:center;">
       <button id="saveAll" class="btn">Değişiklikleri Kaydet</button>
+      <label style="display:flex;align-items:center;gap:0.4rem; margin-left:0.5rem;"><input id="pushToGithub" type="checkbox" checked /> GitHub'a da kaydet</label>
       <button id="exportJson" class="btn btn-ghost">JSON Dışa Aktar</button>
       <button id="exportCsv" class="btn btn-ghost">CSV Dışa Aktar</button>
       <label for="importFile" class="btn btn-ghost" style="margin-left:0; cursor:pointer;">İçe Aktar</label>
@@ -322,6 +323,49 @@
         }
         setProducts(products);
         alert('Ürünler kaydedildi. Lütfen siteyi yenileyin.');
+
+        // If enabled, push the products and images to GitHub via serverless function
+        try{
+          const push = !!document.getElementById('pushToGithub') && document.getElementById('pushToGithub').checked;
+          if (!push) return;
+          // Build files: products.json (root) and any images (data URLs) as separate files in repo root
+          const prods = getProducts();
+          const files = [];
+          // products.json
+          const productsJson = JSON.stringify(prods, null, 2);
+          files.push({ path: 'products.json', contentBase64: btoa(unescape(encodeURIComponent(productsJson))) });
+          // images embedded as data URLs: convert to base64 content and add as files
+          for (const p of prods){
+            if (p.image && typeof p.image === 'string' && p.image.indexOf('data:') === 0){
+              const match = p.image.match(/^data:(image\/(png|jpeg|jpg|webp));base64,(.*)$/i);
+              if (match){
+                const mime = match[1];
+                const ext = (match[2] && match[2].toLowerCase() === 'jpeg') ? 'jpg' : (match[2] || 'png');
+                const content = match[3];
+                const filename = `product-${p.id}.${ext}`;
+                files.push({ path: filename, contentBase64: content });
+                // update product image reference to filename so site can load it
+                p.image = filename;
+              }
+            }
+          }
+          // If we updated product image references, update products.json again
+          const updatedProductsJson = JSON.stringify(prods, null, 2);
+          files[0].contentBase64 = btoa(unescape(encodeURIComponent(updatedProductsJson)));
+
+          const payload = { files, message: 'admin: update products and images via admin panel' };
+          const endpoints = ['/.netlify/functions/commit-file', '/api/commit-file', '/functions/commit-file'];
+          let ok = false; let lastRes = null;
+          for (const ep of endpoints){
+            try{
+              const res = await fetch(ep, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+              lastRes = res;
+              if (res.ok){ ok = true; break; }
+            }catch(e){ lastRes = e; }
+          }
+          if (ok) alert('Değişiklikler GitHub deposuna işlendi.');
+          else alert('GitHub kaydı başarısız: ' + (lastRes && lastRes.statusText ? lastRes.statusText : (lastRes && lastRes.message) || 'unknown'));
+        }catch(err){ console.error('push to github failed', err); alert('GitHub kaydı sırasında hata: ' + err.message); }
       });
 
       document.getElementById('resetDefault').addEventListener('click', ()=>{
