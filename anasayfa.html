@@ -387,6 +387,16 @@
             .product-card { transform: none; box-shadow: none; }
         }
 
+        /* Mobile auth compact layout: move auth row to left and use icon-only */
+        @media (max-width:480px) {
+            .nav-bottom { justify-content:flex-start; gap:0.4rem; }
+            #authBtn { padding:0.45rem 0.6rem; }
+            #authBtn .auth-label { display:none; }
+            #authBtn .auth-icon { display:inline-block; font-size:1.05rem; }
+            /* make admin link smaller on mobile */
+            #mainAdminLink a { padding:0.35rem 0.6rem; font-size:0.9rem; }
+        }
+
         /* Ensure images and SVG scale to container width */
         img, svg { max-width:100%; height:auto; display:block; }
         html, body { width:100%; overflow-x:hidden; }
@@ -534,7 +544,10 @@
                         <div class="nav-bottom" style="display:flex;justify-content:flex-end;align-items:center;margin-top:0.4rem;">
                             <div id="mainAdminLink" style="display:none; margin-right:0.6rem;"><a class="auth-btn" href="https://ern-cicek.com.tr/admin.html" target="_blank" rel="noopener" style="background:#3b7d3b;">Yönetici</a></div>
                             <div id="authContainer" style="margin-left:0.6rem;">
-                                <button id="authBtn" class="auth-btn contact-btn" aria-controls="authModal" aria-expanded="false" onclick="openAuthModal()">Giriş / Kayıt</button>
+                                <button id="authBtn" class="auth-btn contact-btn" aria-controls="authModal" aria-expanded="false" onclick="openAuthModal()">
+                                    <span class="auth-icon" aria-hidden="true">👤</span>
+                                    <span class="auth-label">Giriş / Kayıt</span>
+                                </button>
                             </div>
                             <div id="userContainer" class="hidden" style="margin-left:0.6rem;display:flex;gap:0.4rem;align-items:center;">
                                 <span class="user-info" id="userName"></span>
