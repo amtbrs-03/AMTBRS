@@ -405,6 +405,22 @@
             /* make contact panel full-width under header on mobile */
             .contact-panel { position: fixed; left: 0.6rem; right: 0.6rem; top: 64px; width: auto; }
         }
+
+        /* contact button styles */
+        .contact-btn {
+            background: linear-gradient(90deg,#10b981,#059669);
+            color: white;
+            padding: 0.45rem 0.7rem;
+            border-radius: 10px;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            font-weight:700;
+            box-shadow: 0 8px 22px rgba(16,185,129,0.18);
+        }
+        .contact-btn:focus { outline: 3px solid rgba(16,185,129,0.18); }
     </style>
   </head>
   <body>
@@ -475,7 +491,11 @@
                             <li><a href="#products">Ürünler</a></li>
                             <li><a href="#about">Hakkında</a></li>
                             <li>
-                                <button id="contactBtn" class="nav-link" aria-expanded="false" aria-controls="contactPanel" onclick="toggleContact(event)">İletişim</button>
+                                <button id="contactBtn" class="contact-btn" aria-expanded="false" aria-controls="contactPanel" onclick="toggleContact(event)">
+                                    <span style="display:inline-block;margin-right:6px;line-height:1">📞</span>
+                                    <span>İletişim</span>
+                                    <span style="margin-left:8px;opacity:0.9">▾</span>
+                                </button>
                             </li>
                             <li id="mainAdminLink" style="display:none;">
                                 <a class="auth-btn" href="https://ern-cicek.com.tr/admin.html" target="_blank" rel="noopener" style="background:#3b7d3b;">Yönetici</a>
@@ -505,6 +525,7 @@
                         <div style="font-size:0.95rem; color:#0b1220;">
                             <div><strong>E-posta:</strong> <a href="mailto:amtbrs@icloud.com">amtbrs@icloud.com</a></div>
                             <div style="margin-top:0.25rem;"><strong>Telefon (demo):</strong> +90 5XX XXX XXXX</div>
+                            <div style="margin-top:0.25rem;"><strong>Adres:</strong> Adresiniz Caddesi 1, Şehir, TR</div>
                             <div style="margin-top:0.5rem;"><strong>Çalışma Saatleri:</strong><div style="font-size:0.9rem; color:#334155">Pzt-Cum 09:00-19:00 · Cmt 10:00-16:00 · Paz kapalı</div></div>
                         </div>
                         <div style="margin-top:0.6rem; display:flex; gap:0.5rem;">
@@ -707,20 +728,10 @@
                 <footer>
                     <div style="display:flex;flex-direction:column;gap:0.5rem;align-items:center;">
                         <div style="display:flex;gap:1.5rem;flex-wrap:wrap;justify-content:center;align-items:center;">
-                            <div style="text-align:left; min-width:220px;">
-                                <strong>ERN Tropikal Çiçek</strong>
-                                <div class="meta">Adres: Adresiniz Caddesi 1, Şehir, TR</div>
-                                <div class="meta">Telefon: +90 5XX XXX XXXX · E-posta: <a href="mailto:amtbrs@icloud.com" style="color:#fff; text-decoration:underline;">amtbrs@icloud.com</a></div>
-                            </div>
                             <div style="text-align:left; min-width:200px;">
                                 <strong>Ödeme</strong>
                                 <div class="meta">Kredi Kartı · Havale/EFT · Kapıda Ödeme</div>
                                 <div class="meta">Güvenli ödeme sağlanır</div>
-                            </div>
-                            <div style="text-align:left; min-width:160px;">
-                                <strong>Çalışma Saatleri</strong>
-                                <div class="meta">Pzt-Cum 09:00 - 19:00</div>
-                                <div class="meta">Cmt 10:00 - 16:00 · Paz kapalı</div>
                             </div>
                         </div>
                         <div style="font-size:0.9rem; opacity:0.9">&copy; 2025 ERN Tropikal Çiçek — Tüm Hakları Saklıdır.</div>
