@@ -1,0 +1,12 @@
+{
+  "name": "send-order-function",
+  "version": "1.0.0",
+  "description": "Dependencies for the send-order serverless function",
+  "engines": {
+    "node": "16.x || 18.x || 20.x"
+  },
+  "dependencies": {
+    "nodemailer": "^6.9.4",
+    "googleapis": "^113.0.0"
+  }
+}

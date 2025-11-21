@@ -8,21 +8,33 @@ let google;
 try{ google = require('googleapis').google; }catch(e){ google = null; }
 
 exports.handler = async function(event, context) {
-  // Allow only POST
+  // CORS headers for browser clients (adjust origin in production)
+  const CORS_HEADERS = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'POST,OPTIONS'
+  };
+
+  // Respond to CORS preflight
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 200, headers: CORS_HEADERS, body: '' };
+  }
+
+  // Allow only POST for the main handler
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
+    return { statusCode: 405, headers: CORS_HEADERS, body: 'Method Not Allowed' };
   }
 
   let payload;
   try {
     payload = JSON.parse(event.body || '{}');
   } catch (err) {
-    return { statusCode: 400, body: 'Invalid JSON' };
+    return { statusCode: 400, headers: CORS_HEADERS, body: 'Invalid JSON' };
   }
 
   const { payerEmail, cart = [], iban } = payload;
   if (!payerEmail) {
-    return { statusCode: 400, body: 'Missing payerEmail' };
+    return { statusCode: 400, headers: CORS_HEADERS, body: 'Missing payerEmail' };
   }
 
   // Read SMTP / Gmail OAuth config from env
@@ -40,12 +52,12 @@ exports.handler = async function(event, context) {
 
   // Validate presence of at least one auth method
   if (!((GMAIL_OAUTH_CLIENT_ID && GMAIL_OAUTH_CLIENT_SECRET && GMAIL_OAUTH_REFRESH_TOKEN && SMTP_USER) || (SMTP_HOST && SMTP_USER && SMTP_PASS))) {
-    return { statusCode: 500, body: 'SMTP or Gmail OAuth not configured on server' };
+    return { statusCode: 500, headers: CORS_HEADERS, body: 'SMTP or Gmail OAuth not configured on server' };
   }
 
   // Build simple HTML/text message
-  const total = (cart || []).reduce((s,i) => s + ((i.price||0) * (i.qty||0)), 0);
-  const itemsHtml = (cart || []).map(i => `<li>${escape(i.name)} x${i.qty||1} @ ₺${(i.price||0).toFixed(2)}</li>`).join('');
+  const total = (cart || []).reduce((s,i) => s + ((Number(i.price)||0) * (Number(i.qty)||0)), 0);
+  const itemsHtml = (cart || []).map(i => `<li>${escape(i.name)} x${escape(i.qty||1)} @ ₺${Number(i.price||0).toFixed(2)}</li>`).join('');
   const html = `
     <p>Yeni havale/eft bildirimi geldi.</p>
     <p>Gönderen e-posta: ${escape(payerEmail)}</p>
@@ -112,11 +124,12 @@ exports.handler = async function(event, context) {
 
     return {
       statusCode: 200,
+      headers: CORS_HEADERS,
       body: JSON.stringify({ ok: true })
     };
   } catch (err) {
     console.error('mail error', err);
-    return { statusCode: 502, body: 'Failed to send email' };
+    return { statusCode: 502, headers: CORS_HEADERS, body: 'Failed to send email' };
   }
 };
 
