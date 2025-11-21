@@ -1032,11 +1032,19 @@
                     }
 
                     function logout() {
-                        localStorage.removeItem('currentUser');
-                        document.getElementById('authContainer').classList.remove('hidden');
-                        document.getElementById('userContainer').classList.add('hidden');
-                        updateCartCount();
-                        console.log('Çıkış yapılmıştır.');
+                                        // remove current user and reset UI to public homepage state
+                                        localStorage.removeItem('currentUser');
+                                        document.getElementById('authContainer').classList.remove('hidden');
+                                        document.getElementById('userContainer').classList.add('hidden');
+                                        updateCartCount();
+                                        // close any open modals and mini cart
+                                        try{ closeAuthModal(); }catch(e){}
+                                        try{ closeCart(); }catch(e){}
+                                        try{ closeBank(); }catch(e){}
+                                        try{ hideMiniCart(0); }catch(e){}
+                                        // navigate back to homepage top (smooth)
+                                        try{ scrollToSection && scrollToSection('home'); }catch(e){ window.location.href = 'anasayfa.html'; }
+                                        console.log('Çıkış yapıldı.');
                     }
 
                     /* --- Cart logic (user-specific) --- */
