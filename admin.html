@@ -72,7 +72,8 @@
   <script>
     // Client-side admin auth: set password first time, then login.
     (function(){
-      const AUTH_KEY = 'admin_pass_hash_v1';
+  const AUTH_KEY = 'admin_pass_hash_v1';
+  const ADMIN_USER_KEY = 'admin_user_v1';
       const authContent = document.getElementById('authContent');
       const adminUI = document.getElementById('adminUI');
 
@@ -90,32 +91,54 @@
       }
 
       function showSetPassword(){
+        const savedUser = localStorage.getItem(ADMIN_USER_KEY) || '';
         authContent.innerHTML = `<div style="margin-bottom:.5rem">Henüz bir yönetici parolası ayarlanmadı. Güçlü bir parola belirleyin (yalnızca tarayıcıda).</div>
-          <input id="pw1" type="password" placeholder="Yeni parola" style="width:60%; padding:0.5rem;" />
+          <input id="adminUser" type="text" placeholder="Yönetici kullanıcı adı (opsiyonel)" value="${savedUser}" style="width:60%; padding:0.5rem;" />
+          <input id="pw1" type="password" placeholder="Yeni parola" style="width:60%; padding:0.5rem; margin-top:0.5rem;" />
           <input id="pw2" type="password" placeholder="Parolayı tekrar girin" style="width:60%; padding:0.5rem; margin-top:0.5rem;" />
-          <div style="margin-top:0.5rem;"><button id="setPwBtn">Parolayı Kaydet</button></div>`;
+          <div style="margin-top:0.5rem;"><label style=\"display:block;margin-bottom:0.35rem;\"><input id=\"rememberOnSet\" type=\"checkbox\" /> Beni hatırla (otomatik giriş)</label><button id="setPwBtn">Parolayı Kaydet</button></div>`;
         document.getElementById('setPwBtn').onclick = async ()=>{
           const a = document.getElementById('pw1').value;
           const b = document.getElementById('pw2').value;
+          const user = (document.getElementById('adminUser').value || '').trim();
+          const remember = !!document.getElementById('rememberOnSet').checked;
           if (!a || a.length < 4) return alert('Parola en az 4 karakter olmalı');
           if (a !== b) return alert('Parolalar eşleşmiyor');
           const h = await hashPassword(a);
           localStorage.setItem(AUTH_KEY, h);
-          alert('Parola kaydedildi. Lütfen giriş yapın.');
+          if (user) localStorage.setItem(ADMIN_USER_KEY, user);
+          if (remember) {
+            // persist logged-in state
+            localStorage.setItem('admin_logged_in', '1');
+          } else {
+            sessionStorage.setItem('admin_logged_in', '1');
+          }
+          alert('Parola kaydedildi. Yönetici hesabı oluşturuldu.');
           renderAuth();
+          renderAdmin();
         };
       }
 
       function showLogin(){
+        const savedUser = localStorage.getItem(ADMIN_USER_KEY) || '';
         authContent.innerHTML = `<div style="margin-bottom:.5rem">Yönetici girişi</div>
-          <input id="loginPw" type="password" placeholder="Parola" style="width:60%; padding:0.5rem;" />
+          <input id="loginUser" type="text" placeholder="Kullanıcı adı (opsiyonel)" value="${savedUser}" style="width:60%; padding:0.5rem;" />
+          <input id="loginPw" type="password" placeholder="Parola" style="width:60%; padding:0.5rem; margin-top:0.5rem;" />
+          <label style="display:block;margin-top:0.5rem;"><input id="rememberMe" type="checkbox" /> Beni hatırla</label>
           <div style="margin-top:0.5rem;"><button id="loginBtn">Giriş Yap</button></div>`;
         document.getElementById('loginBtn').onclick = async ()=>{
           const pw = document.getElementById('loginPw').value;
+          const user = (document.getElementById('loginUser').value || '').trim();
+          const remember = !!document.getElementById('rememberMe').checked;
           const h = await hashPassword(pw);
           if (h === localStorage.getItem(AUTH_KEY)){
-            localStorage.setItem('admin_logged_in', '1');
-              authContent.innerHTML = '<div style="color:green">Giriş başarılı — yönetici arayüzü yükleniyor...</div>';
+            if (user) localStorage.setItem(ADMIN_USER_KEY, user);
+            if (remember) {
+              localStorage.setItem('admin_logged_in', '1');
+            } else {
+              sessionStorage.setItem('admin_logged_in', '1');
+            }
+            authContent.innerHTML = '<div style="color:green">Giriş başarılı — yönetici arayüzü yükleniyor...</div>';
             setTimeout(()=>{ renderAuth(); renderAdmin(); }, 400);
           } else alert('Parola yanlış');
         };
@@ -123,10 +146,15 @@
 
       function renderAuth(){
         const has = !!localStorage.getItem(AUTH_KEY);
-        const logged = !!localStorage.getItem('admin_logged_in');
+        const logged = !!(localStorage.getItem('admin_logged_in') || sessionStorage.getItem('admin_logged_in'));
+        const user = localStorage.getItem(ADMIN_USER_KEY) || '';
         if (!has) showSetPassword();
         else if (!logged) showLogin();
-        else { authContent.innerHTML = `<div style="color:green;">Zaten giriş yaptınız. <button id="logoutBtn">Çıkış</button></div>`; document.getElementById('logoutBtn').onclick = ()=>{ localStorage.removeItem('admin_logged_in'); renderAuth(); adminUI.style.display='none'; } ; adminUI.style.display='block'; }
+        else {
+          authContent.innerHTML = `<div style="color:green;">Zaten giriş yaptınız${user?(' — ' + user):''}. <button id="logoutBtn">Çıkış</button></div>`;
+          document.getElementById('logoutBtn').onclick = ()=>{ localStorage.removeItem('admin_logged_in'); sessionStorage.removeItem('admin_logged_in'); renderAuth(); adminUI.style.display='none'; };
+          adminUI.style.display='block';
+        }
       }
 
       function renderAdmin(){
