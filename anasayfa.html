@@ -519,17 +519,17 @@
 
                 <!-- Contact dropdown panel (hidden by default) -->
                 <div id="contactPanel" class="contact-panel hidden" role="region" aria-hidden="true" aria-labelledby="contactBtn">
-                    <div style="padding:0.8rem 1rem; max-width:320px;">
-                        <strong style="display:block; margin-bottom:0.4rem; color:#0b1220">İletişim</strong>
-                        <div style="font-size:0.95rem; color:#334155; margin-bottom:0.5rem">Bizimle iletişime geçmek için aşağıdaki seçenekleri kullanabilirsiniz.</div>
-                        <div style="font-size:0.95rem; color:#0b1220;">
-                            <div><strong>E-posta:</strong> <a href="mailto:amtbrs@icloud.com">amtbrs@icloud.com</a></div>
-                            <div style="margin-top:0.25rem;"><strong>Telefon (demo):</strong> +90 5XX XXX XXXX</div>
-                            <div style="margin-top:0.25rem;"><strong>Adres:</strong> Adresiniz Caddesi 1, Şehir, TR</div>
-                            <div style="margin-top:0.5rem;"><strong>Çalışma Saatleri:</strong><div style="font-size:0.9rem; color:#334155">Pzt-Cum 09:00-19:00 · Cmt 10:00-16:00 · Paz kapalı</div></div>
+                    <div style="padding:0.8rem 1rem; max-width:360px;">
+                        <strong id="contactPanelTitle" style="display:block; margin-bottom:0.4rem; color:#0b1220">İletişim</strong>
+                        <div id="contactPanelDesc" style="font-size:0.95rem; color:#334155; margin-bottom:0.5rem">Bizimle iletişime geçmek için aşağıdaki seçenekleri kullanabilirsiniz.</div>
+                        <div id="contactPanelBody" style="font-size:0.95rem; color:#0b1220;">
+                            <div><strong>E-posta:</strong> <a id="contactEmailLink" href="mailto:amtbrs@icloud.com">amtbrs@icloud.com</a></div>
+                            <div style="margin-top:0.25rem;"><strong>Telefon:</strong> <span id="contactPhone">+90 5XX XXX XXXX</span></div>
+                            <div style="margin-top:0.25rem;"><strong>Adres:</strong> <span id="contactAddress">Adresiniz Caddesi 1, Şehir, TR</span></div>
+                            <div style="margin-top:0.5rem;"><strong>Çalışma Saatleri:</strong><div id="contactHours" style="font-size:0.9rem; color:#334155">Pzt-Cum 09:00-19:00</div></div>
                         </div>
                         <div style="margin-top:0.6rem; display:flex; gap:0.5rem;">
-                            <a href="mailto:amtbrs@icloud.com?subject=İletişim%20-%20Web" style="flex:1;background:#2563eb;color:#fff;padding:0.5rem;border-radius:8px;text-align:center;text-decoration:none">E-posta Gönder</a>
+                            <a id="contactEmailBtn" href="mailto:amtbrs@icloud.com?subject=İletişim%20-%20Web" style="flex:1;background:#2563eb;color:#fff;padding:0.5rem;border-radius:8px;text-align:center;text-decoration:none">E-posta Gönder</a>
                             <button onclick="closeContact()" style="flex:1;background:#e53e3e;color:#fff;padding:0.5rem;border-radius:8px;border:none;">Kapat</button>
                         </div>
                     </div>
@@ -794,6 +794,59 @@
                         if (target === panel || panel.contains(target) || target === btn || btn.contains(target)) return;
                         closeContact();
                     });
+
+                        /* --- Site settings loader (tries /site-settings.json, falls back to localStorage) --- */
+                        const SETTINGS_KEY = 'site_settings_v1';
+                        async function fetchSiteSettings(){
+                            try{
+                                const res = await fetch('/site-settings.json', {cache: 'no-store'});
+                                if (res.ok){
+                                    const json = await res.json();
+                                    return json;
+                                }
+                            }catch(e){ /* ignore fetch errors */ }
+                            try{ return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}; }catch(e){ return {}; }
+                        }
+
+                        function applySiteSettings(s){
+                            const defaults = {
+                                email: 'amtbrs@icloud.com',
+                                phone: '+90 5XX XXX XXXX',
+                                address: 'Adresiniz Caddesi 1, Şehir, TR',
+                                hours: 'Pzt-Cum 09:00-19:00',
+                                iban: 'TR33 0006 1005 1978 6457 8413 26',
+                                contactBtnText: 'İletişim'
+                            };
+                            const cfg = Object.assign({}, defaults, s || {});
+                            // contact panel
+                            const emailLink = document.getElementById('contactEmailLink');
+                            const emailBtn = document.getElementById('contactEmailBtn');
+                            const phoneEl = document.getElementById('contactPhone');
+                            const addrEl = document.getElementById('contactAddress');
+                            const hoursEl = document.getElementById('contactHours');
+                            const siteIbanEl = document.getElementById('siteIban');
+                            const widgetIban = document.getElementById('widgetIban');
+                            const contactBtn = document.getElementById('contactBtn');
+                            if (emailLink) { emailLink.href = 'mailto:' + cfg.email; emailLink.textContent = cfg.email; }
+                            if (emailBtn) emailBtn.href = 'mailto:' + cfg.email + '?subject=' + encodeURIComponent('İletişim - Web');
+                            if (phoneEl) phoneEl.textContent = cfg.phone;
+                            if (addrEl) addrEl.textContent = cfg.address;
+                            if (hoursEl) hoursEl.textContent = cfg.hours;
+                            if (siteIbanEl) siteIbanEl.textContent = cfg.iban;
+                            if (widgetIban) widgetIban.textContent = cfg.iban;
+                            if (contactBtn) {
+                                // update contact button label if provided
+                                const span = contactBtn.querySelector('span:nth-child(2)');
+                                if (span) span.textContent = cfg.contactBtnText;
+                            }
+                            // store locally for admin and other clients
+                            try{ localStorage.setItem(SETTINGS_KEY, JSON.stringify(cfg)); }catch(e){}
+                        }
+
+                        async function loadSiteSettingsAndApply(){
+                            const s = await fetchSiteSettings();
+                            applySiteSettings(s);
+                        }
 
                     /* --- Registration / Login --- */
                     // --- Password hashing helpers using Web Crypto (PBKDF2 SHA-256) ---
@@ -1246,17 +1299,15 @@
                     function openPaymentPage(){ window.open('/odeme.html','_blank'); }
 
                     // Init behavior
-                    (function(){
+                    (async function(){
                         try{
                             const cu = getCurrentUser();
                             if (cu) updateUIAfterLogin(cu.name);
-                            // set sample IBAN
-                            const ibanEl = document.getElementById('siteIban');
-                            if (ibanEl) ibanEl.textContent = 'TR33 0006 1005 1978 6457 8413 26';
-                            const widgetIban = document.getElementById('widgetIban'); if (widgetIban) widgetIban.textContent = ibanEl ? ibanEl.textContent : '';
+                            // load site settings (fetch /site-settings.json or localStorage)
+                            await loadSiteSettingsAndApply();
                             // sample default total
                             const bankAmount = document.getElementById('bankAmount'); if (bankAmount) bankAmount.textContent = 'Toplam: ₺0.00';
-                        }catch(e){ }
+                        }catch(e){ console.error('init error', e); }
                         initProducts();
                         updateCartCount();
                     })();

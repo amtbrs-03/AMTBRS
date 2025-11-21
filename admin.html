@@ -57,6 +57,42 @@
     <div id="products" class="products-list"></div>
   </div>
 
+  <div class="card">
+    <h2>Site Ayarları (İletişim & Ödeme)</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;align-items:start;">
+      <div>
+        <label for="siteEmail">İletişim E-posta</label>
+        <input id="siteEmail" type="email" placeholder="info@example.com" />
+      </div>
+      <div>
+        <label for="sitePhone">Telefon</label>
+        <input id="sitePhone" type="text" placeholder="+90 5XX XXX XXXX" />
+      </div>
+      <div>
+        <label for="siteAddress">Adres</label>
+        <input id="siteAddress" type="text" placeholder="Adresiniz Caddesi 1, Şehir" />
+      </div>
+      <div>
+        <label for="siteHours">Çalışma Saatleri</label>
+        <input id="siteHours" type="text" placeholder="Pzt-Cum 09:00-19:00" />
+      </div>
+      <div>
+        <label for="siteIban">Varsayılan IBAN</label>
+        <input id="siteIbanIn" type="text" placeholder="TRxx xxxx xxxx ..." />
+      </div>
+      <div>
+        <label for="contactBtnText">İletişim Butonu Metni</label>
+        <input id="contactBtnText" type="text" placeholder="İletişim" />
+      </div>
+    </div>
+    <div style="display:flex;gap:0.6rem;margin-top:0.6rem;align-items:center;">
+      <button id="saveSettings" class="btn">Ayarları Kaydet</button>
+      <label style="display:flex;align-items:center;gap:0.4rem;"><input id="pushSettingsToGithub" type="checkbox" checked /> GitHub'a da kaydet</label>
+      <button id="loadDefaultsSettings" class="btn btn-ghost">Varsayılanları Yükle</button>
+    </div>
+    <div class="small meta" style="margin-top:0.5rem">Not: Ayarlar önce tarayıcıda (localStorage) saklanır. "GitHub'a da kaydet" seçilirse site-settings.json dosyası depoya gönderilir (serverless/commit-file endpoint gerekir).</div>
+  </div>
+
     <div style="display:flex; gap:0.5rem; align-items:center;">
       <button id="saveAll" class="btn">Değişiklikleri Kaydet</button>
       <label style="display:flex;align-items:center;gap:0.4rem; margin-left:0.5rem;"><input id="pushToGithub" type="checkbox" checked /> GitHub'a da kaydet</label>
@@ -367,6 +403,74 @@
           else alert('GitHub kaydı başarısız: ' + (lastRes && lastRes.statusText ? lastRes.statusText : (lastRes && lastRes.message) || 'unknown'));
         }catch(err){ console.error('push to github failed', err); alert('GitHub kaydı sırasında hata: ' + err.message); }
       });
+
+      // Site settings save/load (contact / IBAN / hours)
+      const SETTINGS_KEY = 'site_settings_v1';
+      function getSiteSettings(){
+        try{ return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {} }catch(e){ return {}; }
+      }
+      function setSiteSettings(s){ localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); }
+
+      function loadSettingsIntoForm(){
+        const s = getSiteSettings();
+        document.getElementById('siteEmail').value = s.email || 'amtbrs@icloud.com';
+        document.getElementById('sitePhone').value = s.phone || '+90 5XX XXX XXXX';
+        document.getElementById('siteAddress').value = s.address || 'Adresiniz Caddesi 1, Şehir, TR';
+        document.getElementById('siteHours').value = s.hours || 'Pzt-Cum 09:00-19:00';
+        document.getElementById('siteIbanIn').value = s.iban || 'TR33 0006 1005 1978 6457 8413 26';
+        document.getElementById('contactBtnText').value = s.contactBtnText || 'İletişim';
+      }
+
+      document.getElementById('saveSettings').addEventListener('click', async ()=>{
+        const s = {
+          email: document.getElementById('siteEmail').value.trim(),
+          phone: document.getElementById('sitePhone').value.trim(),
+          address: document.getElementById('siteAddress').value.trim(),
+          hours: document.getElementById('siteHours').value.trim(),
+          iban: document.getElementById('siteIbanIn').value.trim(),
+          contactBtnText: document.getElementById('contactBtnText').value.trim() || 'İletişim'
+        };
+        setSiteSettings(s);
+        alert('Ayarlar tarayıcıda kaydedildi.');
+
+        // If user requested, push site-settings.json to GitHub via serverless commit-file
+        try{
+          const push = !!document.getElementById('pushSettingsToGithub') && document.getElementById('pushSettingsToGithub').checked;
+          if (!push) return;
+          const json = JSON.stringify(s, null, 2);
+          const files = [{ path: 'site-settings.json', contentBase64: btoa(unescape(encodeURIComponent(json))) }];
+          const payload = { files, message: 'admin: update site-settings.json via admin panel' };
+          const endpoints = ['/.netlify/functions/commit-file', '/api/commit-file', '/functions/commit-file'];
+          let ok = false; let lastRes = null;
+          for (const ep of endpoints){
+            try{
+              const res = await fetch(ep, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+              lastRes = res;
+              if (res.ok){ ok = true; break; }
+            }catch(e){ lastRes = e; }
+          }
+          if (ok) alert('Ayarlar GitHub deposuna işlendi.');
+          else alert('GitHub kaydı başarısız: ' + (lastRes && lastRes.statusText ? lastRes.statusText : (lastRes && lastRes.message) || 'unknown'));
+        }catch(err){ console.error('push settings failed', err); alert('Ayarlar push edilirken hata: ' + err.message); }
+      });
+
+      document.getElementById('loadDefaultsSettings').addEventListener('click', ()=>{
+        if (!confirm('Varsayılan site ayarları yüklensin mi?')) return;
+        const defaults = {
+          email: 'amtbrs@icloud.com',
+          phone: '+90 5XX XXX XXXX',
+          address: 'Adresiniz Caddesi 1, Şehir, TR',
+          hours: 'Pzt-Cum 09:00-19:00',
+          iban: 'TR33 0006 1005 1978 6457 8413 26',
+          contactBtnText: 'İletişim'
+        };
+        setSiteSettings(defaults);
+        loadSettingsIntoForm();
+        alert('Varsayılan ayarlar yüklendi ve kaydedildi.');
+      });
+
+      // load settings when admin UI ready
+      try{ loadSettingsIntoForm(); }catch(e){}
 
       document.getElementById('resetDefault').addEventListener('click', ()=>{
         if (!confirm('Varsayılan ürünlere geri dönülsün mü?')) return;
