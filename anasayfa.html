@@ -650,6 +650,33 @@
                     </div>
                 </div>
 
+                <!-- Account Modal: shows profile + orders/invoices for logged-in users -->
+                <div id="accountModal" class="modal">
+                    <div class="modal-content">
+                        <span class="close" onclick="closeAccountModal()">&times;</span>
+                        <h2 style="margin-bottom: 1rem; color: #0b1220;">Üye Hesabım</h2>
+                        <div id="accountBody">
+                            <div style="margin-bottom:0.6rem;">
+                                <strong id="acctName">İsim</strong>
+                                <div id="acctEmail" style="font-size:0.95rem;color:#334155"></div>
+                                <div id="acctPhone" style="font-size:0.95rem;color:#334155"></div>
+                            </div>
+
+                            <div style="margin-top:0.6rem;">
+                                <strong>Siparişlerim</strong>
+                                <div id="ordersList" style="margin-top:0.5rem;">
+                                    <div style="color:#6b7280;padding:0.6rem">Siparişiniz bulunmuyor.</div>
+                                </div>
+                            </div>
+
+                            <div style="margin-top:1rem; display:flex; gap:0.5rem;">
+                                <button onclick="closeAccountModal()" style="flex:1;">Kapat</button>
+                                <button onclick="downloadAllInvoices()" style="flex:1;background:#2563eb;color:#fff">Tüm Faturaları İndir</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Bottom-right payment widget (compact, non-page) -->
                 <div id="paymentWidget" class="hidden" style="position:fixed; right:1rem; bottom:1rem; width:320px; max-width:92%; z-index:1100;">
                     <div style="background:#fff;border-radius:12px;box-shadow:0 18px 40px rgba(2,6,23,0.2);overflow:hidden;border:1px solid rgba(10,12,30,0.06);">
@@ -1035,7 +1062,18 @@
                                         try{ document.getElementById('authContainer').classList.remove('hidden'); }catch(e){}
                                         document.getElementById('userContainer').classList.remove('hidden');
                                         document.getElementById('userName').textContent = 'Hoşgeldiniz, ' + name;
-                                        try{ const b = document.getElementById('authBtn'); if (b) b.classList.add('active'); }catch(e){}
+                                        try{
+                                            const b = document.getElementById('authBtn');
+                                            if (b) {
+                                                b.classList.add('active');
+                                                // change label to "Hesabım" and make it open account view
+                                                const label = b.querySelector('.auth-label');
+                                                if (label) label.textContent = 'Hesabım';
+                                                b.onclick = openAccountModal;
+                                                b.setAttribute('aria-controls', 'accountModal');
+                                                b.setAttribute('aria-expanded', 'false');
+                                            }
+                                        }catch(e){}
                     }
 
                     function logout() {
@@ -1044,15 +1082,109 @@
                                         document.getElementById('authContainer').classList.remove('hidden');
                                         document.getElementById('userContainer').classList.add('hidden');
                                         updateCartCount();
+                                        // reset auth button label and handler
+                                        try{
+                                            const b = document.getElementById('authBtn');
+                                            if (b) {
+                                                b.classList.remove('active');
+                                                const label = b.querySelector('.auth-label');
+                                                if (label) label.textContent = 'Giriş / Kayıt';
+                                                b.onclick = openAuthModal;
+                                                b.setAttribute('aria-controls', 'authModal');
+                                                b.setAttribute('aria-expanded', 'false');
+                                            }
+                                        }catch(e){}
                                         // close any open modals and mini cart
                                         try{ closeAuthModal(); }catch(e){}
                                         try{ closeCart(); }catch(e){}
                                         try{ closeBank(); }catch(e){}
                                         try{ hideMiniCart(0); }catch(e){}
-                                        try{ const b = document.getElementById('authBtn'); if (b) b.classList.remove('active'); }catch(e){}
                                         // navigate back to homepage top (smooth)
                                         try{ scrollToSection && scrollToSection('home'); }catch(e){ window.location.href = 'anasayfa.html'; }
                                         console.log('Çıkış yapıldı.');
+                    }
+
+                    /* --- Orders / account helpers --- */
+                    function ordersKeyForUser(email){ return 'orders_' + email; }
+                    function getOrdersForUser(email){
+                        try{ const raw = localStorage.getItem(ordersKeyForUser(email)); return raw?JSON.parse(raw):[]; }catch(e){ return []; }
+                    }
+                    function saveOrderForUser(email, order){
+                        if (!email) return;
+                        const arr = getOrdersForUser(email);
+                        arr.unshift(order);
+                        try{ localStorage.setItem(ordersKeyForUser(email), JSON.stringify(arr)); }catch(e){}
+                    }
+
+                    function renderAccountModal(){
+                        const user = getCurrentUser();
+                        if (!user) return openAuthModal();
+                        const nameEl = document.getElementById('acctName');
+                        const emailEl = document.getElementById('acctEmail');
+                        const phoneEl = document.getElementById('acctPhone');
+                        const ordersEl = document.getElementById('ordersList');
+                        if (nameEl) nameEl.textContent = user.name || '';
+                        if (emailEl) emailEl.textContent = user.email || '';
+                        if (phoneEl) phoneEl.textContent = user.phone || '';
+                        const orders = getOrdersForUser(user.email || '');
+                        ordersEl.innerHTML = '';
+                        if (!orders || !orders.length){ ordersEl.innerHTML = '<div style="color:#6b7280;padding:0.6rem">Henüz siparişiniz yok.</div>'; return; }
+                        orders.forEach(o=>{
+                            const d = document.createElement('div');
+                            d.style.padding = '0.6rem'; d.style.borderBottom = '1px dashed rgba(10,12,30,0.06)'; d.style.display='flex'; d.style.justifyContent='space-between'; d.style.alignItems='center';
+                            const left = document.createElement('div');
+                            left.innerHTML = '<div style="font-weight:700">Sipariş #' + (o.id || '') + '</div><div style="font-size:0.9rem;color:#334155">' + (new Date(o.date||0)).toLocaleString() + '</div>';
+                            const right = document.createElement('div');
+                            right.innerHTML = '<div style="font-weight:800;color:#0b1220">₺' + (Number(o.total)||0).toFixed(2) + '</div><div style="margin-top:6px"><button style="margin-right:6px;" onclick="downloadInvoice(\'' + (o.id||'') + '\')">Fatura indir</button><button onclick="viewOrderDetails(\'' + (o.id||'') + '\')">Detay</button></div>';
+                            d.appendChild(left); d.appendChild(right);
+                            ordersEl.appendChild(d);
+                        });
+                    }
+
+                    function openAccountModal(){
+                        renderAccountModal();
+                        const m = document.getElementById('accountModal'); if (!m) return;
+                        m.style.display = 'block';
+                        try{ const b = document.getElementById('authBtn'); if (b) b.setAttribute('aria-expanded','true'); }catch(e){}
+                    }
+                    function closeAccountModal(){
+                        const m = document.getElementById('accountModal'); if (!m) return; m.style.display='none';
+                        try{ const b = document.getElementById('authBtn'); if (b) b.setAttribute('aria-expanded','false'); }catch(e){}
+                    }
+
+                    function viewOrderDetails(id){
+                        const user = getCurrentUser(); if (!user) return openAuthModal();
+                        const orders = getOrdersForUser(user.email || '');
+                        const o = orders.find(x=>x.id===id);
+                        if (!o) return alert('Sipariş bulunamadı');
+                        alert('Sipariş detayları:\n' + JSON.stringify(o, null, 2));
+                    }
+
+                    function downloadInvoice(orderId){
+                        const user = getCurrentUser(); if (!user) return openAuthModal();
+                        const orders = getOrdersForUser(user.email || '');
+                        const o = orders.find(x=>x.id===orderId);
+                        if (!o) return alert('Fatura bulunamadı');
+                        const lines = [];
+                        lines.push('Firma: ERN Tropikal Çiçek');
+                        lines.push('Sipariş ID: ' + (o.id || ''));
+                        lines.push('Tarih: ' + (new Date(o.date||0)).toLocaleString());
+                        lines.push('Müşteri: ' + (user.name || '') + ' <' + (user.email||'') + '>');
+                        lines.push('--------------------------------------------------');
+                        (o.items||[]).forEach(it=>{ lines.push(it.name + ' x' + (it.qty||1) + ' — ₺' + ((it.price||0)*(it.qty||1)).toFixed(2)); });
+                        lines.push('--------------------------------------------------');
+                        lines.push('Toplam: ₺' + (Number(o.total)||0).toFixed(2));
+                        const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a'); a.href = url; a.download = 'fatura_' + (o.id||Date.now()) + '.txt'; document.body.appendChild(a); a.click(); a.remove();
+                        setTimeout(()=>URL.revokeObjectURL(url), 2000);
+                    }
+
+                    function downloadAllInvoices(){
+                        const user = getCurrentUser(); if (!user) return openAuthModal();
+                        const orders = getOrdersForUser(user.email || '');
+                        if (!orders.length) return alert('İndirilecek fatura yok.');
+                        orders.forEach(o=>{ try{ downloadInvoice(o.id); }catch(e){} });
                     }
 
                     /* --- Cart logic (user-specific) --- */
@@ -1402,26 +1534,37 @@
 
                     function sendBankNotification(){
                         // Try serverless endpoint first
-                        const email = (document.getElementById('payerEmail')||{}).value || (getCurrentUser()||{}).email || '';
+                        const payerEmail = (document.getElementById('payerEmail')||{}).value || '';
                         const cart = loadCart();
                         const total = cart.reduce((s,i)=>s + (i.price||0)*(i.qty||0),0).toFixed(2);
                         const body = {
-                            email: email,
+                            email: payerEmail || (getCurrentUser()||{}).email || '',
                             total: total,
                             items: cart
                         };
+
+                        // create order object to persist for user
+                        const order = { id: 'ORD' + Date.now().toString(36), date: Date.now(), items: cart, total: Number(total) };
+
                         // POST to functions/send-order if available (netlify functions)
                         fetch('/.netlify/functions/send-order', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) })
                         .then(r=>{ if (!r.ok) throw new Error('send failed'); return r.text(); })
                         .then(()=>{
                             console.log('Sipariş bildirimi gönderildi.');
+                            // persist order for logged-in user (or for provided payer email)
+                            const user = getCurrentUser();
+                            if (user && user.email) saveOrderForUser(user.email, order);
+                            else if (body.email) saveOrderForUser(body.email, order);
                             // clear cart
-                            const user = getCurrentUser(); if (user) localStorage.removeItem(cartKeyForUser(user.email));
+                            if (user) localStorage.removeItem(cartKeyForUser(user.email));
                             renderCart(); updateCartCount(); closeBank();
                         })
                         .catch(()=>{
-                            // Fallback: open mailto
-                            const subject = encodeURIComponent('Yeni Sipariş - ' + (email||'misafir'));
+                            // Fallback: persist order if possible then open mailto
+                            const user = getCurrentUser();
+                            if (user && user.email) saveOrderForUser(user.email, order);
+                            else if (body.email) saveOrderForUser(body.email, order);
+                            const subject = encodeURIComponent('Yeni Sipariş - ' + (body.email||'misafir'));
                             const bodyText = encodeURIComponent('Yeni sipariş:\nToplam: ' + total + '\n\n' + JSON.stringify(cart, null, 2));
                             window.location.href = 'mailto:amtbrs@icloud.com?subject='+subject+'&body='+bodyText;
                         });
