@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-            <!-- Redirect root index to denme.html via JS so we can preserve hash fragments (meta-refresh removed to avoid dropping fragments) -->
+            <!-- Redirect root index to anasayfa.html via JS so we can preserve hash fragments (meta-refresh removed to avoid dropping fragments) -->
             <script>
                 (function(){
                     try{
                         if(location.pathname === '/' || location.pathname === '/index.html'){
-                            var target = '/denme.html' + (location.hash || '');
+                            var target = '/anasayfa.html' + (location.hash || '');
                             location.replace(target);
                         }
                     }catch(e){ /* ignore */ }

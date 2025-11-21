@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>ÇİÇEK DÜNYASINA HOŞGELDİNİZ</title>
+    <script>
+        // Eğer kullanıcı www ile geldiyse, kök domaine (non-www) yönlendir
+        (function(){
+            try{
+                if (location.hostname && location.hostname.indexOf('www.') === 0) {
+                    var target = location.protocol + '//' + location.hostname.replace(/^www\./,'') + location.pathname + location.search + location.hash;
+                    location.replace(target);
+                }
+            }catch(e){ /* ignore */ }
+        })();
+    </script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #0b2f1f;
+            /* Yeşil tema: yumuşak yeşil arka plan + hafif vinyet efektleri */
+            background: radial-gradient(1200px 600px at 10% 10%, rgba(34,197,94,0.10), transparent),
+                        radial-gradient(800px 400px at 90% 90%, rgba(16,185,129,0.08), transparent),
+                        linear-gradient(180deg, #e6f7ec 0%, #064e3b 100%);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            min-height: 100%;
+            padding-bottom: 4rem;
+            /* Prevent accidental horizontal scroll on small devices */
+            overflow-x: hidden;
+        }
+
+        /* Floral background SVG container: subtle, decorative */
+        #floral-bg {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0; /* content will be placed above */
+            opacity: 0.12;
+            mix-blend-mode: overlay;
+        }
+
+        /* Ensure main content sits above the floral SVG */
+        header, .hero, .products-wrapper, footer {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Gentle float animation for decorative flowers inside SVG */
+        @keyframes floatY {
+            0% { transform: translateY(0) translateX(0) rotate(0deg); }
+            50% { transform: translateY(-12px) translateX(6px) rotate(3deg); }
+            100% { transform: translateY(0) translateX(0) rotate(0deg); }
+        }
+
+        header {
+            background: rgba(30, 143, 85, 0.6);
+            color: white;
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(6px);
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+        .logo {
+            font-size: 1.35rem;
+            font-weight: 700;
+            letter-spacing: .6px;
+            color: #fff;
+            text-shadow: 0 6px 18px rgba(6,95,58,0.18);
+        }
+        .nav-links { list-style: none; display: flex; gap: 1.5rem; align-items: center; }
+        .nav-links a { color: rgba(255,255,255,0.9); text-decoration: none; transition: 0.25s; }
+        .nav-links a:hover { color: #b8d4ff; transform: translateY(-2px); }
+        .auth-btn { background: #6b897f; padding: 0.6rem 1.2rem; border-radius: 8px; cursor: pointer; border: none; color: white; transition: 0.25s; }
+        .auth-btn:hover { background: #a2444b; }
+        .user-info { color: rgba(255,255,255,0.9); }
+
+        .cart-btn {
+            position: relative;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.95);
+            padding: 0.5rem 0.8rem;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .cart-count {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: #ff4d6d;
+            color: white;
+            font-size: 0.75rem;
+            padding: 2px 6px;
+            border-radius: 999px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .hero {
+            color: white;
+            padding: 5rem 2rem 6rem;
+            text-align: center;
+            position: relative;
+            overflow: visible;
+        }
+        .hero .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            transform-style: preserve-3d;
+            perspective: 1200px;
+        }
+        .hero h1 {
+            font-size: 2.2rem;
+            margin-bottom: .6rem;
+            text-shadow: 0 8px 30px rgba(0,0,0,0.6), 0 2px 6px rgba(102,126,234,0.15);
+            transform: translateZ(30px);
+        }
+        .hero p {
+            opacity: .95;
+            transform: translateZ(20px);
+        }
+
+        /* Modal base */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        .modal-content {
+            /* Arka fonu yeşile dönük gradient ile güncellendi */
+            background: linear-gradient(180deg, #e6f7ec 0%, #c2e9c7 100%);
+            margin: 6% auto;
+            padding: 2rem;
+            border-radius: 16px;
+            width: 92%;
+            max-width: 520px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.4);
+            animation: slideDown 0.3s;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        @keyframes slideDown { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 1.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.25s;
+        }
+        .close:hover { color: #000; }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #0b1220;
+            font-weight: 600;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid rgba(10,12,30,0.1);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: 0.25s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #6b46c1;
+            box-shadow: 0 0 0 3px rgba(107,70,193,0.1);
+        }
+
+        .form-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .form-tabs button {
+            flex: 1;
+            padding: 0.8rem;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.25s;
+            color: #0b1220;
+            font-weight: 600;
+        }
+        .form-tabs button.active {
+            background: #6b46c1;
+            color: white;
+            border-color: #6b46c1;
+        }
+
+        .form-content { display: none; }
+        .form-content.active { display: block; }
+
+        /* Products scene */
+        .products-wrapper {
+            max-width: 1200px;
+            margin: -4rem auto 0;
+            padding: 0 2rem 3rem;
+            perspective: 1400px;
+        }
+        .products {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            transform-style: preserve-3d;
+        }
+
+        .product-card {
+            position: relative;
+            background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(245,245,255,0.9));
+            border-radius: 12px;
+            overflow: visible;
+            padding: 1rem;
+            box-shadow:
+                0 30px 60px rgba(2,6,23,0.6),
+                0 8px 18px rgba(2,6,23,0.35),
+                inset 0 1px 0 rgba(255,255,255,0.6);
+            transform-style: preserve-3d;
+            transition: transform 400ms cubic-bezier(.2,.9,.2,1), box-shadow 300ms;
+            will-change: transform;
+            cursor: default;
+            border: 1px solid rgba(10,12,30,0.06);
+        }
+
+        .product-card::before,
+        .product-card::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: 12px;
+            z-index: -2;
+            transition: transform 400ms, opacity 400ms;
+        }
+        .product-card::before {
+            background: linear-gradient(180deg, rgba(118,75,162,0.06), rgba(102,126,234,0.03));
+            transform: translateZ(-30px) scale(.98);
+            filter: blur(18px);
+            opacity: 0.9;
+        }
+        .product-card::after {
+            background: linear-gradient(180deg, rgba(0,0,0,0.08), transparent);
+            transform: translateZ(-60px) scale(.96);
+            filter: blur(30px);
+            opacity: 0.7;
+        }
+
+        .product-card:hover {
+            transform: rotateY(8deg) rotateX(6deg) translateY(-12px) translateZ(30px) scale(1.02);
+            box-shadow:
+                0 60px 120px rgba(2,6,23,0.7),
+                0 20px 40px rgba(2,6,23,0.45);
+        }
+        .product-image {
+            width: 100%;
+            height: 180px;
+            background: linear-gradient(135deg, rgba(102,126,234,0.12), rgba(118,75,162,0.08));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.2rem;
+            transform: translateZ(60px);
+            transition: transform 350ms cubic-bezier(.2,.9,.2,1);
+            box-shadow: 0 18px 40px rgba(102,126,234,0.12), inset 0 -6px 18px rgba(0,0,0,0.06);
+            margin-bottom: .9rem;
+            user-select: none;
+        }
+        .product-card:hover .product-image {
+            transform: translateZ(90px) translateY(-6px) rotateZ(-2deg);
+        }
+
+        .product-info {
+            padding: 0.8rem 0 0;
+            transform: translateZ(40px);
+        }
+        .product-name {
+            font-size: 1.05rem;
+            margin-bottom: .5rem;
+            color: #0b1220;
+            font-weight: 600;
+            letter-spacing: .2px;
+        }
+        .product-price {
+            color: #6b46c1;
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-shadow: 0 6px 18px rgba(107,70,193,0.08);
+        }
+
+        /* Buttons - professional, consistent */
+        .btn, button {
+            background: linear-gradient(180deg,var(--brand), #0a5c35);
+            color: white;
+            border: none;
+            padding: 0.7rem 1rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 180ms ease, box-shadow 180ms ease;
+            width: 100%;
+            box-shadow: 0 8px 22px rgba(6,95,58,0.14);
+            transform: translateZ(20px);
+            font-weight: 600;
+        }
+        .btn.btn-ghost, .btn.ghost { background: transparent; color: var(--brand); border: 1px solid rgba(11,105,61,0.08); width: auto }
+        .btn.small { padding: 0.4rem 0.6rem; border-radius: 8px; width: auto }
+
+        footer {
+            background: rgba(28,36,50,0.6);
+            color: rgba(255,255,255,0.85);
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+            border-top: 1px solid rgba(255,255,255,0.03);
+            position: relative;
+            transform: translateZ(10px);
+        }
+
+        .hidden { display: none; }
+
+        /* Cart styles */
+        .cart-items { list-style: none; margin: 0; padding: 0; }
+        .cart-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.6rem 0;
+            border-bottom: 1px dashed rgba(10,12,30,0.06);
+        }
+        .cart-item .ci-name { flex: 1; font-weight: 600; color: #0b1220; }
+        .ci-meta { color: #6b46c1; font-weight: 700; }
+        .qty-controls { display:flex; gap:0.5rem; align-items:center; }
+        .qty-controls button { padding: 0.25rem 0.5rem; font-size: 0.9rem; border-radius: 6px; width: auto; }
+
+        .cart-actions { display:flex; gap:0.75rem; margin-top:1rem; }
+        .cart-total { text-align:right; margin-top: 1rem; font-weight:700; color:#0b1220; }
+
+        @media (max-width: 700px) {
+            /* Reduce large spacings and ensure elements wrap to fit small screens */
+            header nav { padding: 0 1rem; }
+            .logo { font-size: 1.2rem; }
+            .hero { padding: 3rem 1rem 4rem; }
+            .hero .container { max-width: 100%; padding: 0 0.5rem; }
+            .products-wrapper { margin: -2rem auto 0; padding: 0 1rem 3rem; }
+            .products { gap: 1rem; }
+            .product-image { height: 140px; font-size: 2rem; }
+            .product-card { padding: 0.6rem; border-radius: 10px; }
+            .product-info { padding: 0.6rem 0 0; }
+            .product-price { font-size: 1.1rem; }
+            .product-name { font-size: 1rem; }
+            .modal-content { width: 95%; margin: 4% auto; }
+            /* Make nav links wrap and reduce spacing */
+            .nav-links { gap: 0.6rem; flex-wrap: wrap; align-items: center; }
+            .nav-links a, .auth-btn { padding: 0.4rem 0.6rem; font-size: 0.95rem; }
+            .cart-btn { padding: 0.4rem 0.6rem; }
+            /* Payment widget full width at bottom with small margins */
+            #paymentWidget { right: 0.5rem; left: 0.5rem; width: auto; bottom: 1rem; }
+            footer { padding: 1.25rem; }
+            /* Slightly reduce the decorative SVG opacity on small screens */
+            #floral-bg { opacity: 0.06; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Decorative floral SVG background (purely visual) -->
+    <svg id="floral-bg" aria-hidden="true" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
+        <defs>
+            <linearGradient id="pg1" x1="0" x2="1">
+                <stop offset="0%" stop-color="#FFFBF0" stop-opacity="0.95"/>
+                <stop offset="100%" stop-color="#F0FFF6" stop-opacity="0.95"/>
+            </linearGradient>
+        </defs>
+        <rect width="1200" height="800" fill="url(#pg1)" />
+
+        <!-- flowers: grouped shapes with subtle colors -->
+        <g class="flower f1" transform="translate(120,140) scale(1)">
+            <g style="transform-origin: center; animation: floatY 8s ease-in-out infinite;">
+                <circle cx="0" cy="0" r="10" fill="#FFB6C1" opacity="0.95" />
+                <g fill="#FFDFE4" opacity="0.9">
+                    <ellipse rx="8" ry="16" cx="0" cy="-16" transform="rotate(0)" />
+                    <ellipse rx="8" ry="16" cx="0" cy="16" transform="rotate(180)" />
+                    <ellipse rx="8" ry="16" cx="-16" cy="0" transform="rotate(-90)" />
+                    <ellipse rx="8" ry="16" cx="16" cy="0" transform="rotate(90)" />
+                </g>
+            </g>
+        </g>
+
+        <g class="flower f2" transform="translate(980,120) scale(1.6)">
+            <g style="transform-origin: center; animation: floatY 10s ease-in-out -2s infinite;">
+                <circle cx="0" cy="0" r="12" fill="#C8FACC" opacity="0.95" />
+                <g fill="#E8FFF2" opacity="0.9">
+                    <ellipse rx="10" ry="20" cx="0" cy="-18" />
+                    <ellipse rx="10" ry="20" cx="0" cy="18" />
+                    <ellipse rx="10" ry="20" cx="-18" cy="0" />
+                    <ellipse rx="10" ry="20" cx="18" cy="0" />
+                </g>
+            </g>
+        </g>
+
+        <g class="flower f3" transform="translate(640,560) scale(1.2)">
+            <g style="transform-origin: center; animation: floatY 9s ease-in-out -4s infinite;">
+                <circle cx="0" cy="0" r="14" fill="#FFEFD5" opacity="0.95" />
+                <g fill="#FFF5E6" opacity="0.9">
+                    <ellipse rx="12" ry="22" cx="0" cy="-20" />
+                    <ellipse rx="12" ry="22" cx="0" cy="20" />
+                    <ellipse rx="12" ry="22" cx="-20" cy="0" />
+                    <ellipse rx="12" ry="22" cx="20" cy="0" />
+                </g>
+            </g>
+        </g>
+
+    </svg>
+
+    <header>
+        <nav>
+            <div class="logo"><img src="/logo.svg" alt="logo" style="height:28px; vertical-align:middle; margin-right:8px">ERN Çiçek</div>
+            <ul class="nav-links">
+                <li><a href="/anasayfa.html">Anasayfa</a></li>
+                <li><a href="/odeme.html">Ödeme</a></li>
+                <li><a href="/admin.html">Admin</a></li>
+                <li><button id="cartBtn" class="cart-btn">Sepet <span id="cartCount" class="cart-count hidden">0</span></button></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <h1>Taze Çiçekler, Hızlı Teslimat</h1>
+                <p>Özel günlerin için el yapımı aranjmanlar — sevgiyle hazırlanır ve kapına teslim edilir.</p>
+                <div style="margin-top:1.25rem; display:flex; gap:0.75rem; justify-content:center;">
+                    <a class="btn" href="#products">Ürünlere Gözat</a>
+                    <a class="btn btn-ghost" href="/odeme.html">İban ile Ödeme</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="products" class="products-wrapper">
+            <div class="products">
+                <article class="product-card">
+                    <div class="product-image">🌸</div>
+                    <div class="product-info">
+                        <div class="product-name">Mevsim Buketi</div>
+                        <div class="product-price">₺120</div>
+                        <button class="btn add-to-cart">Sepete Ekle</button>
+                    </div>
+                </article>
+                <article class="product-card">
+                    <div class="product-image">💐</div>
+                    <div class="product-info">
+                        <div class="product-name">Luxe Aranjman</div>
+                        <div class="product-price">₺240</div>
+                        <button class="btn add-to-cart">Sepete Ekle</button>
+                    </div>
+                </article>
+                <article class="product-card">
+                    <div class="product-image">🌺</div>
+                    <div class="product-info">
+                        <div class="product-name">Gül Sepeti</div>
+                        <div class="product-price">₺160</div>
+                        <button class="btn add-to-cart">Sepete Ekle</button>
+                    </div>
+                </article>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div>© <span id="year"></span> ERN Çiçek — Tüm hakları saklıdır.</div>
+    </footer>
+
+    <div id="cartContainer" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeCart">&times;</span>
+            <h3>Sepetiniz</h3>
+            <ul id="cartItems" class="cart-items"></ul>
+            <div class="cart-total">Toplam: <span id="cartTotal">₺0</span></div>
+            <div class="cart-actions">
+                <button id="checkoutBtn" class="btn">Ödeme</button>
+                <button id="clearCart" class="btn btn-ghost">Temizle</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // small client cart handling using localStorage
+        document.getElementById('year').textContent = new Date().getFullYear();
+
+        function qs(sel){return document.querySelector(sel)}
+
+        var cart = JSON.parse(localStorage.getItem('site_cart')||'[]');
+        var cartCountEl = qs('#cartCount');
+        function refreshCartUI(){
+            var count = cart.reduce((s,i)=>s+i.qty,0);
+            if(count>0){ cartCountEl.textContent = count; cartCountEl.classList.remove('hidden'); } else { cartCountEl.classList.add('hidden'); }
+            var itemsEl = qs('#cartItems'); itemsEl.innerHTML='';
+            var total = 0;
+            cart.forEach(function(it,idx){
+                total += it.price*it.qty;
+                var li = document.createElement('li'); li.className='cart-item';
+                li.innerHTML = '<div class="ci-name">'+it.name+'</div><div class="ci-meta">₺'+(it.price*it.qty)+'</div>';
+                itemsEl.appendChild(li);
+            });
+            qs('#cartTotal').textContent = '₺'+total;
+            localStorage.setItem('site_cart', JSON.stringify(cart));
+        }
+
+        document.querySelectorAll('.add-to-cart').forEach(function(btn, i){
+            btn.addEventListener('click', function(){
+                var card = btn.closest('.product-card');
+                var name = card.querySelector('.product-name').textContent.trim();
+                var priceText = card.querySelector('.product-price').textContent.replace('₺','').trim();
+                var price = parseFloat(priceText)||0;
+                var existing = cart.find(c=>c.name===name);
+                if(existing) existing.qty += 1; else cart.push({name:name, price:price, qty:1});
+                refreshCartUI();
+            });
+        });
+
+        qs('#cartBtn').addEventListener('click', function(){ qs('#cartContainer').style.display='block'; });
+        qs('#closeCart').addEventListener('click', function(){ qs('#cartContainer').style.display='none'; });
+        qs('#clearCart').addEventListener('click', function(){ cart=[]; refreshCartUI(); });
+        qs('#checkoutBtn').addEventListener('click', function(){ location.href='/odeme.html'; });
+
+        // Initialize
+        refreshCartUI();
+    </script>
+</body>
+</html>

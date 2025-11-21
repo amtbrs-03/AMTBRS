@@ -48,4 +48,4 @@ fetch('/.netlify/functions/send-order', {
 Notlar ve güvenlik
 - SMTP kimlik bilgilerini asla istemci tarafında saklamayın.
 - Bu örnek basittir; üretim için rate limiting, doğrulama ve logging ekleyin.
-- Eğer isterseniz bu fonksiyonu doğrudan projeye entegre edip `denme.html`'de mailto çağrısını yerine fetch çağrısı yapan bir seçenek ekleyebilirim.
+- Eğer isterseniz bu fonksiyonu doğrudan projeye entegre edip `anasayfa.html`'de mailto çağrısını yerine fetch çağrısı yapan bir seçenek ekleyebilirim.
