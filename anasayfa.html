@@ -554,8 +554,15 @@
                                     <span class="auth-label">Giriş / Kayıt</span>
                                 </button>
                             </div>
-                            <div id="userContainer" class="hidden" style="margin-left:0.6rem;display:flex;gap:0.4rem;align-items:center;">
+                            <div id="userContainer" class="hidden" style="margin-left:0.6rem;display:flex;gap:0.4rem;align-items:center;position:relative;">
                                 <span class="user-info" id="userName"></span>
+                                <div id="profileWrap" style="position:relative;">
+                                    <button id="profileToggle" class="auth-btn" aria-controls="profileMenu" aria-expanded="false" style="margin-left:0.3rem;padding:0.35rem 0.5rem;">▾</button>
+                                    <div id="profileMenu" class="hidden" role="menu" style="position:absolute;right:0;top:calc(100% + 6px);background:linear-gradient(180deg, #fff, #fbfbfb);border:1px solid rgba(10,12,30,0.06);box-shadow:0 12px 30px rgba(2,6,23,0.12);border-radius:10px;padding:0.5rem;min-width:160px;z-index:120;">
+                                        <button style="display:block;width:100%;text-align:left;padding:0.5rem;border:none;background:transparent;cursor:pointer;border-radius:6px;margin-bottom:0.25rem;" onclick="openAccountModal(); closeProfileMenu();">Hesabım</button>
+                                        <button id="profileLogout" style="display:block;width:100%;text-align:left;padding:0.5rem;border:none;background:#e53e3e;color:#fff;cursor:pointer;border-radius:6px;" onclick="logoutConfirm(); closeProfileMenu();">Çıkış Yap</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </nav>
@@ -1168,6 +1175,15 @@
                         try{ const b = document.getElementById('authBtn'); if (b) b.setAttribute('aria-expanded','false'); }catch(e){}
                     }
 
+                    // Profile menu helpers
+                    function openProfileMenu(){ const m = document.getElementById('profileMenu'); const t = document.getElementById('profileToggle'); if (m){ m.classList.remove('hidden'); if (t) t.setAttribute('aria-expanded','true'); } }
+                    function closeProfileMenu(){ const m = document.getElementById('profileMenu'); const t = document.getElementById('profileToggle'); if (m){ m.classList.add('hidden'); if (t) t.setAttribute('aria-expanded','false'); } }
+                    document.addEventListener('click', function(ev){ try{ const wrap = document.getElementById('profileWrap'); const menu = document.getElementById('profileMenu'); const toggle = document.getElementById('profileToggle'); if (!wrap || !menu) return; const target = ev.target; if (wrap.contains(target)) return; if (!menu.classList.contains('hidden')) closeProfileMenu(); }catch(e){} });
+                    document.getElementById && document.getElementById('profileToggle') && document.getElementById('profileToggle').addEventListener('click', function(e){ e.stopPropagation(); const menu = document.getElementById('profileMenu'); if (!menu) return; if (menu.classList.contains('hidden')) openProfileMenu(); else closeProfileMenu(); });
+
+                    // Confirm-protected logout used in modal and profile menu
+                    function logoutConfirm(){ if (confirm('Çıkış yapmak istediğinizden emin misiniz?')) logout(); }
+
                     function viewOrderDetails(id){
                                         const user = getCurrentUser(); if (!user) return openAuthModal();
                                         const orders = getOrdersForUser(user.email || '');
@@ -1199,14 +1215,22 @@
 
                                     function openPrintableInvoice(order){
                                         const user = getCurrentUser() || {};
-                                        const html = `<!doctype html><html><head><meta charset="utf-8"><title>Fatura ${order.id}</title><style>body{font-family:Arial, Helvetica, sans-serif;padding:20px;color:#0b1220}header{display:flex;justify-content:space-between;align-items:center}h1{margin:0}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f7f7fb}tfoot td{font-weight:800}</style></head><body>`+
-                                            `<header><div><h1>ERN Tropikal Çiçek</h1><div style="font-size:0.9rem;color:#334155">Adresiniz Caddesi 1, Şehir</div></div><div style="text-align:right"><div>Fatura #: ${escapeHtml(order.id)}</div><div>${new Date(order.date||0).toLocaleString()}</div></div></header>`+
-                                            `<section style="margin-top:14px"><strong>Müşteri</strong><div>${escapeHtml(user.name||'')}</div><div>${escapeHtml(user.email||'')}</div><div>${escapeHtml(user.phone||'')}</div></section>`+
-                                            `<table><thead><tr><th>Ürün</th><th>Adet</th><th>Birim (₺)</th><th>Tutar (₺)</th></tr></thead><tbody>`+
-                                            (order.items||[]).map(it=>`<tr><td>${escapeHtml(it.name)}</td><td>${(it.qty||1)}</td><td>${Number(it.price||0).toFixed(2)}</td><td>${((it.price||0)*(it.qty||1)).toFixed(2)}</td></tr>`).join('')+
-                                            `</tbody><tfoot><tr><td colspan="3">Toplam</td><td>₺${Number(order.total||0).toFixed(2)}</td></tr></tfoot></table>`+
-                                            `<div style="margin-top:18px;font-size:0.9rem;color:#334155">Teşekkürler! Ödeme Havale/EFT ile gerçekleştiyse lütfen dekontunuzu saklayın.</div>`+
-                                            `<script>window.onload=function(){ setTimeout(()=>{ window.print(); },200); }</script></body></html>`;
+                                        const rows = (order.items||[]).map(function(it){
+                                            return '<tr><td>'+escapeHtml(it.name)+'</td><td>'+(it.qty||1)+'</td><td>'+Number(it.price||0).toFixed(2)+'</td><td>'+((it.price||0)*(it.qty||1)).toFixed(2)+'</td></tr>';
+                                        }).join('');
+                                        const htmlParts = [];
+                                        htmlParts.push('<!doctype html><html><head><meta charset="utf-8"><title>Fatura '+escapeHtml(order.id)+'</title>');
+                                        htmlParts.push('<style>body{font-family:Arial, Helvetica, sans-serif;padding:20px;color:#0b1220}header{display:flex;justify-content:space-between;align-items:center}h1{margin:0}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f7f7fb}tfoot td{font-weight:800}</style>');
+                                        htmlParts.push('</head><body>');
+                                        htmlParts.push('<header><div><h1>ERN Tropikal Çiçek</h1><div style="font-size:0.9rem;color:#334155">Adresiniz Caddesi 1, Şehir</div></div><div style="text-align:right"><div>Fatura #: '+escapeHtml(order.id)+'</div><div>'+new Date(order.date||0).toLocaleString()+'</div></div></header>');
+                                        htmlParts.push('<section style="margin-top:14px"><strong>Müşteri</strong><div>'+escapeHtml(user.name||'')+'</div><div>'+escapeHtml(user.email||'')+'</div><div>'+escapeHtml(user.phone||'')+'</div></section>');
+                                        htmlParts.push('<table><thead><tr><th>Ürün</th><th>Adet</th><th>Birim (₺)</th><th>Tutar (₺)</th></tr></thead><tbody>');
+                                        htmlParts.push(rows);
+                                        htmlParts.push('</tbody><tfoot><tr><td colspan="3">Toplam</td><td>₺'+Number(order.total||0).toFixed(2)+'</td></tr></tfoot></table>');
+                                        htmlParts.push('<div style="margin-top:18px;font-size:0.9rem;color:#334155">Teşekkürler! Ödeme Havale/EFT ile gerçekleştiyse lütfen dekontunuzu saklayın.</div>');
+                                        htmlParts.push('<script>window.onload=function(){ setTimeout(function(){ window.print(); },200); }</script>');
+                                        htmlParts.push('</body></html>');
+                                        const html = htmlParts.join('');
                                         const w = window.open('','_blank'); if (!w) { alert('Yeni pencere açılamadı; tarayıcı pop-up engelleyici devrede olabilir.'); return; }
                                         w.document.open(); w.document.write(html); w.document.close();
                                     }
@@ -1349,11 +1373,11 @@
                                 <div class="ci-name">${escapeHtml(item.name)}</div>
                                 <div style="text-align:right;">
                                     <div class="ci-meta">₺${(item.price||0).toFixed(2)}</div>
-                                    <div class="qty-controls">
-                                        <button onclick="changeQty('${item.id}', -1)">-</button>
+                                        <div class="qty-controls">
+                                        <button data-action="change-qty" data-item-id="${item.id}" data-delta="-1">-</button>
                                         <div style="min-width:26px; text-align:center;">${item.qty}</div>
-                                        <button onclick="changeQty('${item.id}', 1)">+</button>
-                                        <button style="margin-left:8px; background:#e53e3e; padding:0.25rem 0.5rem;" onclick="removeFromCart('${item.id}')">Sil</button>
+                                        <button data-action="change-qty" data-item-id="${item.id}" data-delta="1">+</button>
+                                        <button style="margin-left:8px; background:#e53e3e; padding:0.25rem 0.5rem;" data-action="remove-item" data-item-id="${item.id}">Sil</button>
                                     </div>
                                 </div>
                             `;
@@ -1565,7 +1589,7 @@
                                 <div class="product-info">
                                     <div class="product-name">${escapeHtml(p.name)}</div>
                                     <div class="product-price">₺${(p.price||0).toFixed(2)}</div>
-                                    <button onclick="addToCartFromBtn(this)">Sepete Ekle</button>
+                                    <button data-action="add-to-cart" data-product-id="${p.id}">Sepete Ekle</button>
                                 </div>
                             `;
                             container.appendChild(card);
@@ -1640,6 +1664,45 @@
                         initProducts();
                         updateCartCount();
                     })();
+
+                    // Event delegation for cart/product actions (avoids inline onclick parsing issues)
+                    document.addEventListener('click', function(e){
+                        try{
+                            const t = e.target.closest && e.target.closest('[data-action]');
+                            if (!t) return;
+                            const action = t.getAttribute('data-action');
+                            if (!action) return;
+                            if (action === 'change-qty') {
+                                const id = t.dataset.itemId;
+                                const delta = Number(t.dataset.delta || 0);
+                                if (id) changeQty(id, delta);
+                            } else if (action === 'remove-item') {
+                                const id = t.dataset.itemId;
+                                if (id) removeFromCart(id);
+                            } else if (action === 'add-to-cart') {
+                                const pid = t.dataset.productId;
+                                if (!pid) return;
+                                try {
+                                    const raw = localStorage.getItem(PRODUCTS_KEY);
+                                    const products = raw ? JSON.parse(raw) : [];
+                                    const p = products.find(x => String(x.id) === String(pid));
+                                    if (p) {
+                                        addToCart({ id: p.id, name: p.name, price: Number(p.price || 0) });
+                                    } else {
+                                        const card = document.querySelector('.product-card[data-id="' + pid + '"]');
+                                        if (card) {
+                                            const id = card.getAttribute('data-id');
+                                            const name = card.getAttribute('data-name');
+                                            const price = parseFloat(card.getAttribute('data-price')) || 0;
+                                            addToCart({ id, name, price });
+                                        }
+                                    }
+                                } catch (err) {
+                                    console.error('add-to-cart handler error', err);
+                                }
+                            }
+                        }catch(err){ console.error('delegation error', err); }
+                    });
 
     </script>
 </body>
