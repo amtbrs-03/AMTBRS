@@ -338,11 +338,56 @@
         .cart-total { text-align:right; margin-top:1rem; font-weight:700; color:#0b1220 }
 
         @media (max-width:700px) {
-            .hero h1 { font-size:1.6rem }
-            .product-image { height:160px; font-size:2.6rem }
+            /* General spacing and layout tweaks for small screens */
+            .hero { padding: 3rem 1rem 4rem; }
+            .hero h1 { font-size:1.6rem; line-height:1.15; }
+            .hero p { font-size:1rem; }
+
+            /* Products */
+            .products-wrapper { padding: 0 1rem 3rem; }
+            .products { gap:1rem; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); }
+            .product-image { height:140px; font-size:2.4rem }
             .product-card { padding:.8rem; border-radius:10px }
-            .modal-content { width:95% }
+
+            /* Nav and header */
+            header nav { padding: 0 1rem; }
+            .nav-links { gap:0.6rem; flex-wrap:wrap; align-items:center; }
+            .nav-links li { margin-bottom: 0.3rem; }
+
+            /* Modals and widgets */
+            .modal-content { width:95%; max-width:520px; margin:6% auto; }
+            #paymentWidget { right: 0.5rem; left: 0.5rem; width: auto; bottom: 1rem; }
+            .cart-btn, .auth-btn { padding: 0.4rem 0.6rem; font-size: 0.95rem; }
+            body { padding-bottom: 5rem; }
         }
+
+        @media (max-width:480px) {
+            /* Tighten for narrow phones */
+            .hero { padding: 2rem 0.8rem 3rem; }
+            .hero h1 { font-size:1.35rem; }
+            .hero p { font-size:0.95rem; }
+
+            .products { grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap:0.8rem; }
+            .product-image { height:120px; font-size:1.8rem; }
+            .product-price { font-size:1.05rem; }
+            .product-name { font-size:0.98rem; }
+
+            .modal-content { width: 96%; margin: 5% auto; padding:1.25rem; }
+            header nav { padding: 0 0.8rem; }
+            .nav-links { gap:0.5rem; }
+            #paymentWidget { left: 0.6rem; right:0.6rem; width:auto; bottom:0.8rem; }
+            footer { padding: 1rem; }
+
+            /* Hide heavy decorative background on very small screens */
+            #floral-bg { display: none; }
+
+            /* Disable fancy hover transforms on small devices for stability */
+            .product-card { transform: none; box-shadow: none; }
+        }
+
+        /* Ensure images and SVG scale to container width */
+        img, svg { max-width:100%; height:auto; display:block; }
+        html, body { width:100%; overflow-x:hidden; }
     </style>
   </head>
   <body>
