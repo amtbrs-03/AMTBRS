@@ -487,8 +487,8 @@
                     <nav>
                         <!-- logo removed per request -->
                         <ul class="nav-links">
-                            <li><a href="#home">Ana Sayfa</a></li>
-                            <li><a href="#products">Ürünler</a></li>
+                            <li><button id="homeBtn" class="contact-btn" aria-controls="home" aria-expanded="false" onclick="scrollToSection('home')">Ana Sayfa</button></li>
+                                <li><button id="productsBtn" class="contact-btn" aria-controls="products" aria-expanded="false" onclick="scrollToSection('products')">Ürünler</button></li>
                             <li><a href="#about">Hakkında</a></li>
                             <li>
                                 <button id="contactBtn" class="contact-btn" aria-expanded="false" aria-controls="contactPanel" onclick="toggleContact(event)">
@@ -501,14 +501,14 @@
                                 <a class="auth-btn" href="https://ern-cicek.com.tr/admin.html" target="_blank" rel="noopener" style="background:#3b7d3b;">Yönetici</a>
                             </li>
                             <li id="authContainer">
-                                <button class="auth-btn" onclick="openAuthModal()">Giriş / Kayıt</button>
+                                <button id="authBtn" class="auth-btn contact-btn" aria-controls="authModal" aria-expanded="false" onclick="openAuthModal()">Giriş / Kayıt</button>
                             </li>
                             <li id="userContainer" class="hidden">
                                 <span class="user-info" id="userName"></span>
                                 <button class="auth-btn" onclick="logout()">Çıkış</button>
                             </li>
                             <li id="cartContainer">
-                                <button id="cartBtn" class="cart-btn" onclick="openCart()">
+                                <button id="cartBtn" class="cart-btn contact-btn" aria-controls="cartModal" aria-expanded="false" onclick="openCart()">
                                     Sepet
                                     <span id="cartCount" class="cart-count hidden">0</span>
                                 </button>
@@ -723,10 +723,12 @@
                     /* --- Auth modal and tabs --- */
                     function openAuthModal() {
                         document.getElementById('authModal').style.display = 'block';
+                        try{ const b = document.getElementById('authBtn'); if (b) b.setAttribute('aria-expanded','true'); }catch(e){}
                     }
 
                     function closeAuthModal() {
                         document.getElementById('authModal').style.display = 'none';
+                        try{ const b = document.getElementById('authBtn'); if (b) b.setAttribute('aria-expanded','false'); }catch(e){}
                     }
 
                     function switchTab(tab, el) {
@@ -761,6 +763,18 @@
                         panel.classList.add('hidden');
                         panel.setAttribute('aria-hidden', 'true');
                         if (btn) btn.setAttribute('aria-expanded', 'false');
+                    }
+
+                    // Scroll helper used by nav buttons; mimics toggle behavior briefly for aria
+                    function scrollToSection(id){
+                        try{
+                            const el = document.getElementById(id);
+                            if (!el) return;
+                            el.scrollIntoView({behavior:'smooth', block:'start'});
+                            // find nav button pointing to this id and set aria-expanded briefly
+                            const btn = document.querySelector('[aria-controls="'+id+'"]');
+                            if (btn) { btn.setAttribute('aria-expanded','true'); setTimeout(()=>{ try{ btn.setAttribute('aria-expanded','false'); }catch(e){} }, 700); }
+                        }catch(e){ console.error('scrollToSection error', e); }
                     }
 
                     // Close contact panel when clicking outside
@@ -1053,10 +1067,12 @@
                         }
                         renderCart();
                         document.getElementById('cartModal').style.display = 'block';
+                        try{ const b = document.getElementById('cartBtn'); if (b) b.setAttribute('aria-expanded','true'); }catch(e){}
                     }
 
                     function closeCart() {
                         document.getElementById('cartModal').style.display = 'none';
+                        try{ const b = document.getElementById('cartBtn'); if (b) b.setAttribute('aria-expanded','false'); }catch(e){}
                     }
 
                     function renderCart() {
@@ -1273,7 +1289,8 @@
                     }
 
                     function openBank(){ document.getElementById('bankModal').style.display = 'block'; }
-                    function closeBank(){ document.getElementById('bankModal').style.display = 'none'; }
+                    function openBank(){ document.getElementById('bankModal').style.display = 'block'; try{ const b = document.getElementById('paymentOpenBtn'); if (b) b.setAttribute('aria-expanded','true'); }catch(e){} }
+                    function closeBank(){ document.getElementById('bankModal').style.display = 'none'; try{ const b = document.getElementById('paymentOpenBtn'); if (b) b.setAttribute('aria-expanded','false'); }catch(e){} }
                     function closePaymentWidget(){ document.getElementById('paymentWidget').style.display = 'none'; }
                     function openPaymentPage(){ window.open('/odeme.html','_blank'); }
 
