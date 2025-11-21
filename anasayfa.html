@@ -354,6 +354,7 @@
             header nav { padding: 0 1rem; }
             .nav-links { gap:0.6rem; flex-wrap:wrap; align-items:center; }
             .nav-links li { margin-bottom: 0.3rem; }
+            .nav-bottom { margin-top: 0.5rem; }
 
             /* Modals and widgets */
             .modal-content { width:95%; max-width:520px; margin:6% auto; }
@@ -522,34 +523,24 @@
                 <header>
                     <nav>
                         <!-- logo removed per request -->
-                        <ul class="nav-links">
-                            <li><button id="homeBtn" class="contact-btn" aria-controls="home" aria-expanded="false" onclick="scrollToSection('home')">Ana Sayfa</button></li>
+                        <div class="nav-top" style="display:flex;align-items:center;gap:0.6rem;">
+                            <ul class="nav-links" style="display:flex;gap:0.6rem;align-items:center;list-style:none;margin:0;padding:0;">
+                                <li><button id="homeBtn" class="contact-btn" aria-controls="home" aria-expanded="false" onclick="scrollToSection('home')">Ana Sayfa</button></li>
                                 <li><button id="productsBtn" class="contact-btn" aria-controls="products" aria-expanded="false" onclick="scrollToSection('products')">Ürünler</button></li>
-                            <!-- 'Hakkında' menü öğesi kaldırıldı -->
-                            <li>
-                                <button id="contactBtn" class="contact-btn" aria-expanded="false" aria-controls="contactPanel" onclick="toggleContact(event)">
-                                    <span style="display:inline-block;margin-right:6px;line-height:1">📞</span>
-                                    <span>İletişim</span>
-                                    <span style="margin-left:8px;opacity:0.9">▾</span>
-                                </button>
-                            </li>
-                            <li id="mainAdminLink" style="display:none;">
-                                <a class="auth-btn" href="https://ern-cicek.com.tr/admin.html" target="_blank" rel="noopener" style="background:#3b7d3b;">Yönetici</a>
-                            </li>
-                            <li id="authContainer">
+                                <li id="cartContainer"><button id="cartBtn" class="cart-btn contact-btn" aria-controls="cartModal" aria-expanded="false" onclick="openCart()">Sepet <span id="cartCount" class="cart-count hidden">0</span></button></li>
+                                <li><button id="contactBtn" class="contact-btn" aria-expanded="false" aria-controls="contactPanel" onclick="toggleContact(event)"><span style="display:inline-block;margin-right:6px;line-height:1">📞</span><span>İletişim</span><span style="margin-left:8px;opacity:0.9">▾</span></button></li>
+                            </ul>
+                        </div>
+                        <div class="nav-bottom" style="display:flex;justify-content:flex-end;align-items:center;margin-top:0.4rem;">
+                            <div id="mainAdminLink" style="display:none; margin-right:0.6rem;"><a class="auth-btn" href="https://ern-cicek.com.tr/admin.html" target="_blank" rel="noopener" style="background:#3b7d3b;">Yönetici</a></div>
+                            <div id="authContainer" style="margin-left:0.6rem;">
                                 <button id="authBtn" class="auth-btn contact-btn" aria-controls="authModal" aria-expanded="false" onclick="openAuthModal()">Giriş / Kayıt</button>
-                            </li>
-                            <li id="userContainer" class="hidden">
+                            </div>
+                            <div id="userContainer" class="hidden" style="margin-left:0.6rem;display:flex;gap:0.4rem;align-items:center;">
                                 <span class="user-info" id="userName"></span>
                                 <button class="auth-btn" onclick="logout()">Çıkış</button>
-                            </li>
-                            <li id="cartContainer">
-                                <button id="cartBtn" class="cart-btn contact-btn" aria-controls="cartModal" aria-expanded="false" onclick="openCart()">
-                                    Sepet
-                                    <span id="cartCount" class="cart-count hidden">0</span>
-                                </button>
-                            </li>
-                        </ul>
+                            </div>
+                        </div>
                     </nav>
 
                     <!-- Mini cart dropdown (shown on hover/focus of cart button) -->
