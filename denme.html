@@ -30,6 +30,8 @@
             -moz-osx-font-smoothing: grayscale;
             min-height: 100%;
             padding-bottom: 4rem;
+            /* Prevent accidental horizontal scroll on small devices */
+            overflow-x: hidden;
         }
 
         /* Floral background SVG container: subtle, decorative */
@@ -368,12 +370,29 @@
         .cart-total { text-align:right; margin-top: 1rem; font-weight:700; color:#0b1220; }
 
         @media (max-width: 700px) {
+            /* Reduce large spacings and ensure elements wrap to fit small screens */
+            header nav { padding: 0 1rem; }
+            .logo { font-size: 1.2rem; }
+            .hero { padding: 3rem 1rem 4rem; }
             .hero h1 { font-size: 1.6rem; }
-            .product-image { height: 160px; font-size: 2.6rem; }
-            .product-card { padding: .8rem; border-radius: 10px; }
-            .modal-content { width: 95%; }
-            /* Mobile: make payment widget full width at bottom */
+            .hero .container { max-width: 100%; padding: 0 0.5rem; }
+            .products-wrapper { margin: -2rem auto 0; padding: 0 1rem 3rem; }
+            .products { gap: 1rem; }
+            .product-image { height: 140px; font-size: 2rem; }
+            .product-card { padding: 0.6rem; border-radius: 10px; }
+            .product-info { padding: 0.6rem 0 0; }
+            .product-price { font-size: 1.1rem; }
+            .product-name { font-size: 1rem; }
+            .modal-content { width: 95%; margin: 4% auto; }
+            /* Make nav links wrap and reduce spacing */
+            .nav-links { gap: 0.6rem; flex-wrap: wrap; align-items: center; }
+            .nav-links a, .auth-btn { padding: 0.4rem 0.6rem; font-size: 0.95rem; }
+            .cart-btn { padding: 0.4rem 0.6rem; }
+            /* Payment widget full width at bottom with small margins */
             #paymentWidget { right: 0.5rem; left: 0.5rem; width: auto; bottom: 1rem; }
+            footer { padding: 1.25rem; }
+            /* Slightly reduce the decorative SVG opacity on small screens */
+            #floral-bg { opacity: 0.06; }
         }
     </style>
 </head>
