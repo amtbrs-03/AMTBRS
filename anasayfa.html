@@ -172,391 +172,1160 @@
             font-size: 1.8rem;
             font-weight: bold;
             cursor: pointer;
-            transition: 0.25s;
-        }
-        .close:hover { color: #000; }
+            <!DOCTYPE html>
+            <html lang="tr">
+            <head>
+                <meta charset="UTF-8" />
+                <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+                    <title>ÇİÇEK DÜNYASINA HOŞGELDİNİZ</title>
+                    <meta name="description" content="ERN Tropikal Çiçek — Tropikal çiçek aranjmanları ve hızlı teslimat. Egzotik buketlerle evinize renk katın." />
+                    <meta name="theme-color" content="#0b2f1f" />
+                    <!-- Open Graph / Social -->
+                    <meta property="og:type" content="website" />
+                    <meta property="og:title" content="ERN Tropikal Çiçek — Tropikal Çiçeklerle Evinize Renk Katın" />
+                    <meta property="og:description" content="Egzotik dokunuşlarla mekanınıza ferahlık getiriyoruz. Buketler, aranjmanlar ve özel tasarımlar." />
+                    <meta property="og:url" content="https://ern-cicek.com.tr/" />
+                    <meta property="og:site_name" content="ERN Tropikal Çiçek" />
+                    <!-- Placeholder image: add a real image at /og-image.jpg for better sharing -->
+                    <meta property="og:image" content="/og-image.jpg" />
+                    <link rel="icon" href="/favicon.ico" />
+                    <script type="application/ld+json">
+                    {
+                        "@context": "https://schema.org",
+                        "@type": "Florist",
+                        "name": "ERN Tropikal Çiçek",
+                        "url": "https://ern-cicek.com.tr/",
+                        "telephone": "+90-5XX-XXX-XXXX",
+                        "email": "amtbrs@icloud.com",
+                        "address": {
+                            "@type": "PostalAddress",
+                            "streetAddress": "Adresiniz Caddesi 1",
+                            "addressLocality": "Şehir",
+                            "addressCountry": "TR"
+                        },
+                        "description": "Tropikal çiçek aranjmanları ve buketler. Hızlı teslimat ve özel tasarım seçenekleri.",
+                        "openingHours": "Mo-Sa 09:00-19:00"
+                    }
+                    </script>
+                <script>
+                    // Eğer kullanıcı www ile geldiyse, kök domaine (non-www) yönlendir
+                    (function(){
+                        try{
+                            if (location.hostname && location.hostname.indexOf('www.') === 0) {
+                                var target = location.protocol + '//' + location.hostname.replace(/^www\./,'') + location.pathname + location.search + location.hash;
+                                location.replace(target);
+                            }
+                        }catch(e){ /* ignore */ }
+                    })();
+                </script>
+                <style>
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                    html, body { height: 100%; }
+                    body {
+                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                        line-height: 1.6;
+                        color: #0b2f1f;
+                        /* Yeşil tema: yumuşak yeşil arka plan + hafif vinyet efektleri */
+                        background: radial-gradient(1200px 600px at 10% 10%, rgba(34,197,94,0.10), transparent),
+                                    radial-gradient(800px 400px at 90% 90%, rgba(16,185,129,0.08), transparent),
+                                    linear-gradient(180deg, #e6f7ec 0%, #064e3b 100%);
+                        -webkit-font-smoothing: antialiased;
+                        -moz-osx-font-smoothing: grayscale;
+                        min-height: 100%;
+                        padding-bottom: 4rem;
+                        /* Prevent accidental horizontal scroll on small devices */
+                        overflow-x: hidden;
+                    }
 
-        .form-group {
-            margin-bottom: 1rem;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: #0b1220;
-            font-weight: 600;
-        }
-        .form-group input {
-            width: 100%;
-            padding: 0.8rem;
-            border: 1px solid rgba(10,12,30,0.1);
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: 0.25s;
-        }
-        .form-group input:focus {
-            outline: none;
-            border-color: #6b46c1;
-            box-shadow: 0 0 0 3px rgba(107,70,193,0.1);
-        }
+                    /* Floral background SVG container: subtle, decorative */
+                    #floral-bg {
+                        position: fixed;
+                        left: 0;
+                        top: 0;
+                        width: 100%;
+                        height: 100%;
+                        pointer-events: none;
+                        z-index: 0; /* content will be placed above */
+                        opacity: 0.12;
+                        mix-blend-mode: overlay;
+                    }
 
-        .form-tabs {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        .form-tabs button {
-            flex: 1;
-            padding: 0.8rem;
-            border: 2px solid #ddd;
-            background: white;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: 0.25s;
-            color: #0b1220;
-            font-weight: 600;
-        }
-        .form-tabs button.active {
-            background: #6b46c1;
-            color: white;
-            border-color: #6b46c1;
-        }
+                    /* Ensure main content sits above the floral SVG */
+                    header, .hero, .products-wrapper, footer {
+                        position: relative;
+                        z-index: 1;
+                    }
 
-        .form-content { display: none; }
-        .form-content.active { display: block; }
+                    /* Gentle float animation for decorative flowers inside SVG */
+                    @keyframes floatY {
+                        0% { transform: translateY(0) translateX(0) rotate(0deg); }
+                        50% { transform: translateY(-12px) translateX(6px) rotate(3deg); }
+                        100% { transform: translateY(0) translateX(0) rotate(0deg); }
+                    }
 
-        /* Products scene */
-        .products-wrapper {
-            max-width: 1200px;
-            margin: -4rem auto 0;
-            padding: 0 2rem 3rem;
-            perspective: 1400px;
-        }
-        .products {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-            transform-style: preserve-3d;
-        }
+                    header {
+                        background: rgba(30, 143, 85, 0.6);
+                        color: white;
+                        padding: 1rem 0;
+                        position: sticky;
+                        top: 0;
+                        z-index: 100;
+                        backdrop-filter: blur(6px);
+                        border-bottom: 1px solid rgba(255,255,255,0.04);
+                    }
+                    nav {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        max-width: 1200px;
+                        margin: 0 auto;
+                        padding: 0 2rem;
+                    }
+                    :root{ --brand:#0b693d; --accent:#0b693d; --muted:#6b7280; }
 
-        .product-card {
-            position: relative;
-            background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(245,245,255,0.9));
-            border-radius: 12px;
-            overflow: visible;
-            padding: 1rem;
-            box-shadow:
-                0 30px 60px rgba(2,6,23,0.6),
-                0 8px 18px rgba(2,6,23,0.35),
-                inset 0 1px 0 rgba(255,255,255,0.6);
-            transform-style: preserve-3d;
-            transition: transform 400ms cubic-bezier(.2,.9,.2,1), box-shadow 300ms;
-            will-change: transform;
-            cursor: default;
-            border: 1px solid rgba(10,12,30,0.06);
-        }
+                    .logo {
+                        font-size: 1.35rem;
+                        font-weight: 700;
+                        letter-spacing: .6px;
+                        color: #fff;
+                        text-shadow: 0 6px 18px rgba(6,95,58,0.18);
+                    }
+                    .nav-links { list-style: none; display: flex; gap: 1.5rem; align-items: center; }
+                    .nav-links a { color: rgba(255,255,255,0.9); text-decoration: none; transition: 0.25s; }
+                    .nav-links a:hover { color: #b8d4ff; transform: translateY(-2px); }
+                    .auth-btn { background: #6b897f; padding: 0.6rem 1.2rem; border-radius: 8px; cursor: pointer; border: none; color: white; transition: 0.25s; }
+                    .auth-btn:hover { background: #a2444b; }
+                    .user-info { color: rgba(255,255,255,0.9); }
 
-        .product-card::before,
-        .product-card::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            border-radius: 12px;
-            z-index: -2;
-            transition: transform 400ms, opacity 400ms;
-        }
-        .product-card::before {
-            background: linear-gradient(180deg, rgba(118,75,162,0.06), rgba(102,126,234,0.03));
-            transform: translateZ(-30px) scale(.98);
-            filter: blur(18px);
-            opacity: 0.9;
-        }
-        .product-card::after {
-            background: linear-gradient(180deg, rgba(0,0,0,0.08), transparent);
-            transform: translateZ(-60px) scale(.96);
-            filter: blur(30px);
-            opacity: 0.7;
-        }
+                    .cart-btn {
+                        position: relative;
+                        background: rgba(255,255,255,0.06);
+                        border: 1px solid rgba(255,255,255,0.06);
+                        color: rgba(255,255,255,0.95);
+                        padding: 0.5rem 0.8rem;
+                        border-radius: 8px;
+                        cursor: pointer;
+                    }
+                    .cart-count {
+                        position: absolute;
+                        top: -6px;
+                        right: -6px;
+                        background: #ff4d6d;
+                        color: white;
+                        font-size: 0.75rem;
+                        padding: 2px 6px;
+                        border-radius: 999px;
+                        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+                    }
 
-        .product-card:hover {
-            transform: rotateY(8deg) rotateX(6deg) translateY(-12px) translateZ(30px) scale(1.02);
-            box-shadow:
-                0 60px 120px rgba(2,6,23,0.7),
-                0 20px 40px rgba(2,6,23,0.45);
-        }
-        .product-image {
-            width: 100%;
-            height: 180px;
-            background: linear-gradient(135deg, rgba(102,126,234,0.12), rgba(118,75,162,0.08));
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3.2rem;
-            transform: translateZ(60px);
-            transition: transform 350ms cubic-bezier(.2,.9,.2,1);
-            box-shadow: 0 18px 40px rgba(102,126,234,0.12), inset 0 -6px 18px rgba(0,0,0,0.06);
-            margin-bottom: .9rem;
-            user-select: none;
-        }
-        .product-card:hover .product-image {
-            transform: translateZ(90px) translateY(-6px) rotateZ(-2deg);
-        }
+                    .hero {
+                        color: white;
+                        padding: 5rem 2rem 6rem;
+                        text-align: center;
+                        position: relative;
+                        overflow: visible;
+                    }
+                    .hero .container {
+                        max-width: 1000px;
+                        margin: 0 auto;
+                        transform-style: preserve-3d;
+                        perspective: 1200px;
+                    }
+                    .hero h1 {
+                        font-size: 2.2rem;
+                        margin-bottom: .6rem;
+                        text-shadow: 0 8px 30px rgba(0,0,0,0.6), 0 2px 6px rgba(102,126,234,0.15);
+                        transform: translateZ(30px);
+                    }
+                    .hero p {
+                        opacity: .95;
+                        transform: translateZ(20px);
+                    }
 
-        .product-info {
-            padding: 0.8rem 0 0;
-            transform: translateZ(40px);
-        }
-        .product-name {
-            font-size: 1.05rem;
-            margin-bottom: .5rem;
-            color: #0b1220;
-            font-weight: 600;
-            letter-spacing: .2px;
-        }
-        .product-price {
-            color: #6b46c1;
-            font-size: 1.3rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-            text-shadow: 0 6px 18px rgba(107,70,193,0.08);
-        }
+                    /* Modal base */
+                    .modal {
+                        display: none;
+                        position: fixed;
+                        z-index: 1000;
+                        left: 0;
+                        top: 0;
+                        width: 100%;
+                        height: 100%;
+                        background-color: rgba(0,0,0,0.5);
+                        animation: fadeIn 0.3s;
+                    }
+                    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+                    .modal-content {
+                        /* Arka fonu yeşile dönük gradient ile güncellendi */
+                        background: linear-gradient(180deg, #e6f7ec 0%, #c2e9c7 100%);
+                        margin: 6% auto;
+                        padding: 2rem;
+                        border-radius: 16px;
+                        width: 92%;
+                        max-width: 520px;
+                        box-shadow: 0 30px 60px rgba(0,0,0,0.4);
+                        animation: slideDown 0.3s;
+                        max-height: 80vh;
+                        overflow-y: auto;
+                    }
+                    @keyframes slideDown { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        /* Buttons - professional, consistent */
-        .btn, button {
-            background: linear-gradient(180deg,var(--brand), #0a5c35);
-            color: white;
-            border: none;
-            padding: 0.7rem 1rem;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: transform 180ms ease, box-shadow 180ms ease;
-            width: 100%;
-            box-shadow: 0 8px 22px rgba(6,95,58,0.14);
-            transform: translateZ(20px);
-            font-weight: 600;
-        }
-        .btn.btn-ghost, .btn.ghost { background: transparent; color: var(--brand); border: 1px solid rgba(11,105,61,0.08); width: auto }
-        .btn.small { padding: 0.4rem 0.6rem; border-radius: 8px; width: auto }
+                    .close {
+                        color: #aaa;
+                        float: right;
+                        font-size: 1.8rem;
+                        font-weight: bold;
+                        cursor: pointer;
+                        transition: 0.25s;
+                    }
+                    .close:hover { color: #000; }
 
-        footer {
-            background: rgba(28,36,50,0.6);
-            color: rgba(255,255,255,0.85);
-            text-align: center;
-            padding: 2rem;
-            margin-top: 3rem;
-            border-top: 1px solid rgba(255,255,255,0.03);
-            position: relative;
-            transform: translateZ(10px);
-        }
+                    .form-group {
+                        margin-bottom: 1rem;
+                    }
+                    .form-group label {
+                        display: block;
+                        margin-bottom: 0.5rem;
+                        color: #0b1220;
+                        font-weight: 600;
+                    }
+                    .form-group input {
+                        width: 100%;
+                        padding: 0.8rem;
+                        border: 1px solid rgba(10,12,30,0.1);
+                        border-radius: 8px;
+                        font-size: 1rem;
+                        transition: 0.25s;
+                    }
+                    .form-group input:focus {
+                        outline: none;
+                        border-color: #6b46c1;
+                        box-shadow: 0 0 0 3px rgba(107,70,193,0.1);
+                    }
 
-        .hidden { display: none; }
+                    .form-tabs {
+                        display: flex;
+                        gap: 1rem;
+                        margin-bottom: 1.5rem;
+                    }
+                    .form-tabs button {
+                        flex: 1;
+                        padding: 0.8rem;
+                        border: 2px solid #ddd;
+                        background: white;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        transition: 0.25s;
+                        color: #0b1220;
+                        font-weight: 600;
+                    }
+                    .form-tabs button.active {
+                        background: #6b46c1;
+                        color: white;
+                        border-color: #6b46c1;
+                    }
 
-        /* Cart styles */
-        .cart-items { list-style: none; margin: 0; padding: 0; }
-        .cart-item {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.6rem 0;
-            border-bottom: 1px dashed rgba(10,12,30,0.06);
-        }
-        .cart-item .ci-name { flex: 1; font-weight: 600; color: #0b1220; }
-        .ci-meta { color: #6b46c1; font-weight: 700; }
-        .qty-controls { display:flex; gap:0.5rem; align-items:center; }
-        .qty-controls button { padding: 0.25rem 0.5rem; font-size: 0.9rem; border-radius: 6px; width: auto; }
+                    .form-content { display: none; }
+                    .form-content.active { display: block; }
 
-        .cart-actions { display:flex; gap:0.75rem; margin-top:1rem; }
-        .cart-total { text-align:right; margin-top: 1rem; font-weight:700; color:#0b1220; }
+                    /* Products scene */
+                    .products-wrapper {
+                        max-width: 1200px;
+                        margin: -4rem auto 0;
+                        padding: 0 2rem 3rem;
+                        perspective: 1400px;
+                    }
+                    .products {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                        gap: 2rem;
+                        transform-style: preserve-3d;
+                    }
 
-        @media (max-width: 700px) {
-            /* Reduce large spacings and ensure elements wrap to fit small screens */
-            header nav { padding: 0 1rem; }
-            .logo { font-size: 1.2rem; }
-            .hero { padding: 3rem 1rem 4rem; }
-            .hero .container { max-width: 100%; padding: 0 0.5rem; }
-            .products-wrapper { margin: -2rem auto 0; padding: 0 1rem 3rem; }
-            .products { gap: 1rem; }
-            .product-image { height: 140px; font-size: 2rem; }
-            .product-card { padding: 0.6rem; border-radius: 10px; }
-            .product-info { padding: 0.6rem 0 0; }
-            .product-price { font-size: 1.1rem; }
-            .product-name { font-size: 1rem; }
-            .modal-content { width: 95%; margin: 4% auto; }
-            /* Make nav links wrap and reduce spacing */
-            .nav-links { gap: 0.6rem; flex-wrap: wrap; align-items: center; }
-            .nav-links a, .auth-btn { padding: 0.4rem 0.6rem; font-size: 0.95rem; }
-            .cart-btn { padding: 0.4rem 0.6rem; }
-            /* Payment widget full width at bottom with small margins */
-            #paymentWidget { right: 0.5rem; left: 0.5rem; width: auto; bottom: 1rem; }
-            footer { padding: 1.25rem; }
-            /* Slightly reduce the decorative SVG opacity on small screens */
-            #floral-bg { opacity: 0.06; }
-        }
-    </style>
-</head>
-<body>
-    <!-- Decorative floral SVG background (purely visual) -->
-    <svg id="floral-bg" aria-hidden="true" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
-        <defs>
-            <linearGradient id="pg1" x1="0" x2="1">
-                <stop offset="0%" stop-color="#FFFBF0" stop-opacity="0.95"/>
-                <stop offset="100%" stop-color="#F0FFF6" stop-opacity="0.95"/>
-            </linearGradient>
-        </defs>
-        <rect width="1200" height="800" fill="url(#pg1)" />
+                    .product-card {
+                        position: relative;
+                        background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(245,245,255,0.9));
+                        border-radius: 12px;
+                        overflow: visible;
+                        padding: 1rem;
+                        box-shadow:
+                            0 30px 60px rgba(2,6,23,0.6),
+                            0 8px 18px rgba(2,6,23,0.35),
+                            inset 0 1px 0 rgba(255,255,255,0.6);
+                        transform-style: preserve-3d;
+                        transition: transform 400ms cubic-bezier(.2,.9,.2,1), box-shadow 300ms;
+                        will-change: transform;
+                        cursor: default;
+                        border: 1px solid rgba(10,12,30,0.06);
+                    }
 
-        <!-- flowers: grouped shapes with subtle colors -->
-        <g class="flower f1" transform="translate(120,140) scale(1)">
-            <g style="transform-origin: center; animation: floatY 8s ease-in-out infinite;">
-                <circle cx="0" cy="0" r="10" fill="#FFB6C1" opacity="0.95" />
-                <g fill="#FFDFE4" opacity="0.9">
-                    <ellipse rx="8" ry="16" cx="0" cy="-16" transform="rotate(0)" />
-                    <ellipse rx="8" ry="16" cx="0" cy="16" transform="rotate(180)" />
-                    <ellipse rx="8" ry="16" cx="-16" cy="0" transform="rotate(-90)" />
-                    <ellipse rx="8" ry="16" cx="16" cy="0" transform="rotate(90)" />
-                </g>
-            </g>
-        </g>
+                    .product-card::before,
+                    .product-card::after {
+                        content: "";
+                        position: absolute;
+                        inset: 0;
+                        border-radius: 12px;
+                        z-index: -2;
+                        transition: transform 400ms, opacity 400ms;
+                    }
+                    .product-card::before {
+                        background: linear-gradient(180deg, rgba(118,75,162,0.06), rgba(102,126,234,0.03));
+                        transform: translateZ(-30px) scale(.98);
+                        filter: blur(18px);
+                        opacity: 0.9;
+                    }
+                    .product-card::after {
+                        background: linear-gradient(180deg, rgba(0,0,0,0.08), transparent);
+                        transform: translateZ(-60px) scale(.96);
+                        filter: blur(30px);
+                        opacity: 0.7;
+                    }
 
-        <g class="flower f2" transform="translate(980,120) scale(1.6)">
-            <g style="transform-origin: center; animation: floatY 10s ease-in-out -2s infinite;">
-                <circle cx="0" cy="0" r="12" fill="#C8FACC" opacity="0.95" />
-                <g fill="#E8FFF2" opacity="0.9">
-                    <ellipse rx="10" ry="20" cx="0" cy="-18" />
-                    <ellipse rx="10" ry="20" cx="0" cy="18" />
-                    <ellipse rx="10" ry="20" cx="-18" cy="0" />
-                    <ellipse rx="10" ry="20" cx="18" cy="0" />
-                </g>
-            </g>
-        </g>
+                    .product-card:hover {
+                        transform: rotateY(8deg) rotateX(6deg) translateY(-12px) translateZ(30px) scale(1.02);
+                        box-shadow:
+                            0 60px 120px rgba(2,6,23,0.7),
+                            0 20px 40px rgba(2,6,23,0.45);
+                    }
+                    .product-image {
+                        width: 100%;
+                        height: 180px;
+                        background: linear-gradient(135deg, rgba(102,126,234,0.12), rgba(118,75,162,0.08));
+                        border-radius: 8px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 3.2rem;
+                        transform: translateZ(60px);
+                        transition: transform 350ms cubic-bezier(.2,.9,.2,1);
+                        box-shadow: 0 18px 40px rgba(102,126,234,0.12), inset 0 -6px 18px rgba(0,0,0,0.06);
+                        margin-bottom: .9rem;
+                        user-select: none;
+                    }
+                    .product-card:hover .product-image {
+                        transform: translateZ(90px) translateY(-6px) rotateZ(-2deg);
+                    }
 
-        <g class="flower f3" transform="translate(640,560) scale(1.2)">
-            <g style="transform-origin: center; animation: floatY 9s ease-in-out -4s infinite;">
-                <circle cx="0" cy="0" r="14" fill="#FFEFD5" opacity="0.95" />
-                <g fill="#FFF5E6" opacity="0.9">
-                    <ellipse rx="12" ry="22" cx="0" cy="-20" />
-                    <ellipse rx="12" ry="22" cx="0" cy="20" />
-                    <ellipse rx="12" ry="22" cx="-20" cy="0" />
-                    <ellipse rx="12" ry="22" cx="20" cy="0" />
-                </g>
-            </g>
-        </g>
+                    .product-info {
+                        padding: 0.8rem 0 0;
+                        transform: translateZ(40px);
+                    }
+                    .product-name {
+                        font-size: 1.05rem;
+                        margin-bottom: .5rem;
+                        color: #0b1220;
+                        font-weight: 600;
+                        letter-spacing: .2px;
+                    }
+                    .product-price {
+                        color: #6b46c1;
+                        font-size: 1.3rem;
+                        font-weight: 700;
+                        margin-bottom: 1rem;
+                        text-shadow: 0 6px 18px rgba(107,70,193,0.08);
+                    }
 
-    </svg>
+                    /* Buttons - professional, consistent */
+                    .btn, button {
+                        background: linear-gradient(180deg,var(--brand), #0a5c35);
+                        color: white;
+                        border: none;
+                        padding: 0.7rem 1rem;
+                        border-radius: 10px;
+                        cursor: pointer;
+                        transition: transform 180ms ease, box-shadow 180ms ease;
+                        width: 100%;
+                        box-shadow: 0 8px 22px rgba(6,95,58,0.14);
+                        transform: translateZ(20px);
+                        font-weight: 600;
+                    }
+                    .btn.btn-ghost, .btn.ghost { background: transparent; color: var(--brand); border: 1px solid rgba(11,105,61,0.08); width: auto }
+                    .btn.small { padding: 0.4rem 0.6rem; border-radius: 8px; width: auto }
+                    button:hover {
+                        transform: translateY(-6px) translateZ(48px) scale(1.01);
+                        box-shadow: 0 18px 48px rgba(91,44,168,0.48);
+                    }
 
-    <header>
-        <nav>
-            <div class="logo"><img src="/logo.svg" alt="logo" style="height:28px; vertical-align:middle; margin-right:8px">ERN Çiçek</div>
-            <ul class="nav-links">
-                <li><a href="/anasayfa.html">Anasayfa</a></li>
-                <li><a href="/odeme.html">Ödeme</a></li>
-                <li><a href="/admin.html">Admin</a></li>
-                <li><button id="cartBtn" class="cart-btn">Sepet <span id="cartCount" class="cart-count hidden">0</span></button></li>
-            </ul>
-        </nav>
-    </header>
+                    footer {
+                        background: rgba(28,36,50,0.6);
+                        color: rgba(255,255,255,0.85);
+                        text-align: center;
+                        padding: 2rem;
+                        margin-top: 3rem;
+                        border-top: 1px solid rgba(255,255,255,0.03);
+                        position: relative;
+                        transform: translateZ(10px);
+                    }
 
-    <main>
-        <section class="hero">
-            <div class="container">
-                <h1>Taze Çiçekler, Hızlı Teslimat</h1>
-                <p>Özel günlerin için el yapımı aranjmanlar — sevgiyle hazırlanır ve kapına teslim edilir.</p>
-                <div style="margin-top:1.25rem; display:flex; gap:0.75rem; justify-content:center;">
-                    <a class="btn" href="#products">Ürünlere Gözat</a>
-                    <a class="btn btn-ghost" href="/odeme.html">İban ile Ödeme</a>
+                    .hidden { display: none; }
+
+                    /* Cart styles */
+                    .cart-items { list-style: none; margin: 0; padding: 0; }
+                    .cart-item {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.75rem;
+                        padding: 0.6rem 0;
+                        border-bottom: 1px dashed rgba(10,12,30,0.06);
+                    }
+                    .cart-item .ci-name { flex: 1; font-weight: 600; color: #0b1220; }
+                    .ci-meta { color: #6b46c1; font-weight: 700; }
+                    .qty-controls { display:flex; gap:0.5rem; align-items:center; }
+                    .qty-controls button { padding: 0.25rem 0.5rem; font-size: 0.9rem; border-radius: 6px; width: auto; }
+
+                    .cart-actions { display:flex; gap:0.75rem; margin-top:1rem; }
+                    .cart-total { text-align:right; margin-top: 1rem; font-weight:700; color:#0b1220; }
+
+                    @media (max-width: 700px) {
+                        /* Reduce large spacings and ensure elements wrap to fit small screens */
+                        header nav { padding: 0 1rem; }
+                        .logo { font-size: 1.2rem; }
+                        .hero { padding: 3rem 1rem 4rem; }
+                        .hero h1 { font-size: 1.6rem; }
+                        .hero .container { max-width: 100%; padding: 0 0.5rem; }
+                        .products-wrapper { margin: -2rem auto 0; padding: 0 1rem 3rem; }
+                        .products { gap: 1rem; }
+                        .product-image { height: 140px; font-size: 2rem; }
+                        .product-card { padding: 0.6rem; border-radius: 10px; }
+                        .product-info { padding: 0.6rem 0 0; }
+                        .product-price { font-size: 1.1rem; }
+                        .product-name { font-size: 1rem; }
+                        .modal-content { width: 95%; margin: 4% auto; }
+                        /* Make nav links wrap and reduce spacing */
+                        .nav-links { gap: 0.6rem; flex-wrap: wrap; align-items: center; }
+                        .nav-links a, .auth-btn { padding: 0.4rem 0.6rem; font-size: 0.95rem; }
+                        .cart-btn { padding: 0.4rem 0.6rem; }
+                        /* Payment widget full width at bottom with small margins */
+                        #paymentWidget { right: 0.5rem; left: 0.5rem; width: auto; bottom: 1rem; }
+                        footer { padding: 1.25rem; }
+                        /* Slightly reduce the decorative SVG opacity on small screens */
+                        #floral-bg { opacity: 0.06; }
+                    }
+                </style>
+            </head>
+            <body>
+                <!-- Decorative floral SVG background (purely visual) -->
+                <svg id="floral-bg" aria-hidden="true" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
+                    <defs>
+                        <linearGradient id="pg1" x1="0" x2="1">
+                            <stop offset="0%" stop-color="#FFFBF0" stop-opacity="0.95"/>
+                            <stop offset="100%" stop-color="#F0FFF6" stop-opacity="0.95"/>
+                        </linearGradient>
+                    </defs>
+                    <rect width="1200" height="800" fill="url(#pg1)" />
+
+                    <!-- flowers: grouped shapes with subtle colors -->
+                    <g class="flower f1" transform="translate(120,140) scale(1)">
+                        <g style="transform-origin: center; animation: floatY 8s ease-in-out infinite;">
+                            <circle cx="0" cy="0" r="10" fill="#FFB6C1" opacity="0.95" />
+                            <g fill="#FFDFE4" opacity="0.9">
+                                <ellipse rx="8" ry="16" cx="0" cy="-16" transform="rotate(0)" />
+                                <ellipse rx="8" ry="16" cx="0" cy="16" transform="rotate(180)" />
+                                <ellipse rx="8" ry="16" cx="-16" cy="0" transform="rotate(-90)" />
+                                <ellipse rx="8" ry="16" cx="16" cy="0" transform="rotate(90)" />
+                            </g>
+                        </g>
+                    </g>
+
+                    <g class="flower f2" transform="translate(980,120) scale(1.6)">
+                        <g style="transform-origin: center; animation: floatY 10s ease-in-out -2s infinite;">
+                            <circle cx="0" cy="0" r="12" fill="#C8FACC" opacity="0.95" />
+                            <g fill="#E8FFF2" opacity="0.9">
+                                <ellipse rx="10" ry="20" cx="0" cy="-18" />
+                                <ellipse rx="10" ry="20" cx="0" cy="18" />
+                                <ellipse rx="10" ry="20" cx="-18" cy="0" />
+                                <ellipse rx="10" ry="20" cx="18" cy="0" />
+                            </g>
+                        </g>
+                    </g>
+
+                    <g class="flower f3" transform="translate(640,560) scale(1.2)">
+                        <g style="transform-origin: center; animation: floatY 9s ease-in-out -4s infinite;">
+                            <circle cx="0" cy="0" r="14" fill="#FFEFD5" opacity="0.95" />
+                            <g fill="#FFF5E6" opacity="0.9">
+                                <ellipse rx="12" ry="22" cx="0" cy="-20" />
+                                <ellipse rx="12" ry="22" cx="0" cy="20" />
+                                <ellipse rx="12" ry="22" cx="-20" cy="0" />
+                                <ellipse rx="12" ry="22" cx="20" cy="0" />
+                            </g>
+                        </g>
+                    </g>
+
+                    <g class="flower f4" transform="translate(300,620) scale(1.4)">
+                        <g style="transform-origin: center; animation: floatY 11s ease-in-out -1s infinite;">
+                            <circle cx="0" cy="0" r="9" fill="#FFD6EA" opacity="0.95" />
+                            <g fill="#FFF0F6" opacity="0.9">
+                                <ellipse rx="7" ry="14" cx="0" cy="-14" />
+                                <ellipse rx="7" ry="14" cx="0" cy="14" />
+                                <ellipse rx="7" ry="14" cx="-14" cy="0" />
+                                <ellipse rx="7" ry="14" cx="14" cy="0" />
+                            </g>
+                        </g>
+                    </g>
+                </svg>
+                <header>
+                    <nav>
+                        <a href="/" class="logo" aria-label="ERN-ÇİÇEK - Ana Sayfa" style="display:inline-block;">
+                            <img src="/logo.svg" alt="ERN-ÇİÇEK" style="height:36px; display:block;" />
+                        </a>
+                        <ul class="nav-links">
+                            <li><a href="#home">Ana Sayfa</a></li>
+                            <li><a href="#products">Ürünler</a></li>
+                            <li><a href="#about">Hakkında</a></li>
+                            <li><a href="#contact">İletişim</a></li>
+                            <li id="mainAdminLink" style="display:none;">
+                                <a class="auth-btn" href="https://ern-cicek.com.tr/admin.html" target="_blank" rel="noopener" style="background:#3b7d3b;">Yönetici</a>
+                            </li>
+                            <li id="authContainer">
+                                <button class="auth-btn" onclick="openAuthModal()">Giriş / Kayıt</button>
+                            </li>
+                            <li id="userContainer" class="hidden">
+                                <span class="user-info" id="userName"></span>
+                                <button class="auth-btn" onclick="logout()">Çıkış</button>
+                            </li>
+                            <li id="cartContainer">
+                                <button id="cartBtn" class="cart-btn" onclick="openCart()">
+                                    Sepet
+                                    <span id="cartCount" class="cart-count hidden">0</span>
+                                </button>
+                            </li>
+                        </ul>
+                    </nav>
+                </header>
+
+                <!-- Auth Modal -->
+                <div id="authModal" class="modal">
+                    <div class="modal-content">
+                        <span class="close" onclick="closeAuthModal()">&times;</span>
+                        <h2 style="margin-bottom: 1.5rem; color: #0b1220;">Hoşgeldiniz</h2>
+            
+                        <div class="form-tabs">
+                            <button class="form-tab active" onclick="switchTab('login', this)">Giriş</button>
+                            <button class="form-tab" onclick="switchTab('register', this)">Kayıt</button>
+                        </div>
+                        <div id="adminBtnRow" style="text-align:right; margin-bottom:1rem;">
+                            <button class="auth-btn" style="background:#2e7d32; margin-top:0.5rem;" onclick="window.open('admin.html','_blank')">Admin Girişi</button>
+                        </div>
+
+                        <!-- Giriş Formu -->
+                        <div id="login" class="form-content active">
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" id="loginEmail" placeholder="Email adresiniz">
+                            </div>
+                            <div class="form-group">
+                                <label>Telefon</label>
+                                <input type="tel" id="loginPhone" placeholder="Telefon numaranız" pattern="[0-9]{10,15}">
+                            </div>
+                            <div class="form-group">
+                                <label>Şifre</label>
+                                <input type="password" id="loginPassword" placeholder="Şifreniz">
+                            </div>
+                            <button onclick="loginUser()" style="width: 100%; margin-top: 1rem;">Giriş Yap</button>
+                        </div>
+
+                        <!-- Kayıt Formu -->
+                        <div id="register" class="form-content">
+                            <div class="form-group">
+                                <label>Ad Soyad</label>
+                                <input type="text" id="registerName" placeholder="Ad Soyadınız">
+                            </div>
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" id="registerEmail" placeholder="Email adresiniz">
+                            </div>
+                            <div class="form-group">
+                                <label>Telefon</label>
+                                <input type="tel" id="registerPhone" placeholder="Telefon numaranız" pattern="[0-9]{10,15}">
+                            </div>
+                            <div class="form-group">
+                                <label>Şifre</label>
+                                <input type="password" id="registerPassword" placeholder="Şifreniz">
+                            </div>
+                            <div class="form-group">
+                                <label>Şifre Tekrar</label>
+                                <input type="password" id="registerPassword2" placeholder="Şifreniz tekrar" style="width:100%; padding:0.8rem; border:1px solid rgba(10,12,30,0.1); border-radius:8px; font-size:1rem; transition:0.25s;">
+                            </div>
+                            <button onclick="registerUser()" style="width: 100%; margin-top: 1rem;">Kayıt Ol</button>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </section>
 
-        <section id="products" class="products-wrapper">
-            <div class="products">
-                <article class="product-card">
-                    <div class="product-image">🌸</div>
-                    <div class="product-info">
-                        <div class="product-name">Mevsim Buketi</div>
-                        <div class="product-price">₺120</div>
-                        <button class="btn add-to-cart">Sepete Ekle</button>
+                <!-- Bottom-right payment widget (compact, non-page) -->
+                <div id="paymentWidget" class="hidden" style="position:fixed; right:1rem; bottom:1rem; width:320px; max-width:92%; z-index:1100;">
+                    <div style="background:#fff;border-radius:12px;box-shadow:0 18px 40px rgba(2,6,23,0.2);overflow:hidden;border:1px solid rgba(10,12,30,0.06);">
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0.8rem;background:linear-gradient(90deg,#f7fafc,#eef2ff);border-bottom:1px solid rgba(0,0,0,0.04);">
+                            <strong style="color:#0b1220">Ödeme (Havale/EFT)</strong>
+                            <button onclick="closePaymentWidget()" style="background:transparent;border:none;font-size:1.1rem;cursor:pointer;padding:0 6px;">✕</button>
+                        </div>
+                        <div style="padding:0.85rem;">
+                            <div style="font-size:0.95rem;color:#334155">Lütfen aşağıdaki IBAN'a ödeme yapınız. Ödeme sonrası 'Siparişi Bildir' butonunu kullanın.</div>
+                            <div id="widgetIban" style="font-family:monospace;font-size:1rem;margin-top:0.6rem;color:#0b1220;word-break:break-all">xxxxxxxxxxxxxxx</div>
+                            <div id="widgetTotal" style="margin-top:0.5rem;font-weight:700;color:#0b1220">Toplam: ₺0.00</div>
+                            <div style="display:flex;gap:0.5rem;margin-top:0.8rem;">
+                                <button onclick="copyIbanFromWidget()" style="flex:1;background:#2563eb;color:#fff;padding:0.5rem;border-radius:8px;border:none;">IBAN'ı Kopyala</button>
+                                <button onclick="openFullPaymentPageFromWidget()" style="flex:1;background:#6b7280;color:#fff;padding:0.5rem;border-radius:8px;border:none;">Tam Sayfa</button>
+                            </div>
+                            <div style="display:flex;gap:0.5rem;margin-top:0.6rem;">
+                                <button onclick="sendBankNotificationFromWidget()" style="flex:1;background:#10b981;color:#fff;padding:0.55rem;border-radius:8px;border:none;font-weight:700;">Siparişi Bildir</button>
+                                <button onclick="closePaymentWidget()" style="flex:1;background:#e53e3e;color:#fff;padding:0.55rem;border-radius:8px;border:none;">İptal</button>
+                            </div>
+                        </div>
                     </div>
-                </article>
-                <article class="product-card">
-                    <div class="product-image">💐</div>
-                    <div class="product-info">
-                        <div class="product-name">Luxe Aranjman</div>
-                        <div class="product-price">₺240</div>
-                        <button class="btn add-to-cart">Sepete Ekle</button>
+                </div>
+
+                        <!-- Bank Transfer Modal - show IBAN and instructions -->
+                        <div id="bankModal" class="modal">
+                            <div class="modal-content">
+                                <span class="close" onclick="closeBank()">&times;</span>
+                                <h2 style="margin-bottom: 1rem; color: #0b1220;">Havale / EFT ile Ödeme</h2>
+                                <div id="bankBody">
+                                    <p>Lütfen aşağıdaki IBAN'a havale/eft yapınız. Ödeme yapıldıktan sonra siparişi manuel olarak onaylayacağız.</p>
+                                    <div style="background:#f7f7fb; padding:1rem; border-radius:8px; margin-top:0.75rem;">
+                                        <strong>IBAN:</strong>
+                                        <div id="siteIban" style="font-family:monospace; font-size:1.05rem; margin-top:0.5rem;">xxxxxxxxxxxxxxx</div>
+                                        <div style="margin-top:0.5rem; display:flex; gap:0.5rem;">
+                                            <button onclick="copyIban()">IBAN'ı Kopyala</button>
+                                            <button onclick="openPaymentPage()" style="background:#2563eb; color:#fff;">IBAN'e Git</button>
+                                        </div>
+                                    </div>
+
+                                    <div style="margin-top:1rem;">
+                                        <label for="payerEmail" style="display:block; font-weight:600; margin-bottom:0.4rem;">E-posta Adresiniz (sipariş onayı için)</label>
+                                        <input id="payerEmail" type="email" placeholder="you@example.com" style="width:100%; padding:0.6rem; border:1px solid #ddd; border-radius:6px;" />
+                                    </div>
+
+                                    <div id="bankAmount" style="margin-top:0.75rem; font-weight:700; color:#0b1220;">Toplam: ₺0.00</div>
+
+                                    <div style="margin-top:1rem; display:flex; gap:0.5rem;">
+                                        <button onclick="sendBankNotification()" style="flex:1;">Siparişi Bildir (E-posta Gönder)</button>
+                                        <button onclick="closeBank()" style="flex:1; background:#6b7280">İptal</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                <!-- Cart Modal -->
+                <div id="cartModal" class="modal">
+                    <div class="modal-content">
+                        <span class="close" onclick="closeCart()">&times;</span>
+                        <h2 style="margin-bottom: 1rem; color: #0b1220;">Sepetiniz</h2>
+                        <div id="cartBody">
+                            <ul id="cartItems" class="cart-items"></ul>
+                            <div id="emptyCart" style="text-align:center; color:#555; padding:1rem 0;">Sepetiniz boş.</div>
+                            <div class="cart-total" id="cartTotal"></div>
+                            <div class="cart-actions">
+                                <button onclick="clearCart()" style="flex:1; background:#e53e3e">Sepeti Temizle</button>
+                                <button onclick="checkout()" style="flex:1; background:#2b6cb0">Satın Al</button>
+                            </div>
+                        </div>
                     </div>
-                </article>
-                <article class="product-card">
-                    <div class="product-image">🌺</div>
-                    <div class="product-info">
-                        <div class="product-name">Gül Sepeti</div>
-                        <div class="product-price">₺160</div>
-                        <button class="btn add-to-cart">Sepete Ekle</button>
+                </div>
+
+                <section class="hero" id="home">
+                    <div class="container">
+                        <h1>Tropikal Çiçeklerle Evinize Renk Katın</h1>
+                        <p>Egzotik dokunuşlarla mekanınıza ferahlık getiriyoruz</p>
                     </div>
-                </article>
-            </div>
-        </section>
-    </main>
+                </section>
 
-    <footer>
-        <div>© <span id="year"></span> ERN Çiçek — Tüm hakları saklıdır.</div>
-    </footer>
+                <div class="products-wrapper">
+                    <section class="products" id="products">
+                        <div class="product-card" data-id="1" data-name="Ürün 1" data-price="99.99">
+                            <div class="product-image">🛍️</div>
+                            <div class="product-info">
+                                <div class="product-name">Ürün 1</div>
+                                <div class="product-price">₺99.99</div>
+                                <button onclick="addToCartFromBtn(this)">Sepete Ekle</button>
+                            </div>
+                        </div>
 
-    <div id="cartContainer" class="modal">
-        <div class="modal-content">
-            <span class="close" id="closeCart">&times;</span>
-            <h3>Sepetiniz</h3>
-            <ul id="cartItems" class="cart-items"></ul>
-            <div class="cart-total">Toplam: <span id="cartTotal">₺0</span></div>
-            <div class="cart-actions">
-                <button id="checkoutBtn" class="btn">Ödeme</button>
-                <button id="clearCart" class="btn btn-ghost">Temizle</button>
-            </div>
-        </div>
-    </div>
+                        <div class="product-card" data-id="2" data-name="Ürün 2" data-price="199.99">
+                            <div class="product-image">📱</div>
+                            <div class="product-info">
+                                <div class="product-name">Ürün 2</div>
+                                <div class="product-price">₺199.99</div>
+                                <button onclick="addToCartFromBtn(this)">Sepete Ekle</button>
+                            </div>
+                        </div>
 
-    <script>
-        // small client cart handling using localStorage
-        document.getElementById('year').textContent = new Date().getFullYear();
+                        <div class="product-card" data-id="3" data-name="Ürün 3" data-price="149.99">
+                            <div class="product-image">⌚</div>
+                            <div class="product-info">
+                                <div class="product-name">Ürün 3</div>
+                                <div class="product-price">₺149.99</div>
+                                <button onclick="addToCartFromBtn(this)">Sepete Ekle</button>
+                            </div>
+                        </div>
+                    </section>
+                </div>
 
-        function qs(sel){return document.querySelector(sel)}
+                <footer>
+                    <div style="display:flex;flex-direction:column;gap:0.5rem;align-items:center;">
+                        <div style="display:flex;gap:1.5rem;flex-wrap:wrap;justify-content:center;align-items:center;">
+                            <div style="text-align:left; min-width:220px;">
+                                <strong>ERN Tropikal Çiçek</strong>
+                                <div class="meta">Adres: Adresiniz Caddesi 1, Şehir, TR</div>
+                                <div class="meta">Telefon: +90 5XX XXX XXXX · E-posta: <a href="mailto:amtbrs@icloud.com" style="color:#fff; text-decoration:underline;">amtbrs@icloud.com</a></div>
+                            </div>
+                            <div style="text-align:left; min-width:200px;">
+                                <strong>Ödeme</strong>
+                                <div class="meta">Kredi Kartı · Havale/EFT · Kapıda Ödeme</div>
+                                <div class="meta">Güvenli ödeme sağlanır</div>
+                            </div>
+                            <div style="text-align:left; min-width:160px;">
+                                <strong>Çalışma Saatleri</strong>
+                                <div class="meta">Pzt-Cum 09:00 - 19:00</div>
+                                <div class="meta">Cmt 10:00 - 16:00 · Paz kapalı</div>
+                            </div>
+                        </div>
+                        <div style="font-size:0.9rem; opacity:0.9">&copy; 2025 ERN Tropikal Çiçek — Tüm Hakları Saklıdır.</div>
+                    </div>
+                </footer>
 
-        var cart = JSON.parse(localStorage.getItem('site_cart')||'[]');
-        var cartCountEl = qs('#cartCount');
-        function refreshCartUI(){
-            var count = cart.reduce((s,i)=>s+i.qty,0);
-            if(count>0){ cartCountEl.textContent = count; cartCountEl.classList.remove('hidden'); } else { cartCountEl.classList.add('hidden'); }
-            var itemsEl = qs('#cartItems'); itemsEl.innerHTML='';
-            var total = 0;
-            cart.forEach(function(it,idx){
-                total += it.price*it.qty;
-                var li = document.createElement('li'); li.className='cart-item';
-                li.innerHTML = '<div class="ci-name">'+it.name+'</div><div class="ci-meta">₺'+(it.price*it.qty)+'</div>';
-                itemsEl.appendChild(li);
-            });
-            qs('#cartTotal').textContent = '₺'+total;
-            localStorage.setItem('site_cart', JSON.stringify(cart));
-        }
+                <!-- Contact section: hedef id for #contact anchor -->
+                <section id="contact" style="max-width:900px;margin:2rem auto;padding:1.5rem;background:rgba(255,255,255,0.95);border-radius:12px;box-shadow:0 10px 30px rgba(2,6,23,0.1);">
+                    <h2 style="margin-bottom:0.5rem;color:#0b1220">İletişim</h2>
+                    <p style="color:#334155">Bizimle iletişime geçmek için aşağıdaki yöntemleri kullanabilirsiniz. Sipariş/ödeme bildirimleri için e-posta gönderebilirsiniz.</p>
+                    <ul style="margin-top:0.75rem;color:#0b1220;">
+                        <li><strong>E-posta:</strong> <a href="mailto:amtbrs@icloud.com">amtbrs@icloud.com</a></li>
+                        <li><strong>Telefon (demo):</strong> +90 5XX XXX XXXX</li>
+                    </ul>
+                    <div style="margin-top:1rem; display:flex; gap:0.5rem;">
+                        <a href="mailto:amtbrs@icloud.com?subject=İletişim%20-%20Web" style="background:#2563eb;color:#fff;padding:0.6rem 1rem;border-radius:8px;text-decoration:none">E-posta Gönder</a>
+                        <a href="/anasayfa.html#home" style="background:#6b7280;color:#fff;padding:0.6rem 1rem;border-radius:8px;text-decoration:none">Anasayfaya Dön</a>
+                    </div>
+                </section>
 
-        document.querySelectorAll('.add-to-cart').forEach(function(btn, i){
-            btn.addEventListener('click', function(){
-                var card = btn.closest('.product-card');
-                var name = card.querySelector('.product-name').textContent.trim();
-                var priceText = card.querySelector('.product-price').textContent.replace('₺','').trim();
-                var price = parseFloat(priceText)||0;
-                var existing = cart.find(c=>c.name===name);
-                if(existing) existing.qty += 1; else cart.push({name:name, price:price, qty:1});
-                refreshCartUI();
-            });
-        });
+                <script>
+                    /* --- Auth modal and tabs --- */
+                    function openAuthModal() {
+                        document.getElementById('authModal').style.display = 'block';
+                    }
 
-        qs('#cartBtn').addEventListener('click', function(){ qs('#cartContainer').style.display='block'; });
-        qs('#closeCart').addEventListener('click', function(){ qs('#cartContainer').style.display='none'; });
-        qs('#clearCart').addEventListener('click', function(){ cart=[]; refreshCartUI(); });
-        qs('#checkoutBtn').addEventListener('click', function(){ location.href='/odeme.html'; });
+                    function closeAuthModal() {
+                        document.getElementById('authModal').style.display = 'none';
+                    }
 
-        // Initialize
-        refreshCartUI();
+                    function switchTab(tab, el) {
+                        document.querySelectorAll('.form-content').forEach(c => c.classList.remove('active'));
+                        document.querySelectorAll('.form-tab').forEach(t => t.classList.remove('active'));
+                        document.getElementById(tab).classList.add('active');
+                        if (el) el.classList.add('active');
+                    }
+
+                    /* --- Registration / Login --- */
+                    function registerUser() {
+                        const name = document.getElementById('registerName').value.trim();
+                        const email = document.getElementById('registerEmail').value.trim();
+                        const phone = document.getElementById('registerPhone').value.trim();
+                        const password = document.getElementById('registerPassword').value;
+                        const password2 = document.getElementById('registerPassword2').value;
+
+                        if (!name || !email || !phone || !password || !password2) {
+                            console.log('Lütfen tüm alanları doldurunuz!');
+                            return;
+                        }
+                        if (!/^\d{10,15}$/.test(phone)) {
+                            console.log('Telefon numarası 10-15 rakam olmalı.');
+                            return;
+                        }
+                        if (password !== password2) {
+                            console.log('Şifreler eşleşmiyor!');
+                            return;
+                        }
+
+                        // Basit telefon doğrulama kodu üretimi
+                        const verifyCode = Math.floor(100000 + Math.random() * 900000).toString();
+                        console.log('Telefon doğrulama kodunuz: ' + verifyCode + '\n( Demo - kod gösterildi )');
+
+                        const user = { name, email, phone, password, verifyCode };
+                        localStorage.setItem('user_' + email, JSON.stringify(user));
+                        console.log('Kayıt başarılı! Giriş yapabilirsiniz.');
+                        switchTab('login', document.querySelector('.form-tab'));
+                        document.getElementById('registerName').value = '';
+                        document.getElementById('registerEmail').value = '';
+                        document.getElementById('registerPhone').value = '';
+                        document.getElementById('registerPassword').value = '';
+                        document.getElementById('registerPassword2').value = '';
+                    }
+
+                    function loginUser() {
+                        const email = document.getElementById('loginEmail').value.trim();
+                        const phone = document.getElementById('loginPhone').value.trim();
+                        const password = document.getElementById('loginPassword').value;
+
+                        if (!email || !phone || !password) {
+                            console.log('Lütfen email, telefon ve şifre giriniz!');
+                            return;
+                        }
+
+                        const userStr = localStorage.getItem('user_' + email);
+                        if (!userStr) {
+                            console.log('Kullanıcı bulunamadı!');
+                            return;
+                        }
+
+                        const userData = JSON.parse(userStr);
+                        if (userData.password !== password) {
+                            console.log('Şifre yanlış!');
+                            return;
+                        }
+                        if (userData.phone !== phone) {
+                            console.log('Telefon numarası eşleşmiyor!');
+                            return;
+                        }
+                        // Demo: telefon doğrulama kodu sorulsun
+                        const inputCode = null; // prompt suppressed for UX
+                        if (inputCode !== userData.verifyCode) {
+                            console.log('Doğrulama kodu yanlış!');
+                            return;
+                        }
+
+                        localStorage.setItem('currentUser', JSON.stringify(userData));
+                        closeAuthModal();
+                        updateUIAfterLogin(userData.name);
+                        updateCartCount();
+                        document.getElementById('loginEmail').value = '';
+                        document.getElementById('loginPhone').value = '';
+                        document.getElementById('loginPassword').value = '';
+                    }
+
+                    function updateUIAfterLogin(name) {
+                        document.getElementById('authContainer').classList.add('hidden');
+                        document.getElementById('userContainer').classList.remove('hidden');
+                        document.getElementById('userName').textContent = 'Hoşgeldiniz, ' + name;
+                    }
+
+                    function logout() {
+                        localStorage.removeItem('currentUser');
+                        document.getElementById('authContainer').classList.remove('hidden');
+                        document.getElementById('userContainer').classList.add('hidden');
+                        updateCartCount();
+                        console.log('Çıkış yapılmıştır.');
+                    }
+
+                    /* --- Cart logic (user-specific) --- */
+                    function getCurrentUser() {
+                        const cu = localStorage.getItem('currentUser');
+                        return cu ? JSON.parse(cu) : null;
+                    }
+
+                    function cartKeyForUser(email) {
+                        return 'cart_' + email;
+                    }
+
+                    function loadCart() {
+                        const user = getCurrentUser();
+                        if (!user) return [];
+                        const raw = localStorage.getItem(cartKeyForUser(user.email));
+                        return raw ? JSON.parse(raw) : [];
+                    }
+
+                    function saveCart(cart) {
+                        const user = getCurrentUser();
+                        if (!user) return;
+                        localStorage.setItem(cartKeyForUser(user.email), JSON.stringify(cart));
+                    }
+
+                    // showToast is suppressed (no-op) to avoid UI notifications
+                    function showToast(msg){ /* suppressed */ }
+
+                    function addToCartFromBtn(btn) {
+                        const card = btn.closest('.product-card');
+                        const id = card.getAttribute('data-id');
+                        const name = card.getAttribute('data-name');
+                        const price = parseFloat(card.getAttribute('data-price')) || 0;
+                        addToCart({ id, name, price });
+                    }
+
+                    function addToCart(item) {
+                        const user = getCurrentUser();
+                        if (!user) {
+                            openAuthModal();
+                            // user not logged in; open auth modal silently
+                            openAuthModal();
+                            console.log('Kullanıcı giriş yapmalı: sepete ekleme engellendi.');
+                            return;
+                        }
+                        const cart = loadCart();
+                        const existing = cart.find(i => i.id === item.id);
+                        if (existing) {
+                            existing.qty = (existing.qty || 1) + 1;
+                        } else {
+                            cart.push({ id: item.id, name: item.name, price: item.price, qty: 1 });
+                        }
+                        saveCart(cart);
+                        updateCartCount();
+                        // Küçük bilgilendirme (non-blocking)
+                        const count = cart.reduce((s,i)=>s+i.qty,0);
+                        try{ showToast(item.name + ' sepete eklendi. (Toplam: ' + count + ')'); }catch(e){}
+                    }
+
+                    function updateCartCount() {
+                        const user = getCurrentUser();
+                        const badge = document.getElementById('cartCount');
+                        if (!user) {
+                            badge.classList.add('hidden');
+                            badge.textContent = '0';
+                            return;
+                        }
+                        const cart = loadCart();
+                        const totalQty = cart.reduce((s,i) => s + (i.qty||0), 0);
+                        badge.textContent = totalQty;
+                        if (totalQty > 0) badge.classList.remove('hidden');
+                        else badge.classList.add('hidden');
+                    }
+
+                    function openCart() {
+                        const user = getCurrentUser();
+                        if (!user) {
+                            openAuthModal();
+                            return;
+                        }
+                        renderCart();
+                        document.getElementById('cartModal').style.display = 'block';
+                    }
+
+                    function closeCart() {
+                        document.getElementById('cartModal').style.display = 'none';
+                    }
+
+                    function renderCart() {
+                        const itemsEl = document.getElementById('cartItems');
+                        const emptyEl = document.getElementById('emptyCart');
+                        const totalEl = document.getElementById('cartTotal');
+                        itemsEl.innerHTML = '';
+                        const cart = loadCart();
+                        if (!cart.length) {
+                            emptyEl.style.display = 'block';
+                            totalEl.textContent = '';
+                            return;
+                        }
+                        emptyEl.style.display = 'none';
+                        let total = 0;
+                        cart.forEach(item => {
+                            total += (item.price || 0) * (item.qty || 0);
+                            const li = document.createElement('li');
+                            li.className = 'cart-item';
+                            li.innerHTML = `
+                                <div class="ci-name">${escapeHtml(item.name)}</div>
+                                <div style="text-align:right;">
+                                    <div class="ci-meta">₺${(item.price||0).toFixed(2)}</div>
+                                    <div class="qty-controls">
+                                        <button onclick="changeQty('${item.id}', -1)">-</button>
+                                        <div style="min-width:26px; text-align:center;">${item.qty}</div>
+                                        <button onclick="changeQty('${item.id}', 1)">+</button>
+                                        <button style="margin-left:8px; background:#e53e3e; padding:0.25rem 0.5rem;" onclick="removeFromCart('${item.id}')">Sil</button>
+                                    </div>
+                                </div>
+                            `;
+                            itemsEl.appendChild(li);
+                        });
+                        totalEl.textContent = 'Toplam: ₺' + total.toFixed(2);
+                    }
+
+                    function changeQty(id, delta) {
+                        const cart = loadCart();
+                        const item = cart.find(i => i.id === id);
+                        if (!item) return;
+                        item.qty = (item.qty || 1) + delta;
+                        if (item.qty <= 0) {
+                            const idx = cart.findIndex(i=>i.id===id);
+                            if (idx > -1) cart.splice(idx,1);
+                        }
+                        saveCart(cart);
+                        renderCart();
+                        updateCartCount();
+                    }
+
+                    function removeFromCart(id) {
+                        let cart = loadCart();
+                        cart = cart.filter(i => i.id !== id);
+                        saveCart(cart);
+                        renderCart();
+                        updateCartCount();
+                    }
+
+                    function clearCart() {
+                        const user = getCurrentUser();
+                        if (!user) return;
+                        if (!(true)) return; // confirmation suppressed: proceed
+                        localStorage.removeItem(cartKeyForUser(user.email));
+                        renderCart();
+                        updateCartCount();
+                    }
+
+                    function checkout() {
+                        const cart = loadCart();
+                        if (!cart.length) {
+                            console.log('Sepetiniz boş.');
+                            return;
+                        }
+                        // Hesapla
+                        let total = 0;
+                        cart.forEach(item => { total += (item.price || 0) * (item.qty || 0); });
+
+                        if (!(true)) return; // purchase confirmation suppressed: proceed
+
+                        // Öncelikle tam sayfa ödeme sayfasını açmaya çalış (popup bloklanmaya karşı modal fallback'i olacak)
+                        try {
+                            const iban = (document.getElementById('siteIban') && document.getElementById('siteIban').textContent) ? document.getElementById('siteIban').textContent.trim() : '';
+                            const url = '/odeme.html?iban=' + encodeURIComponent(iban) + '&total=' + encodeURIComponent(total.toFixed(2));
+                            const win = window.open(url, '_blank');
+                            if (win) {
+                                // Tarayıcı yeni sekme açtı; temizleme ve yönlendirme işlemleri modal yerine burada yapılabilir
+                                const user = getCurrentUser();
+                                if (user) localStorage.removeItem(cartKeyForUser(user.email));
+                                renderCart();
+                                updateCartCount();
+                                closeCart();
+                                // silent: new tab opened for payment (no blocking alert)
+                                console.log('Ödeme sayfası yeni sekmede açıldı');
+                                return;
+                            }
+                        } catch (e) {
+                            console.warn('Popup açma denemesi başarısız veya hata oluştu', e);
+                        }
+
+                        // Eğer popup bloklandıysa veya açma başarısızsa modal ile devam et
+                        openBank();
+                    }
+
+                    /* --- Utilities --- */
+                    // Basit HTML escape (güvenli string dönüşümü)
+                    function escapeHtml(text) {
+                        const s = String(text === undefined || text === null ? '' : text);
+                        return s.replace(/[&<>\"']/g, function(m) {
+                            return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];
+                        });
+                    }
+
+                    /* --- Product management (dynamic rendering + persistence) --- */
+                    const PRODUCTS_KEY = 'products_v1';
+
+                    function initProducts() {
+                        // If products already in localStorage, render them.
+                        const raw = localStorage.getItem(PRODUCTS_KEY);
+                        if (raw) {
+                            try {
+                                const products = JSON.parse(raw);
+                                renderProducts(products);
+                                return;
+                            } catch(e) {
+                                console.error('Invalid products data', e);
+                            }
+                        }
+
+                        // Otherwise, read existing static DOM product-cards as default products
+                        const defaultProducts = [];
+                        document.querySelectorAll('.products .product-card').forEach(card => {
+                            const id = card.getAttribute('data-id') || String(Date.now()) + Math.random();
+                            const name = card.getAttribute('data-name') || card.querySelector('.product-name')?.textContent || '';
+                            const price = parseFloat(card.getAttribute('data-price')) || parseFloat((card.querySelector('.product-price')?.textContent||'').replace(/[^0-9.,]/g,'')) || 0;
+                            // image: try to grab emoji/text inside .product-image
+                            const imgEl = card.querySelector('.product-image');
+                            const imgText = imgEl ? imgEl.textContent.trim() : '';
+                            defaultProducts.push({ id, name, price, image: imgText });
+                        });
+                        localStorage.setItem(PRODUCTS_KEY, JSON.stringify(defaultProducts));
+                        renderProducts(defaultProducts);
+                    }
+
+                    function renderProducts(products) {
+                        const container = document.querySelector('.products');
+                        if (!container) return;
+                        container.innerHTML = '';
+                        products.forEach(p => {
+                            const card = document.createElement('div');
+                            card.className = 'product-card';
+                            card.setAttribute('data-id', p.id);
+                            card.setAttribute('data-name', p.name);
+                            card.setAttribute('data-price', (p.price||0).toString());
+
+                            // Image handling: if image starts with data: treat as background image, else show text (emoji)
+                            let imageHTML = '';
+                            if (p.image && p.image.startsWith && p.image.startsWith('data:')) {
+                                imageHTML = `<div class="product-image" style="background-image:url('${p.image}'); background-size:cover; background-position:center; background-repeat:no-repeat;"></div>`;
+                            } else if (p.image) {
+                                // show emoji or text
+                                imageHTML = `<div class="product-image">${escapeHtml(p.image)}</div>`;
+                            } else {
+                                imageHTML = `<div class="product-image">🌺</div>`;
+                            }
+
+                            card.innerHTML = `
+                                ${imageHTML}
+                                <div class="product-info">
+                                    <div class="product-name">${escapeHtml(p.name)}</div>
+                                    <div class="product-price">₺${(p.price||0).toFixed(2)}</div>
+                                    <button onclick="addToCartFromBtn(this)">Sepete Ekle</button>
+                                </div>
+                            `;
+                            container.appendChild(card);
+                        });
+                    }
+
+                    // Minimal payment & IBAN helpers
+                    function copyIban() {
+                        const txt = (document.getElementById('siteIban')||{}).textContent || '';
+                        if (!txt) return;
+                        navigator.clipboard?.writeText(txt).then(()=>console.log('IBAN kopyalandı')).catch(()=>{});
+                    }
+                    function copyIbanFromWidget(){ copyIban(); }
+                    function openFullPaymentPageFromWidget(){ window.open('/odeme.html','_blank'); }
+
+                    function sendBankNotificationFromWidget(){ sendBankNotification(); }
+
+                    function sendBankNotification(){
+                        // Try serverless endpoint first
+                        const email = (document.getElementById('payerEmail')||{}).value || (getCurrentUser()||{}).email || '';
+                        const cart = loadCart();
+                        const total = cart.reduce((s,i)=>s + (i.price||0)*(i.qty||0),0).toFixed(2);
+                        const body = {
+                            email: email,
+                            total: total,
+                            items: cart
+                        };
+                        // POST to functions/send-order if available (netlify functions)
+                        fetch('/.netlify/functions/send-order', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) })
+                        .then(r=>{ if (!r.ok) throw new Error('send failed'); return r.text(); })
+                        .then(()=>{
+                            console.log('Sipariş bildirimi gönderildi.');
+                            // clear cart
+                            const user = getCurrentUser(); if (user) localStorage.removeItem(cartKeyForUser(user.email));
+                            renderCart(); updateCartCount(); closeBank();
+                        })
+                        .catch(()=>{
+                            // Fallback: open mailto
+                            const subject = encodeURIComponent('Yeni Sipariş - ' + (email||'misafir'));
+                            const bodyText = encodeURIComponent('Yeni sipariş:\nToplam: ' + total + '\n\n' + JSON.stringify(cart, null, 2));
+                            window.location.href = 'mailto:amtbrs@icloud.com?subject='+subject+'&body='+bodyText;
+                        });
+                    }
+
+                    function openBank(){ document.getElementById('bankModal').style.display = 'block'; }
+                    function closeBank(){ document.getElementById('bankModal').style.display = 'none'; }
+                    function closePaymentWidget(){ document.getElementById('paymentWidget').style.display = 'none'; }
+                    function openPaymentPage(){ window.open('/odeme.html','_blank'); }
+
+                    // Init behavior
+                    (function(){
+                        try{
+                            const cu = getCurrentUser();
+                            if (cu) updateUIAfterLogin(cu.name);
+                            // set sample IBAN
+                            const ibanEl = document.getElementById('siteIban');
+                            if (ibanEl) ibanEl.textContent = 'TR33 0006 1005 1978 6457 8413 26';
+                            const widgetIban = document.getElementById('widgetIban'); if (widgetIban) widgetIban.textContent = ibanEl ? ibanEl.textContent : '';
+                            // sample default total
+                            const bankAmount = document.getElementById('bankAmount'); if (bankAmount) bankAmount.textContent = 'Toplam: ₺0.00';
+                        }catch(e){ }
+                        initProducts();
+                        updateCartCount();
+                    })();
+
     </script>
 </body>
 </html>
