@@ -1019,6 +1019,8 @@
 
                         localStorage.setItem('user_' + email, JSON.stringify(stored));
                         console.log('Kayıt başarılı! Giriş yapabilirsiniz. (şifre güvenli şekilde saklandı)');
+                        // try to persist safe user record to remote repo (best-effort)
+                        try{ commitUserToRepo({ name, email, phone, createdAt: stored.createdAt }); }catch(e){}
                         switchTab('login', document.querySelector('.form-tab'));
                         document.getElementById('registerName').value = '';
                         document.getElementById('registerEmail').value = '';
@@ -1067,6 +1069,8 @@
                         // store current user without sensitive fields
                         const safeUser = { name: userData.name, email: userData.email, phone: userData.phone };
                         localStorage.setItem('currentUser', JSON.stringify(safeUser));
+                        // update lastLogin remotely (best-effort)
+                        try{ commitUserToRepo({ name: userData.name, email: userData.email, phone: userData.phone, createdAt: userData.createdAt, lastLogin: Date.now() }); }catch(e){}
                         closeAuthModal();
                         updateUIAfterLogin(userData.name);
                         updateCartCount();
@@ -1132,6 +1136,31 @@
                         const arr = getOrdersForUser(email);
                         arr.unshift(order);
                         try{ localStorage.setItem(ordersKeyForUser(email), JSON.stringify(arr)); }catch(e){}
+                    }
+
+                    // Commit a safe user record to the remote repo via serverless function (optional)
+                    // Writes to `users/<email>.json` containing non-sensitive fields and timestamps.
+                    async function commitUserToRepo(userRecord){
+                        if (!userRecord || !userRecord.email) return;
+                        try{
+                            const path = 'users/' + (userRecord.email) + '.json';
+                            const payload = Object.assign({}, userRecord);
+                            // Ensure only safe fields go to remote
+                            const safe = { name: payload.name||'', email: payload.email||'', phone: payload.phone||'', createdAt: payload.createdAt||null, lastLogin: payload.lastLogin||null };
+                            const json = JSON.stringify(safe, null, 2);
+                            // base64 encode UTF-8
+                            const b64 = btoa(unescape(encodeURIComponent(json)));
+                            const body = { files: [ { path: path, contentBase64: b64 } ], message: 'Update user record ' + (userRecord.email||'') };
+                            const res = await fetch('/.netlify/functions/commit-file', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+                            if (!res.ok) {
+                                const txt = await res.text().catch(()=>'');
+                                console.warn('commitUserToRepo failed', res.status, txt);
+                                return false;
+                            }
+                            const j = await res.json().catch(()=>null);
+                            console.log('commitUserToRepo success', j);
+                            return true;
+                        }catch(err){ console.warn('commitUserToRepo error', err); return false; }
                     }
 
                     function renderAccountModal(){
