@@ -677,6 +677,22 @@
                     </div>
                 </div>
 
+                <!-- Order Detail Modal (daha güzel detay & yazdırılabilir fatura) -->
+                <div id="orderDetailModal" class="modal">
+                    <div class="modal-content">
+                        <span class="close" onclick="closeOrderDetailModal()">&times;</span>
+                        <h2 style="margin-bottom:0.6rem;color:#0b1220">Sipariş Detayı</h2>
+                        <div id="orderDetailBody">
+                            <div id="odHeader" style="margin-bottom:0.5rem"></div>
+                            <div id="odItems" style="margin-bottom:0.6rem"></div>
+                            <div id="odTotal" style="font-weight:800;color:#0b1220;margin-bottom:0.6rem"></div>
+                            <div style="display:flex;gap:0.5rem;">
+                                <button onclick="printInvoiceCurrent()" style="flex:1;background:#2563eb;color:#fff">Faturayı Yazdır / PDF</button>
+                                <button onclick="closeOrderDetailModal()" style="flex:1">Kapat</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <!-- Bottom-right payment widget (compact, non-page) -->
                 <div id="paymentWidget" class="hidden" style="position:fixed; right:1rem; bottom:1rem; width:320px; max-width:92%; z-index:1100;">
                     <div style="background:#fff;border-radius:12px;box-shadow:0 18px 40px rgba(2,6,23,0.2);overflow:hidden;border:1px solid rgba(10,12,30,0.06);">
@@ -1153,12 +1169,47 @@
                     }
 
                     function viewOrderDetails(id){
-                        const user = getCurrentUser(); if (!user) return openAuthModal();
-                        const orders = getOrdersForUser(user.email || '');
-                        const o = orders.find(x=>x.id===id);
-                        if (!o) return alert('Sipariş bulunamadı');
-                        alert('Sipariş detayları:\n' + JSON.stringify(o, null, 2));
+                                        const user = getCurrentUser(); if (!user) return openAuthModal();
+                                        const orders = getOrdersForUser(user.email || '');
+                                        const o = orders.find(x=>x.id===id);
+                                        if (!o) return alert('Sipariş bulunamadı');
+                                        // populate order detail modal and open it
+                                        const hdr = document.getElementById('odHeader');
+                                        const items = document.getElementById('odItems');
+                                        const tot = document.getElementById('odTotal');
+                                        if (hdr) hdr.innerHTML = '<div><strong>Sipariş #' + escapeHtml(o.id) + '</strong><div style="font-size:0.9rem;color:#334155">' + (new Date(o.date||0)).toLocaleString() + '</div></div>';
+                                        if (items){
+                                            items.innerHTML = '';
+                                            (o.items||[]).forEach(it=>{
+                                                const row = document.createElement('div'); row.style.display='flex'; row.style.justifyContent='space-between'; row.style.padding='0.4rem 0';
+                                                row.innerHTML = '<div>' + escapeHtml(it.name) + ' &times; ' + (it.qty||1) + '</div><div>₺' + (((it.price||0)*(it.qty||1)).toFixed(2)) + '</div>';
+                                                items.appendChild(row);
+                                            });
+                                        }
+                                        if (tot) tot.textContent = 'Toplam: ₺' + (Number(o.total)||0).toFixed(2);
+                                        // stash current order for print
+                                        window.__currentOrderToPrint = o;
+                                        openOrderDetailModal();
                     }
+
+                                    function openOrderDetailModal(){ const m = document.getElementById('orderDetailModal'); if (!m) return; m.style.display='block'; }
+                                    function closeOrderDetailModal(){ const m = document.getElementById('orderDetailModal'); if (!m) return; m.style.display='none'; }
+
+                                    function printInvoiceCurrent(){ const o = window.__currentOrderToPrint; if (!o) return alert('Yazdırılacak sipariş seçili değil'); openPrintableInvoice(o); }
+
+                                    function openPrintableInvoice(order){
+                                        const user = getCurrentUser() || {};
+                                        const html = `<!doctype html><html><head><meta charset="utf-8"><title>Fatura ${order.id}</title><style>body{font-family:Arial, Helvetica, sans-serif;padding:20px;color:#0b1220}header{display:flex;justify-content:space-between;align-items:center}h1{margin:0}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f7f7fb}tfoot td{font-weight:800}</style></head><body>`+
+                                            `<header><div><h1>ERN Tropikal Çiçek</h1><div style="font-size:0.9rem;color:#334155">Adresiniz Caddesi 1, Şehir</div></div><div style="text-align:right"><div>Fatura #: ${escapeHtml(order.id)}</div><div>${new Date(order.date||0).toLocaleString()}</div></div></header>`+
+                                            `<section style="margin-top:14px"><strong>Müşteri</strong><div>${escapeHtml(user.name||'')}</div><div>${escapeHtml(user.email||'')}</div><div>${escapeHtml(user.phone||'')}</div></section>`+
+                                            `<table><thead><tr><th>Ürün</th><th>Adet</th><th>Birim (₺)</th><th>Tutar (₺)</th></tr></thead><tbody>`+
+                                            (order.items||[]).map(it=>`<tr><td>${escapeHtml(it.name)}</td><td>${(it.qty||1)}</td><td>${Number(it.price||0).toFixed(2)}</td><td>${((it.price||0)*(it.qty||1)).toFixed(2)}</td></tr>`).join('')+
+                                            `</tbody><tfoot><tr><td colspan="3">Toplam</td><td>₺${Number(order.total||0).toFixed(2)}</td></tr></tfoot></table>`+
+                                            `<div style="margin-top:18px;font-size:0.9rem;color:#334155">Teşekkürler! Ödeme Havale/EFT ile gerçekleştiyse lütfen dekontunuzu saklayın.</div>`+
+                                            `<script>window.onload=function(){ setTimeout(()=>{ window.print(); },200); }</script></body></html>`;
+                                        const w = window.open('','_blank'); if (!w) { alert('Yeni pencere açılamadı; tarayıcı pop-up engelleyici devrede olabilir.'); return; }
+                                        w.document.open(); w.document.write(html); w.document.close();
+                                    }
 
                     function downloadInvoice(orderId){
                         const user = getCurrentUser(); if (!user) return openAuthModal();

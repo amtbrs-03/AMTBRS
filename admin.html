@@ -140,6 +140,17 @@
     <div class="small meta" style="margin-top:0.5rem">Not: Ayarlar önce tarayıcıda (localStorage) saklanır. "GitHub'a da kaydet" seçilirse site-settings.json dosyası depoya gönderilir (serverless/commit-file endpoint gerekir).</div>
   </div>
 
+  <div class="card" id="ordersCard">
+    <h2>Siparişler (LocalStorage)</h2>
+    <div id="ordersListAdmin" style="max-height:420px; overflow:auto;"></div>
+    <div style="margin-top:0.6rem; display:flex; gap:0.5rem; align-items:center;">
+      <button id="refreshOrders" class="btn btn-ghost">Yenile</button>
+      <button id="pushStatuses" class="btn">Sunucuya Gönder (opsiyonel)</button>
+      <label style="margin-left:auto;display:flex;align-items:center;gap:0.4rem;"><input id="autoPushStatus" type="checkbox" /> Otomatik push</label>
+    </div>
+    <div class="small meta" style="margin-top:0.5rem">Buradan kullanıcı siparişlerini görebilir, durum atayabilirsiniz. Durum değişikliği localStorage'a kaydedilir; isterseniz serverless endpoint'e bildirilebilir.</div>
+  </div>
+
     <div style="display:flex; gap:0.5rem; align-items:center;">
       <button id="saveAll" class="btn">Değişiklikleri Kaydet</button>
       <label style="display:flex;align-items:center;gap:0.4rem; margin-left:0.5rem;"><input id="pushToGithub" type="checkbox" checked /> GitHub'a da kaydet</label>
@@ -518,6 +529,85 @@
 
       // load settings when admin UI ready
       try{ loadSettingsIntoForm(); }catch(e){}
+
+      // Orders admin: read orders_* keys from localStorage
+      function getAllOrdersFromLocalStorage(){
+        const out = [];
+        try{
+          for (let i=0;i<localStorage.length;i++){
+            const key = localStorage.key(i);
+            if (!key) continue;
+            if (key.indexOf('orders_') === 0){
+              try{ const arr = JSON.parse(localStorage.getItem(key)) || []; out.push({ owner: key.replace('orders_',''), orders: arr }); }catch(e){}
+            }
+          }
+        }catch(e){ console.error('getAllOrders error', e); }
+        return out;
+      }
+
+      function renderOrdersAdmin(){
+        const container = document.getElementById('ordersListAdmin'); if (!container) return;
+        const list = getAllOrdersFromLocalStorage();
+        container.innerHTML = '';
+        if (!list.length) { container.innerHTML = '<div style="color:#6b7280;padding:0.6rem">Kayıtlı sipariş yok.</div>'; return; }
+        list.forEach(userBlock => {
+          const header = document.createElement('div'); header.style.padding='0.6rem'; header.style.borderBottom='1px dashed rgba(10,12,30,0.06)'; header.innerHTML = `<div style="font-weight:800">${escapeHtml(userBlock.owner)}</div>`;
+          container.appendChild(header);
+          (userBlock.orders||[]).forEach(o=>{
+            const d = document.createElement('div'); d.style.padding='0.5rem'; d.style.borderBottom='1px solid rgba(0,0,0,0.03)'; d.style.display='flex'; d.style.gap='0.6rem'; d.style.alignItems='center';
+            d.innerHTML = `<div style="flex:1"><div style="font-weight:700">Sipariş #${escapeHtml(o.id||'')}</div><div style="font-size:0.9rem;color:#475569">${new Date(o.date||0).toLocaleString()}</div></div><div style="width:140px;display:flex;flex-direction:column;gap:6px"><select data-owner="${escapeHtml(userBlock.owner)}" data-orderid="${escapeHtml(o.id||'')}" class="order-status"><option value="pending">Beklemede</option><option value="paid">Ödendi</option><option value="processing">İşleniyor</option><option value="shipped">Gönderildi</option></select><div style="display:flex;gap:6px"><button class="btn btn-ghost btn-view" data-owner="${escapeHtml(userBlock.owner)}" data-orderid="${escapeHtml(o.id||'')}">Detay</button><button class="btn btn-ghost btn-save" data-owner="${escapeHtml(userBlock.owner)}" data-orderid="${escapeHtml(o.id||'')}">Kaydet</button></div></div>`;
+            container.appendChild(d);
+          });
+        });
+
+        // set existing statuses if present in orders
+        document.querySelectorAll('.order-status').forEach(sel=>{
+          const owner = sel.getAttribute('data-owner'); const oid = sel.getAttribute('data-orderid');
+          const orders = JSON.parse(localStorage.getItem('orders_' + owner) || '[]');
+          const o = orders.find(x=>x.id===oid);
+          if (o && o.status) sel.value = o.status;
+        });
+
+        // attach handlers
+        document.querySelectorAll('.btn-view').forEach(b=> b.onclick = function(){ const owner=this.getAttribute('data-owner'); const id=this.getAttribute('data-orderid'); alert('Sipariş detay (admin):\n' + JSON.stringify((JSON.parse(localStorage.getItem('orders_'+owner)||'[]')||[]).find(x=>x.id===id), null, 2)); });
+        document.querySelectorAll('.btn-save').forEach(b=> b.onclick = function(){ const owner=this.getAttribute('data-owner'); const id=this.getAttribute('data-orderid'); const sel = document.querySelector('select[data-owner="'+owner+'"][data-orderid="'+id+'"]'); const status = sel? sel.value : 'pending'; updateOrderStatus(owner, id, status); });
+      }
+
+      function updateOrderStatus(ownerEmail, orderId, status){
+        try{
+          const key = 'orders_' + ownerEmail;
+          const arr = JSON.parse(localStorage.getItem(key) || '[]');
+          const o = arr.find(x=>x.id===orderId);
+          if (!o) return alert('Sipariş bulunamadı');
+          o.status = status;
+          localStorage.setItem(key, JSON.stringify(arr));
+          alert('Sipariş durumu güncellendi: ' + status);
+          // optional: push update to serverless endpoint
+          if (document.getElementById('autoPushStatus') && document.getElementById('autoPushStatus').checked){
+            pushOrderStatusToServer(ownerEmail, o).catch(e=>console.warn('push failed', e));
+          }
+          renderOrdersAdmin();
+        }catch(e){ console.error(e); alert('Güncelleme sırasında hata: ' + e.message); }
+      }
+
+      async function pushOrderStatusToServer(ownerEmail, orderObj){
+        const payload = { owner: ownerEmail, order: orderObj };
+        const endpoints = ['/.netlify/functions/update-order','/api/update-order','/functions/update-order'];
+        for (const ep of endpoints){
+          try{ const res = await fetch(ep, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) }); if (res.ok) return true; }catch(e){}
+        }
+        throw new Error('No endpoint responded');
+      }
+
+      document.getElementById('refreshOrders').addEventListener('click', ()=> renderOrdersAdmin());
+      document.getElementById('pushStatuses').addEventListener('click', async ()=>{
+        const list = getAllOrdersFromLocalStorage();
+        for (const u of list){ for (const o of u.orders){ try{ await pushOrderStatusToServer(u.owner, o); }catch(e){ console.warn('push failed', u.owner, o.id); } } }
+        alert('Push tamamlandı (başarısız olanlar console.log içinde).');
+      });
+
+      // render orders on admin load
+      try{ renderOrdersAdmin(); }catch(e){}
 
       document.getElementById('resetDefault').addEventListener('click', ()=>{
         if (!confirm('Varsayılan ürünlere geri dönülsün mü?')) return;
