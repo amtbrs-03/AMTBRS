@@ -388,6 +388,23 @@
         /* Ensure images and SVG scale to container width */
         img, svg { max-width:100%; height:auto; display:block; }
         html, body { width:100%; overflow-x:hidden; }
+
+        /* Contact panel styling */
+        .contact-panel {
+            position: absolute;
+            top: 100%;
+            right: 1rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 18px 40px rgba(2,6,23,0.12);
+            border: 1px solid rgba(10,12,30,0.06);
+            z-index: 1200;
+        }
+
+        @media (max-width:700px) {
+            /* make contact panel full-width under header on mobile */
+            .contact-panel { position: fixed; left: 0.6rem; right: 0.6rem; top: 64px; width: auto; }
+        }
     </style>
   </head>
   <body>
@@ -457,7 +474,9 @@
                             <li><a href="#home">Ana Sayfa</a></li>
                             <li><a href="#products">Ürünler</a></li>
                             <li><a href="#about">Hakkında</a></li>
-                            <li><a href="#contact">İletişim</a></li>
+                            <li>
+                                <button id="contactBtn" class="nav-link" aria-expanded="false" aria-controls="contactPanel" onclick="toggleContact(event)">İletişim</button>
+                            </li>
                             <li id="mainAdminLink" style="display:none;">
                                 <a class="auth-btn" href="https://ern-cicek.com.tr/admin.html" target="_blank" rel="noopener" style="background:#3b7d3b;">Yönetici</a>
                             </li>
@@ -477,6 +496,23 @@
                         </ul>
                     </nav>
                 </header>
+
+                <!-- Contact dropdown panel (hidden by default) -->
+                <div id="contactPanel" class="contact-panel hidden" role="region" aria-hidden="true" aria-labelledby="contactBtn">
+                    <div style="padding:0.8rem 1rem; max-width:320px;">
+                        <strong style="display:block; margin-bottom:0.4rem; color:#0b1220">İletişim</strong>
+                        <div style="font-size:0.95rem; color:#334155; margin-bottom:0.5rem">Bizimle iletişime geçmek için aşağıdaki seçenekleri kullanabilirsiniz.</div>
+                        <div style="font-size:0.95rem; color:#0b1220;">
+                            <div><strong>E-posta:</strong> <a href="mailto:amtbrs@icloud.com">amtbrs@icloud.com</a></div>
+                            <div style="margin-top:0.25rem;"><strong>Telefon (demo):</strong> +90 5XX XXX XXXX</div>
+                            <div style="margin-top:0.5rem;"><strong>Çalışma Saatleri:</strong><div style="font-size:0.9rem; color:#334155">Pzt-Cum 09:00-19:00 · Cmt 10:00-16:00 · Paz kapalı</div></div>
+                        </div>
+                        <div style="margin-top:0.6rem; display:flex; gap:0.5rem;">
+                            <a href="mailto:amtbrs@icloud.com?subject=İletişim%20-%20Web" style="flex:1;background:#2563eb;color:#fff;padding:0.5rem;border-radius:8px;text-align:center;text-decoration:none">E-posta Gönder</a>
+                            <button onclick="closeContact()" style="flex:1;background:#e53e3e;color:#fff;padding:0.5rem;border-radius:8px;border:none;">Kapat</button>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Auth Modal -->
                 <div id="authModal" class="modal">
@@ -668,19 +704,7 @@
                     </div>
                 </footer>
 
-                <!-- Contact section: hedef id for #contact anchor -->
-                <section id="contact" style="max-width:900px;margin:2rem auto;padding:1.5rem;background:rgba(255,255,255,0.95);border-radius:12px;box-shadow:0 10px 30px rgba(2,6,23,0.1);">
-                    <h2 style="margin-bottom:0.5rem;color:#0b1220">İletişim</h2>
-                    <p style="color:#334155">Bizimle iletişime geçmek için aşağıdaki yöntemleri kullanabilirsiniz. Sipariş/ödeme bildirimleri için e-posta gönderebilirsiniz.</p>
-                    <ul style="margin-top:0.75rem;color:#0b1220;">
-                        <li><strong>E-posta:</strong> <a href="mailto:amtbrs@icloud.com">amtbrs@icloud.com</a></li>
-                        <li><strong>Telefon (demo):</strong> +90 5XX XXX XXXX</li>
-                    </ul>
-                    <div style="margin-top:1rem; display:flex; gap:0.5rem;">
-                        <a href="mailto:amtbrs@icloud.com?subject=İletişim%20-%20Web" style="background:#2563eb;color:#fff;padding:0.6rem 1rem;border-radius:8px;text-decoration:none">E-posta Gönder</a>
-                        <a href="/anasayfa.html#home" style="background:#6b7280;color:#fff;padding:0.6rem 1rem;border-radius:8px;text-decoration:none">Anasayfaya Dön</a>
-                    </div>
-                </section>
+                <!-- Contact info has been moved into the header contact panel -->
 
                 <script>
                     /* --- Auth modal and tabs --- */
@@ -698,6 +722,44 @@
                         document.getElementById(tab).classList.add('active');
                         if (el) el.classList.add('active');
                     }
+
+                    /* --- Contact panel toggle --- */
+                    function toggleContact(e) {
+                        e && e.preventDefault && e.preventDefault();
+                        const btn = document.getElementById('contactBtn');
+                        const panel = document.getElementById('contactPanel');
+                        if (!panel) return;
+                        const isHidden = panel.classList.contains('hidden');
+                        if (isHidden) {
+                            panel.classList.remove('hidden');
+                            panel.setAttribute('aria-hidden', 'false');
+                            btn.setAttribute('aria-expanded', 'true');
+                        } else {
+                            panel.classList.add('hidden');
+                            panel.setAttribute('aria-hidden', 'true');
+                            btn.setAttribute('aria-expanded', 'false');
+                        }
+                    }
+
+                    function closeContact() {
+                        const btn = document.getElementById('contactBtn');
+                        const panel = document.getElementById('contactPanel');
+                        if (!panel) return;
+                        panel.classList.add('hidden');
+                        panel.setAttribute('aria-hidden', 'true');
+                        if (btn) btn.setAttribute('aria-expanded', 'false');
+                    }
+
+                    // Close contact panel when clicking outside
+                    document.addEventListener('click', function(ev){
+                        const panel = document.getElementById('contactPanel');
+                        const btn = document.getElementById('contactBtn');
+                        if (!panel || !btn) return;
+                        if (panel.classList.contains('hidden')) return;
+                        const target = ev.target;
+                        if (target === panel || panel.contains(target) || target === btn || btn.contains(target)) return;
+                        closeContact();
+                    });
 
                     /* --- Registration / Login --- */
                     // --- Password hashing helpers using Web Crypto (PBKDF2 SHA-256) ---
