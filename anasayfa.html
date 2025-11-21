@@ -432,6 +432,11 @@
             font-weight:700;
             box-shadow: 0 8px 22px rgba(16,185,129,0.18);
         }
+        .contact-btn.active {
+            box-shadow: 0 10px 30px rgba(16,185,129,0.28);
+            transform: translateY(-1px);
+            border: 1px solid rgba(16,185,129,0.12);
+        }
         .contact-btn:focus { outline: 3px solid rgba(16,185,129,0.18); }
         /* Mini cart dropdown */
         .mini-cart {
@@ -1026,9 +1031,11 @@
                     }
 
                     function updateUIAfterLogin(name) {
-                        document.getElementById('authContainer').classList.add('hidden');
-                        document.getElementById('userContainer').classList.remove('hidden');
-                        document.getElementById('userName').textContent = 'Hoşgeldiniz, ' + name;
+                                        // keep the auth button visible on the homepage but mark it active
+                                        try{ document.getElementById('authContainer').classList.remove('hidden'); }catch(e){}
+                                        document.getElementById('userContainer').classList.remove('hidden');
+                                        document.getElementById('userName').textContent = 'Hoşgeldiniz, ' + name;
+                                        try{ const b = document.getElementById('authBtn'); if (b) b.classList.add('active'); }catch(e){}
                     }
 
                     function logout() {
@@ -1042,6 +1049,7 @@
                                         try{ closeCart(); }catch(e){}
                                         try{ closeBank(); }catch(e){}
                                         try{ hideMiniCart(0); }catch(e){}
+                                        try{ const b = document.getElementById('authBtn'); if (b) b.classList.remove('active'); }catch(e){}
                                         // navigate back to homepage top (smooth)
                                         try{ scrollToSection && scrollToSection('home'); }catch(e){ window.location.href = 'anasayfa.html'; }
                                         console.log('Çıkış yapıldı.');
