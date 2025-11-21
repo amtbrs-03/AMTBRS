@@ -916,9 +916,45 @@
                     }
 
                     /* --- Registration / Login --- */
-                    function registerUser() {
+                    // --- Password hashing helpers using Web Crypto (PBKDF2 SHA-256) ---
+                    const PW_ITERATIONS = 150000; // reasonable for client-side; adjust as needed
+                    const SALT_BYTES = 16;
+
+                    function toBase64(buffer) {
+                        let binary = '';
+                        const bytes = new Uint8Array(buffer);
+                        const len = bytes.byteLength;
+                        for (let i = 0; i < len; i++) binary += String.fromCharCode(bytes[i]);
+                        return btoa(binary);
+                    }
+
+                    function fromBase64(b64) {
+                        const binary = atob(b64);
+                        const len = binary.length;
+                        const bytes = new Uint8Array(len);
+                        for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
+                        return bytes.buffer;
+                    }
+
+                    async function deriveKey(password, saltBuffer, iterations = PW_ITERATIONS) {
+                        const enc = new TextEncoder();
+                        const pwKey = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
+                        const derived = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: saltBuffer, iterations, hash: 'SHA-256' }, pwKey, 256);
+                        return new Uint8Array(derived);
+                    }
+
+                    function secureCompare(a, b) {
+                        if (!(a instanceof Uint8Array)) a = new Uint8Array(a);
+                        if (!(b instanceof Uint8Array)) b = new Uint8Array(b);
+                        if (a.length !== b.length) return false;
+                        let diff = 0;
+                        for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+                        return diff === 0;
+                    }
+
+                    async function registerUser() {
                         const name = document.getElementById('registerName').value.trim();
-                        const email = document.getElementById('registerEmail').value.trim();
+                        const email = document.getElementById('registerEmail').value.trim().toLowerCase();
                         const phone = document.getElementById('registerPhone').value.trim();
                         const password = document.getElementById('registerPassword').value;
                         const password2 = document.getElementById('registerPassword2').value;
@@ -936,13 +972,25 @@
                             return;
                         }
 
-                        // Basit telefon doğrulama kodu üretimi
-                        const verifyCode = Math.floor(100000 + Math.random() * 900000).toString();
-                        console.log('Telefon doğrulama kodunuz: ' + verifyCode + '\n( Demo - kod gösterildi )');
+                        // generate salt
+                        const salt = crypto.getRandomValues(new Uint8Array(SALT_BYTES));
+                        const hash = await deriveKey(password, salt.buffer, PW_ITERATIONS);
 
-                        const user = { name, email, phone, password, verifyCode };
-                        localStorage.setItem('user_' + email, JSON.stringify(user));
-                        console.log('Kayıt başarılı! Giriş yapabilirsiniz.');
+                        const stored = {
+                            name,
+                            email,
+                            phone,
+                            pw: {
+                                algo: 'PBKDF2-SHA256',
+                                iterations: PW_ITERATIONS,
+                                salt: toBase64(salt.buffer),
+                                hash: toBase64(hash.buffer)
+                            },
+                            createdAt: Date.now()
+                        };
+
+                        localStorage.setItem('user_' + email, JSON.stringify(stored));
+                        console.log('Kayıt başarılı! Giriş yapabilirsiniz. (şifre güvenli şekilde saklandı)');
                         switchTab('login', document.querySelector('.form-tab'));
                         document.getElementById('registerName').value = '';
                         document.getElementById('registerEmail').value = '';
@@ -951,8 +999,8 @@
                         document.getElementById('registerPassword2').value = '';
                     }
 
-                    function loginUser() {
-                        const email = document.getElementById('loginEmail').value.trim();
+                    async function loginUser() {
+                        const email = document.getElementById('loginEmail').value.trim().toLowerCase();
                         const phone = document.getElementById('loginPhone').value.trim();
                         const password = document.getElementById('loginPassword').value;
 
@@ -968,22 +1016,29 @@
                         }
 
                         const userData = JSON.parse(userStr);
-                        if (userData.password !== password) {
-                            console.log('Şifre yanlış!');
-                            return;
-                        }
                         if (userData.phone !== phone) {
                             console.log('Telefon numarası eşleşmiyor!');
                             return;
                         }
-                        // Demo: telefon doğrulama kodu sorulsun
-                        const inputCode = null; // prompt suppressed for UX
-                        if (inputCode !== userData.verifyCode) {
-                            console.log('Doğrulama kodu yanlış!');
+
+                        try {
+                            const saltBuf = fromBase64(userData.pw.salt);
+                            const expectedHash = new Uint8Array(fromBase64(userData.pw.hash));
+                            const iter = userData.pw.iterations || PW_ITERATIONS;
+                            const derived = await deriveKey(password, saltBuf, iter);
+                            if (!secureCompare(derived, expectedHash)) {
+                                console.log('Şifre yanlış!');
+                                return;
+                            }
+                        } catch (e) {
+                            console.error('Giriş sırasında hata oluştu', e);
+                            console.log('Giriş başarısız.');
                             return;
                         }
 
-                        localStorage.setItem('currentUser', JSON.stringify(userData));
+                        // store current user without sensitive fields
+                        const safeUser = { name: userData.name, email: userData.email, phone: userData.phone };
+                        localStorage.setItem('currentUser', JSON.stringify(safeUser));
                         closeAuthModal();
                         updateUIAfterLogin(userData.name);
                         updateCartCount();
