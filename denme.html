@@ -3,7 +3,36 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>ÇİÇEK DÜNYASINA HOŞGELDİNİZ</title>
+        <title>ÇİÇEK DÜNYASINA HOŞGELDİNİZ</title>
+        <meta name="description" content="ERN Tropikal Çiçek — Tropikal çiçek aranjmanları ve hızlı teslimat. Egzotik buketlerle evinize renk katın." />
+        <meta name="theme-color" content="#0b2f1f" />
+        <!-- Open Graph / Social -->
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="ERN Tropikal Çiçek — Tropikal Çiçeklerle Evinize Renk Katın" />
+        <meta property="og:description" content="Egzotik dokunuşlarla mekanınıza ferahlık getiriyoruz. Buketler, aranjmanlar ve özel tasarımlar." />
+        <meta property="og:url" content="https://ern-cicek.com.tr/" />
+        <meta property="og:site_name" content="ERN Tropikal Çiçek" />
+        <!-- Placeholder image: add a real image at /og-image.jpg for better sharing -->
+        <meta property="og:image" content="/og-image.jpg" />
+        <link rel="icon" href="/favicon.ico" />
+        <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "Florist",
+            "name": "ERN Tropikal Çiçek",
+            "url": "https://ern-cicek.com.tr/",
+            "telephone": "+90-5XX-XXX-XXXX",
+            "email": "amtbrs@icloud.com",
+            "address": {
+                "@type": "PostalAddress",
+                "streetAddress": "Adresiniz Caddesi 1",
+                "addressLocality": "Şehir",
+                "addressCountry": "TR"
+            },
+            "description": "Tropikal çiçek aranjmanları ve buketler. Hızlı teslimat ve özel tasarım seçenekleri.",
+            "openingHours": "Mo-Sa 09:00-19:00"
+        }
+        </script>
     <script>
         // Eğer kullanıcı www ile geldiyse, kök domaine (non-www) yönlendir
         (function(){
@@ -78,12 +107,14 @@
             margin: 0 auto;
             padding: 0 2rem;
         }
+        :root{ --brand:#0b693d; --accent:#0b693d; --muted:#6b7280; }
+
         .logo {
-            font-size: 1.5rem;
+            font-size: 1.35rem;
             font-weight: 700;
-            letter-spacing: .4px;
+            letter-spacing: .6px;
             color: #fff;
-            text-shadow: 0 6px 18px rgba(118,75,162,0.25);
+            text-shadow: 0 6px 18px rgba(6,95,58,0.18);
         }
         .nav-links { list-style: none; display: flex; gap: 1.5rem; align-items: center; }
         .nav-links a { color: rgba(255,255,255,0.9); text-decoration: none; transition: 0.25s; }
@@ -321,19 +352,22 @@
             text-shadow: 0 6px 18px rgba(107,70,193,0.08);
         }
 
-        button {
-            background: linear-gradient(180deg,#6b46c1,#5a2f9e);
+        /* Buttons - professional, consistent */
+        .btn, button {
+            background: linear-gradient(180deg,var(--brand), #0a5c35);
             color: white;
             border: none;
             padding: 0.7rem 1rem;
             border-radius: 10px;
             cursor: pointer;
-            transition: transform 220ms, box-shadow 220ms;
+            transition: transform 180ms ease, box-shadow 180ms ease;
             width: 100%;
-            box-shadow: 0 8px 22px rgba(91,44,168,0.32);
-            transform: translateZ(40px);
+            box-shadow: 0 8px 22px rgba(6,95,58,0.14);
+            transform: translateZ(20px);
             font-weight: 600;
         }
+        .btn.btn-ghost, .btn.ghost { background: transparent; color: var(--brand); border: 1px solid rgba(11,105,61,0.08); width: auto }
+        .btn.small { padding: 0.4rem 0.6rem; border-radius: 8px; width: auto }
         button:hover {
             transform: translateY(-6px) translateZ(48px) scale(1.01);
             box-shadow: 0 18px 48px rgba(91,44,168,0.48);
@@ -652,7 +686,26 @@
     </div>
 
     <footer>
-        <p>&copy; 2025 [ERN-ÇİÇEK] Tüm Hakları Saklıdır.</p>
+        <div style="display:flex;flex-direction:column;gap:0.5rem;align-items:center;">
+            <div style="display:flex;gap:1.5rem;flex-wrap:wrap;justify-content:center;align-items:center;">
+                <div style="text-align:left; min-width:220px;">
+                    <strong>ERN Tropikal Çiçek</strong>
+                    <div class="meta">Adres: Adresiniz Caddesi 1, Şehir, TR</div>
+                    <div class="meta">Telefon: +90 5XX XXX XXXX · E-posta: <a href="mailto:amtbrs@icloud.com" style="color:#fff; text-decoration:underline;">amtbrs@icloud.com</a></div>
+                </div>
+                <div style="text-align:left; min-width:200px;">
+                    <strong>Ödeme</strong>
+                    <div class="meta">Kredi Kartı · Havale/EFT · Kapıda Ödeme</div>
+                    <div class="meta">Güvenli ödeme sağlanır</div>
+                </div>
+                <div style="text-align:left; min-width:160px;">
+                    <strong>Çalışma Saatleri</strong>
+                    <div class="meta">Pzt-Cum 09:00 - 19:00</div>
+                    <div class="meta">Cmt 10:00 - 16:00 · Paz kapalı</div>
+                </div>
+            </div>
+            <div style="font-size:0.9rem; opacity:0.9">&copy; 2025 ERN Tropikal Çiçek — Tüm Hakları Saklıdır.</div>
+        </div>
     </footer>
 
     <!-- Contact section: hedef id for #contact anchor -->
