@@ -1,0 +1,63 @@
+---
+name: Push to Main Branch
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_branch:
+        description: 'Source branch to push to main'
+        required: false
+        default: ''
+      delete_source:
+        description: 'Delete source branch after push'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  push-to-main:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.source_branch || github.ref }}
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email \
+            "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create or update main branch
+        run: |
+          CURRENT_BRANCH=$(git branch --show-current)
+          echo "Current branch: $CURRENT_BRANCH"
+
+          # Check if main branch exists
+          if git ls-remote --heads origin main | grep main; then
+            echo "Main branch exists, updating..."
+            git fetch origin main:main
+            git checkout main
+            git merge --no-ff "$CURRENT_BRANCH" \
+              -m "Merge $CURRENT_BRANCH into main"
+          else
+            echo "Creating new main branch..."
+            git checkout -b main
+          fi
+
+          git push -u origin main
+          echo "Successfully pushed to main branch"
+
+      - name: Delete source branch
+        if: ${{ inputs.delete_source == true }}
+        run: |
+          SOURCE_BRANCH=${{ inputs.source_branch || github.ref_name }}
+          if [ "$SOURCE_BRANCH" != "main" ]; then
+            git push origin --delete "$SOURCE_BRANCH" || \
+              echo "Could not delete $SOURCE_BRANCH"
+          fi
