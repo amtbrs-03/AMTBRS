@@ -1252,8 +1252,7 @@
                                         htmlParts.push(rows);
                                         htmlParts.push('</tbody><tfoot><tr><td colspan="3">Toplam</td><td>₺'+Number(order.total||0).toFixed(2)+'</td></tr></tfoot></table>');
                                         htmlParts.push('<div style="margin-top:18px;font-size:0.9rem;color:#334155">Teşekkürler! Ödeme Havale/EFT ile gerçekleştiyse lütfen dekontunuzu saklayın.</div>');
-                                        // avoid embedding a literal </script> sequence inside this script block
-                                        htmlParts.push('<script>window.onload=function(){ setTimeout(function(){ window.print(); },200); }</' + 'script>');
+                                        htmlParts.push('<script>window.onload=function(){ setTimeout(function(){ window.print(); },200); }<\/script>');
                                         htmlParts.push('</body></html>');
                                         const html = htmlParts.join('');
                                         const w = window.open('','_blank'); if (!w) { alert('Yeni pencere açılamadı; tarayıcı pop-up engelleyici devrede olabilir.'); return; }
