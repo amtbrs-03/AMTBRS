@@ -1,0 +1,1733 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <title>ÇİÇEK DÜNYASINA HOŞGELDİNİZ</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="description" content="ERN Tropikal Çiçek — Tropikal çiçek aranjmanları ve hızlı teslimat. Egzotik buketlerle evinize renk katın." />
+    <meta name="theme-color" content="#0b2f1f" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="ERN Tropikal Çiçek — Tropikal Çiçeklerle Evinize Renk Katın" />
+    <meta property="og:description" content="Egzotik dokunuşlarla mekanınıza ferahlık getiriyoruz. Buketler, aranjmanlar ve özel tasarımlar." />
+    <meta property="og:url" content="https://ern-cicek.com.tr/" />
+    <meta property="og:site_name" content="ERN Tropikal Çiçek" />
+    <meta property="og:image" content="/og-image.jpg" />
+    <link rel="icon" href="/favicon.ico" />
+
+    <script>
+      // Eğer kullanıcı www ile geldiyse, kök domaine (non-www) yönlendir
+      (function(){
+        try{
+          if (location.hostname && location.hostname.indexOf('www.') === 0) {
+            var target = location.protocol + '//' + location.hostname.replace(/^www\./,'') + location.pathname + location.search + location.hash;
+            location.replace(target);
+          }
+        }catch(e){ /* ignore */ }
+      })();
+    </script>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Florist",
+      "name": "ERN Tropikal Çiçek",
+      "url": "https://ern-cicek.com.tr/",
+      "telephone": "+90-5XX-XXX-XXXX",
+      "email": "amtbrs@icloud.com",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Adresiniz Caddesi 1",
+        "addressLocality": "Şehir",
+        "addressCountry": "TR"
+      },
+      "description": "Tropikal çiçek aranjmanları ve buketler. Hızlı teslimat ve özel tasarım seçenekleri.",
+      "openingHours": "Mo-Sa 09:00-19:00"
+    }
+    </script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #0b2f1f;
+            background: radial-gradient(1200px 600px at 10% 10%, rgba(34,197,94,0.10), transparent),
+                        radial-gradient(800px 400px at 90% 90%, rgba(16,185,129,0.08), transparent),
+                        linear-gradient(180deg, #e6f7ec 0%, #064e3b 100%);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            min-height: 100%;
+            padding-bottom: 4rem;
+        }
+
+        header {
+            background: rgba(30, 143, 85, 0.6);
+            color: white;
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(6px);
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            position: relative;
+        }
+        .logo {
+            font-size: 1.35rem;
+            font-weight: 700;
+            letter-spacing: .6px;
+            color: #fff;
+            text-shadow: 0 6px 18px rgba(6,95,58,0.18);
+        }
+        .nav-links { list-style: none; display: flex; gap: 1.5rem; align-items: center; }
+        .nav-links a { color: rgba(255,255,255,0.9); text-decoration: none; transition: 0.25s; }
+        .nav-links a:hover { color: #b8d4ff; transform: translateY(-2px); }
+        .auth-btn { background: #6b897f; padding: 0.6rem 1.2rem; border-radius: 8px; cursor: pointer; border: none; color: white; transition: 0.25s; }
+        .auth-btn:hover { background: #a2444b; }
+        .user-info { color: rgba(255,255,255,0.9); }
+
+        .cart-btn {
+            position: relative;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.95);
+            padding: 0.5rem 0.8rem;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .cart-count {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: #ff4d6d;
+            color: white;
+            font-size: 0.75rem;
+            padding: 2px 6px;
+            border-radius: 999px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .hero {
+            color: white;
+            padding: 5rem 2rem 6rem;
+            text-align: center;
+            position: relative;
+            overflow: visible;
+        }
+        .hero .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            transform-style: preserve-3d;
+            perspective: 1200px;
+        }
+        .hero h1 {
+            font-size: 2.2rem;
+            margin-bottom: .6rem;
+            text-shadow: 0 8px 30px rgba(0,0,0,0.6), 0 2px 6px rgba(102,126,234,0.15);
+            transform: translateZ(30px);
+        }
+        .hero p {
+            opacity: .95;
+            transform: translateZ(20px);
+        }
+
+        /* Modal base */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        .modal-content {
+            background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(245,245,255,0.95));
+            margin: 6% auto;
+            padding: 2rem;
+            border-radius: 16px;
+            width: 92%;
+            max-width: 520px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.4);
+            animation: slideDown 0.3s;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        @keyframes slideDown { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 1.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.25s;
+        }
+        .close:hover { color: #000; }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #0b1220;
+            font-weight: 600;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid rgba(10,12,30,0.1);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: 0.25s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #6b46c1;
+            box-shadow: 0 0 0 3px rgba(107,70,193,0.1);
+        }
+
+        .form-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .form-tabs button {
+            flex: 1;
+            padding: 0.8rem;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.25s;
+            color: #0b1220;
+            font-weight: 600;
+        }
+        .form-tabs button.active {
+            background: #6b46c1;
+            color: white;
+            border-color: #6b46c1;
+        }
+
+        .form-content { display: none; }
+        .form-content.active { display: block; }
+
+        /* Products scene */
+        .products-wrapper {
+            max-width: 1200px;
+            margin: -4rem auto 0;
+            padding: 0 2rem 3rem;
+            perspective: 1400px;
+        }
+        .products {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            transform-style: preserve-3d;
+        }
+
+        .product-card {
+            position: relative;
+            background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(245,245,255,0.9));
+            border-radius: 12px;
+            overflow: visible;
+            padding: 1rem;
+            box-shadow:
+                0 30px 60px rgba(2,6,23,0.6),
+                0 8px 18px rgba(2,6,23,0.35),
+                inset 0 1px 0 rgba(255,255,255,0.6);
+            transform-style: preserve-3d;
+            transition: transform 400ms cubic-bezier(.2,.9,.2,1), box-shadow 300ms;
+            will-change: transform;
+            cursor: default;
+            border: 1px solid rgba(10,12,30,0.06);
+        }
+
+        .product-card::before,
+        .product-card::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: 12px;
+            z-index: -2;
+            transition: transform 400ms, opacity 400ms;
+        }
+        .product-card::before {
+            background: linear-gradient(180deg, rgba(118,75,162,0.06), rgba(102,126,234,0.03));
+            transform: translateZ(-30px) scale(.98);
+            filter: blur(18px);
+            opacity: 0.9;
+        }
+        .product-card::after {
+            background: linear-gradient(180deg, rgba(0,0,0,0.08), transparent);
+            transform: translateZ(-60px) scale(.96);
+            filter: blur(30px);
+            opacity: 0.7;
+        }
+
+        .product-card:hover {
+            transform: rotateY(8deg) rotateX(6deg) translateY(-12px) translateZ(30px) scale(1.02);
+            box-shadow:
+                0 60px 120px rgba(2,6,23,0.7),
+                0 20px 40px rgba(2,6,23,0.45);
+        }
+        .product-image {
+            width: 100%;
+            height: 180px;
+            background: linear-gradient(135deg, rgba(102,126,234,0.12), rgba(118,75,162,0.08));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.2rem;
+            transform: translateZ(60px);
+            transition: transform 350ms cubic-bezier(.2,.9,.2,1);
+            box-shadow: 0 18px 40px rgba(102,126,234,0.12), inset 0 -6px 18px rgba(0,0,0,0.06);
+            margin-bottom: .9rem;
+            user-select: none;
+        }
+        .product-card:hover .product-image {
+            transform: translateZ(90px) translateY(-6px) rotateZ(-2deg);
+        }
+
+        .product-info {
+            padding: 0.8rem 0 0;
+            transform: translateZ(40px);
+        }
+        .product-name {
+            font-size: 1.05rem;
+            margin-bottom: .5rem;
+            color: #0b1220;
+            font-weight: 600;
+            letter-spacing: .2px;
+        }
+        .product-price {
+            color: #6b46c1;
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-shadow: 0 6px 18px rgba(107,70,193,0.08);
+        }
+
+        button { background: linear-gradient(180deg,#6b46c1,#5a2f9e); color: white; border: none; padding: .7rem 1rem; border-radius:10px; cursor:pointer; transition: transform 220ms, box-shadow 220ms; width:100%; box-shadow:0 8px 22px rgba(91,44,168,0.32); transform: translateZ(40px); font-weight:600 }
+        button:hover { transform: translateY(-6px) translateZ(48px) scale(1.01); box-shadow: 0 18px 48px rgba(91,44,168,0.48) }
+
+        footer { background: rgba(28,36,50,0.6); color: rgba(255,255,255,0.85); text-align:center; padding:2rem; margin-top:3rem; border-top:1px solid rgba(255,255,255,0.03); position:relative; transform:translateZ(10px) }
+
+        .hidden { display: none }
+        .cart-items { list-style:none; margin:0; padding:0 }
+        .cart-item { display:flex; align-items:center; gap:.75rem; padding:.6rem 0; border-bottom:1px dashed rgba(10,12,30,0.06) }
+        .cart-item .ci-name { flex:1; font-weight:600; color:#0b1220 }
+        .ci-meta { color:#6b46c1; font-weight:700 }
+        .qty-controls { display:flex; gap:.5rem; align-items:center }
+        .qty-controls button { padding:.25rem .5rem; font-size:.9rem; border-radius:6px }
+
+        .cart-actions { display:flex; gap:.75rem; margin-top:1rem }
+        .cart-total { text-align:right; margin-top:1rem; font-weight:700; color:#0b1220 }
+
+        @media (max-width:700px) {
+            /* General spacing and layout tweaks for small screens */
+            .hero { padding: 3rem 1rem 4rem; }
+            .hero h1 { font-size:1.6rem; line-height:1.15; }
+            .hero p { font-size:1rem; }
+
+            /* Products */
+            .products-wrapper { padding: 0 1rem 3rem; }
+            .products { gap:1rem; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); }
+            .product-image { height:140px; font-size:2.4rem }
+            .product-card { padding:.8rem; border-radius:10px }
+
+            /* Nav and header */
+            header nav { padding: 0 1rem; }
+            .nav-links { gap:0.6rem; flex-wrap:wrap; align-items:center; }
+            .nav-links li { margin-bottom: 0.3rem; }
+            .nav-bottom { margin-top: 0.5rem; }
+
+            /* Modals and widgets */
+            .modal-content { width:95%; max-width:520px; margin:6% auto; }
+            #paymentWidget { right: 0.5rem; left: 0.5rem; width: auto; bottom: 1rem; }
+            .cart-btn, .auth-btn { padding: 0.4rem 0.6rem; font-size: 0.95rem; }
+            body { padding-bottom: 5rem; }
+        }
+
+        @media (max-width:480px) {
+            /* Tighten for narrow phones */
+            .hero { padding: 2rem 0.8rem 3rem; }
+            .hero h1 { font-size:1.35rem; }
+            .hero p { font-size:0.95rem; }
+
+            .products { grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap:0.8rem; }
+            .product-image { height:120px; font-size:1.8rem; }
+            .product-price { font-size:1.05rem; }
+            .product-name { font-size:0.98rem; }
+
+            .modal-content { width: 96%; margin: 5% auto; padding:1.25rem; }
+            header nav { padding: 0 0.8rem; }
+            .nav-links { gap:0.5rem; }
+            #paymentWidget { left: 0.6rem; right:0.6rem; width:auto; bottom:0.8rem; }
+            footer { padding: 1rem; }
+
+            /* Hide heavy decorative background on very small screens */
+            #floral-bg { display: none; }
+
+            /* Disable fancy hover transforms on small devices for stability */
+            .product-card { transform: none; box-shadow: none; }
+        }
+
+        /* Mobile auth compact layout: move auth row to left and use icon-only */
+        @media (max-width:480px) {
+            .nav-bottom { justify-content:flex-start; gap:0.4rem; }
+            #authBtn { padding:0.45rem 0.6rem; }
+            #authBtn .auth-label { display:none; }
+            #authBtn .auth-icon { display:inline-block; font-size:1.05rem; }
+            /* make admin link smaller on mobile */
+            #mainAdminLink a { padding:0.35rem 0.6rem; font-size:0.9rem; }
+        }
+
+        /* Ensure images and SVG scale to container width */
+        img, svg { max-width:100%; height:auto; display:block; }
+        html, body { width:100%; overflow-x:hidden; }
+
+        /* Contact panel styling */
+        .contact-panel {
+            position: absolute;
+            top: 100%;
+            right: 1rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 18px 40px rgba(2,6,23,0.12);
+            border: 1px solid rgba(10,12,30,0.06);
+            z-index: 1200;
+        }
+
+        @media (max-width:700px) {
+            /* make contact panel full-width under header on mobile */
+            .contact-panel { position: fixed; left: 0.6rem; right: 0.6rem; top: 64px; width: auto; }
+        }
+
+        /* contact button styles */
+        .contact-btn {
+            background: linear-gradient(90deg,#10b981,#059669);
+            color: white;
+            padding: 0.45rem 0.7rem;
+            border-radius: 10px;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            font-weight:700;
+            box-shadow: 0 8px 22px rgba(16,185,129,0.18);
+        }
+        .contact-btn.active {
+            box-shadow: 0 10px 30px rgba(16,185,129,0.28);
+            transform: translateY(-1px);
+            border: 1px solid rgba(16,185,129,0.12);
+        }
+        .contact-btn:focus { outline: 3px solid rgba(16,185,129,0.18); }
+        /* Mini cart dropdown */
+        .mini-cart {
+            position: absolute;
+            right: 1rem;
+            top: 64px;
+            width: 320px;
+            max-width: calc(100% - 2rem);
+            background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(245,245,255,0.96));
+            border-radius: 12px;
+            box-shadow: 0 18px 40px rgba(2,6,23,0.12);
+            border: 1px solid rgba(10,12,30,0.06);
+            z-index: 1300;
+            padding: 0.6rem;
+        }
+        .mini-cart .mc-item{display:flex;gap:0.6rem;align-items:center;padding:0.45rem 0;border-bottom:1px dashed rgba(10,12,30,0.06)}
+        .mini-cart .mc-item .mc-name{flex:1;font-weight:700;color:#0b1220}
+        .mini-cart .mc-footer{display:flex;justify-content:space-between;align-items:center;margin-top:0.5rem}
+
+        /* Mobile: show mini cart as bottom sheet */
+        @media (max-width:480px) {
+            .mini-cart {
+                position: fixed !important;
+                left: 0.6rem !important;
+                right: 0.6rem !important;
+                bottom: 0.6rem !important;
+                top: auto !important;
+                width: auto !important;
+                border-radius: 12px 12px 0 0 !important;
+                max-height: 60vh;
+                overflow-y: auto;
+                padding: 0.75rem;
+            }
+            .mini-cart .mc-item div:first-child{width:48px;height:48px}
+            .mini-cart .mc-footer{flex-direction:row-reverse;gap:0.5rem}
+        }
+    </style>
+  </head>
+  <body>
+                <!-- Decorative floral SVG background (purely visual) -->
+                <svg id="floral-bg" aria-hidden="true" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
+                    <defs>
+                        <linearGradient id="pg1" x1="0" x2="1">
+                            <stop offset="0%" stop-color="#FFFBF0" stop-opacity="0.95"/>
+                            <stop offset="100%" stop-color="#F0FFF6" stop-opacity="0.95"/>
+                        </linearGradient>
+                    </defs>
+                    <rect width="1200" height="800" fill="url(#pg1)" />
+
+                    <!-- flowers: grouped shapes with subtle colors -->
+                    <g class="flower f1" transform="translate(120,140) scale(1)">
+                        <g style="transform-origin: center; animation: floatY 8s ease-in-out infinite;">
+                            <circle cx="0" cy="0" r="10" fill="#FFB6C1" opacity="0.95" />
+                            <g fill="#FFDFE4" opacity="0.9">
+                                <ellipse rx="8" ry="16" cx="0" cy="-16" transform="rotate(0)" />
+                                <ellipse rx="8" ry="16" cx="0" cy="16" transform="rotate(180)" />
+                                <ellipse rx="8" ry="16" cx="-16" cy="0" transform="rotate(-90)" />
+                                <ellipse rx="8" ry="16" cx="16" cy="0" transform="rotate(90)" />
+                            </g>
+                        </g>
+                    </g>
+
+                    <g class="flower f2" transform="translate(980,120) scale(1.6)">
+                        <g style="transform-origin: center; animation: floatY 10s ease-in-out -2s infinite;">
+                            <circle cx="0" cy="0" r="12" fill="#C8FACC" opacity="0.95" />
+                            <g fill="#E8FFF2" opacity="0.9">
+                                <ellipse rx="10" ry="20" cx="0" cy="-18" />
+                                <ellipse rx="10" ry="20" cx="0" cy="18" />
+                                <ellipse rx="10" ry="20" cx="-18" cy="0" />
+                                <ellipse rx="10" ry="20" cx="18" cy="0" />
+                            </g>
+                        </g>
+                    </g>
+
+                    <g class="flower f3" transform="translate(640,560) scale(1.2)">
+                        <g style="transform-origin: center; animation: floatY 9s ease-in-out -4s infinite;">
+                            <circle cx="0" cy="0" r="14" fill="#FFEFD5" opacity="0.95" />
+                            <g fill="#FFF5E6" opacity="0.9">
+                                <ellipse rx="12" ry="22" cx="0" cy="-20" />
+                                <ellipse rx="12" ry="22" cx="0" cy="20" />
+                                <ellipse rx="12" ry="22" cx="-20" cy="0" />
+                                <ellipse rx="12" ry="22" cx="20" cy="0" />
+                            </g>
+                        </g>
+                    </g>
+
+                    <g class="flower f4" transform="translate(300,620) scale(1.4)">
+                        <g style="transform-origin: center; animation: floatY 11s ease-in-out -1s infinite;">
+                            <circle cx="0" cy="0" r="9" fill="#FFD6EA" opacity="0.95" />
+                            <g fill="#FFF0F6" opacity="0.9">
+                                <ellipse rx="7" ry="14" cx="0" cy="-14" />
+                                <ellipse rx="7" ry="14" cx="0" cy="14" />
+                                <ellipse rx="7" ry="14" cx="-14" cy="0" />
+                                <ellipse rx="7" ry="14" cx="14" cy="0" />
+                            </g>
+                        </g>
+                    </g>
+                </svg>
+                <header>
+                    <nav>
+                        <!-- logo removed per request -->
+                        <div class="nav-top" style="display:flex;align-items:center;gap:0.6rem;">
+                            <ul class="nav-links" style="display:flex;gap:0.6rem;align-items:center;list-style:none;margin:0;padding:0;">
+                                <li><button id="homeBtn" class="contact-btn" aria-controls="home" aria-expanded="false" onclick="scrollToSection('home')">Ana Sayfa</button></li>
+                                <li><button id="productsBtn" class="contact-btn" aria-controls="products" aria-expanded="false" onclick="scrollToSection('products')">Ürünler</button></li>
+                                <li id="cartContainer"><button id="cartBtn" class="cart-btn contact-btn" aria-controls="cartModal" aria-expanded="false" onclick="openCart()">Sepet <span id="cartCount" class="cart-count hidden">0</span></button></li>
+                                <li><button id="contactBtn" class="contact-btn" aria-expanded="false" aria-controls="contactPanel" onclick="toggleContact(event)"><span style="display:inline-block;margin-right:6px;line-height:1">📞</span><span>İletişim</span><span style="margin-left:8px;opacity:0.9">▾</span></button></li>
+                            </ul>
+                        </div>
+                        <div class="nav-bottom" style="display:flex;justify-content:flex-end;align-items:center;margin-top:0.4rem;">
+                            <div id="mainAdminLink" style="display:none; margin-right:0.6rem;"><a class="auth-btn" href="https://ern-cicek.com.tr/admin.html" target="_blank" rel="noopener" style="background:#3b7d3b;">Yönetici</a></div>
+                            <div id="authContainer" style="margin-left:0.6rem;">
+                                <button id="authBtn" class="auth-btn contact-btn" aria-controls="authModal" aria-expanded="false" onclick="openAuthModal()">
+                                    <span class="auth-icon" aria-hidden="true">👤</span>
+                                    <span class="auth-label">Giriş / Kayıt</span>
+                                </button>
+                            </div>
+                            <div id="userContainer" class="hidden" style="margin-left:0.6rem;display:flex;gap:0.4rem;align-items:center;position:relative;">
+                                <span class="user-info" id="userName"></span>
+                                <div id="profileWrap" style="position:relative;">
+                                    <button id="profileToggle" class="auth-btn" aria-controls="profileMenu" aria-expanded="false" style="margin-left:0.3rem;padding:0.35rem 0.5rem;">▾</button>
+                                    <div id="profileMenu" class="hidden" role="menu" style="position:absolute;right:0;top:calc(100% + 6px);background:linear-gradient(180deg, #fff, #fbfbfb);border:1px solid rgba(10,12,30,0.06);box-shadow:0 12px 30px rgba(2,6,23,0.12);border-radius:10px;padding:0.5rem;min-width:160px;z-index:120;">
+                                        <button style="display:block;width:100%;text-align:left;padding:0.5rem;border:none;background:transparent;cursor:pointer;border-radius:6px;margin-bottom:0.25rem;" onclick="openAccountModal(); closeProfileMenu();">Hesabım</button>
+                                        <button id="profileLogout" style="display:block;width:100%;text-align:left;padding:0.5rem;border:none;background:#e53e3e;color:#fff;cursor:pointer;border-radius:6px;" onclick="logoutConfirm(); closeProfileMenu();">Çıkış Yap</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
+
+                    <!-- Mini cart dropdown (shown on hover/focus of cart button) -->
+                    <div id="miniCart" class="mini-cart hidden" role="region" aria-hidden="true">
+                        <div id="miniCartItems"></div>
+                        <div class="mc-footer">
+                            <div id="miniCartTotal" style="font-weight:800;color:#0b1220">Toplam: ₺0.00</div>
+                            <div style="display:flex;gap:0.4rem">
+                                <button onclick="openCart(); hideMiniCart()" class="btn">Sepete Gözat</button>
+                                <button onclick="checkout(); hideMiniCart()" class="btn btn-ghost">Satın Al</button>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Contact dropdown panel (hidden by default) -->
+                <div id="contactPanel" class="contact-panel hidden" role="region" aria-hidden="true" aria-labelledby="contactBtn">
+                    <div style="padding:0.8rem 1rem; max-width:360px;">
+                        <strong id="contactPanelTitle" style="display:block; margin-bottom:0.4rem; color:#0b1220">İletişim</strong>
+                        <div id="contactPanelDesc" style="font-size:0.95rem; color:#334155; margin-bottom:0.5rem">Bizimle iletişime geçmek için aşağıdaki seçenekleri kullanabilirsiniz.</div>
+                        <div id="contactPanelBody" style="font-size:0.95rem; color:#0b1220;">
+                            <div><strong>E-posta:</strong> <a id="contactEmailLink" href="mailto:amtbrs@icloud.com">amtbrs@icloud.com</a></div>
+                            <div style="margin-top:0.25rem;"><strong>Telefon:</strong> <span id="contactPhone">+90 5XX XXX XXXX</span></div>
+                            <div style="margin-top:0.25rem;"><strong>Adres:</strong> <span id="contactAddress">Adresiniz Caddesi 1, Şehir, TR</span></div>
+                            <div style="margin-top:0.5rem;"><strong>Çalışma Saatleri:</strong><div id="contactHours" style="font-size:0.9rem; color:#334155">Pzt-Cum 09:00-19:00</div></div>
+                        </div>
+                        <div style="margin-top:0.6rem; display:flex; gap:0.5rem;">
+                            <a id="contactEmailBtn" href="mailto:amtbrs@icloud.com?subject=İletişim%20-%20Web" style="flex:1;background:#2563eb;color:#fff;padding:0.5rem;border-radius:8px;text-align:center;text-decoration:none">E-posta Gönder</a>
+                            <button onclick="closeContact()" style="flex:1;background:#e53e3e;color:#fff;padding:0.5rem;border-radius:8px;border:none;">Kapat</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Auth Modal -->
+                <div id="authModal" class="modal">
+                    <div class="modal-content">
+                        <span class="close" onclick="closeAuthModal()">&times;</span>
+                        <h2 style="margin-bottom: 1.5rem; color: #0b1220;">Hoşgeldiniz</h2>
+            
+                        <div class="form-tabs">
+                            <button class="form-tab active" onclick="switchTab('login', this)">Giriş</button>
+                            <button class="form-tab" onclick="switchTab('register', this)">Kayıt</button>
+                        </div>
+                        <div id="adminBtnRow" style="text-align:right; margin-bottom:1rem;">
+                            <button class="auth-btn" style="background:#2e7d32; margin-top:0.5rem;" onclick="window.open('admin.html','_blank')">Admin Girişi</button>
+                        </div>
+
+                        <!-- Giriş Formu -->
+                        <div id="login" class="form-content active">
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" id="loginEmail" placeholder="Email adresiniz">
+                            </div>
+                            <div class="form-group">
+                                <label>Telefon</label>
+                                <input type="tel" id="loginPhone" placeholder="Telefon numaranız" pattern="[0-9]{10,15}">
+                            </div>
+                            <div class="form-group">
+                                <label>Şifre</label>
+                                <input type="password" id="loginPassword" placeholder="Şifreniz">
+                            </div>
+                            <button onclick="loginUser()" style="width: 100%; margin-top: 1rem;">Giriş Yap</button>
+                        </div>
+
+                        <!-- Kayıt Formu -->
+                        <div id="register" class="form-content">
+                            <div class="form-group">
+                                <label>Ad Soyad</label>
+                                <input type="text" id="registerName" placeholder="Ad Soyadınız">
+                            </div>
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" id="registerEmail" placeholder="Email adresiniz">
+                            </div>
+                            <div class="form-group">
+                                <label>Telefon</label>
+                                <input type="tel" id="registerPhone" placeholder="Telefon numaranız" pattern="[0-9]{10,15}">
+                            </div>
+                            <div class="form-group">
+                                <label>Şifre</label>
+                                <input type="password" id="registerPassword" placeholder="Şifreniz">
+                            </div>
+                            <div class="form-group">
+                                <label>Şifre Tekrar</label>
+                                <input type="password" id="registerPassword2" placeholder="Şifreniz tekrar" style="width:100%; padding:0.8rem; border:1px solid rgba(10,12,30,0.1); border-radius:8px; font-size:1rem; transition:0.25s;">
+                            </div>
+                            <button onclick="registerUser()" style="width: 100%; margin-top: 1rem;">Kayıt Ol</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Account Modal: shows profile + orders/invoices for logged-in users -->
+                <div id="accountModal" class="modal">
+                    <div class="modal-content">
+                        <span class="close" onclick="closeAccountModal()">&times;</span>
+                        <h2 style="margin-bottom: 1rem; color: #0b1220;">Üye Hesabım</h2>
+                        <div id="accountBody">
+                            <div style="margin-bottom:0.6rem;">
+                                <strong id="acctName">İsim</strong>
+                                <div id="acctEmail" style="font-size:0.95rem;color:#334155"></div>
+                                <div id="acctPhone" style="font-size:0.95rem;color:#334155"></div>
+                            </div>
+
+                            <div style="margin-top:0.6rem;">
+                                <strong>Siparişlerim</strong>
+                                <div id="ordersList" style="margin-top:0.5rem;">
+                                    <div style="color:#6b7280;padding:0.6rem">Siparişiniz bulunmuyor.</div>
+                                </div>
+                            </div>
+
+                            <div style="margin-top:1rem; display:flex; gap:0.5rem;">
+                                <button onclick="closeAccountModal()" style="flex:1;">Kapat</button>
+                                <button onclick="downloadAllInvoices()" style="flex:1;background:#2563eb;color:#fff">Tüm Faturaları İndir</button>
+                                <button onclick="logout()" style="flex:1;background:#e53e3e;color:#fff">Çıkış Yap</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Detail Modal (daha güzel detay & yazdırılabilir fatura) -->
+                <div id="orderDetailModal" class="modal">
+                    <div class="modal-content">
+                        <span class="close" onclick="closeOrderDetailModal()">&times;</span>
+                        <h2 style="margin-bottom:0.6rem;color:#0b1220">Sipariş Detayı</h2>
+                        <div id="orderDetailBody">
+                            <div id="odHeader" style="margin-bottom:0.5rem"></div>
+                            <div id="odItems" style="margin-bottom:0.6rem"></div>
+                            <div id="odTotal" style="font-weight:800;color:#0b1220;margin-bottom:0.6rem"></div>
+                            <div style="display:flex;gap:0.5rem;">
+                                <button onclick="printInvoiceCurrent()" style="flex:1;background:#2563eb;color:#fff">Faturayı Yazdır / PDF</button>
+                                <button onclick="closeOrderDetailModal()" style="flex:1">Kapat</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Bottom-right payment widget (compact, non-page) -->
+                <div id="paymentWidget" class="hidden" style="position:fixed; right:1rem; bottom:1rem; width:320px; max-width:92%; z-index:1100;">
+                    <div style="background:#fff;border-radius:12px;box-shadow:0 18px 40px rgba(2,6,23,0.2);overflow:hidden;border:1px solid rgba(10,12,30,0.06);">
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0.8rem;background:linear-gradient(90deg,#f7fafc,#eef2ff);border-bottom:1px solid rgba(0,0,0,0.04);">
+                            <strong style="color:#0b1220">Ödeme (Havale/EFT)</strong>
+                            <button onclick="closePaymentWidget()" style="background:transparent;border:none;font-size:1.1rem;cursor:pointer;padding:0 6px;">✕</button>
+                        </div>
+                        <div style="padding:0.85rem;">
+                            <div style="font-size:0.95rem;color:#334155">Lütfen aşağıdaki IBAN'a ödeme yapınız. Ödeme sonrası 'Siparişi Bildir' butonunu kullanın.</div>
+                            <div id="widgetIban" style="font-family:monospace;font-size:1rem;margin-top:0.6rem;color:#0b1220;word-break:break-all">xxxxxxxxxxxxxxx</div>
+                            <div id="widgetTotal" style="margin-top:0.5rem;font-weight:700;color:#0b1220">Toplam: ₺0.00</div>
+                            <div style="display:flex;gap:0.5rem;margin-top:0.8rem;">
+                                <button onclick="copyIbanFromWidget()" style="flex:1;background:#2563eb;color:#fff;padding:0.5rem;border-radius:8px;border:none;">IBAN'ı Kopyala</button>
+                                <button onclick="openFullPaymentPageFromWidget()" style="flex:1;background:#6b7280;color:#fff;padding:0.5rem;border-radius:8px;border:none;">Tam Sayfa</button>
+                            </div>
+                            <div style="display:flex;gap:0.5rem;margin-top:0.6rem;">
+                                <button onclick="sendBankNotificationFromWidget()" style="flex:1;background:#10b981;color:#fff;padding:0.55rem;border-radius:8px;border:none;font-weight:700;">Siparişi Bildir</button>
+                                <button onclick="closePaymentWidget()" style="flex:1;background:#e53e3e;color:#fff;padding:0.55rem;border-radius:8px;border:none;">İptal</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                        <!-- Bank Transfer Modal - show IBAN and instructions -->
+                        <div id="bankModal" class="modal">
+                            <div class="modal-content">
+                                <span class="close" onclick="closeBank()">&times;</span>
+                                <h2 style="margin-bottom: 1rem; color: #0b1220;">Havale / EFT ile Ödeme</h2>
+                                <div id="bankBody">
+                                    <p>Lütfen aşağıdaki IBAN'a havale/eft yapınız. Ödeme yapıldıktan sonra siparişi manuel olarak onaylayacağız.</p>
+                                    <div style="background:#f7f7fb; padding:1rem; border-radius:8px; margin-top:0.75rem;">
+                                        <strong>IBAN:</strong>
+                                        <div id="siteIban" style="font-family:monospace; font-size:1.05rem; margin-top:0.5rem;">xxxxxxxxxxxxxxx</div>
+                                        <div style="margin-top:0.5rem; display:flex; gap:0.5rem;">
+                                            <button onclick="copyIban()">IBAN'ı Kopyala</button>
+                                            <button onclick="openPaymentPage()" style="background:#2563eb; color:#fff;">IBAN'e Git</button>
+                                        </div>
+                                    </div>
+
+                                    <div style="margin-top:1rem;">
+                                        <label for="payerEmail" style="display:block; font-weight:600; margin-bottom:0.4rem;">E-posta Adresiniz (sipariş onayı için)</label>
+                                        <input id="payerEmail" type="email" placeholder="you@example.com" style="width:100%; padding:0.6rem; border:1px solid #ddd; border-radius:6px;" />
+                                    </div>
+
+                                    <div id="bankAmount" style="margin-top:0.75rem; font-weight:700; color:#0b1220;">Toplam: ₺0.00</div>
+
+                                    <div style="margin-top:1rem; display:flex; gap:0.5rem;">
+                                        <button onclick="sendBankNotification()" style="flex:1;">Siparişi Bildir (E-posta Gönder)</button>
+                                        <button onclick="closeBank()" style="flex:1; background:#6b7280">İptal</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                <!-- Cart Modal -->
+                <div id="cartModal" class="modal">
+                    <div class="modal-content">
+                        <span class="close" onclick="closeCart()">&times;</span>
+                        <h2 style="margin-bottom: 1rem; color: #0b1220;">Sepetiniz</h2>
+                        <div id="cartBody">
+                            <ul id="cartItems" class="cart-items"></ul>
+                            <div id="emptyCart" style="text-align:center; color:#555; padding:1rem 0;">Sepetiniz boş.</div>
+                            <div class="cart-total" id="cartTotal"></div>
+                            <div class="cart-actions">
+                                <button onclick="clearCart()" style="flex:1; background:#e53e3e">Sepeti Temizle</button>
+                                <button onclick="checkout()" style="flex:1; background:#2b6cb0">Satın Al</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hero section removed (big logo/title) per request -->
+
+                <div class="products-wrapper">
+                    <section class="products" id="products">
+                        <div class="product-card" data-id="1" data-name="Ürün 1" data-price="99.99">
+                            <div class="product-image">🛍️</div>
+                            <div class="product-info">
+                                <div class="product-name">Ürün 1</div>
+                                <div class="product-price">₺99.99</div>
+                                <button onclick="addToCartFromBtn(this)">Sepete Ekle</button>
+                            </div>
+                        </div>
+
+                        <div class="product-card" data-id="2" data-name="Ürün 2" data-price="199.99">
+                            <div class="product-image">📱</div>
+                            <div class="product-info">
+                                <div class="product-name">Ürün 2</div>
+                                <div class="product-price">₺199.99</div>
+                                <button onclick="addToCartFromBtn(this)">Sepete Ekle</button>
+                            </div>
+                        </div>
+
+                        <div class="product-card" data-id="3" data-name="Ürün 3" data-price="149.99">
+                            <div class="product-image">⌚</div>
+                            <div class="product-info">
+                                <div class="product-name">Ürün 3</div>
+                                <div class="product-price">₺149.99</div>
+                                <button onclick="addToCartFromBtn(this)">Sepete Ekle</button>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Hakkımızda bölümü kaldırıldı -->
+
+                <footer>
+                    <div style="display:flex;flex-direction:column;gap:0.5rem;align-items:center;">
+                        <div style="display:flex;gap:1.5rem;flex-wrap:wrap;justify-content:center;align-items:center;">
+                            <div style="text-align:left; min-width:200px;">
+                                <strong>Ödeme</strong>
+                                <div class="meta">Havale / EFT</div>
+                                <div class="meta">Güvenli ödeme sağlanır</div>
+                            </div>
+                        </div>
+                        <div style="font-size:0.9rem; opacity:0.9">&copy; 2025 ERN Tropikal Çiçek — Tüm Hakları Saklıdır.</div>
+                    </div>
+                </footer>
+
+                <!-- Contact info has been moved into the header contact panel -->
+
+                <script>
+                    /* --- Auth modal and tabs --- */
+                    function openAuthModal() {
+                        document.getElementById('authModal').style.display = 'block';
+                        try{ const b = document.getElementById('authBtn'); if (b) b.setAttribute('aria-expanded','true'); }catch(e){}
+                    }
+
+                    function closeAuthModal() {
+                        document.getElementById('authModal').style.display = 'none';
+                        try{ const b = document.getElementById('authBtn'); if (b) b.setAttribute('aria-expanded','false'); }catch(e){}
+                    }
+
+                    function switchTab(tab, el) {
+                        document.querySelectorAll('.form-content').forEach(c => c.classList.remove('active'));
+                        document.querySelectorAll('.form-tab').forEach(t => t.classList.remove('active'));
+                        document.getElementById(tab).classList.add('active');
+                        if (el) el.classList.add('active');
+                    }
+
+                    /* --- Contact panel toggle --- */
+                    function toggleContact(e) {
+                        e && e.preventDefault && e.preventDefault();
+                        const btn = document.getElementById('contactBtn');
+                        const panel = document.getElementById('contactPanel');
+                        if (!panel) return;
+                        const isHidden = panel.classList.contains('hidden');
+                        if (isHidden) {
+                            panel.classList.remove('hidden');
+                            panel.setAttribute('aria-hidden', 'false');
+                            btn.setAttribute('aria-expanded', 'true');
+                        } else {
+                            panel.classList.add('hidden');
+                            panel.setAttribute('aria-hidden', 'true');
+                            btn.setAttribute('aria-expanded', 'false');
+                        }
+                    }
+
+                    function closeContact() {
+                        const btn = document.getElementById('contactBtn');
+                        const panel = document.getElementById('contactPanel');
+                        if (!panel) return;
+                        panel.classList.add('hidden');
+                        panel.setAttribute('aria-hidden', 'true');
+                        if (btn) btn.setAttribute('aria-expanded', 'false');
+                    }
+
+                    // Scroll helper used by nav buttons; mimics toggle behavior briefly for aria
+                    function scrollToSection(id){
+                        try{
+                            const el = document.getElementById(id);
+                            if (!el) return;
+                            el.scrollIntoView({behavior:'smooth', block:'start'});
+                            // find nav button pointing to this id and set aria-expanded briefly
+                            const btn = document.querySelector('[aria-controls="'+id+'"]');
+                            if (btn) { btn.setAttribute('aria-expanded','true'); setTimeout(()=>{ try{ btn.setAttribute('aria-expanded','false'); }catch(e){} }, 700); }
+                        }catch(e){ console.error('scrollToSection error', e); }
+                    }
+
+                    // Close contact panel when clicking outside
+                    document.addEventListener('click', function(ev){
+                        const panel = document.getElementById('contactPanel');
+                        const btn = document.getElementById('contactBtn');
+                        if (!panel || !btn) return;
+                        if (panel.classList.contains('hidden')) return;
+                        const target = ev.target;
+                        if (target === panel || panel.contains(target) || target === btn || btn.contains(target)) return;
+                        closeContact();
+                    });
+
+                        /* --- Site settings loader (tries /site-settings.json, falls back to localStorage) --- */
+                        const SETTINGS_KEY = 'site_settings_v1';
+                        async function fetchSiteSettings(){
+                            try{
+                                const res = await fetch('/site-settings.json', {cache: 'no-store'});
+                                if (res.ok){
+                                    const json = await res.json();
+                                    return json;
+                                }
+                            }catch(e){ /* ignore fetch errors */ }
+                            try{ return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}; }catch(e){ return {}; }
+                        }
+
+                        function applySiteSettings(s){
+                            const defaults = {
+                                email: 'amtbrs@icloud.com',
+                                phone: '+90 5XX XXX XXXX',
+                                address: 'Adresiniz Caddesi 1, Şehir, TR',
+                                hours: 'Pzt-Cum 09:00-19:00',
+                                iban: 'TR33 0006 1005 1978 6457 8413 26',
+                                contactBtnText: 'İletişim'
+                            };
+                            const cfg = Object.assign({}, defaults, s || {});
+                            // contact panel
+                            const emailLink = document.getElementById('contactEmailLink');
+                            const emailBtn = document.getElementById('contactEmailBtn');
+                            const phoneEl = document.getElementById('contactPhone');
+                            const addrEl = document.getElementById('contactAddress');
+                            const hoursEl = document.getElementById('contactHours');
+                            const siteIbanEl = document.getElementById('siteIban');
+                            const widgetIban = document.getElementById('widgetIban');
+                            const contactBtn = document.getElementById('contactBtn');
+                            if (emailLink) { emailLink.href = 'mailto:' + cfg.email; emailLink.textContent = cfg.email; }
+                            if (emailBtn) emailBtn.href = 'mailto:' + cfg.email + '?subject=' + encodeURIComponent('İletişim - Web');
+                            if (phoneEl) phoneEl.textContent = cfg.phone;
+                            if (addrEl) addrEl.textContent = cfg.address;
+                            if (hoursEl) hoursEl.textContent = cfg.hours;
+                            if (siteIbanEl) siteIbanEl.textContent = cfg.iban;
+                            if (widgetIban) widgetIban.textContent = cfg.iban;
+                            if (contactBtn) {
+                                // update contact button label if provided
+                                const span = contactBtn.querySelector('span:nth-child(2)');
+                                if (span) span.textContent = cfg.contactBtnText;
+                            }
+                            // store locally for admin and other clients
+                            try{ localStorage.setItem(SETTINGS_KEY, JSON.stringify(cfg)); }catch(e){}
+                        }
+
+                        async function loadSiteSettingsAndApply(){
+                            const s = await fetchSiteSettings();
+                            applySiteSettings(s);
+                        }
+
+                    /* --- Registration / Login --- */
+                    // --- Password hashing helpers using Web Crypto (PBKDF2 SHA-256) ---
+                    const PW_ITERATIONS = 150000; // reasonable for client-side; adjust as needed
+                    const SALT_BYTES = 16;
+
+                    function toBase64(buffer) {
+                        let binary = '';
+                        const bytes = new Uint8Array(buffer);
+                        const len = bytes.byteLength;
+                        for (let i = 0; i < len; i++) binary += String.fromCharCode(bytes[i]);
+                        return btoa(binary);
+                    }
+
+                    function fromBase64(b64) {
+                        const binary = atob(b64);
+                        const len = binary.length;
+                        const bytes = new Uint8Array(len);
+                        for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
+                        return bytes.buffer;
+                    }
+
+                    async function deriveKey(password, saltBuffer, iterations = PW_ITERATIONS) {
+                        const enc = new TextEncoder();
+                        const pwKey = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
+                        const derived = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: saltBuffer, iterations, hash: 'SHA-256' }, pwKey, 256);
+                        return new Uint8Array(derived);
+                    }
+
+                    function secureCompare(a, b) {
+                        if (!(a instanceof Uint8Array)) a = new Uint8Array(a);
+                        if (!(b instanceof Uint8Array)) b = new Uint8Array(b);
+                        if (a.length !== b.length) return false;
+                        let diff = 0;
+                        for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+                        return diff === 0;
+                    }
+
+                    async function registerUser() {
+                        const name = document.getElementById('registerName').value.trim();
+                        const email = document.getElementById('registerEmail').value.trim().toLowerCase();
+                        const phone = document.getElementById('registerPhone').value.trim();
+                        const password = document.getElementById('registerPassword').value;
+                        const password2 = document.getElementById('registerPassword2').value;
+
+                        if (!name || !email || !phone || !password || !password2) {
+                            console.log('Lütfen tüm alanları doldurunuz!');
+                            return;
+                        }
+                        if (!/^\d{10,15}$/.test(phone)) {
+                            console.log('Telefon numarası 10-15 rakam olmalı.');
+                            return;
+                        }
+                        if (password !== password2) {
+                            console.log('Şifreler eşleşmiyor!');
+                            return;
+                        }
+
+                        // generate salt
+                        const salt = crypto.getRandomValues(new Uint8Array(SALT_BYTES));
+                        const hash = await deriveKey(password, salt.buffer, PW_ITERATIONS);
+
+                        const stored = {
+                            name,
+                            email,
+                            phone,
+                            pw: {
+                                algo: 'PBKDF2-SHA256',
+                                iterations: PW_ITERATIONS,
+                                salt: toBase64(salt.buffer),
+                                hash: toBase64(hash.buffer)
+                            },
+                            createdAt: Date.now()
+                        };
+
+                        localStorage.setItem('user_' + email, JSON.stringify(stored));
+                        console.log('Kayıt başarılı! Giriş yapabilirsiniz. (şifre güvenli şekilde saklandı)');
+                        // try to persist safe user record to remote repo (best-effort)
+                        try{ commitUserToRepo({ name, email, phone, createdAt: stored.createdAt }); }catch(e){}
+                        switchTab('login', document.querySelector('.form-tab'));
+                        document.getElementById('registerName').value = '';
+                        document.getElementById('registerEmail').value = '';
+                        document.getElementById('registerPhone').value = '';
+                        document.getElementById('registerPassword').value = '';
+                        document.getElementById('registerPassword2').value = '';
+                    }
+
+                    async function loginUser() {
+                        const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+                        const phone = document.getElementById('loginPhone').value.trim();
+                        const password = document.getElementById('loginPassword').value;
+
+                        if (!email || !phone || !password) {
+                            console.log('Lütfen email, telefon ve şifre giriniz!');
+                            return;
+                        }
+
+                        const userStr = localStorage.getItem('user_' + email);
+                        if (!userStr) {
+                            console.log('Kullanıcı bulunamadı!');
+                            return;
+                        }
+
+                        const userData = JSON.parse(userStr);
+                        if (userData.phone !== phone) {
+                            console.log('Telefon numarası eşleşmiyor!');
+                            return;
+                        }
+
+                        try {
+                            const saltBuf = fromBase64(userData.pw.salt);
+                            const expectedHash = new Uint8Array(fromBase64(userData.pw.hash));
+                            const iter = userData.pw.iterations || PW_ITERATIONS;
+                            const derived = await deriveKey(password, saltBuf, iter);
+                            if (!secureCompare(derived, expectedHash)) {
+                                console.log('Şifre yanlış!');
+                                return;
+                            }
+                        } catch (e) {
+                            console.error('Giriş sırasında hata oluştu', e);
+                            console.log('Giriş başarısız.');
+                            return;
+                        }
+
+                        // store current user without sensitive fields
+                        const safeUser = { name: userData.name, email: userData.email, phone: userData.phone };
+                        localStorage.setItem('currentUser', JSON.stringify(safeUser));
+                        // update lastLogin remotely (best-effort)
+                        try{ commitUserToRepo({ name: userData.name, email: userData.email, phone: userData.phone, createdAt: userData.createdAt, lastLogin: Date.now() }); }catch(e){}
+                        closeAuthModal();
+                        updateUIAfterLogin(userData.name);
+                        updateCartCount();
+                        document.getElementById('loginEmail').value = '';
+                        document.getElementById('loginPhone').value = '';
+                        document.getElementById('loginPassword').value = '';
+                    }
+
+                    function updateUIAfterLogin(name) {
+                                        // keep the auth button visible on the homepage but mark it active
+                                        try{ document.getElementById('authContainer').classList.remove('hidden'); }catch(e){}
+                                        document.getElementById('userContainer').classList.remove('hidden');
+                                        document.getElementById('userName').textContent = 'Hoşgeldiniz, ' + name;
+                                        try{
+                                            const b = document.getElementById('authBtn');
+                                            if (b) {
+                                                b.classList.add('active');
+                                                // change label to "Hesabım" and make it open account view
+                                                const label = b.querySelector('.auth-label');
+                                                if (label) label.textContent = 'Hesabım';
+                                                b.onclick = openAccountModal;
+                                                b.setAttribute('aria-controls', 'accountModal');
+                                                b.setAttribute('aria-expanded', 'false');
+                                            }
+                                        }catch(e){}
+                    }
+
+                    function logout() {
+                                        // remove current user and reset UI to public homepage state
+                                        localStorage.removeItem('currentUser');
+                                        document.getElementById('authContainer').classList.remove('hidden');
+                                        document.getElementById('userContainer').classList.add('hidden');
+                                        updateCartCount();
+                                        // reset auth button label and handler
+                                        try{
+                                            const b = document.getElementById('authBtn');
+                                            if (b) {
+                                                b.classList.remove('active');
+                                                const label = b.querySelector('.auth-label');
+                                                if (label) label.textContent = 'Giriş / Kayıt';
+                                                b.onclick = openAuthModal;
+                                                b.setAttribute('aria-controls', 'authModal');
+                                                b.setAttribute('aria-expanded', 'false');
+                                            }
+                                        }catch(e){}
+                                        // close any open modals and mini cart
+                                        try{ closeAuthModal(); }catch(e){}
+                                        try{ closeCart(); }catch(e){}
+                                        try{ closeBank(); }catch(e){}
+                                        try{ hideMiniCart(0); }catch(e){}
+                                        // navigate back to homepage top (smooth)
+                                        try{ scrollToSection && scrollToSection('home'); }catch(e){ window.location.href = 'anasayfa.html'; }
+                                        console.log('Çıkış yapıldı.');
+                    }
+
+                    /* --- Orders / account helpers --- */
+                    function ordersKeyForUser(email){ return 'orders_' + email; }
+                    function getOrdersForUser(email){
+                        try{ const raw = localStorage.getItem(ordersKeyForUser(email)); return raw?JSON.parse(raw):[]; }catch(e){ return []; }
+                    }
+                    function saveOrderForUser(email, order){
+                        if (!email) return;
+                        const arr = getOrdersForUser(email);
+                        arr.unshift(order);
+                        try{ localStorage.setItem(ordersKeyForUser(email), JSON.stringify(arr)); }catch(e){}
+                    }
+
+                    // Commit a safe user record to the remote repo via serverless function (optional)
+                    // Writes to `users/<email>.json` containing non-sensitive fields and timestamps.
+                    async function commitUserToRepo(userRecord){
+                        if (!userRecord || !userRecord.email) return;
+                        try{
+                            const path = 'users/' + (userRecord.email) + '.json';
+                            const payload = Object.assign({}, userRecord);
+                            // Ensure only safe fields go to remote
+                            const safe = { name: payload.name||'', email: payload.email||'', phone: payload.phone||'', createdAt: payload.createdAt||null, lastLogin: payload.lastLogin||null };
+                            const json = JSON.stringify(safe, null, 2);
+                            // base64 encode UTF-8
+                            const b64 = btoa(unescape(encodeURIComponent(json)));
+                            const body = { files: [ { path: path, contentBase64: b64 } ], message: 'Update user record ' + (userRecord.email||'') };
+                            const res = await fetch('/.netlify/functions/commit-file', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+                            if (!res.ok) {
+                                const txt = await res.text().catch(()=>'');
+                                console.warn('commitUserToRepo failed', res.status, txt);
+                                return false;
+                            }
+                            const j = await res.json().catch(()=>null);
+                            console.log('commitUserToRepo success', j);
+                            return true;
+                        }catch(err){ console.warn('commitUserToRepo error', err); return false; }
+                    }
+
+                    function renderAccountModal(){
+                        const user = getCurrentUser();
+                        if (!user) return openAuthModal();
+                        const nameEl = document.getElementById('acctName');
+                        const emailEl = document.getElementById('acctEmail');
+                        const phoneEl = document.getElementById('acctPhone');
+                        const ordersEl = document.getElementById('ordersList');
+                        if (nameEl) nameEl.textContent = user.name || '';
+                        if (emailEl) emailEl.textContent = user.email || '';
+                        if (phoneEl) phoneEl.textContent = user.phone || '';
+                        const orders = getOrdersForUser(user.email || '');
+                        ordersEl.innerHTML = '';
+                        if (!orders || !orders.length){ ordersEl.innerHTML = '<div style="color:#6b7280;padding:0.6rem">Henüz siparişiniz yok.</div>'; return; }
+                        orders.forEach(o=>{
+                            const d = document.createElement('div');
+                            d.style.padding = '0.6rem'; d.style.borderBottom = '1px dashed rgba(10,12,30,0.06)'; d.style.display='flex'; d.style.justifyContent='space-between'; d.style.alignItems='center';
+                            const left = document.createElement('div');
+                            left.innerHTML = '<div style="font-weight:700">Sipariş #' + (o.id || '') + '</div><div style="font-size:0.9rem;color:#334155">' + (new Date(o.date||0)).toLocaleString() + '</div>';
+                            const right = document.createElement('div');
+                            right.innerHTML = '<div style="font-weight:800;color:#0b1220">₺' + (Number(o.total)||0).toFixed(2) + '</div><div style="margin-top:6px"><button style="margin-right:6px;" onclick="downloadInvoice(\'' + (o.id||'') + '\')">Fatura indir</button><button onclick="viewOrderDetails(\'' + (o.id||'') + '\')">Detay</button></div>';
+                            d.appendChild(left); d.appendChild(right);
+                            ordersEl.appendChild(d);
+                        });
+                    }
+
+                    function openAccountModal(){
+                        renderAccountModal();
+                        const m = document.getElementById('accountModal'); if (!m) return;
+                        m.style.display = 'block';
+                        try{ const b = document.getElementById('authBtn'); if (b) b.setAttribute('aria-expanded','true'); }catch(e){}
+                    }
+                    function closeAccountModal(){
+                        const m = document.getElementById('accountModal'); if (!m) return; m.style.display='none';
+                        try{ const b = document.getElementById('authBtn'); if (b) b.setAttribute('aria-expanded','false'); }catch(e){}
+                    }
+
+                    // Profile menu helpers
+                    function openProfileMenu(){ const m = document.getElementById('profileMenu'); const t = document.getElementById('profileToggle'); if (m){ m.classList.remove('hidden'); if (t) t.setAttribute('aria-expanded','true'); } }
+                    function closeProfileMenu(){ const m = document.getElementById('profileMenu'); const t = document.getElementById('profileToggle'); if (m){ m.classList.add('hidden'); if (t) t.setAttribute('aria-expanded','false'); } }
+                    document.addEventListener('click', function(ev){ try{ const wrap = document.getElementById('profileWrap'); const menu = document.getElementById('profileMenu'); const toggle = document.getElementById('profileToggle'); if (!wrap || !menu) return; const target = ev.target; if (wrap.contains(target)) return; if (!menu.classList.contains('hidden')) closeProfileMenu(); }catch(e){} });
+                    document.getElementById && document.getElementById('profileToggle') && document.getElementById('profileToggle').addEventListener('click', function(e){ e.stopPropagation(); const menu = document.getElementById('profileMenu'); if (!menu) return; if (menu.classList.contains('hidden')) openProfileMenu(); else closeProfileMenu(); });
+
+                    // Confirm-protected logout used in modal and profile menu
+                    function logoutConfirm(){ if (confirm('Çıkış yapmak istediğinizden emin misiniz?')) logout(); }
+
+                    function viewOrderDetails(id){
+                                        const user = getCurrentUser(); if (!user) return openAuthModal();
+                                        const orders = getOrdersForUser(user.email || '');
+                                        const o = orders.find(x=>x.id===id);
+                                        if (!o) return alert('Sipariş bulunamadı');
+                                        // populate order detail modal and open it
+                                        const hdr = document.getElementById('odHeader');
+                                        const items = document.getElementById('odItems');
+                                        const tot = document.getElementById('odTotal');
+                                        if (hdr) hdr.innerHTML = '<div><strong>Sipariş #' + escapeHtml(o.id) + '</strong><div style="font-size:0.9rem;color:#334155">' + (new Date(o.date||0)).toLocaleString() + '</div></div>';
+                                        if (items){
+                                            items.innerHTML = '';
+                                            (o.items||[]).forEach(it=>{
+                                                const row = document.createElement('div'); row.style.display='flex'; row.style.justifyContent='space-between'; row.style.padding='0.4rem 0';
+                                                row.innerHTML = '<div>' + escapeHtml(it.name) + ' &times; ' + (it.qty||1) + '</div><div>₺' + (((it.price||0)*(it.qty||1)).toFixed(2)) + '</div>';
+                                                items.appendChild(row);
+                                            });
+                                        }
+                                        if (tot) tot.textContent = 'Toplam: ₺' + (Number(o.total)||0).toFixed(2);
+                                        // stash current order for print
+                                        window.__currentOrderToPrint = o;
+                                        openOrderDetailModal();
+                    }
+
+                                    function openOrderDetailModal(){ const m = document.getElementById('orderDetailModal'); if (!m) return; m.style.display='block'; }
+                                    function closeOrderDetailModal(){ const m = document.getElementById('orderDetailModal'); if (!m) return; m.style.display='none'; }
+
+                                    function printInvoiceCurrent(){ const o = window.__currentOrderToPrint; if (!o) return alert('Yazdırılacak sipariş seçili değil'); openPrintableInvoice(o); }
+
+                                    function openPrintableInvoice(order){
+                                        const user = getCurrentUser() || {};
+                                        const rows = (order.items||[]).map(function(it){
+                                            return '<tr><td>'+escapeHtml(it.name)+'</td><td>'+(it.qty||1)+'</td><td>'+Number(it.price||0).toFixed(2)+'</td><td>'+((it.price||0)*(it.qty||1)).toFixed(2)+'</td></tr>';
+                                        }).join('');
+                                        const htmlParts = [];
+                                        htmlParts.push('<!doctype html><html><head><meta charset="utf-8"><title>Fatura '+escapeHtml(order.id)+'</title>');
+                                        htmlParts.push('<style>body{font-family:Arial, Helvetica, sans-serif;padding:20px;color:#0b1220}header{display:flex;justify-content:space-between;align-items:center}h1{margin:0}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f7f7fb}tfoot td{font-weight:800}</style>');
+                                        htmlParts.push('</head><body>');
+                                        htmlParts.push('<header><div><h1>ERN Tropikal Çiçek</h1><div style="font-size:0.9rem;color:#334155">Adresiniz Caddesi 1, Şehir</div></div><div style="text-align:right"><div>Fatura #: '+escapeHtml(order.id)+'</div><div>'+new Date(order.date||0).toLocaleString()+'</div></div></header>');
+                                        htmlParts.push('<section style="margin-top:14px"><strong>Müşteri</strong><div>'+escapeHtml(user.name||'')+'</div><div>'+escapeHtml(user.email||'')+'</div><div>'+escapeHtml(user.phone||'')+'</div></section>');
+                                        htmlParts.push('<table><thead><tr><th>Ürün</th><th>Adet</th><th>Birim (₺)</th><th>Tutar (₺)</th></tr></thead><tbody>');
+                                        htmlParts.push(rows);
+                                        htmlParts.push('</tbody><tfoot><tr><td colspan="3">Toplam</td><td>₺'+Number(order.total||0).toFixed(2)+'</td></tr></tfoot></table>');
+                                        htmlParts.push('<div style="margin-top:18px;font-size:0.9rem;color:#334155">Teşekkürler! Ödeme Havale/EFT ile gerçekleştiyse lütfen dekontunuzu saklayın.</div>');
+                                        htmlParts.push('<script>window.onload=function(){ setTimeout(function(){ window.print(); },200); }</script>');
+                                        htmlParts.push('</body></html>');
+                                        const html = htmlParts.join('');
+                                        const w = window.open('','_blank'); if (!w) { alert('Yeni pencere açılamadı; tarayıcı pop-up engelleyici devrede olabilir.'); return; }
+                                        w.document.open(); w.document.write(html); w.document.close();
+                                    }
+
+                    function downloadInvoice(orderId){
+                        const user = getCurrentUser(); if (!user) return openAuthModal();
+                        const orders = getOrdersForUser(user.email || '');
+                        const o = orders.find(x=>x.id===orderId);
+                        if (!o) return alert('Fatura bulunamadı');
+                        const lines = [];
+                        lines.push('Firma: ERN Tropikal Çiçek');
+                        lines.push('Sipariş ID: ' + (o.id || ''));
+                        lines.push('Tarih: ' + (new Date(o.date||0)).toLocaleString());
+                        lines.push('Müşteri: ' + (user.name || '') + ' <' + (user.email||'') + '>');
+                        lines.push('--------------------------------------------------');
+                        (o.items||[]).forEach(it=>{ lines.push(it.name + ' x' + (it.qty||1) + ' — ₺' + ((it.price||0)*(it.qty||1)).toFixed(2)); });
+                        lines.push('--------------------------------------------------');
+                        lines.push('Toplam: ₺' + (Number(o.total)||0).toFixed(2));
+                        const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a'); a.href = url; a.download = 'fatura_' + (o.id||Date.now()) + '.txt'; document.body.appendChild(a); a.click(); a.remove();
+                        setTimeout(()=>URL.revokeObjectURL(url), 2000);
+                    }
+
+                    function downloadAllInvoices(){
+                        const user = getCurrentUser(); if (!user) return openAuthModal();
+                        const orders = getOrdersForUser(user.email || '');
+                        if (!orders.length) return alert('İndirilecek fatura yok.');
+                        orders.forEach(o=>{ try{ downloadInvoice(o.id); }catch(e){} });
+                    }
+
+                    /* --- Cart logic (user-specific) --- */
+                    function getCurrentUser() {
+                        const cu = localStorage.getItem('currentUser');
+                        return cu ? JSON.parse(cu) : null;
+                    }
+
+                    function cartKeyForUser(email) {
+                        return 'cart_' + email;
+                    }
+
+                    function loadCart() {
+                        const user = getCurrentUser();
+                        if (!user) return [];
+                        const raw = localStorage.getItem(cartKeyForUser(user.email));
+                        return raw ? JSON.parse(raw) : [];
+                    }
+
+                    function saveCart(cart) {
+                        const user = getCurrentUser();
+                        if (!user) return;
+                        localStorage.setItem(cartKeyForUser(user.email), JSON.stringify(cart));
+                    }
+
+                    // showToast is suppressed (no-op) to avoid UI notifications
+                    function showToast(msg){ /* suppressed */ }
+
+                    function addToCartFromBtn(btn) {
+                        const card = btn.closest('.product-card');
+                        const id = card.getAttribute('data-id');
+                        const name = card.getAttribute('data-name');
+                        const price = parseFloat(card.getAttribute('data-price')) || 0;
+                        addToCart({ id, name, price });
+                    }
+
+                    function addToCart(item) {
+                        const user = getCurrentUser();
+                        if (!user) {
+                            openAuthModal();
+                            // user not logged in; open auth modal silently
+                            openAuthModal();
+                            console.log('Kullanıcı giriş yapmalı: sepete ekleme engellendi.');
+                            return;
+                        }
+                        const cart = loadCart();
+                        const existing = cart.find(i => i.id === item.id);
+                        if (existing) {
+                            existing.qty = (existing.qty || 1) + 1;
+                        } else {
+                            cart.push({ id: item.id, name: item.name, price: item.price, qty: 1 });
+                        }
+                        saveCart(cart);
+                        updateCartCount();
+                        // Küçük bilgilendirme (non-blocking)
+                        const count = cart.reduce((s,i)=>s+i.qty,0);
+                        try{ showToast(item.name + ' sepete eklendi. (Toplam: ' + count + ')'); }catch(e){}
+                    }
+
+                    function updateCartCount() {
+                        const user = getCurrentUser();
+                        const badge = document.getElementById('cartCount');
+                        if (!user) {
+                            badge.classList.add('hidden');
+                            badge.textContent = '0';
+                            return;
+                        }
+                        const cart = loadCart();
+                        const totalQty = cart.reduce((s,i) => s + (i.qty||0), 0);
+                        badge.textContent = totalQty;
+                        if (totalQty > 0) badge.classList.remove('hidden');
+                        else badge.classList.add('hidden');
+                        // keep mini cart in sync
+                        try{ renderMiniCart(); }catch(e){}
+                    }
+
+                    function openCart() {
+                        const user = getCurrentUser();
+                        if (!user) {
+                            openAuthModal();
+                            return;
+                        }
+                        renderCart();
+                        document.getElementById('cartModal').style.display = 'block';
+                        try{ const b = document.getElementById('cartBtn'); if (b) b.setAttribute('aria-expanded','true'); }catch(e){}
+                    }
+
+                    function closeCart() {
+                        document.getElementById('cartModal').style.display = 'none';
+                        try{ const b = document.getElementById('cartBtn'); if (b) b.setAttribute('aria-expanded','false'); }catch(e){}
+                    }
+
+                    function renderCart() {
+                        const itemsEl = document.getElementById('cartItems');
+                        const emptyEl = document.getElementById('emptyCart');
+                        const totalEl = document.getElementById('cartTotal');
+                        itemsEl.innerHTML = '';
+                        const cart = loadCart();
+                        if (!cart.length) {
+                            emptyEl.style.display = 'block';
+                            totalEl.textContent = '';
+                            return;
+                        }
+                        emptyEl.style.display = 'none';
+                        let total = 0;
+                        cart.forEach(item => {
+                            total += (item.price || 0) * (item.qty || 0);
+                            const li = document.createElement('li');
+                            li.className = 'cart-item';
+                            li.innerHTML = `
+                                <div class="ci-name">${escapeHtml(item.name)}</div>
+                                <div style="text-align:right;">
+                                    <div class="ci-meta">₺${(item.price||0).toFixed(2)}</div>
+                                        <div class="qty-controls">
+                                        <button data-action="change-qty" data-item-id="${item.id}" data-delta="-1">-</button>
+                                        <div style="min-width:26px; text-align:center;">${item.qty}</div>
+                                        <button data-action="change-qty" data-item-id="${item.id}" data-delta="1">+</button>
+                                        <button style="margin-left:8px; background:#e53e3e; padding:0.25rem 0.5rem;" data-action="remove-item" data-item-id="${item.id}">Sil</button>
+                                    </div>
+                                </div>
+                            `;
+                            itemsEl.appendChild(li);
+                        });
+                        totalEl.textContent = 'Toplam: ₺' + total.toFixed(2);
+                    }
+
+                    function changeQty(id, delta) {
+                        const cart = loadCart();
+                        const item = cart.find(i => i.id === id);
+                        if (!item) return;
+                        item.qty = (item.qty || 1) + delta;
+                        if (item.qty <= 0) {
+                            const idx = cart.findIndex(i=>i.id===id);
+                            if (idx > -1) cart.splice(idx,1);
+                        }
+                        saveCart(cart);
+                        renderCart();
+                        updateCartCount();
+                    }
+
+                    function removeFromCart(id) {
+                        let cart = loadCart();
+                        cart = cart.filter(i => i.id !== id);
+                        saveCart(cart);
+                        renderCart();
+                        updateCartCount();
+                    }
+
+                    /* --- Mini cart rendering & behavior --- */
+                    function renderMiniCart(){
+                        const el = document.getElementById('miniCart');
+                        const itemsEl = document.getElementById('miniCartItems');
+                        const totalEl = document.getElementById('miniCartTotal');
+                        if (!itemsEl || !totalEl || !el) return;
+                        const cart = loadCart();
+                        itemsEl.innerHTML = '';
+                        if (!cart.length){ itemsEl.innerHTML = '<div style="padding:0.6rem;color:#6b7280">Sepetiniz boş.</div>'; totalEl.textContent = 'Toplam: ₺0.00'; return; }
+                        let total = 0;
+                        cart.slice(0,6).forEach(item=>{
+                            total += (item.price||0)*(item.qty||0);
+                            const d = document.createElement('div'); d.className = 'mc-item';
+                            d.innerHTML = `<div style="width:44px;height:44px;border-radius:8px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:1.1rem">${escapeHtml((item.name||'').slice(0,1))}</div><div class="mc-name">${escapeHtml(item.name)}</div><div style="font-weight:700">₺${((item.price||0)*(item.qty||0)).toFixed(2)}</div>`;
+                            itemsEl.appendChild(d);
+                        });
+                        if (cart.length > 6){ const more = document.createElement('div'); more.style.padding='0.4rem'; more.style.color='#6b7280'; more.textContent = '+' + (cart.length-6) + ' diğer ürün'; itemsEl.appendChild(more); }
+                        totalEl.textContent = 'Toplam: ₺' + total.toFixed(2);
+                    }
+
+                    let miniCartTimer = null;
+                    function showMiniCart(){
+                        const el = document.getElementById('miniCart'); if (!el) return;
+                        renderMiniCart();
+                        el.classList.remove('hidden'); el.setAttribute('aria-hidden','false');
+                        // cancel pending hide
+                        if (miniCartTimer) { clearTimeout(miniCartTimer); miniCartTimer = null; }
+                    }
+                    function hideMiniCart(delay = 150){
+                        const el = document.getElementById('miniCart'); if (!el) return;
+                        if (miniCartTimer) clearTimeout(miniCartTimer);
+                        miniCartTimer = setTimeout(()=>{ el.classList.add('hidden'); el.setAttribute('aria-hidden','true'); miniCartTimer = null; }, delay);
+                    }
+
+                    // attach hover/focus behavior without changing click action
+                    (function(){
+                        try{
+                            const cartBtn = document.getElementById('cartBtn');
+                            const mini = document.getElementById('miniCart');
+                            if (!cartBtn || !mini) return;
+                            cartBtn.addEventListener('mouseenter', showMiniCart);
+                            cartBtn.addEventListener('focus', showMiniCart);
+                            cartBtn.addEventListener('mouseleave', ()=>hideMiniCart(300));
+                            cartBtn.addEventListener('blur', ()=>hideMiniCart(300));
+                            // keep mini visible when hovering mini itself
+                            mini.addEventListener('mouseenter', showMiniCart);
+                            mini.addEventListener('mouseleave', ()=>hideMiniCart(200));
+                            // hide when clicking outside
+                            document.addEventListener('click', function(ev){
+                                const target = ev.target;
+                                if (!mini.contains(target) && target !== cartBtn && !cartBtn.contains(target)) hideMiniCart(100);
+                            });
+                            // Intercept clicks on small screens: open mini-cart as bottom sheet instead of modal
+                            cartBtn.addEventListener('click', function(e){
+                                try{
+                                    if (window.innerWidth <= 480){
+                                        // Prevent inline onclick handlers (openCart) from running
+                                        e.stopImmediatePropagation();
+                                        e.preventDefault();
+                                        // Toggle mini cart visibility
+                                        const isHidden = mini.classList.contains('hidden');
+                                        if (isHidden) showMiniCart(); else hideMiniCart(100);
+                                        return false;
+                                    }
+                                }catch(err){ }
+                            }, true);
+                        }catch(e){ }
+                    })();
+
+                    function clearCart() {
+                        const user = getCurrentUser();
+                        if (!user) return;
+                        if (!(true)) return; // confirmation suppressed: proceed
+                        localStorage.removeItem(cartKeyForUser(user.email));
+                        renderCart();
+                        updateCartCount();
+                    }
+
+                    function checkout() {
+                        const cart = loadCart();
+                        if (!cart.length) {
+                            console.log('Sepetiniz boş.');
+                            return;
+                        }
+                        // Hesapla
+                        let total = 0;
+                        cart.forEach(item => { total += (item.price || 0) * (item.qty || 0); });
+
+                        if (!(true)) return; // purchase confirmation suppressed: proceed
+
+                        // Öncelikle tam sayfa ödeme sayfasını açmaya çalış (popup bloklanmaya karşı modal fallback'i olacak)
+                        try {
+                            const iban = (document.getElementById('siteIban') && document.getElementById('siteIban').textContent) ? document.getElementById('siteIban').textContent.trim() : '';
+                            const url = '/odeme.html?iban=' + encodeURIComponent(iban) + '&total=' + encodeURIComponent(total.toFixed(2));
+                            const win = window.open(url, '_blank');
+                            if (win) {
+                                // Tarayıcı yeni sekme açtı; temizleme ve yönlendirme işlemleri modal yerine burada yapılabilir
+                                const user = getCurrentUser();
+                                if (user) localStorage.removeItem(cartKeyForUser(user.email));
+                                renderCart();
+                                updateCartCount();
+                                closeCart();
+                                // silent: new tab opened for payment (no blocking alert)
+                                console.log('Ödeme sayfası yeni sekmede açıldı');
+                                return;
+                            }
+                        } catch (e) {
+                            console.warn('Popup açma denemesi başarısız veya hata oluştu', e);
+                        }
+
+                        // Eğer popup bloklandıysa veya açma başarısızsa modal ile devam et
+                        openBank();
+                    }
+
+                    /* --- Utilities --- */
+                    // Basit HTML escape (güvenli string dönüşümü)
+                    function escapeHtml(text) {
+                        const s = String(text === undefined || text === null ? '' : text);
+                        return s.replace(/[&<>\"']/g, function(m) {
+                            return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];
+                        });
+                    }
+
+                    /* --- Product management (dynamic rendering + persistence) --- */
+                    const PRODUCTS_KEY = 'products_v1';
+
+                    function initProducts() {
+                        // If products already in localStorage, render them.
+                        const raw = localStorage.getItem(PRODUCTS_KEY);
+                        if (raw) {
+                            try {
+                                const products = JSON.parse(raw);
+                                renderProducts(products);
+                                return;
+                            } catch(e) {
+                                console.error('Invalid products data', e);
+                            }
+                        }
+
+                        // Otherwise, read existing static DOM product-cards as default products
+                        const defaultProducts = [];
+                        document.querySelectorAll('.products .product-card').forEach(card => {
+                            const id = card.getAttribute('data-id') || String(Date.now()) + Math.random();
+                            const name = card.getAttribute('data-name') || card.querySelector('.product-name')?.textContent || '';
+                            const price = parseFloat(card.getAttribute('data-price')) || parseFloat((card.querySelector('.product-price')?.textContent||'').replace(/[^0-9.,]/g,'')) || 0;
+                            // image: try to grab emoji/text inside .product-image
+                            const imgEl = card.querySelector('.product-image');
+                            const imgText = imgEl ? imgEl.textContent.trim() : '';
+                            defaultProducts.push({ id, name, price, image: imgText });
+                        });
+                        localStorage.setItem(PRODUCTS_KEY, JSON.stringify(defaultProducts));
+                        renderProducts(defaultProducts);
+                    }
+
+                    function renderProducts(products) {
+                        const container = document.querySelector('.products');
+                        if (!container) return;
+                        container.innerHTML = '';
+                        products.forEach(p => {
+                            const card = document.createElement('div');
+                            card.className = 'product-card';
+                            card.setAttribute('data-id', p.id);
+                            card.setAttribute('data-name', p.name);
+                            card.setAttribute('data-price', (p.price||0).toString());
+
+                            // Image handling: if image starts with data: treat as background image, else show text (emoji)
+                            let imageHTML = '';
+                            if (p.image && p.image.startsWith && p.image.startsWith('data:')) {
+                                imageHTML = `<div class="product-image" style="background-image:url('${p.image}'); background-size:cover; background-position:center; background-repeat:no-repeat;"></div>`;
+                            } else if (p.image) {
+                                // show emoji or text
+                                imageHTML = `<div class="product-image">${escapeHtml(p.image)}</div>`;
+                            } else {
+                                imageHTML = `<div class="product-image">🌺</div>`;
+                            }
+
+                            card.innerHTML = `
+                                ${imageHTML}
+                                <div class="product-info">
+                                    <div class="product-name">${escapeHtml(p.name)}</div>
+                                    <div class="product-price">₺${(p.price||0).toFixed(2)}</div>
+                                    <button data-action="add-to-cart" data-product-id="${p.id}">Sepete Ekle</button>
+                                </div>
+                            `;
+                            container.appendChild(card);
+                        });
+                    }
+
+                    // Minimal payment & IBAN helpers
+                    function copyIban() {
+                        const txt = (document.getElementById('siteIban')||{}).textContent || '';
+                        if (!txt) return;
+                        navigator.clipboard?.writeText(txt).then(()=>console.log('IBAN kopyalandı')).catch(()=>{});
+                    }
+                    function copyIbanFromWidget(){ copyIban(); }
+                    function openFullPaymentPageFromWidget(){ window.open('/odeme.html','_blank'); }
+
+                    function sendBankNotificationFromWidget(){ sendBankNotification(); }
+
+                    function sendBankNotification(){
+                        // Try serverless endpoint first
+                        const payerEmail = (document.getElementById('payerEmail')||{}).value || '';
+                        const cart = loadCart();
+                        const total = cart.reduce((s,i)=>s + (i.price||0)*(i.qty||0),0).toFixed(2);
+                        const body = {
+                            email: payerEmail || (getCurrentUser()||{}).email || '',
+                            total: total,
+                            items: cart
+                        };
+
+                        // create order object to persist for user
+                        const order = { id: 'ORD' + Date.now().toString(36), date: Date.now(), items: cart, total: Number(total) };
+
+                        // POST to functions/send-order if available (netlify functions)
+                        fetch('/.netlify/functions/send-order', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) })
+                        .then(r=>{ if (!r.ok) throw new Error('send failed'); return r.text(); })
+                        .then(()=>{
+                            console.log('Sipariş bildirimi gönderildi.');
+                            // persist order for logged-in user (or for provided payer email)
+                            const user = getCurrentUser();
+                            if (user && user.email) saveOrderForUser(user.email, order);
+                            else if (body.email) saveOrderForUser(body.email, order);
+                            // clear cart
+                            if (user) localStorage.removeItem(cartKeyForUser(user.email));
+                            renderCart(); updateCartCount(); closeBank();
+                        })
+                        .catch(()=>{
+                            // Fallback: persist order if possible then open mailto
+                            const user = getCurrentUser();
+                            if (user && user.email) saveOrderForUser(user.email, order);
+                            else if (body.email) saveOrderForUser(body.email, order);
+                            const subject = encodeURIComponent('Yeni Sipariş - ' + (body.email||'misafir'));
+                            const bodyText = encodeURIComponent('Yeni sipariş:\nToplam: ' + total + '\n\n' + JSON.stringify(cart, null, 2));
+                            window.location.href = 'mailto:amtbrs@icloud.com?subject='+subject+'&body='+bodyText;
+                        });
+                    }
+
+                    function openBank(){ document.getElementById('bankModal').style.display = 'block'; }
+                    function openBank(){ document.getElementById('bankModal').style.display = 'block'; try{ const b = document.getElementById('paymentOpenBtn'); if (b) b.setAttribute('aria-expanded','true'); }catch(e){} }
+                    function closeBank(){ document.getElementById('bankModal').style.display = 'none'; try{ const b = document.getElementById('paymentOpenBtn'); if (b) b.setAttribute('aria-expanded','false'); }catch(e){} }
+                    function closePaymentWidget(){ document.getElementById('paymentWidget').style.display = 'none'; }
+                    function openPaymentPage(){ window.open('/odeme.html','_blank'); }
+
+                    // Init behavior
+                    (async function(){
+                        try{
+                            const cu = getCurrentUser();
+                            if (cu) updateUIAfterLogin(cu.name);
+                            // load site settings (fetch /site-settings.json or localStorage)
+                            await loadSiteSettingsAndApply();
+                            // sample default total
+                            const bankAmount = document.getElementById('bankAmount'); if (bankAmount) bankAmount.textContent = 'Toplam: ₺0.00';
+                        }catch(e){ console.error('init error', e); }
+                        initProducts();
+                        updateCartCount();
+                    })();
+
+                    // Event delegation for cart/product actions (avoids inline onclick parsing issues)
+                    document.addEventListener('click', function(e){
+                        try{
+                            const t = e.target.closest && e.target.closest('[data-action]');
+                            if (!t) return;
+                            const action = t.getAttribute('data-action');
+                            if (!action) return;
+                            if (action === 'change-qty') {
+                                const id = t.dataset.itemId;
+                                const delta = Number(t.dataset.delta || 0);
+                                if (id) changeQty(id, delta);
+                            } else if (action === 'remove-item') {
+                                const id = t.dataset.itemId;
+                                if (id) removeFromCart(id);
+                            } else if (action === 'add-to-cart') {
+                                const pid = t.dataset.productId;
+                                if (!pid) return;
+                                try {
+                                    const raw = localStorage.getItem(PRODUCTS_KEY);
+                                    const products = raw ? JSON.parse(raw) : [];
+                                    const p = products.find(x => String(x.id) === String(pid));
+                                    if (p) {
+                                        addToCart({ id: p.id, name: p.name, price: Number(p.price || 0) });
+                                    } else {
+                                        const card = document.querySelector('.product-card[data-id="' + pid + '"]');
+                                        if (card) {
+                                            const id = card.getAttribute('data-id');
+                                            const name = card.getAttribute('data-name');
+                                            const price = parseFloat(card.getAttribute('data-price')) || 0;
+                                            addToCart({ id, name, price });
+                                        }
+                                    }
+                                } catch (err) {
+                                    console.error('add-to-cart handler error', err);
+                                }
+                            }
+                        }catch(err){ console.error('delegation error', err); }
+                    });
+
+    </script>
+</body>
+</html>
