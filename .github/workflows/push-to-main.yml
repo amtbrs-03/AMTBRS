@@ -43,7 +43,7 @@ jobs:
             echo "Main branch exists, updating..."
             git fetch origin main:main
             git checkout main
-            git merge --no-ff $CURRENT_BRANCH \
+            git merge --no-ff "$CURRENT_BRANCH" \
               -m "Merge $CURRENT_BRANCH into main"
           else
             echo "Creating new main branch..."
@@ -58,6 +58,6 @@ jobs:
         run: |
           SOURCE_BRANCH=${{ inputs.source_branch || github.ref_name }}
           if [ "$SOURCE_BRANCH" != "main" ]; then
-            git push origin --delete $SOURCE_BRANCH || \
+            git push origin --delete "$SOURCE_BRANCH" || \
               echo "Could not delete $SOURCE_BRANCH"
           fi
