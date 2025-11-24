@@ -4,3 +4,15 @@
 
 [dev]
   functions = "functions"
+
+[[redirects]]
+  from = "https://www.ern-cicek.com.tr/*"
+  to = "https://ern-cicek.com.tr/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "http://ern-cicek.com.tr/*"
+  to = "https://ern-cicek.com.tr/:splat"
+  status = 301
+  force = true
