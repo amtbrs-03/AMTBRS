@@ -1729,6 +1729,41 @@
                         }catch(err){ console.error('delegation error', err); }
                     });
 
+                    // Diagnostic: check buttons with inline onclick and report missing handlers
+                    function checkAllButtons() {
+                        const els = Array.from(document.querySelectorAll('[onclick]'));
+                        const report = { total: els.length, checked: 0, missing: [] };
+                        els.forEach(el => {
+                            const src = el.getAttribute('onclick') || '';
+                            // try to extract first identifier (function name) before '(' or whitespace
+                            const m = src.match(/\s*([\w$]+)\s*\(/);
+                            if (m && m[1]) {
+                                report.checked++;
+                                const fn = m[1];
+                                if (typeof window[fn] !== 'function') {
+                                    report.missing.push({ el: describeElement(el), handler: fn, src });
+                                }
+                            } else {
+                                // couldn't parse a single function name; still count
+                                report.checked++;
+                                // don't attempt to run complex inline handlers here
+                            }
+                        });
+                        console.info('Button diagnostic:', report);
+                        return report;
+                    }
+
+                    function describeElement(el){
+                        const parts = [el.tagName.toLowerCase()];
+                        if (el.id) parts.push('#'+el.id);
+                        if (el.className) parts.push('.'+String(el.className).split(' ').join('.'));
+                        if (el.getAttribute && el.getAttribute('aria-controls')) parts.push('[aria-controls="'+el.getAttribute('aria-controls')+'"]');
+                        return parts.join('');
+                    }
+
+                    // Run diagnostics shortly after init so functions defined by script are present
+                    setTimeout(function(){ try{ checkAllButtons(); }catch(e){ console.error('checkAllButtons error', e); } }, 400);
+
     </script>
 </body>
 </html>
