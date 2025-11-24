@@ -817,19 +817,27 @@
 
                     /* --- Contact panel toggle --- */
                     function toggleContact(e) {
-                        e && e.preventDefault && e.preventDefault();
-                        const btn = document.getElementById('contactBtn');
+                        try{ e && e.preventDefault && e.preventDefault(); }catch(err){}
+                        // Prefer the button that triggered the event (supports delegated clicks and duplicate IDs)
+                        let btn = null;
+                        if (e && e.target) btn = e.target.closest && e.target.closest('[data-action="toggle-contact"]');
+                        if (!btn) btn = document.getElementById('contactBtn');
                         const panel = document.getElementById('contactPanel');
                         if (!panel) return;
                         const isHidden = panel.classList.contains('hidden');
                         if (isHidden) {
                             panel.classList.remove('hidden');
                             panel.setAttribute('aria-hidden', 'false');
-                            btn.setAttribute('aria-expanded', 'true');
+                            panel.style.display = '';
+                            if (btn) btn.setAttribute('aria-expanded', 'true');
+                            // focus first focusable element inside panel for accessibility
+                            const focusable = panel.querySelector('a, button, [tabindex]:not([tabindex="-1"])');
+                            if (focusable) try{ focusable.focus(); }catch(e){}
                         } else {
                             panel.classList.add('hidden');
                             panel.setAttribute('aria-hidden', 'true');
-                            btn.setAttribute('aria-expanded', 'false');
+                            panel.style.display = 'none';
+                            if (btn) btn.setAttribute('aria-expanded', 'false');
                         }
                     }
 
@@ -839,6 +847,7 @@
                         if (!panel) return;
                         panel.classList.add('hidden');
                         panel.setAttribute('aria-hidden', 'true');
+                        panel.style.display = 'none';
                         if (btn) btn.setAttribute('aria-expanded', 'false');
                     }
 
