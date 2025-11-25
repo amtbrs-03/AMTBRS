@@ -1182,22 +1182,10 @@
                     }
 
                     function updateUIAfterLogin(name) {
-                                        // keep the auth button visible on the homepage but mark it active
-                                        try{ document.getElementById('authContainer').classList.remove('hidden'); }catch(e){}
+                                        // Hide auth button, show user container
+                                        document.getElementById('authContainer').classList.add('hidden');
                                         document.getElementById('userContainer').classList.remove('hidden');
                                         document.getElementById('userName').textContent = 'Hoşgeldiniz, ' + name;
-                                        try{
-                                            const b = document.getElementById('authBtn');
-                                            if (b) {
-                                                b.classList.add('active');
-                                                // change label to "Hesabım" and make it open account view
-                                                const label = b.querySelector('.auth-label');
-                                                if (label) label.textContent = 'Hesabım';
-                                                b.onclick = openAccountModal;
-                                                b.setAttribute('aria-controls', 'accountModal');
-                                                b.setAttribute('aria-expanded', 'false');
-                                            }
-                                        }catch(e){}
                     }
 
                     function logout() {
