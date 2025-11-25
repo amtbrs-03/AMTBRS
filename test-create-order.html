@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test: Sipariş Oluşturma Simülasyonu</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 1rem;
+      background: #f9fafb;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      margin-bottom: 1.5rem;
+    }
+    h1 {
+      color: #10b981;
+      margin-bottom: 1.5rem;
+    }
+    .btn {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
+      transition: all 0.3s ease;
+      margin-right: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(16, 185, 129, 0.4);
+    }
+    .btn:active {
+      transform: translateY(1px);
+    }
+    .btn-secondary {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
+    }
+    .btn-secondary:hover {
+      box-shadow: 0 6px 12px rgba(59, 130, 246, 0.4);
+    }
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      margin: 0.75rem 0;
+      font-weight: 500;
+    }
+    .status.loading {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    .status.success {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .status.error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: #374151;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 0.75rem;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.2s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #10b981;
+    }
+    .product-item {
+      background: #f9fafb;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .product-item button {
+      padding: 0.5rem 1rem;
+      background: #ef4444;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    pre {
+      background: #1f2937;
+      color: #f3f4f6;
+      padding: 1rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 0.85rem;
+    }
+    .meta {
+      font-size: 0.9rem;
+      color: #6b7280;
+      margin-top: 0.5rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    @media (max-width: 768px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>🧪 Test: Sipariş Oluşturma ve GitHub'a Kaydetme</h1>
+  
+  <div class="card">
+    <h2>📝 Sipariş Bilgileri</h2>
+    <div class="grid">
+      <div class="form-group">
+        <label for="customerName">👤 Müşteri Adı</label>
+        <input type="text" id="customerName" value="Test Kullanıcı" placeholder="Ad Soyad">
+      </div>
+      <div class="form-group">
+        <label for="customerEmail">📧 Email</label>
+        <input type="email" id="customerEmail" value="test@example.com" placeholder="email@example.com">
+      </div>
+    </div>
+    
+    <div class="form-group">
+      <label for="iban">💳 IBAN</label>
+      <input type="text" id="iban" value="TR33 0006 1005 1978 6457 8413 26" placeholder="TR...">
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🛒 Sepet Ürünleri</h2>
+    <div id="cartItems">
+      <div class="product-item">
+        <div>
+          <strong>Kırmızı Gül Buketi</strong> - ₺149.00 x 2
+        </div>
+        <button onclick="removeItem(0)">🗑️ Sil</button>
+      </div>
+      <div class="product-item">
+        <div>
+          <strong>Beyaz Lilyum</strong> - ₺129.00 x 1
+        </div>
+        <button onclick="removeItem(1)">🗑️ Sil</button>
+      </div>
+    </div>
+    
+    <div style="margin-top:1rem; padding-top:1rem; border-top:2px solid #e5e7eb;">
+      <strong style="font-size:1.2rem;">Toplam: <span id="totalAmount">₺427.00</span></strong>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🚀 Sipariş İşlemleri</h2>
+    <button id="createOrderBtn" class="btn">📦 Sipariş Oluştur ve GitHub'a Gönder</button>
+    <button id="checkOrdersBtn" class="btn btn-secondary">📊 GitHub'daki Siparişleri Kontrol Et</button>
+    <div id="status"></div>
+    <div id="results"></div>
+  </div>
+
+  <div class="card">
+    <h2>ℹ️ Test Detayları</h2>
+    <p><strong>Repository:</strong> amtbrs-03/AMTBRS</p>
+    <p><strong>Branch:</strong> site-release</p>
+    <p><strong>Klasör:</strong> orders/</p>
+    <p><strong>Workflow:</strong> .github/workflows/save-order.yml</p>
+    <div class="meta">
+      💡 Bu test, ödeme sayfasındaki "Siparişi Bildir" butonunun işlevini simüle eder.
+      Sipariş GitHub Actions üzerinden orders/ klasörüne JSON dosyası olarak kaydedilir.
+    </div>
+  </div>
+
+  <script>
+    // XOR token decoder (same as in odeme.html)
+    function decodeToken(encoded, key){
+      let result = '';
+      for (let i = 0; i < encoded.length; i++) {
+        result += String.fromCharCode(encoded.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+      }
+      return result;
+    }
+    
+    function getGitHubToken(){
+      const encoded = '":>r3\x0e,\' bj@\x06\x07\t5\'K"\x0b4\x08\tYUJ[f\x11\x0b\rK0\x0cs\x0f\x1dupY';
+      const key = 'ERN-CICEK-2025';
+      return decodeToken(encoded, key);
+    }
+
+    let cart = [
+      { name: 'Kırmızı Gül Buketi', price: 149.00, qty: 2 },
+      { name: 'Beyaz Lilyum', price: 129.00, qty: 1 }
+    ];
+
+    function updateCart() {
+      const container = document.getElementById('cartItems');
+      container.innerHTML = '';
+      
+      let total = 0;
+      cart.forEach((item, idx) => {
+        const itemTotal = item.price * item.qty;
+        total += itemTotal;
+        
+        const div = document.createElement('div');
+        div.className = 'product-item';
+        div.innerHTML = `
+          <div>
+            <strong>${item.name}</strong> - ₺${item.price.toFixed(2)} x ${item.qty}
+          </div>
+          <button onclick="removeItem(${idx})">🗑️ Sil</button>
+        `;
+        container.appendChild(div);
+      });
+      
+      document.getElementById('totalAmount').textContent = '₺' + total.toFixed(2);
+    }
+
+    function removeItem(idx) {
+      cart.splice(idx, 1);
+      updateCart();
+    }
+
+    function escapeHtml(text) {
+      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+      return String(text).replace(/[&<>"']/g, m => map[m]);
+    }
+
+    document.getElementById('createOrderBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('createOrderBtn');
+      const statusEl = document.getElementById('status');
+      const resultsEl = document.getElementById('results');
+      
+      if (cart.length === 0) {
+        statusEl.innerHTML = '<div class="status error">❌ Sepet boş! En az bir ürün ekleyin.</div>';
+        return;
+      }
+      
+      btn.disabled = true;
+      btn.textContent = '⏳ Sipariş oluşturuluyor...';
+      statusEl.innerHTML = '<div class="status loading">🔄 Sipariş GitHub\'a gönderiliyor...</div>';
+      resultsEl.innerHTML = '';
+      
+      const steps = [];
+      const startTime = Date.now();
+      
+      try {
+        // Get form data
+        const customerName = document.getElementById('customerName').value.trim();
+        const customerEmail = document.getElementById('customerEmail').value.trim();
+        const iban = document.getElementById('iban').value.trim();
+        
+        if (!customerName || !customerEmail) {
+          throw new Error('Müşteri adı ve email gerekli!');
+        }
+        
+        // Calculate total
+        let total = 0;
+        cart.forEach(item => {
+          total += item.price * item.qty;
+        });
+        
+        // Create order object
+        const order = {
+          id: 'ORD-' + Date.now(),
+          date: Date.now(),
+          customerEmail: customerEmail,
+          customerName: customerName,
+          items: cart,
+          total: total.toFixed(2),
+          iban: iban,
+          status: 'pending'
+        };
+        
+        steps.push('1️⃣ Sipariş objesi oluşturuldu: ' + order.id);
+        statusEl.innerHTML = '<div class="status loading">' + steps.join('<br>') + '</div>';
+        
+        // Send to GitHub via repository_dispatch
+        steps.push('2️⃣ GitHub API\'ye bağlanılıyor...');
+        statusEl.innerHTML = '<div class="status loading">' + steps.join('<br>') + '</div>';
+        
+        const token = getGitHubToken();
+        const owner = 'amtbrs-03';
+        const repo = 'AMTBRS';
+        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/dispatches`;
+        
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/vnd.github.v3+json',
+            'Authorization': `token ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            event_type: 'save-order',
+            client_payload: {
+              order: order
+            }
+          })
+        });
+        
+        if (response.status === 204 || response.ok) {
+          const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+          steps.push('✅ Sipariş GitHub Actions\'a gönderildi! (' + elapsed + 's)');
+          steps.push('⏳ GitHub Actions workflow çalışıyor...');
+          steps.push('📁 Sipariş orders/' + order.id + '.json olarak kaydedilecek');
+          statusEl.innerHTML = '<div class="status success">' + steps.join('<br>') + '</div>';
+          
+          // Display order details
+          let html = '<h3>✅ Sipariş Başarıyla Oluşturuldu!</h3>';
+          html += '<div style="background:#f0fdf4; padding:1rem; border-radius:8px; border:2px solid #10b981; margin-top:1rem;">';
+          html += '<p><strong>📦 Sipariş No:</strong> ' + escapeHtml(order.id) + '</p>';
+          html += '<p><strong>👤 Müşteri:</strong> ' + escapeHtml(order.customerName) + '</p>';
+          html += '<p><strong>📧 Email:</strong> ' + escapeHtml(order.customerEmail) + '</p>';
+          html += '<p><strong>💰 Toplam:</strong> ₺' + escapeHtml(order.total) + '</p>';
+          html += '<p><strong>📊 Durum:</strong> <span style="background:#f59e0b; color:white; padding:0.25rem 0.75rem; border-radius:12px; font-weight:600;">Beklemede</span></p>';
+          html += '</div>';
+          
+          html += '<h3 style="margin-top:2rem;">📄 GitHub\'a Gönderilen JSON</h3>';
+          html += '<pre>' + JSON.stringify(order, null, 2) + '</pre>';
+          
+          html += '<div class="meta" style="margin-top:1rem;">';
+          html += '⏱️ GitHub Actions workflow yaklaşık 10-30 saniye içinde tamamlanacak.<br>';
+          html += '📊 "GitHub\'daki Siparişleri Kontrol Et" butonuna tıklayarak sipariş dosyasının oluşup oluşmadığını kontrol edebilirsiniz.';
+          html += '</div>';
+          
+          resultsEl.innerHTML = html;
+          
+          btn.textContent = '✅ Sipariş Gönderildi';
+          btn.disabled = false;
+          
+        } else {
+          throw new Error(`GitHub API hata döndü: ${response.status} ${response.statusText}`);
+        }
+        
+      } catch (err) {
+        console.error('Order creation failed:', err);
+        steps.push('❌ HATA: ' + err.message);
+        statusEl.innerHTML = '<div class="status error">' + steps.join('<br>') + '</div>';
+        
+        resultsEl.innerHTML = `
+          <h3>🔴 Sipariş Oluşturulamadı</h3>
+          <p><strong>Hata:</strong> ${escapeHtml(err.message)}</p>
+          <pre>${escapeHtml(err.stack || 'Stack trace yok')}</pre>
+        `;
+        
+        btn.textContent = '🔄 Tekrar Dene';
+        btn.disabled = false;
+      }
+    });
+
+    document.getElementById('checkOrdersBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('checkOrdersBtn');
+      const statusEl = document.getElementById('status');
+      const resultsEl = document.getElementById('results');
+      
+      btn.disabled = true;
+      btn.textContent = '⏳ Kontrol ediliyor...';
+      statusEl.innerHTML = '<div class="status loading">🔄 GitHub\'dan siparişler çekiliyor...</div>';
+      resultsEl.innerHTML = '';
+      
+      const steps = [];
+      const startTime = Date.now();
+      
+      try {
+        const owner = 'amtbrs-03';
+        const repo = 'AMTBRS';
+        const branch = 'site-release';
+        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/orders?ref=${branch}`;
+        
+        steps.push('1️⃣ GitHub API\'den orders/ klasörü sorgulanıyor...');
+        statusEl.innerHTML = '<div class="status loading">' + steps.join('<br>') + '</div>';
+        
+        const res = await fetch(apiUrl, {
+          headers: { 'Accept': 'application/vnd.github.v3+json' }
+        });
+        
+        if (!res.ok) {
+          throw new Error(`GitHub API yanıt vermedi: ${res.status} ${res.statusText}`);
+        }
+        
+        const files = await res.json();
+        const orderFiles = files.filter(f => f.name.endsWith('.json'));
+        
+        steps.push(`✅ ${orderFiles.length} sipariş dosyası bulundu`);
+        statusEl.innerHTML = '<div class="status loading">' + steps.join('<br>') + '</div>';
+        
+        // Fetch orders
+        const orders = [];
+        for (const file of orderFiles) {
+          try {
+            const orderRes = await fetch(file.download_url);
+            if (orderRes.ok) {
+              const orderData = await orderRes.json();
+              orders.push(orderData);
+              steps.push(`  📥 ${orderData.id} yüklendi`);
+              statusEl.innerHTML = '<div class="status loading">' + steps.join('<br>') + '</div>';
+            }
+          } catch(e) {
+            console.error('Failed to load order:', file.name, e);
+          }
+        }
+        
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+        steps.push(`✅ ${orders.length} sipariş başarıyla yüklendi (${elapsed}s)`);
+        statusEl.innerHTML = '<div class="status success">' + steps.join('<br>') + '</div>';
+        
+        // Display orders table
+        if (orders.length > 0) {
+          orders.sort((a, b) => (b.date || 0) - (a.date || 0));
+          
+          let html = '<h3>📊 GitHub\'daki Tüm Siparişler</h3>';
+          html += '<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.1); border-radius:8px; overflow:hidden;">';
+          html += '<thead><tr style="background:linear-gradient(135deg, #10b981, #059669); color:white;">';
+          html += '<th style="padding:0.75rem; text-align:left;">🆔 Sipariş No</th>';
+          html += '<th style="padding:0.75rem; text-align:left;">👤 Müşteri</th>';
+          html += '<th style="padding:0.75rem; text-align:left;">💰 Toplam</th>';
+          html += '<th style="padding:0.75rem; text-align:left;">📅 Tarih</th>';
+          html += '<th style="padding:0.75rem; text-align:left;">📊 Durum</th>';
+          html += '</tr></thead><tbody>';
+          
+          orders.forEach((order, idx) => {
+            const orderDate = order.date ? new Date(order.date).toLocaleDateString('tr-TR', {
+              day: '2-digit', 
+              month: '2-digit', 
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            }) : '-';
+            const rowBg = idx % 2 === 0 ? '#f9fafb' : '#ffffff';
+            
+            const statusMap = {
+              'pending': { text: 'Beklemede', color: '#f59e0b' },
+              'paid': { text: 'Ödendi', color: '#10b981' },
+              'processing': { text: 'İşleniyor', color: '#3b82f6' },
+              'shipped': { text: 'Gönderildi', color: '#8b5cf6' }
+            };
+            const statusInfo = statusMap[order.status] || statusMap['pending'];
+            
+            html += `<tr style="background:${rowBg};">`;
+            html += `<td style="padding:0.75rem; border-bottom:1px solid #e5e7eb; font-weight:600; color:#10b981;">${escapeHtml(order.id)}</td>`;
+            html += `<td style="padding:0.75rem; border-bottom:1px solid #e5e7eb;">${escapeHtml(order.customerName)}</td>`;
+            html += `<td style="padding:0.75rem; border-bottom:1px solid #e5e7eb; font-weight:600;">₺${escapeHtml(order.total)}</td>`;
+            html += `<td style="padding:0.75rem; border-bottom:1px solid #e5e7eb;">${orderDate}</td>`;
+            html += `<td style="padding:0.75rem; border-bottom:1px solid #e5e7eb;"><span style="display:inline-block; padding:0.25rem 0.75rem; background:${statusInfo.color}; color:white; border-radius:12px; font-size:0.85rem; font-weight:600;">${statusInfo.text}</span></td>`;
+            html += '</tr>';
+          });
+          
+          html += '</tbody></table></div>';
+          
+          // Show latest order JSON
+          html += '<h3 style="margin-top:2rem;">📄 En Son Sipariş (JSON)</h3>';
+          html += '<pre>' + JSON.stringify(orders[0], null, 2) + '</pre>';
+          
+          resultsEl.innerHTML = html;
+        } else {
+          resultsEl.innerHTML = '<p style="color:#6b7280;">Henüz sipariş yok.</p>';
+        }
+        
+        btn.textContent = '📊 GitHub\'daki Siparişleri Kontrol Et';
+        btn.disabled = false;
+        
+      } catch (err) {
+        console.error('Check orders failed:', err);
+        steps.push('❌ HATA: ' + err.message);
+        statusEl.innerHTML = '<div class="status error">' + steps.join('<br>') + '</div>';
+        
+        resultsEl.innerHTML = `
+          <h3>🔴 Siparişler Yüklenemedi</h3>
+          <p><strong>Hata:</strong> ${escapeHtml(err.message)}</p>
+        `;
+        
+        btn.textContent = '🔄 Tekrar Dene';
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
