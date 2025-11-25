@@ -1241,19 +1241,31 @@
                         // If not in localStorage, try fetching from remote
                         if (!userStr) {
                             console.log('loginUser: User NOT in localStorage, fetching from remote...');
+                            
+                            // Show loading message
+                            const loginBtn = event?.target || document.querySelector('button[onclick*="loginUser"]');
+                            const originalText = loginBtn?.textContent;
+                            if (loginBtn) loginBtn.textContent = 'Kontrol ediliyor...';
+                            
                             try{
                                 userData = await fetchUserFromRepo(email);
                                 if (userData) {
                                     console.log('loginUser: ✓ User fetched from remote and ready for verification');
                                 } else {
                                     console.warn('loginUser: User not found in remote repo');
-                                    alert('Kullanıcı bulunamadı! Lütfen önce kayıt olun.');
+                                    if (loginBtn) loginBtn.textContent = originalText;
+                                    alert('Bu cihazda kullanıcı kaydı bulunamadı.\n\nFarklı bir cihazda kayıt olduysanız, bu cihazda da kayıt olmanız gerekir.\n\n(Not: Cihazlar arası giriş özelliği şu an sorun yaşıyor, her cihazda ayrı kayıt gerekiyor)');
                                     return;
                                 }
                             }catch(e){
                                 console.error('loginUser: Failed to fetch user from remote', e);
-                                alert('Kullanıcı bulunamadı! Lütfen önce kayıt olun.');
+                                if (loginBtn) loginBtn.textContent = originalText;
+                                alert('Bu cihazda kullanıcı kaydı bulunamadı.\n\nBu cihazda kayıt olmanız gerekir.');
                                 return;
+                            } finally {
+                                if (loginBtn && loginBtn.textContent !== originalText) {
+                                    loginBtn.textContent = originalText;
+                                }
                             }
                         } else {
                             console.log('loginUser: ✓ User found in localStorage');
