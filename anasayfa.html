@@ -1518,8 +1518,8 @@
                                 renderCart();
                                 updateCartCount();
                                 closeCart();
-                                // Redirect to 'Ürünler' section after checkout
-                                scrollToSection('products');
+                                // Redirect to 'Ürünler' section after checkout with a small delay to ensure modal closes smoothly
+                                setTimeout(function() { scrollToSection('products'); }, 150);
                                 // silent: new tab opened for payment (no blocking alert)
                                 console.log('Ödeme sayfası yeni sekmede açıldı');
                                 return;
@@ -1643,8 +1643,8 @@
                             // clear cart
                             if (user) localStorage.removeItem(cartKeyForUser(user.email));
                             renderCart(); updateCartCount(); closeBank();
-                            // Redirect to 'Ürünler' section after checkout
-                            scrollToSection('products');
+                            // Redirect to 'Ürünler' section after checkout with a small delay to ensure modal closes smoothly
+                            setTimeout(function() { scrollToSection('products'); }, 150);
                         })
                         .catch(()=>{
                             // Fallback: persist order if possible then open mailto
