@@ -1343,7 +1343,14 @@
                     document.getElementById && document.getElementById('profileToggle') && document.getElementById('profileToggle').addEventListener('click', function(e){ e.stopPropagation(); const menu = document.getElementById('profileMenu'); if (!menu) return; if (menu.classList.contains('hidden')) openProfileMenu(); else closeProfileMenu(); });
 
                     // Confirm-protected logout used in modal and profile menu
-                    function logoutConfirm(){ if (confirm('Çıkış yapmak istediğinizden emin misiniz?')) logout(); }
+                    function logoutConfirm(){ 
+                        if (confirm('Çıkış yapmak istediğinizden emin misiniz?')) {
+                            closeProfileMenu(); // Close menu before logout
+                            logout();
+                        } else {
+                            closeProfileMenu(); // Close menu even if cancelled
+                        }
+                    }
 
                     function viewOrderDetails(id){
                                         const user = getCurrentUser(); if (!user) return openAuthModal();
@@ -1925,7 +1932,7 @@
                                     case 'toggle-about': { try{ toggleAbout(e); }catch(e){} break; }
                                     case 'open-auth': { try{ openAuthModal(); }catch(e){} break; }
                                     case 'open-account': { try{ openAccountModal(); closeProfileMenu(); }catch(e){} break; }
-                                    case 'logout-confirm': { try{ logoutConfirm(); closeProfileMenu(); }catch(e){} break; }
+                                    case 'logout-confirm': { try{ logoutConfirm(); }catch(e){} break; }
                                     case 'close-contact': { try{ closeContact(); }catch(e){} break; }
                                     case 'close-about': { try{ closeAbout(); }catch(e){} break; }
                                     case 'close-auth': { try{ closeAuthModal(); }catch(e){} break; }
