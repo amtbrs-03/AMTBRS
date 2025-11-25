@@ -1057,16 +1057,18 @@
           }
           
           if (allOrders.length === 0) {
-            container.innerHTML = '<p style="color:#6b7280;">Sipariş verileri yüklenemedi.</p>';
-            countEl.textContent = '0 sipariş';
+            container.innerHTML = '<p style="color:#6b7280;">Sipariş verileri yüklenemedi. Console\'u kontrol edin.</p>';
+            if (countEl) countEl.textContent = '0 sipariş';
             return;
           }
+          
+          console.log('Total orders loaded:', allOrders.length);
           
           // Sort by date (newest first)
           allOrders.sort((a, b) => (b.date || 0) - (a.date || 0));
           
           // Display count
-          countEl.textContent = `${allOrders.length} sipariş`;
+          if (countEl) countEl.textContent = `${allOrders.length} sipariş`;
           
           // Build table
           let html = '<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.1); border-radius:8px; overflow:hidden;">';
