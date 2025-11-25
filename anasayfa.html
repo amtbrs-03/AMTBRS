@@ -467,6 +467,27 @@
             #authBtn .auth-icon { display:inline-block; font-size:1.05rem; }
             /* make admin link smaller on mobile */
             #mainAdminLink a { padding:0.35rem 0.6rem; font-size:0.9rem; }
+            
+            /* further optimize about panel for very small screens */
+            #aboutPanel {
+                left: 0.3rem !important;
+                right: 0.3rem !important;
+                padding: 0.75rem !important;
+                font-size: 0.85rem !important;
+            }
+            
+            #aboutPanel > div > div {
+                grid-template-columns: 1fr !important;
+                gap: 0.8rem !important;
+            }
+            
+            #aboutPanel h3 {
+                font-size: 0.9rem !important;
+            }
+            
+            #aboutPanel p {
+                font-size: 0.8rem !important;
+            }
         }
 
         /* Ensure images and SVG scale to container width */
@@ -488,6 +509,32 @@
         @media (max-width:700px) {
             /* make contact panel full-width under header on mobile */
             .contact-panel { position: fixed; left: 0.6rem; right: 0.6rem; top: 64px; width: auto; }
+            
+            /* make about panel mobile-friendly */
+            #aboutPanel {
+                position: fixed !important;
+                left: 0.5rem !important;
+                right: 0.5rem !important;
+                top: 64px !important;
+                width: auto !important;
+                max-width: none !important;
+                max-height: 80vh;
+                overflow-y: auto;
+                padding: 1rem !important;
+                margin-top: 0 !important;
+            }
+            
+            #aboutPanel > div:first-child {
+                font-size: 0.9rem !important;
+            }
+            
+            #aboutPanel h3 {
+                font-size: 0.95rem !important;
+            }
+            
+            #aboutPanel p {
+                font-size: 0.85rem !important;
+            }
         }
 
         /* contact button styles */
