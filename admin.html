@@ -301,16 +301,12 @@
   </div>
 
   <div class="card" id="ordersCard">
-    <h2>📦 Siparişler</h2>
-    <div id="ordersListAdmin" style="max-height:420px; overflow:auto;"></div>
-    <div style="margin-top:1rem; display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
-      <button id="pushStatuses" class="btn">Durumları Güncelle</button>
-      <button id="pushOrdersToGithub" class="btn btn-ghost">GitHub'a Kaydet</button>
-      <label style="margin-left:auto;display:flex;align-items:center;gap:0.4rem;">
-        <input id="autoPushStatus" type="checkbox" /> Otomatik güncelleme
-      </label>
+    <h2>📦 Müşteri Siparişleri</h2>
+    <div style="margin-bottom:1rem; display:flex; gap:0.75rem; align-items:center;">
+      <span id="orderCount" style="font-weight:600; color:var(--green-dark);"></span>
     </div>
-    <div class="small meta" style="margin-top:0.5rem">Buradan kullanıcı siparişlerini görebilir, durum atayabilirsiniz. Durum değişikliği localStorage'a kaydedilir; isterseniz serverless endpoint'e bildirilebilir.</div>
+    <div id="ordersListAdmin" style="max-height:500px; overflow:auto;"></div>
+    <div class="small meta" style="margin-top:0.75rem">📦 Sipariş bilgileri GitHub'dan çekilir. Müşteriler ödeme sayfasından sipariş bildirimi yapar.</div>
   </div>
 
     <div style="display:flex; gap:0.5rem; align-items:center;">
@@ -1001,98 +997,116 @@
       // load settings when admin UI ready
       try{ loadSettingsIntoForm(); }catch(e){}
 
-      // Orders admin: read orders_* keys from localStorage
-      function getAllOrdersFromLocalStorage(){
-        const out = [];
-        try{
-          for (let i=0;i<localStorage.length;i++){
-            const key = localStorage.key(i);
-            if (!key) continue;
-            if (key.indexOf('orders_') === 0){
-              try{ const arr = JSON.parse(localStorage.getItem(key)) || []; out.push({ owner: key.replace('orders_',''), orders: arr }); }catch(e){}
+      // Orders admin: fetch from GitHub
+      async function renderOrdersAdmin(){
+        const container = document.getElementById('ordersListAdmin'); 
+        const countEl = document.getElementById('orderCount');
+        if (!container) return;
+        
+        container.innerHTML = '<p style="color:#6b7280;">Siparişler GitHub\'dan çekiliyor...</p>';
+        
+        try {
+          // Fetch orders from GitHub
+          const owner = 'amtbrs-03';
+          const repo = 'AMTBRS';
+          const branch = 'site-release';
+          const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/orders?ref=${branch}`;
+          
+          const res = await fetch(apiUrl, {
+            headers: { 'Accept': 'application/vnd.github.v3+json' }
+          });
+          
+          if (!res.ok) {
+            throw new Error(`GitHub API responded with ${res.status}`);
+          }
+          
+          const files = await res.json();
+          const orderFiles = files.filter(f => f.name.endsWith('.json'));
+          
+          if (orderFiles.length === 0) {
+            container.innerHTML = '<p style="color:#6b7280;">Henüz sipariş yok.</p>';
+            countEl.textContent = '0 sipariş';
+            return;
+          }
+          
+          // Fetch each order file
+          const allOrders = [];
+          for (const file of orderFiles) {
+            try {
+              const orderRes = await fetch(file.download_url);
+              if (orderRes.ok) {
+                const orderData = await orderRes.json();
+                allOrders.push(orderData);
+              }
+            } catch(e) {
+              console.error('Failed to load order:', file.name, e);
             }
           }
-        }catch(e){ console.error('getAllOrders error', e); }
-        return out;
-      }
-
-      function renderOrdersAdmin(){
-        const container = document.getElementById('ordersListAdmin'); if (!container) return;
-        const list = getAllOrdersFromLocalStorage();
-        container.innerHTML = '';
-        if (!list.length) { container.innerHTML = '<div style="color:#6b7280;padding:0.6rem">Kayıtlı sipariş yok.</div>'; return; }
-        list.forEach(userBlock => {
-          const header = document.createElement('div'); header.style.padding='0.6rem'; header.style.borderBottom='1px dashed rgba(10,12,30,0.06)'; header.innerHTML = `<div style="font-weight:800">${escapeHtml(userBlock.owner)}</div>`;
-          container.appendChild(header);
-          (userBlock.orders||[]).forEach(o=>{
-            const d = document.createElement('div'); d.style.padding='0.5rem'; d.style.borderBottom='1px solid rgba(0,0,0,0.03)'; d.style.display='flex'; d.style.gap='0.6rem'; d.style.alignItems='center';
-            d.innerHTML = `<div style="flex:1"><div style="font-weight:700">Sipariş #${escapeHtml(o.id||'')}</div><div style="font-size:0.9rem;color:#475569">${new Date(o.date||0).toLocaleString()}</div></div><div style="width:140px;display:flex;flex-direction:column;gap:6px"><select data-owner="${escapeHtml(userBlock.owner)}" data-orderid="${escapeHtml(o.id||'')}" class="order-status"><option value="pending">Beklemede</option><option value="paid">Ödendi</option><option value="processing">İşleniyor</option><option value="shipped">Gönderildi</option></select><div style="display:flex;gap:6px"><button class="btn btn-ghost btn-view" data-owner="${escapeHtml(userBlock.owner)}" data-orderid="${escapeHtml(o.id||'')}">Detay</button><button class="btn btn-ghost btn-save" data-owner="${escapeHtml(userBlock.owner)}" data-orderid="${escapeHtml(o.id||'')}">Kaydet</button></div></div>`;
-            container.appendChild(d);
-          });
-        });
-
-        // set existing statuses if present in orders
-        document.querySelectorAll('.order-status').forEach(sel=>{
-          const owner = sel.getAttribute('data-owner'); const oid = sel.getAttribute('data-orderid');
-          const orders = JSON.parse(localStorage.getItem('orders_' + owner) || '[]');
-          const o = orders.find(x=>x.id===oid);
-          if (o && o.status) sel.value = o.status;
-        });
-
-        // attach handlers
-        document.querySelectorAll('.btn-view').forEach(b=> b.onclick = function(){ const owner=this.getAttribute('data-owner'); const id=this.getAttribute('data-orderid'); alert('Sipariş detay (admin):\n' + JSON.stringify((JSON.parse(localStorage.getItem('orders_'+owner)||'[]')||[]).find(x=>x.id===id), null, 2)); });
-        document.querySelectorAll('.btn-save').forEach(b=> b.onclick = function(){ const owner=this.getAttribute('data-owner'); const id=this.getAttribute('data-orderid'); const sel = document.querySelector('select[data-owner="'+owner+'"][data-orderid="'+id+'"]'); const status = sel? sel.value : 'pending'; updateOrderStatus(owner, id, status); });
-      }
-
-      function updateOrderStatus(ownerEmail, orderId, status){
-        try{
-          const key = 'orders_' + ownerEmail;
-          const arr = JSON.parse(localStorage.getItem(key) || '[]');
-          const o = arr.find(x=>x.id===orderId);
-          if (!o) return alert('Sipariş bulunamadı');
-          o.status = status;
-          localStorage.setItem(key, JSON.stringify(arr));
-          alert('Sipariş durumu güncellendi: ' + status);
-          // optional: push update to serverless endpoint
-          if (document.getElementById('autoPushStatus') && document.getElementById('autoPushStatus').checked){
-            pushOrderStatusToServer(ownerEmail, o).catch(e=>console.warn('push failed', e));
+          
+          if (allOrders.length === 0) {
+            container.innerHTML = '<p style="color:#6b7280;">Sipariş verileri yüklenemedi.</p>';
+            countEl.textContent = '0 sipariş';
+            return;
           }
-          renderOrdersAdmin();
-        }catch(e){ console.error(e); alert('Güncelleme sırasında hata: ' + e.message); }
-      }
-
-      async function pushOrderStatusToServer(ownerEmail, orderObj){
-        const payload = { owner: ownerEmail, order: orderObj };
-        const endpoints = ['/.netlify/functions/update-order','/api/update-order','/functions/update-order'];
-        for (const ep of endpoints){
-          try{ const res = await fetch(ep, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) }); if (res.ok) return true; }catch(e){}
+          
+          // Sort by date (newest first)
+          allOrders.sort((a, b) => (b.date || 0) - (a.date || 0));
+          
+          // Display count
+          countEl.textContent = `${allOrders.length} sipariş`;
+          
+          // Build table
+          let html = '<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.1); border-radius:8px; overflow:hidden;">';
+          html += '<thead><tr style="background:linear-gradient(135deg, var(--green-primary), var(--green-dark)); color:white; text-align:left;">';
+          html += '<th style="padding:0.75rem 1rem; font-weight:600; border-bottom:2px solid rgba(255,255,255,0.2);">🆔 Sipariş No</th>';
+          html += '<th style="padding:0.75rem 1rem; font-weight:600; border-bottom:2px solid rgba(255,255,255,0.2);">👤 Müşteri</th>';
+          html += '<th style="padding:0.75rem 1rem; font-weight:600; border-bottom:2px solid rgba(255,255,255,0.2);">📧 Email</th>';
+          html += '<th style="padding:0.75rem 1rem; font-weight:600; border-bottom:2px solid rgba(255,255,255,0.2);">🛒 Ürünler</th>';
+          html += '<th style="padding:0.75rem 1rem; font-weight:600; border-bottom:2px solid rgba(255,255,255,0.2);">💰 Toplam</th>';
+          html += '<th style="padding:0.75rem 1rem; font-weight:600; border-bottom:2px solid rgba(255,255,255,0.2);">📅 Tarih</th>';
+          html += '<th style="padding:0.75rem 1rem; font-weight:600; border-bottom:2px solid rgba(255,255,255,0.2);">📊 Durum</th>';
+          html += '</tr></thead><tbody>';
+          
+          allOrders.forEach((order, idx) => {
+            const orderDate = order.date ? new Date(order.date).toLocaleDateString('tr-TR', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'}) : '-';
+            const rowBg = idx % 2 === 0 ? '#f9fafb' : '#ffffff';
+            
+            // Format items
+            const itemsText = (order.items || []).map(item => `${item.name} x${item.qty}`).join(', ') || '-';
+            const itemsShort = itemsText.length > 40 ? itemsText.substring(0, 37) + '...' : itemsText;
+            
+            // Status badge
+            const statusMap = {
+              'pending': { text: 'Beklemede', color: '#f59e0b' },
+              'paid': { text: 'Ödendi', color: '#10b981' },
+              'processing': { text: 'İşleniyor', color: '#3b82f6' },
+              'shipped': { text: 'Gönderildi', color: '#8b5cf6' }
+            };
+            const statusInfo = statusMap[order.status] || statusMap['pending'];
+            const statusBadge = `<span style="display:inline-block; padding:0.25rem 0.75rem; background:${statusInfo.color}; color:white; border-radius:12px; font-size:0.85rem; font-weight:600;">${statusInfo.text}</span>`;
+            
+            html += `<tr style="background:${rowBg}; transition:all 0.2s ease;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='${rowBg}'">`;
+            html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; font-weight:600; color:var(--green-dark);">${escapeHtml(order.id || '-')}</td>`;
+            html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; font-weight:500;">${escapeHtml(order.customerName || '-')}</td>`;
+            html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; color:#6b7280;">${escapeHtml(order.customerEmail || '-')}</td>`;
+            html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; color:#6b7280;" title="${escapeHtml(itemsText)}">${escapeHtml(itemsShort)}</td>`;
+            html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; font-weight:600;">₺${escapeHtml(order.total || '0')}</td>`;
+            html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; color:#6b7280;">${orderDate}</td>`;
+            html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb;">${statusBadge}</td>`;
+            html += '</tr>';
+          });
+          
+          html += '</tbody></table></div>';
+          container.innerHTML = html;
+          
+        } catch(err) {
+          console.error('Failed to load orders:', err);
+          container.innerHTML = `<p style="color:#e53e3e;">Hata: ${escapeHtml(err.message)}</p>`;
+          if (countEl) countEl.textContent = '';
         }
-        throw new Error('No endpoint responded');
       }
 
       document.getElementById('refreshOrders').addEventListener('click', ()=> renderOrdersAdmin());
-      document.getElementById('pushStatuses').addEventListener('click', async ()=>{
-        const list = getAllOrdersFromLocalStorage();
-        for (const u of list){ for (const o of u.orders){ try{ await pushOrderStatusToServer(u.owner, o); }catch(e){ console.warn('push failed', u.owner, o.id); } } }
-        alert('Push tamamlandı (başarısız olanlar console.log içinde).');
-      });
-
-      // Push orders to repo: creates files orders-<owner>.json in repo root
-      document.getElementById('pushOrdersToGithub').addEventListener('click', async ()=>{
-        try{
-          const list = getAllOrdersFromLocalStorage();
-          if (!list || !list.length) return alert('Kayıtlı sipariş yok');
-          const files = [];
-          for (const u of list){
-            const safeOwner = (u.owner||'unknown').replace(/[^a-z0-9@.\-]/gi,'_').replace(/@/g,'__at__');
-            const path = `orders-${safeOwner}.json`;
-            files.push({ path, contentBase64: btoa(unescape(encodeURIComponent(JSON.stringify(u.orders||[], null, 2)))) });
-          }
-          const res = await commitFilesToRepo(files, 'admin: push orders via admin panel');
-          if (res.ok) alert('Siparişler GitHub deposuna kaydedildi');
-          else alert('Sipariş push başarısız: ' + (res.err && res.err.statusText ? res.err.statusText : (res.err && res.err.message) || 'unknown'));
-        }catch(err){ console.error(err); alert('Sipariş push sırasında hata: ' + err.message); }
-      });
 
       // render orders on admin load
       try{ renderOrdersAdmin(); }catch(e){}

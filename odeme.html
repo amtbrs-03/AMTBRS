@@ -46,44 +46,98 @@
       navigator.clipboard?.writeText(txt).then(()=>alert('IBAN kopyalandı: '+txt)).catch(()=>{prompt('Lütfen kopyalayın:', txt)});
     });
 
-    // Siparişi Bildir - try serverless POST when possible, fallback to mailto
+    // XOR token decoder (same as admin)
+    function decodeToken(encoded, key){
+      let result = '';
+      for (let i = 0; i < encoded.length; i++) {
+        result += String.fromCharCode(encoded.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+      }
+      return result;
+    }
+    function getGitHubToken(){
+      const encoded = '":>r3\x0e,\' bj@\x06\x07\t5\'K"\x0b4\x08\tYUJ[f\x11\x0b\rK0\x0cs\x0f\x1dupY';
+      const key = 'ERN-CICEK-2025';
+      return decodeToken(encoded, key);
+    }
+
+    // Siparişi Bildir - save to GitHub instead of email
     document.getElementById('notifyBtn').addEventListener('click', async function(e){
       e.preventDefault();
-      const ownerEmail = 'amtbrs@icloud.com';
+      const btn = this;
+      btn.textContent = 'Kaydediliyor...';
+      btn.disabled = true;
+      
       const current = (function(){ try{ const c = localStorage.getItem('currentUser'); return c?JSON.parse(c):null }catch(e){return null} })();
-      const payerEmail = current && current.email ? current.email : '';
-      const cart = (function(){ try{ const key = payerEmail ? 'cart_' + payerEmail : (function(){ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k && k.indexOf('cart_')===0) return k; } return null })(); return key ? JSON.parse(localStorage.getItem(key)||'[]') : []; }catch(e){ return []; } })();
-
-      // attempt serverless if we have payerEmail
-      if (payerEmail){
-        const payload = { payerEmail, cart, iban: (document.getElementById('iban').textContent||'').trim() };
-        const endpoints = ['/.netlify/functions/send-order','/api/send-order','/functions/send-order'];
-        for (let ep of endpoints){
-          try{
-            const res = await fetch(ep, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
-            if (res.ok){
-              try{ localStorage.removeItem('cart_' + payerEmail); }catch(e){}
-              // toast suppressed
-              return;
-            }
-          }catch(err){ /* try next */ }
-        }
+      const payerEmail = current && current.email ? current.email : 'misafir@' + Date.now();
+      const payerName = current && current.name ? current.name : 'Misafir';
+      const cart = (function(){ try{ const key = payerEmail !== 'misafir@' + Date.now() ? 'cart_' + payerEmail : (function(){ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k && k.indexOf('cart_')===0) return k; } return null })(); return key ? JSON.parse(localStorage.getItem(key)||'[]') : []; }catch(e){ return []; } })();
+      
+      if(!cart || cart.length === 0){
+        alert('Sepetiniz boş!');
+        btn.textContent = 'Siparişi Bildir';
+        btn.disabled = false;
+        return;
       }
 
-      // fallback: build mailto and open
-      const lines = [];
-      lines.push('Merhaba','');
-      lines.push('Aşağıdaki kullanıcı havale/eft yaptığını bildirdi ve sipariş onayı bekliyor:','');
-      lines.push('Gönderen e-posta: ' + (payerEmail||''),'');
-      if(!cart.length) lines.push('Sepet: (boş)'); else { lines.push('Sepet içerikleri:'); let totalCalc=0; cart.forEach(item=>{ lines.push('- ' + (item.name||'') + ' x' + (item.qty||1) + ' @ ₺' + ((item.price||0).toFixed(2))); totalCalc += (item.price||0)*(item.qty||0); }); lines.push('', 'Toplam: ₺' + totalCalc.toFixed(2)); }
-      const ibanText = document.getElementById('iban').textContent || '';
-      lines.push('', 'IBAN: ' + ibanText.trim());
-      const subject = 'Havale bildirimi - yeni sipariş';
-      const body = lines.join('\n');
-      const mailto = 'mailto:' + ownerEmail + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
-      window.location.href = mailto;
-      try{ if (payerEmail) localStorage.removeItem('cart_' + payerEmail); }catch(e){}
-      return;
+      const ibanText = (document.getElementById('iban').textContent || '').trim();
+      const totalText = (document.getElementById('total').textContent || '').replace(/[^0-9.,]/g, '');
+      
+      // Create order object
+      const order = {
+        id: 'ORD-' + Date.now(),
+        date: Date.now(),
+        customerEmail: payerEmail,
+        customerName: payerName,
+        items: cart,
+        total: totalText,
+        iban: ibanText,
+        status: 'pending'
+      };
+
+      try {
+        // Save to GitHub via repository_dispatch
+        const token = getGitHubToken();
+        const owner = 'amtbrs-03';
+        const repo = 'AMTBRS';
+        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/dispatches`;
+        
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/vnd.github.v3+json',
+            'Authorization': `token ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            event_type: 'save-order',
+            client_payload: {
+              order: order
+            }
+          })
+        });
+
+        if (response.status === 204 || response.ok) {
+          // Save to localStorage as backup
+          const key = 'orders_' + payerEmail;
+          let orders = [];
+          try { orders = JSON.parse(localStorage.getItem(key) || '[]'); } catch(e) {}
+          orders.push(order);
+          localStorage.setItem(key, JSON.stringify(orders));
+          
+          // Clear cart
+          try { localStorage.removeItem('cart_' + payerEmail); } catch(e) {}
+          
+          alert('✅ Siparişiniz kaydedildi!\n\nSipariş No: ' + order.id + '\n\nÖdemeniz kontrol edildikten sonra siparişiniz işleme alınacaktır.');
+          setTimeout(() => { window.location.href = '/anasayfa.html'; }, 1500);
+        } else {
+          throw new Error('GitHub API yanıt vermedi');
+        }
+      } catch(err) {
+        console.error('Order save failed:', err);
+        alert('❌ Sipariş kaydedilemedi. Lütfen tekrar deneyin veya iletişime geçin.');
+        btn.textContent = 'Siparişi Bildir';
+        btn.disabled = false;
+      }
     });
   </script>
 </body>

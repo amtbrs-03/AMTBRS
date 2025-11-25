@@ -1,0 +1,32 @@
+name: Save Order
+
+on:
+  repository_dispatch:
+    types: [save-order]
+
+jobs:
+  save-order:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout site-release
+        uses: actions/checkout@v3
+        with:
+          ref: site-release
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create orders directory
+        run: mkdir -p orders
+
+      - name: Save order file
+        run: |
+          ORDER_ID="${{ github.event.client_payload.order.id }}"
+          ORDER_JSON='${{ toJson(github.event.client_payload.order) }}'
+          echo "$ORDER_JSON" > "orders/${ORDER_ID}.json"
+
+      - name: Commit and push
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add orders/
+          git commit -m "Add order ${{ github.event.client_payload.order.id }}" || echo "No changes"
+          git push origin site-release
