@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /admin-latest.html
+Disallow: /archive/
+Disallow: /functions/
+
+Sitemap: https://ern-cicek.com.tr/sitemap.xml
+
+# Yonetici panellerini engelle
+User-agent: *
+Disallow: /*admin*
+
+# Onemli sayfalar
+Allow: /anasayfa.html
+Allow: /index.html
+Allow: /odeme.html

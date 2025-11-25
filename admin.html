@@ -101,6 +101,10 @@
 
   <div class="card">
     <h2>Kayıtlı Ürünler</h2>
+    <div style="display:flex;gap:0.5rem;margin-bottom:0.6rem;align-items:center;">
+      <button id="pushProducts" class="btn">Ürünleri GitHub'a Kaydet</button>
+      <button id="downloadProducts" class="btn btn-ghost">Ürünleri İndir (JSON)</button>
+    </div>
     <div id="products" class="products-list"></div>
   </div>
 
@@ -146,6 +150,7 @@
     <div style="margin-top:0.6rem; display:flex; gap:0.5rem; align-items:center;">
       <button id="refreshOrders" class="btn btn-ghost">Yenile</button>
       <button id="pushStatuses" class="btn">Sunucuya Gönder (opsiyonel)</button>
+      <button id="pushOrdersToGithub" class="btn">Siparişleri GitHub'a Kaydet</button>
       <label style="margin-left:auto;display:flex;align-items:center;gap:0.4rem;"><input id="autoPushStatus" type="checkbox" /> Otomatik push</label>
     </div>
     <div class="small meta" style="margin-top:0.5rem">Buradan kullanıcı siparişlerini görebilir, durum atayabilirsiniz. Durum değişikliği localStorage'a kaydedilir; isterseniz serverless endpoint'e bildirilebilir.</div>
@@ -462,6 +467,57 @@
         }catch(err){ console.error('push to github failed', err); alert('GitHub kaydı sırasında hata: ' + err.message); }
       });
 
+      // helper: commit files to repo via serverless endpoints
+      async function commitFilesToRepo(files, message){
+        const payload = { files, message: message || 'admin: update via admin panel' };
+        const endpoints = ['/.netlify/functions/commit-file', '/api/commit-file', '/functions/commit-file'];
+        let lastErr = null;
+        for (const ep of endpoints){
+          try{
+            const res = await fetch(ep, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+            if (res.ok) return { ok:true, res };
+            lastErr = res;
+          }catch(e){ lastErr = e; }
+        }
+        return { ok:false, err: lastErr };
+      }
+
+      // Push products explicitly (uses same flow as saveAll push)
+      document.getElementById('pushProducts').addEventListener('click', async ()=>{
+        try{
+          const prods = getProducts();
+          if (!prods || !prods.length) return alert('Kayıtlı ürün yok');
+          const files = [];
+          // products.json
+          files.push({ path: 'products.json', contentBase64: btoa(unescape(encodeURIComponent(JSON.stringify(prods, null, 2)))) });
+          // include embedded images
+          for (const p of prods){
+            if (p.image && typeof p.image === 'string' && p.image.indexOf('data:') === 0){
+              const m = p.image.match(/^data:(image\/(png|jpeg|jpg|webp));base64,(.*)$/i);
+              if (m){
+                const ext = (m[2] && m[2].toLowerCase() === 'jpeg') ? 'jpg' : (m[2] || 'png');
+                const filename = `product-${p.id}.${ext}`;
+                files.push({ path: filename, contentBase64: m[3] });
+                p.image = filename;
+              }
+            }
+          }
+          // update products.json with filenames
+          files[0].contentBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(prods, null, 2))));
+          const r = await commitFilesToRepo(files, 'admin: push products via admin panel');
+          if (r.ok) alert('Ürünler GitHub deposuna kaydedildi');
+          else alert('Ürün push başarısız: ' + (r.err && r.err.statusText ? r.err.statusText : (r.err && r.err.message) || 'unknown'));
+        }catch(err){ console.error(err); alert('Ürün push sırasında hata: ' + err.message); }
+      });
+
+      // Download products JSON locally
+      document.getElementById('downloadProducts').addEventListener('click', ()=>{
+        const data = JSON.stringify(getProducts(), null, 2);
+        const blob = new Blob([data], {type:'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'products.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      });
+
       // Site settings save/load (contact / IBAN / hours)
       const SETTINGS_KEY = 'site_settings_v1';
       function getSiteSettings(){
@@ -604,6 +660,23 @@
         const list = getAllOrdersFromLocalStorage();
         for (const u of list){ for (const o of u.orders){ try{ await pushOrderStatusToServer(u.owner, o); }catch(e){ console.warn('push failed', u.owner, o.id); } } }
         alert('Push tamamlandı (başarısız olanlar console.log içinde).');
+      });
+
+      // Push orders to repo: creates files orders-<owner>.json in repo root
+      document.getElementById('pushOrdersToGithub').addEventListener('click', async ()=>{
+        try{
+          const list = getAllOrdersFromLocalStorage();
+          if (!list || !list.length) return alert('Kayıtlı sipariş yok');
+          const files = [];
+          for (const u of list){
+            const safeOwner = (u.owner||'unknown').replace(/[^a-z0-9@.\-]/gi,'_').replace(/@/g,'__at__');
+            const path = `orders-${safeOwner}.json`;
+            files.push({ path, contentBase64: btoa(unescape(encodeURIComponent(JSON.stringify(u.orders||[], null, 2)))) });
+          }
+          const res = await commitFilesToRepo(files, 'admin: push orders via admin panel');
+          if (res.ok) alert('Siparişler GitHub deposuna kaydedildi');
+          else alert('Sipariş push başarısız: ' + (res.err && res.err.statusText ? res.err.statusText : (res.err && res.err.message) || 'unknown'));
+        }catch(err){ console.error(err); alert('Sipariş push sırasında hata: ' + err.message); }
       });
 
       // render orders on admin load
