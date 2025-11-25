@@ -972,15 +972,15 @@
                         const password2 = document.getElementById('registerPassword2').value;
 
                         if (!name || !email || !phone || !password || !password2) {
-                            console.log('Lütfen tüm alanları doldurunuz!');
+                            alert('Lütfen tüm alanları doldurunuz!');
                             return;
                         }
                         if (!/^\d{10,15}$/.test(phone)) {
-                            console.log('Telefon numarası 10-15 rakam olmalı.');
+                            alert('Telefon numarası 10-15 rakam olmalı.');
                             return;
                         }
                         if (password !== password2) {
-                            console.log('Şifreler eşleşmiyor!');
+                            alert('Şifreler eşleşmiyor!');
                             return;
                         }
 
@@ -1002,7 +1002,7 @@
                         };
 
                         localStorage.setItem('user_' + email, JSON.stringify(stored));
-                        console.log('Kayıt başarılı! Giriş yapabilirsiniz. (şifre güvenli şekilde saklandı)');
+                        alert('Kayıt başarılı! Giriş yapabilirsiniz.');
                         // try to persist safe user record to remote repo (best-effort)
                         try{ commitUserToRepo({ name, email, phone, createdAt: stored.createdAt }); }catch(e){}
                         switchTab('login', document.querySelector('.form-tab'));
@@ -1019,19 +1019,19 @@
                         const password = document.getElementById('loginPassword').value;
 
                         if (!email || !phone || !password) {
-                            console.log('Lütfen email, telefon ve şifre giriniz!');
+                            alert('Lütfen email, telefon ve şifre giriniz!');
                             return;
                         }
 
                         const userStr = localStorage.getItem('user_' + email);
                         if (!userStr) {
-                            console.log('Kullanıcı bulunamadı!');
+                            alert('Kullanıcı bulunamadı!');
                             return;
                         }
 
                         const userData = JSON.parse(userStr);
                         if (userData.phone !== phone) {
-                            console.log('Telefon numarası eşleşmiyor!');
+                            alert('Telefon numarası eşleşmiyor!');
                             return;
                         }
 
@@ -1041,12 +1041,12 @@
                             const iter = userData.pw.iterations || PW_ITERATIONS;
                             const derived = await deriveKey(password, saltBuf, iter);
                             if (!secureCompare(derived, expectedHash)) {
-                                console.log('Şifre yanlış!');
+                                alert('Şifre yanlış!');
                                 return;
                             }
                         } catch (e) {
                             console.error('Giriş sırasında hata oluştu', e);
-                            console.log('Giriş başarısız.');
+                            alert('Giriş başarısız.');
                             return;
                         }
 
