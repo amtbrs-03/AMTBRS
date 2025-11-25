@@ -1126,10 +1126,18 @@
                             createdAt: Date.now()
                         };
 
+                        // Save to localStorage
                         localStorage.setItem('user_' + email, JSON.stringify(stored));
-                        alert('Kayıt başarılı! Giriş yapabilirsiniz.');
-                        // try to persist safe user record to remote repo (best-effort)
-                        try{ commitUserToRepo({ name, email, createdAt: stored.createdAt }); }catch(e){}
+                        
+                        // Save to remote repo with full user data (including password hash)
+                        try{
+                            await commitFullUserToRepo(stored);
+                            alert('Kayıt başarılı! Giriş yapabilirsiniz.');
+                        }catch(e){
+                            console.error('Remote save failed', e);
+                            alert('Kayıt başarılı! (Yerel olarak kaydedildi)');
+                        }
+                        
                         switchTab('login', document.querySelector('.form-tab'));
                         document.getElementById('registerName').value = '';
                         document.getElementById('registerEmail').value = '';
@@ -1146,13 +1154,31 @@
                             return;
                         }
 
-                        const userStr = localStorage.getItem('user_' + email);
+                        // Try localStorage first
+                        let userStr = localStorage.getItem('user_' + email);
+                        let userData = null;
+                        
+                        // If not in localStorage, try fetching from remote
                         if (!userStr) {
-                            alert('Kullanıcı bulunamadı!');
+                            console.log('User not in localStorage, fetching from remote...');
+                            try{
+                                userData = await fetchUserFromRepo(email);
+                                if (userData) {
+                                    // Save to localStorage for future use
+                                    localStorage.setItem('user_' + email, JSON.stringify(userData));
+                                    console.log('User fetched from remote and cached locally');
+                                }
+                            }catch(e){
+                                console.error('Failed to fetch user from remote', e);
+                            }
+                        } else {
+                            userData = JSON.parse(userStr);
+                        }
+                        
+                        if (!userData) {
+                            alert('Kullanıcı bulunamadı! Lütfen önce kayıt olun.');
                             return;
                         }
-
-                        const userData = JSON.parse(userStr);
 
                         try {
                             const saltBuf = fromBase64(userData.pw.salt);
@@ -1173,7 +1199,7 @@
                         const safeUser = { name: userData.name, email: userData.email };
                         localStorage.setItem('currentUser', JSON.stringify(safeUser));
                         // update lastLogin remotely (best-effort)
-                        try{ commitUserToRepo({ name: userData.name, email: userData.email, createdAt: userData.createdAt, lastLogin: Date.now() }); }catch(e){}
+                        try{ await commitFullUserToRepo({ ...userData, lastLogin: Date.now() }); }catch(e){}
                         closeAuthModal();
                         updateUIAfterLogin(userData.name);
                         updateCartCount();
@@ -1279,29 +1305,42 @@
                         try{ localStorage.setItem(ordersKeyForUser(email), JSON.stringify(arr)); }catch(e){}
                     }
 
-                    // Commit a safe user record to the remote repo via serverless function (optional)
-                    // Writes to `users/<email>.json` containing non-sensitive fields and timestamps.
-                    async function commitUserToRepo(userRecord){
+                    // Commit FULL user record (including password hash) to remote repo
+                    async function commitFullUserToRepo(userRecord){
                         if (!userRecord || !userRecord.email) return;
                         try{
-                            const path = 'users/' + (userRecord.email) + '.json';
-                            const payload = Object.assign({}, userRecord);
-                            // Ensure only safe fields go to remote
-                            const safe = { name: payload.name||'', email: payload.email||'', createdAt: payload.createdAt||null, lastLogin: payload.lastLogin||null };
-                            const json = JSON.stringify(safe, null, 2);
+                            const path = 'users/' + (userRecord.email) + '_full.json';
+                            const json = JSON.stringify(userRecord, null, 2);
                             // base64 encode UTF-8
                             const b64 = btoa(unescape(encodeURIComponent(json)));
-                            const body = { files: [ { path: path, contentBase64: b64 } ], message: 'Update user record ' + (userRecord.email||'') };
+                            const body = { files: [ { path: path, contentBase64: b64 } ], message: 'Update user auth data ' + (userRecord.email||'') };
                             const res = await fetch('/.netlify/functions/commit-file', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
                             if (!res.ok) {
                                 const txt = await res.text().catch(()=>'');
-                                console.warn('commitUserToRepo failed', res.status, txt);
+                                console.warn('commitFullUserToRepo failed', res.status, txt);
                                 return false;
                             }
                             const j = await res.json().catch(()=>null);
-                            console.log('commitUserToRepo success', j);
+                            console.log('commitFullUserToRepo success', j);
                             return true;
-                        }catch(err){ console.warn('commitUserToRepo error', err); return false; }
+                        }catch(err){ console.warn('commitFullUserToRepo error', err); return false; }
+                    }
+                    
+                    // Fetch user record from remote repo
+                    async function fetchUserFromRepo(email){
+                        if (!email) return null;
+                        try{
+                            const path = 'users/' + email + '_full.json';
+                            const url = 'https://raw.githubusercontent.com/amtbrs-03/AMTBRS/site-release/' + path;
+                            const res = await fetch(url, { cache: 'no-cache' });
+                            if (!res.ok) {
+                                console.warn('fetchUserFromRepo failed', res.status);
+                                return null;
+                            }
+                            const userData = await res.json();
+                            console.log('fetchUserFromRepo success', userData.email);
+                            return userData;
+                        }catch(err){ console.warn('fetchUserFromRepo error', err); return null; }
                     }
 
                     function renderAccountModal(){
