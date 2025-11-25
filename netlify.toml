@@ -6,22 +6,22 @@
   functions = "functions"
 
 [[redirects]]
-  # Redirect apex to canonical www host
-  from = "https://ern-cicek.com.tr/*"
-  to = "https://www.ern-cicek.com.tr/:splat"
+  # Redirect www to canonical non-www host
+  from = "https://www.ern-cicek.com.tr/*"
+  to = "https://ern-cicek.com.tr/:splat"
   status = 301
   force = true
 
 [[redirects]]
-  # Ensure http apex also redirects to https://www
-  from = "http://ern-cicek.com.tr/*"
-  to = "https://www.ern-cicek.com.tr/:splat"
-  status = 301
-  force = true
-
-[[redirects]]
-  # Ensure plain http www also upgrades to https
+  # Ensure http www also redirects to https non-www
   from = "http://www.ern-cicek.com.tr/*"
-  to = "https://www.ern-cicek.com.tr/:splat"
+  to = "https://ern-cicek.com.tr/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  # Ensure plain http apex also upgrades to https
+  from = "http://ern-cicek.com.tr/*"
+  to = "https://ern-cicek.com.tr/:splat"
   status = 301
   force = true
