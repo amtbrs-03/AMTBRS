@@ -236,6 +236,64 @@
       }
     }
 
+    // Save admin credentials to GitHub
+    async function saveAdminToGitHub(adminData) {
+      const token = getGitHubToken();
+      if (!token) return { ok: false, error: 'No token' };
+
+      const owner = 'amtbrs-03';
+      const repo = 'AMTBRS';
+      const url = `https://api.github.com/repos/${owner}/${repo}/dispatches`;
+
+      const payload = {
+        event_type: 'save-admin',
+        client_payload: {
+          admin_data: JSON.stringify(adminData, null, 2)
+        }
+      };
+
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        return res.ok || res.status === 204 ? { ok: true } : { ok: false, error: `Status ${res.status}` };
+      } catch(err) {
+        return { ok: false, error: err.message };
+      }
+    }
+
+    // Fetch admin credentials from GitHub
+    async function fetchAdminFromGitHub() {
+      const urls = [
+        `https://raw.githubusercontent.com/amtbrs-03/AMTBRS/site-release/admin-config.json?t=${Date.now()}`,
+        `https://cdn.jsdelivr.net/gh/amtbrs-03/AMTBRS@site-release/admin-config.json`,
+      ];
+
+      for (let url of urls) {
+        try {
+          const res = await fetch(url, { 
+            cache: 'no-store',
+            headers: { 'Cache-Control': 'no-cache' }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            console.log('Admin config fetched from GitHub');
+            return data;
+          }
+        } catch(e) {
+          console.warn('Failed to fetch from:', url);
+        }
+      }
+      return null;
+    }
+
     // Client-side admin auth: set password first time, then login.
     (function(){
   const AUTH_KEY = 'admin_pass_hash_v1';
@@ -279,7 +337,21 @@
           } else {
             sessionStorage.setItem('admin_logged_in', '1');
           }
-          alert('Parola kaydedildi. Yönetici hesabı oluşturuldu.');
+          
+          // Save to GitHub
+          const adminData = {
+            user: user || 'admin',
+            passwordHash: h,
+            createdAt: Date.now()
+          };
+          const result = await saveAdminToGitHub(adminData);
+          
+          if (result.ok) {
+            alert('Parola kaydedildi ve GitHub\'a gönderildi. Yönetici hesabı oluşturuldu.');
+          } else {
+            alert('Parola kaydedildi (yerel). GitHub senkronizasyonu başarısız: ' + (result.error || 'unknown'));
+          }
+          
           renderAuth();
           renderAdmin();
         };
@@ -297,7 +369,24 @@
           const user = (document.getElementById('loginUser').value || '').trim();
           const remember = !!document.getElementById('rememberMe').checked;
           const h = await hashPassword(pw);
-          if (h === localStorage.getItem(AUTH_KEY)){
+          
+          // Try localStorage first
+          let storedHash = localStorage.getItem(AUTH_KEY);
+          
+          // If not in localStorage, try fetching from GitHub
+          if (!storedHash) {
+            console.log('Admin credentials not in localStorage, fetching from GitHub...');
+            const adminData = await fetchAdminFromGitHub();
+            if (adminData && adminData.passwordHash) {
+              storedHash = adminData.passwordHash;
+              // Cache to localStorage
+              localStorage.setItem(AUTH_KEY, storedHash);
+              if (adminData.user) localStorage.setItem(ADMIN_USER_KEY, adminData.user);
+              console.log('Admin credentials fetched and cached');
+            }
+          }
+          
+          if (h === storedHash){
             if (user) localStorage.setItem(ADMIN_USER_KEY, user);
             if (remember) {
               localStorage.setItem('admin_logged_in', '1');

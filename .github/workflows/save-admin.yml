@@ -1,0 +1,29 @@
+name: Save Admin Config
+
+on:
+  repository_dispatch:
+    types: [save-admin]
+
+permissions:
+  contents: write
+
+jobs:
+  save-admin:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: site-release
+          
+      - name: Save admin config
+        run: |
+          echo '${{ github.event.client_payload.admin_data }}' > admin-config.json
+          
+      - name: Commit and push
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          git add admin-config.json
+          git commit -m "Update admin config" || echo "No changes to commit"
+          git push origin site-release
