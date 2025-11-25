@@ -641,11 +641,16 @@
                                 </div>
                             </div>
 
-                            <div style="margin-top:1rem; display:flex; gap:0.5rem;">
-                                <button data-action="close-account" style="flex:1;">Kapat</button>
-                                <button data-action="download-all-invoices" style="flex:1;background:#2563eb;color:#fff">Tüm Faturaları İndir</button>
-                                <button data-action="logout" style="flex:1;background:#f59e0b;color:#fff">Çıkış Yap</button>
-                                <button data-action="delete-account" style="flex:1;background:#e53e3e;color:#fff">Hesabı Sil</button>
+                            <div style="margin-top:1rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+                                <button data-action="close-account" style="flex:1; min-width:120px;">Kapat</button>
+                                <button data-action="download-all-invoices" style="flex:1; min-width:120px; background:#2563eb;color:#fff">Tüm Faturaları İndir</button>
+                                <button data-action="logout" style="flex:1; min-width:120px; background:#f59e0b;color:#fff">Çıkış Yap</button>
+                            </div>
+
+                            <div style="margin-top:1rem; padding-top:1rem; border-top:2px solid #fee2e2;">
+                                <div style="color:#991b1b; font-size:0.9rem; margin-bottom:0.5rem; font-weight:600;">⚠️ Tehlikeli Bölge</div>
+                                <div style="color:#6b7280; font-size:0.85rem; margin-bottom:0.6rem;">Hesabınızı kalıcı olarak silmek istiyorsanız aşağıdaki butonu kullanın. Bu işlem geri alınamaz.</div>
+                                <button data-action="delete-account" style="width:100%; background:#dc2626; color:#fff; font-weight:700;">🗑️ Hesabı Kalıcı Olarak Sil</button>
                             </div>
                         </div>
                     </div>
