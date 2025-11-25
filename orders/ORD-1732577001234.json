@@ -1,0 +1,21 @@
+{
+  "id": "ORD-1732577001234",
+  "date": 1732577001234,
+  "customerEmail": "test@example.com",
+  "customerName": "Test Müşteri",
+  "items": [
+    {
+      "name": "Kırmızı Gül Buketi",
+      "price": 149.00,
+      "qty": 2
+    },
+    {
+      "name": "Beyaz Lilyum",
+      "price": 129.00,
+      "qty": 1
+    }
+  ],
+  "total": "427.00",
+  "iban": "TR33 0006 1005 1978 6457 8413 26",
+  "status": "pending"
+}
