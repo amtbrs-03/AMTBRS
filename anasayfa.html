@@ -1244,14 +1244,16 @@
                             try{
                                 userData = await fetchUserFromRepo(email);
                                 if (userData) {
-                                    // Save to localStorage for future use
-                                    localStorage.setItem('user_' + email, JSON.stringify(userData));
-                                    console.log('loginUser: ✓ User fetched from remote and cached locally');
+                                    console.log('loginUser: ✓ User fetched from remote and ready for verification');
                                 } else {
                                     console.warn('loginUser: User not found in remote repo');
+                                    alert('Kullanıcı bulunamadı! Lütfen önce kayıt olun.');
+                                    return;
                                 }
                             }catch(e){
                                 console.error('loginUser: Failed to fetch user from remote', e);
+                                alert('Kullanıcı bulunamadı! Lütfen önce kayıt olun.');
+                                return;
                             }
                         } else {
                             console.log('loginUser: ✓ User found in localStorage');
@@ -1461,7 +1463,16 @@
                             
                             console.log('fetchUserFromRepo: Fetching from URL:', url);
                             
-                            const res = await fetch(url, { cache: 'no-cache', headers: { 'Cache-Control': 'no-cache' } });
+                            // Add random query param to bypass cache
+                            const cacheBustUrl = url + '?t=' + Date.now();
+                            
+                            const res = await fetch(cacheBustUrl, { 
+                                cache: 'no-cache', 
+                                headers: { 
+                                    'Cache-Control': 'no-cache',
+                                    'Pragma': 'no-cache'
+                                } 
+                            });
                             
                             console.log('fetchUserFromRepo: Response status:', res.status);
                             
@@ -1475,6 +1486,11 @@
                             }
                             const userData = await res.json();
                             console.log('fetchUserFromRepo: SUCCESS ✓ Found user:', userData.email);
+                            
+                            // Cache it locally for this device
+                            localStorage.setItem('user_' + email, JSON.stringify(userData));
+                            console.log('fetchUserFromRepo: ✓ Cached user to localStorage');
+                            
                             return userData;
                         }catch(err){ 
                             console.error('fetchUserFromRepo: EXCEPTION', err);
