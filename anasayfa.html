@@ -232,6 +232,12 @@
             animation: pageExit 0.3s ease-in forwards;
         }
 
+        /* Re-enter animation class for bfcache restoration */
+        body.page-reenter {
+            opacity: 0;
+            animation: pageEnter 0.4s ease-out forwards;
+        }
+
         /* Staggered entrance animations for key elements */
         header {
             opacity: 0;
@@ -1944,10 +1950,9 @@
                         // Handle browser back/forward navigation
                         window.addEventListener('pageshow', function(e) {
                             if (e.persisted) {
-                                // Page was restored from bfcache, reset animation state
+                                // Page was restored from bfcache, reset animation state using CSS class
                                 document.body.classList.remove('page-exit');
-                                document.body.style.opacity = '';
-                                document.body.style.animation = 'pageEnter 0.4s ease-out forwards';
+                                document.body.classList.add('page-reenter');
                             }
                         });
                     })();
