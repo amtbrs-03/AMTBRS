@@ -641,20 +641,29 @@
         const branch = 'site-release';
         const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/users?ref=${branch}`;
         
+        console.log('Fetching users from:', apiUrl);
+        
         const res = await fetch(apiUrl, {
           headers: { 'Accept': 'application/vnd.github.v3+json' }
         });
         
+        console.log('GitHub API response:', res.status, res.statusText);
+        
         if (!res.ok) {
-          throw new Error(`GitHub API responded with ${res.status}`);
+          const errorText = await res.text().catch(() => '');
+          console.error('GitHub API error:', res.status, errorText);
+          throw new Error(`GitHub API responded with ${res.status}: ${res.statusText}`);
         }
         
         const files = await res.json();
+        console.log('Files in users/:', files.length, files.map(f => f.name));
+        
         const userFiles = files.filter(f => f.name.endsWith('_full.json'));
+        console.log('User files:', userFiles.length);
         
         if (userFiles.length === 0) {
-          listEl.innerHTML = '<p style="color:#6b7280;">Henüz kayıtlı kullanıcı yok.</p>';
-          countEl.textContent = '0 kullanıcı';
+          listEl.innerHTML = '<p style="color:#6b7280;">Henüz kayıtlı kullanıcı yok. (users/ klasöründe _full.json dosyası bulunamadı)</p>';
+          if (countEl) countEl.textContent = '0 kullanıcı';
           return;
         }
         
@@ -662,10 +671,14 @@
         const users = [];
         for (const file of userFiles) {
           try {
+            console.log('Fetching user:', file.name, file.download_url);
             const userRes = await fetch(file.download_url);
             if (userRes.ok) {
               const userData = await userRes.json();
+              console.log('User loaded:', userData.email);
               users.push(userData);
+            } else {
+              console.error('Failed to fetch user file:', file.name, userRes.status);
             }
           } catch(e) {
             console.error('Failed to load user:', file.name, e);
@@ -673,12 +686,14 @@
         }
         
         // Display users
-        countEl.textContent = `${users.length} kullanıcı`;
+        if (countEl) countEl.textContent = `${users.length} kullanıcı`;
         
         if (users.length === 0) {
-          listEl.innerHTML = '<p style="color:#6b7280;">Kullanıcı verileri yüklenemedi.</p>';
+          listEl.innerHTML = '<p style="color:#6b7280;">Kullanıcı verileri yüklenemedi. Console\'u kontrol edin.</p>';
           return;
         }
+        
+        console.log('Total users loaded:', users.length);
         
         let html = '<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.1); border-radius:8px; overflow:hidden;">';
         html += '<thead><tr style="background:linear-gradient(135deg, var(--green-primary), var(--green-dark)); color:white; text-align:left;">';
@@ -708,10 +723,11 @@
         
       } catch(err) {
         console.error('Failed to load users:', err);
-        listEl.innerHTML = `<p style="color:#e53e3e;">Hata: ${escapeHtml(err.message)}</p>`;
-        countEl.textContent = '';
+        console.error('Error stack:', err.stack);
+        listEl.innerHTML = `<p style="color:#e53e3e;">Hata: ${escapeHtml(err.message)}</p><p style="color:#6b7280; font-size:0.9rem;">Console\'da detayları kontrol edin (F12)</p>`;
+        if (countEl) countEl.textContent = '';
       } finally {
-        btn.textContent = 'GitHub\'dan Kullanıcıları Yükle';
+        btn.textContent = '👥 Kullanıcıları Yükle';
         btn.disabled = false;
       }
     });
