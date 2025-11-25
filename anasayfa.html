@@ -239,14 +239,17 @@
         .products-wrapper {
             max-width: 1200px;
             margin: -4rem auto 0;
-            padding: 0 2rem 3rem;
+            padding: 2rem 2rem 3rem;
             perspective: 1400px;
+            overflow: visible;
         }
         .products {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 2rem;
             transform-style: preserve-3d;
+            overflow: visible;
+            padding-top: 16rem;
         }
 
         .product-card {
@@ -330,6 +333,166 @@
             font-weight: 700;
             margin-bottom: 1rem;
             text-shadow: 0 6px 18px rgba(107,70,193,0.08);
+        }
+
+        /* Product hover details popup with 3D effect */
+        .product-details-popup {
+            position: absolute;
+            left: 50%;
+            bottom: calc(100% + 12px);
+            width: 260px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,255,0.96));
+            border-radius: 14px;
+            padding: 1.2rem;
+            box-shadow:
+                0 30px 60px rgba(2,6,23,0.35),
+                0 12px 24px rgba(2,6,23,0.25),
+                inset 0 1px 0 rgba(255,255,255,0.8);
+            border: 1px solid rgba(107,70,193,0.12);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateX(-50%) translateY(10px) rotateX(15deg) scale(0.95);
+            transform-origin: center bottom;
+            transform-style: preserve-3d;
+            transition: opacity 300ms cubic-bezier(.2,.9,.2,1),
+                        transform 350ms cubic-bezier(.2,.9,.2,1),
+                        visibility 0ms 300ms;
+            z-index: 100;
+            pointer-events: none;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .product-card:hover .product-details-popup {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0) rotateX(0) scale(1);
+            transition: opacity 300ms cubic-bezier(.2,.9,.2,1),
+                        transform 350ms cubic-bezier(.2,.9,.2,1),
+                        visibility 0ms 0ms;
+            pointer-events: auto;
+        }
+
+        /* Ensure hovered card appears on top */
+        .product-card:hover {
+            z-index: 50;
+        }
+
+        /* 3D floating icon inside popup */
+        .popup-3d-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.4rem;
+            background: linear-gradient(135deg, rgba(107,70,193,0.12), rgba(102,126,234,0.08));
+            border-radius: 16px;
+            box-shadow:
+                0 16px 32px rgba(107,70,193,0.18),
+                inset 0 -4px 12px rgba(0,0,0,0.05);
+            transform: translateZ(30px) rotateX(5deg);
+            animation: float3D 3s ease-in-out infinite;
+            transform-style: preserve-3d;
+        }
+
+        @keyframes float3D {
+            0%, 100% { transform: translateZ(30px) rotateX(5deg) translateY(0); }
+            50% { transform: translateZ(40px) rotateX(8deg) translateY(-8px); }
+        }
+
+        .popup-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #0b1220;
+            text-align: center;
+            margin-bottom: 0.6rem;
+            letter-spacing: 0.3px;
+        }
+
+        .popup-price {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #6b46c1;
+            text-align: center;
+            margin-bottom: 0.8rem;
+            text-shadow: 0 4px 12px rgba(107,70,193,0.15);
+        }
+
+        .popup-description {
+            font-size: 0.92rem;
+            color: #475569;
+            line-height: 1.5;
+            text-align: center;
+            margin-bottom: 0.8rem;
+        }
+
+        .popup-features {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 0.8rem 0;
+        }
+
+        .popup-features li {
+            font-size: 0.88rem;
+            color: #334155;
+            padding: 0.35rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .popup-features li::before {
+            content: '✓';
+            color: #10b981;
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+
+        .popup-arrow {
+            position: absolute;
+            left: 50%;
+            bottom: -10px;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 10px solid rgba(255,255,255,0.95);
+            filter: drop-shadow(0 3px 4px rgba(2,6,23,0.08));
+        }
+
+        /* Responsive adjustments for popup */
+        @media (max-width: 900px) {
+            .product-details-popup {
+                width: 240px;
+                padding: 1rem;
+            }
+        }
+
+        @media (max-width: 700px) {
+            .product-details-popup {
+                width: 240px;
+                padding: 1rem;
+            }
+            .popup-3d-icon {
+                width: 52px;
+                height: 52px;
+                font-size: 1.8rem;
+            }
+            .popup-title {
+                font-size: 1.05rem;
+            }
+            .popup-price {
+                font-size: 1.2rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            /* On very small screens, hide popup to avoid layout issues */
+            .product-details-popup {
+                display: none;
+            }
         }
 
         button { background: linear-gradient(180deg,#6b46c1,#5a2f9e); color: white; border: none; padding: .7rem 1rem; border-radius:10px; cursor:pointer; transition: transform 220ms, box-shadow 220ms; width:100%; box-shadow:0 8px 22px rgba(91,44,168,0.32); transform: translateZ(40px); font-weight:600 }
@@ -757,6 +920,18 @@
                                 <div class="product-price">₺99.99</div>
                                 <button data-action="add-to-cart" data-product-id="1">Sepete Ekle</button>
                             </div>
+                            <div class="product-details-popup">
+                                <div class="popup-arrow"></div>
+                                <div class="popup-3d-icon">🛍️</div>
+                                <div class="popup-title">Ürün 1</div>
+                                <div class="popup-price">₺99.99</div>
+                                <div class="popup-description">Özel tasarım hediye paketi ile sunulan kaliteli ürün.</div>
+                                <ul class="popup-features">
+                                    <li>Hızlı teslimat</li>
+                                    <li>Kalite garantisi</li>
+                                    <li>Güvenli ödeme</li>
+                                </ul>
+                            </div>
                         </div>
 
                         <div class="product-card" data-id="2" data-name="Ürün 2" data-price="199.99">
@@ -766,6 +941,18 @@
                                 <div class="product-price">₺199.99</div>
                                 <button data-action="add-to-cart" data-product-id="2">Sepete Ekle</button>
                             </div>
+                            <div class="product-details-popup">
+                                <div class="popup-arrow"></div>
+                                <div class="popup-3d-icon">📱</div>
+                                <div class="popup-title">Ürün 2</div>
+                                <div class="popup-price">₺199.99</div>
+                                <div class="popup-description">Şık tasarımı ve üstün kalitesiyle dikkat çeken ürün.</div>
+                                <ul class="popup-features">
+                                    <li>Hızlı teslimat</li>
+                                    <li>Kalite garantisi</li>
+                                    <li>Güvenli ödeme</li>
+                                </ul>
+                            </div>
                         </div>
 
                         <div class="product-card" data-id="3" data-name="Ürün 3" data-price="149.99">
@@ -774,6 +961,18 @@
                                 <div class="product-name">Ürün 3</div>
                                 <div class="product-price">₺149.99</div>
                                 <button data-action="add-to-cart" data-product-id="3">Sepete Ekle</button>
+                            </div>
+                            <div class="product-details-popup">
+                                <div class="popup-arrow"></div>
+                                <div class="popup-3d-icon">⌚</div>
+                                <div class="popup-title">Ürün 3</div>
+                                <div class="popup-price">₺149.99</div>
+                                <div class="popup-description">Modern ve fonksiyonel tasarımıyla kullanışlı ürün.</div>
+                                <ul class="popup-features">
+                                    <li>Hızlı teslimat</li>
+                                    <li>Kalite garantisi</li>
+                                    <li>Güvenli ödeme</li>
+                                </ul>
                             </div>
                         </div>
                     </section>
@@ -1570,6 +1769,22 @@
                         renderProducts(defaultProducts);
                     }
 
+                    // Generate product description based on product data
+                    function getProductDescription(p) {
+                        const descriptions = {
+                            '1': 'Özel tasarım hediye paketi ile sunulan kaliteli ürün.',
+                            '2': 'Şık tasarımı ve üstün kalitesiyle dikkat çeken ürün.',
+                            '3': 'Modern ve fonksiyonel tasarımıyla kullanışlı ürün.'
+                        };
+                        return p.description || descriptions[p.id] || 'Yüksek kaliteli, özenle seçilmiş ürün.';
+                    }
+
+                    // Generate product features based on product data
+                    function getProductFeatures(p) {
+                        const defaultFeatures = ['Hızlı teslimat', 'Kalite garantisi', 'Güvenli ödeme'];
+                        return p.features || defaultFeatures;
+                    }
+
                     function renderProducts(products) {
                         const container = document.querySelector('.products');
                         if (!container) return;
@@ -1583,6 +1798,7 @@
 
                             // Image handling: if image starts with data: treat as background image, else show text (emoji)
                             let imageHTML = '';
+                            let imageContent = p.image || '🌺';
                             if (p.image && p.image.startsWith && p.image.startsWith('data:')) {
                                 imageHTML = `<div class="product-image" style="background-image:url('${p.image}'); background-size:cover; background-position:center; background-repeat:no-repeat;"></div>`;
                             } else if (p.image) {
@@ -1592,12 +1808,27 @@
                                 imageHTML = `<div class="product-image">🌺</div>`;
                             }
 
+                            // Generate product details popup HTML
+                            const description = getProductDescription(p);
+                            const features = getProductFeatures(p);
+                            const featuresHTML = features.map(f => `<li>${escapeHtml(f)}</li>`).join('');
+
                             card.innerHTML = `
                                 ${imageHTML}
                                 <div class="product-info">
                                     <div class="product-name">${escapeHtml(p.name)}</div>
                                     <div class="product-price">₺${(p.price||0).toFixed(2)}</div>
                                     <button data-action="add-to-cart" data-product-id="${p.id}">Sepete Ekle</button>
+                                </div>
+                                <div class="product-details-popup">
+                                    <div class="popup-arrow"></div>
+                                    <div class="popup-3d-icon">${escapeHtml(imageContent)}</div>
+                                    <div class="popup-title">${escapeHtml(p.name)}</div>
+                                    <div class="popup-price">₺${(p.price||0).toFixed(2)}</div>
+                                    <div class="popup-description">${escapeHtml(description)}</div>
+                                    <ul class="popup-features">
+                                        ${featuresHTML}
+                                    </ul>
                                 </div>
                             `;
                             container.appendChild(card);
