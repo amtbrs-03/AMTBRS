@@ -684,29 +684,30 @@
           return;
         }
         
-        let html = '<table style="width:100%; border-collapse:collapse;">';
-        html += '<thead><tr style="background:#f3f4f6; text-align:left;">';
-        html += '<th style="padding:0.5rem; border:1px solid #e5e7eb;">Ad</th>';
-        html += '<th style="padding:0.5rem; border:1px solid #e5e7eb;">Email</th>';
-        html += '<th style="padding:0.5rem; border:1px solid #e5e7eb;">Kayıt Tarihi</th>';
-        html += '<th style="padding:0.5rem; border:1px solid #e5e7eb;">Son Giriş</th>';
+        let html = '<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.1); border-radius:8px; overflow:hidden;">';
+        html += '<thead><tr style="background:linear-gradient(135deg, var(--green-primary), var(--green-dark)); color:white; text-align:left;">';
+        html += '<th style="padding:0.75rem 1rem; font-weight:600; border-bottom:2px solid rgba(255,255,255,0.2);">👤 Ad</th>';
+        html += '<th style="padding:0.75rem 1rem; font-weight:600; border-bottom:2px solid rgba(255,255,255,0.2);">📧 Email</th>';
+        html += '<th style="padding:0.75rem 1rem; font-weight:600; border-bottom:2px solid rgba(255,255,255,0.2);">📅 Kayıt Tarihi</th>';
+        html += '<th style="padding:0.75rem 1rem; font-weight:600; border-bottom:2px solid rgba(255,255,255,0.2);">🕐 Son Giriş</th>';
         html += '</tr></thead><tbody>';
         
         users.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
         
-        users.forEach(user => {
-          const createdDate = user.createdAt ? new Date(user.createdAt).toLocaleDateString('tr-TR') : '-';
-          const lastLogin = user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('tr-TR') : '-';
+        users.forEach((user, idx) => {
+          const createdDate = user.createdAt ? new Date(user.createdAt).toLocaleDateString('tr-TR', {day:'2-digit', month:'2-digit', year:'numeric'}) : '-';
+          const lastLogin = user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('tr-TR', {day:'2-digit', month:'2-digit', year:'numeric'}) : '-';
+          const rowBg = idx % 2 === 0 ? '#f9fafb' : '#ffffff';
           
-          html += '<tr>';
-          html += `<td style="padding:0.5rem; border:1px solid #e5e7eb;">${escapeHtml(user.name || '-')}</td>`;
-          html += `<td style="padding:0.5rem; border:1px solid #e5e7eb;">${escapeHtml(user.email || '-')}</td>`;
-          html += `<td style="padding:0.5rem; border:1px solid #e5e7eb;">${createdDate}</td>`;
-          html += `<td style="padding:0.5rem; border:1px solid #e5e7eb;">${lastLogin}</td>`;
+          html += `<tr style="background:${rowBg}; transition:all 0.2s ease;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='${rowBg}'">`;
+          html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; font-weight:500;">${escapeHtml(user.name || '-')}</td>`;
+          html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; color:#6b7280;">${escapeHtml(user.email || '-')}</td>`;
+          html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; color:#6b7280;">${createdDate}</td>`;
+          html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; color:#6b7280;">${lastLogin}</td>`;
           html += '</tr>';
         });
         
-        html += '</tbody></table>';
+        html += '</tbody></table></div>';
         listEl.innerHTML = html;
         
       } catch(err) {
