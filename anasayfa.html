@@ -1175,13 +1175,21 @@
 
                         // Save to localStorage
                         localStorage.setItem('user_' + email, JSON.stringify(stored));
+                        console.log('registerUser: Saved to localStorage for', email);
                         
                         // Save to remote repo with full user data (including password hash)
+                        console.log('registerUser: Attempting remote save...');
                         try{
-                            await commitFullUserToRepo(stored);
-                            alert('Kayıt başarılı! Giriş yapabilirsiniz.');
+                            const remoteSuccess = await commitFullUserToRepo(stored);
+                            if (remoteSuccess) {
+                                alert('Kayıt başarılı! Uzak sunucuya kaydedildi. Giriş yapabilirsiniz.');
+                                console.log('registerUser: ✓ Remote save successful');
+                            } else {
+                                alert('Kayıt başarılı! (Sadece yerel olarak kaydedildi)');
+                                console.warn('registerUser: Remote save failed but localStorage OK');
+                            }
                         }catch(e){
-                            console.error('Remote save failed', e);
+                            console.error('registerUser: Remote save exception', e);
                             alert('Kayıt başarılı! (Yerel olarak kaydedildi)');
                         }
                         
@@ -1201,24 +1209,29 @@
                             return;
                         }
 
+                        console.log('loginUser: Attempting login for', email);
+                        
                         // Try localStorage first
                         let userStr = localStorage.getItem('user_' + email);
                         let userData = null;
                         
                         // If not in localStorage, try fetching from remote
                         if (!userStr) {
-                            console.log('User not in localStorage, fetching from remote...');
+                            console.log('loginUser: User NOT in localStorage, fetching from remote...');
                             try{
                                 userData = await fetchUserFromRepo(email);
                                 if (userData) {
                                     // Save to localStorage for future use
                                     localStorage.setItem('user_' + email, JSON.stringify(userData));
-                                    console.log('User fetched from remote and cached locally');
+                                    console.log('loginUser: ✓ User fetched from remote and cached locally');
+                                } else {
+                                    console.warn('loginUser: User not found in remote repo');
                                 }
                             }catch(e){
-                                console.error('Failed to fetch user from remote', e);
+                                console.error('loginUser: Failed to fetch user from remote', e);
                             }
                         } else {
+                            console.log('loginUser: ✓ User found in localStorage');
                             userData = JSON.parse(userStr);
                         }
                         
@@ -1354,40 +1367,73 @@
 
                     // Commit FULL user record (including password hash) to remote repo
                     async function commitFullUserToRepo(userRecord){
-                        if (!userRecord || !userRecord.email) return;
+                        if (!userRecord || !userRecord.email) {
+                            console.error('commitFullUserToRepo: invalid user record', userRecord);
+                            return false;
+                        }
+                        console.log('commitFullUserToRepo: Starting for', userRecord.email);
                         try{
                             const path = 'users/' + (userRecord.email) + '_full.json';
                             const json = JSON.stringify(userRecord, null, 2);
                             // base64 encode UTF-8
                             const b64 = btoa(unescape(encodeURIComponent(json)));
                             const body = { files: [ { path: path, contentBase64: b64 } ], message: 'Update user auth data ' + (userRecord.email||'') };
+                            
+                            console.log('commitFullUserToRepo: Sending request to Netlify Function');
+                            console.log('commitFullUserToRepo: Path:', path);
+                            
                             const res = await fetch('/.netlify/functions/commit-file', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+                            
+                            console.log('commitFullUserToRepo: Response status:', res.status);
+                            
                             if (!res.ok) {
                                 const txt = await res.text().catch(()=>'');
-                                console.warn('commitFullUserToRepo failed', res.status, txt);
+                                console.error('commitFullUserToRepo failed - Status:', res.status, 'Response:', txt);
+                                alert('Uzak sunucuya kayıt başarısız oldu. Sadece yerel olarak kaydedildi.');
                                 return false;
                             }
                             const j = await res.json().catch(()=>null);
-                            console.log('commitFullUserToRepo success', j);
+                            console.log('commitFullUserToRepo: SUCCESS ✓', j);
                             return true;
-                        }catch(err){ console.warn('commitFullUserToRepo error', err); return false; }
+                        }catch(err){ 
+                            console.error('commitFullUserToRepo: EXCEPTION', err); 
+                            alert('Uzak sunucuya bağlanılamadı: ' + err.message);
+                            return false; 
+                        }
                     }
                     
                     // Fetch user record from remote repo
                     async function fetchUserFromRepo(email){
-                        if (!email) return null;
+                        if (!email) {
+                            console.error('fetchUserFromRepo: no email provided');
+                            return null;
+                        }
+                        console.log('fetchUserFromRepo: Starting for', email);
                         try{
                             const path = 'users/' + email + '_full.json';
                             const url = 'https://raw.githubusercontent.com/amtbrs-03/AMTBRS/site-release/' + path;
-                            const res = await fetch(url, { cache: 'no-cache' });
+                            
+                            console.log('fetchUserFromRepo: Fetching from URL:', url);
+                            
+                            const res = await fetch(url, { cache: 'no-cache', headers: { 'Cache-Control': 'no-cache' } });
+                            
+                            console.log('fetchUserFromRepo: Response status:', res.status);
+                            
                             if (!res.ok) {
-                                console.warn('fetchUserFromRepo failed', res.status);
+                                if (res.status === 404) {
+                                    console.warn('fetchUserFromRepo: User file not found (404) for', email);
+                                } else {
+                                    console.error('fetchUserFromRepo: Failed with status', res.status);
+                                }
                                 return null;
                             }
                             const userData = await res.json();
-                            console.log('fetchUserFromRepo success', userData.email);
+                            console.log('fetchUserFromRepo: SUCCESS ✓ Found user:', userData.email);
                             return userData;
-                        }catch(err){ console.warn('fetchUserFromRepo error', err); return null; }
+                        }catch(err){ 
+                            console.error('fetchUserFromRepo: EXCEPTION', err);
+                            return null; 
+                        }
                     }
 
                     function renderAccountModal(){
