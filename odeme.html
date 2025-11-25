@@ -26,11 +26,33 @@
   </div>
 
   <script>
+    console.log('=== ÖDEME SAYFASI AÇILDI ===');
+    console.log('URL:', window.location.href);
+    console.log('localStorage keys:', Object.keys(localStorage));
+    
+    // Check currentUser
+    const currentUser = (function(){ try{ const c = localStorage.getItem('currentUser'); return c?JSON.parse(c):null }catch(e){return null} })();
+    console.log('currentUser from localStorage:', currentUser);
+    
+    // Check all cart_ keys
+    const cartKeys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.indexOf('cart_') === 0) {
+        cartKeys.push(k);
+        console.log('Found cart key:', k, '-> value:', localStorage.getItem(k));
+      }
+    }
+    console.log('All cart keys:', cartKeys);
+    
     function qs(key){
       try{const u=new URL(location.href); return u.searchParams.get(key);}catch(e){return null}
     }
     const iban = qs('iban') || qs('IBAN') || '';
     const total = qs('total') || qs('amount') || '';
+    console.log('IBAN from URL:', iban);
+    console.log('Total from URL:', total);
+    
     if(iban){
       document.getElementById('iban').textContent = iban;
     }
@@ -71,19 +93,30 @@
       const payerEmail = current && current.email ? current.email : null;
       const payerName = current && current.name ? current.name : 'Misafir';
       
+      console.log('Current user:', current);
+      console.log('Payer email:', payerEmail);
+      console.log('Payer name:', payerName);
+      
       // Get cart - try logged in user first, then any cart_* key
       let cart = [];
+      let cartKey = null;
       try {
         if (payerEmail) {
           // Logged in user
-          const key = 'cart_' + payerEmail;
-          cart = JSON.parse(localStorage.getItem(key) || '[]');
+          cartKey = 'cart_' + payerEmail;
+          console.log('Looking for cart key:', cartKey);
+          cart = JSON.parse(localStorage.getItem(cartKey) || '[]');
+          console.log('Cart loaded for user:', cart);
         } else {
           // Guest - find any cart_* key
+          console.log('No user found, looking for any cart_* key...');
           for (let i = 0; i < localStorage.length; i++) {
             const k = localStorage.key(i);
+            console.log('Checking key:', k);
             if (k && k.indexOf('cart_') === 0) {
+              cartKey = k;
               cart = JSON.parse(localStorage.getItem(k) || '[]');
+              console.log('Found cart key:', k, 'with items:', cart);
               break;
             }
           }
@@ -91,6 +124,9 @@
       } catch(e) {
         console.error('Cart load error:', e);
       }
+      
+      console.log('Final cart:', cart);
+      console.log('Cart length:', cart ? cart.length : 0);
       
       if(!cart || cart.length === 0){
         alert('Sepetiniz boş!');

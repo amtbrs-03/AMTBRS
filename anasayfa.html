@@ -1898,11 +1898,7 @@
                             const url = '/odeme.html?iban=' + encodeURIComponent(iban) + '&total=' + encodeURIComponent(total.toFixed(2));
                             const win = window.open(url, '_blank');
                             if (win) {
-                                // Tarayıcı yeni sekme açtı; temizleme ve yönlendirme işlemleri modal yerine burada yapılabilir
-                                const user = getCurrentUser();
-                                if (user) localStorage.removeItem(cartKeyForUser(user.email));
-                                renderCart();
-                                updateCartCount();
+                                // Tarayıcı yeni sekme açtı - sepeti TEMİZLEME, sipariş kaydedilince temizlenecek
                                 closeCart();
                                 // silent: new tab opened for payment (no blocking alert)
                                 console.log('Ödeme sayfası yeni sekmede açıldı');
