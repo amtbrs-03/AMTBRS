@@ -1997,13 +1997,31 @@
                     (function(){
                         try{
                             const user = getCurrentUser();
-                            if (user && user.name) {
-                                // User is already logged in, restore UI
-                                updateUIAfterLogin(user.name);
-                                updateCartCount();
-                                console.log('Oturum otomatik olarak geri yüklendi:', user.name);
+                            if (user && user.name && user.email) {
+                                // Verify user data exists in localStorage
+                                const userKey = 'user_' + user.email;
+                                const userData = localStorage.getItem(userKey);
+                                if (userData) {
+                                    // User is already logged in with valid data, restore UI
+                                    updateUIAfterLogin(user.name);
+                                    updateCartCount();
+                                    console.log('Oturum otomatik olarak geri yüklendi:', user.name);
+                                } else {
+                                    // Invalid session, clear it
+                                    localStorage.removeItem('currentUser');
+                                    console.warn('Geçersiz oturum verisi temizlendi.');
+                                }
+                            } else {
+                                // No valid user, ensure UI is in logged-out state
+                                document.getElementById('authContainer').classList.remove('hidden');
+                                document.getElementById('userContainer').classList.add('hidden');
                             }
-                        }catch(e){ console.error('Auto-restore session failed', e); }
+                        }catch(e){ 
+                            console.error('Auto-restore session failed', e);
+                            // On error, ensure logged-out state
+                            document.getElementById('authContainer').classList.remove('hidden');
+                            document.getElementById('userContainer').classList.add('hidden');
+                        }
                     })();
 
     </script>
