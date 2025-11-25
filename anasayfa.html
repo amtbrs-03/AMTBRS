@@ -581,7 +581,43 @@
                                 <li><button id="productsBtn" class="contact-btn" aria-controls="products" aria-expanded="false" data-action="scroll" data-target="products">Ürünler</button></li>
                                 <li id="cartContainer"><button id="cartBtn" class="cart-btn contact-btn" aria-controls="cartModal" aria-expanded="false" data-action="open-cart">Sepet <span id="cartCount" class="cart-count hidden">0</span></button></li>
                                 <li><button id="contactBtn" class="contact-btn" aria-expanded="false" aria-controls="contactPanel" data-action="toggle-contact"><span style="display:inline-block;margin-right:6px;line-height:1">📞</span><span>İletişim</span><span style="margin-left:8px;opacity:0.9">▾</span></button></li>
-                                <li><button id="aboutBtn" class="contact-btn" aria-controls="hakkimizda" aria-expanded="false" data-action="scroll" data-target="hakkimizda">Hakkımızda</button></li>
+                                <li style="position:relative;">
+                                    <button id="aboutBtn" class="contact-btn" aria-controls="aboutPanel" aria-expanded="false" data-action="toggle-about">
+                                        <span>Hakkımızda</span><span style="margin-left:8px;opacity:0.9">▾</span>
+                                    </button>
+                                    <!-- Hakkımızda Dropdown Panel -->
+                                    <div id="aboutPanel" class="hidden" style="position:absolute;top:100%;right:0;margin-top:0.5rem;width:900px;max-width:90vw;background:rgba(255,255,255,0.98);border-radius:16px;box-shadow:0 20px 60px rgba(2,6,23,0.2);padding:2rem;z-index:1000;backdrop-filter:blur(10px);border:2px solid rgba(11,47,31,0.1);">
+                                        <div style="margin-bottom:1.5rem;text-align:center;color:#334155;font-size:1rem;line-height:1.7;">
+                                            <p style="margin-bottom:0.8rem;">ERN Çiçek olarak, Türkiye'nin önde gelen online çiçekçisi olma yolunda sizlere hizmet veriyoruz. Taze ve kaliteli çiçekler ile özel günlerinizi unutulmaz kılıyoruz.</p>
+                                            <p>Gül buketi, lilyum, orkide ve daha birçok çiçek çeşidi ile aynı gün teslimat garantisi sunuyoruz. İstanbul çiçekçi, Ankara çiçekçi ve tüm Türkiye'ye hizmet veriyoruz.</p>
+                                        </div>
+                                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.2rem;">
+                                            <div style="padding:1.2rem;background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-radius:10px;border:2px solid #86efac;">
+                                                <h3 style="font-size:1.05rem;margin-bottom:0.6rem;color:#166534;font-weight:700;">🌹 Çiçek Çeşitlerimiz</h3>
+                                                <p style="color:#334155;line-height:1.6;font-size:0.9rem;">Gül buketi, lilyum, orkide, papatya, ayçiçeği, lale, karanfil ve daha fazlası.</p>
+                                            </div>
+                                            <div style="padding:1.2rem;background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:10px;border:2px solid #fbbf24;">
+                                                <h3 style="font-size:1.05rem;margin-bottom:0.6rem;color:#92400e;font-weight:700;">📦 Çiçek Siparişi</h3>
+                                                <p style="color:#334155;line-height:1.6;font-size:0.9rem;">İstanbul, Ankara, İzmir ve tüm Türkiye'ye aynı gün teslimat.</p>
+                                            </div>
+                                            <div style="padding:1.2rem;background:linear-gradient(135deg,#fce7f3,#fbcfe8);border-radius:10px;border:2px solid #f472b6;">
+                                                <h3 style="font-size:1.05rem;margin-bottom:0.6rem;color:#831843;font-weight:700;">🎉 Özel Günler</h3>
+                                                <p style="color:#334155;line-height:1.6;font-size:0.9rem;">Düğün, nikah, doğum günü, mezuniyet ve tüm özel günleriniz için.</p>
+                                            </div>
+                                        </div>
+                                        <div style="margin-top:1.2rem;padding:1.2rem;background:#f0f9ff;border-radius:10px;border-left:4px solid #0284c7;">
+                                            <h3 style="font-size:1.05rem;margin-bottom:0.6rem;color:#0c4a6e;font-weight:700;">✨ Neden ERN Çiçek?</h3>
+                                            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.5rem;color:#334155;font-size:0.9rem;">
+                                                <div>✓ Taze ve kaliteli çiçekler</div>
+                                                <div>✓ Aynı gün teslimat</div>
+                                                <div>✓ Uygun fiyat seçenekleri</div>
+                                                <div>✓ Türkiye geneli hizmet</div>
+                                                <div>✓ Güvenli ödeme sistemi</div>
+                                                <div>✓ 7/24 müşteri desteği</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
                             </ul>
                         </div>
                         <div class="nav-bottom" style="display:flex;justify-content:flex-end;align-items:center;margin-top:0.4rem;">
@@ -839,42 +875,9 @@
                     </section>
                 </div>
 
-                <!-- Hakkımızda Bölümü -->
-                <section id="hakkimizda" style="max-width:1200px;margin:3rem auto;padding:2rem;background:rgba(255,255,255,0.95);border-radius:16px;box-shadow:0 20px 60px rgba(2,6,23,0.15);">
-                    
-                    <div style="margin-bottom:2rem;text-align:center;color:#334155;font-size:1.05rem;line-height:1.8;max-width:800px;margin-left:auto;margin-right:auto;">
-                        <p style="margin-bottom:1rem;">ERN Çiçek olarak, Türkiye'nin önde gelen online çiçekçisi olma yolunda sizlere hizmet veriyoruz. Taze ve kaliteli çiçekler ile özel günlerinizi unutulmaz kılıyoruz.</p>
-                        <p>Gül buketi, lilyum, orkide ve daha birçok çiçek çeşidi ile aynı gün teslimat garantisi sunuyoruz. İstanbul çiçekçi, Ankara çiçekçi ve tüm Türkiye'ye hizmet veriyoruz.</p>
-                    </div>
-
-                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:2rem;margin-top:2rem;">
-                        <div style="padding:1.5rem;background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-radius:12px;border:2px solid #86efac;">
-                            <h3 style="font-size:1.2rem;margin-bottom:0.8rem;color:#166534;font-weight:700;">🌹 Çiçek Çeşitlerimiz</h3>
-                            <p style="color:#334155;line-height:1.7;">Gül buketi, kırmızı gül, beyaz gül, pembe gül, sarı gül, lilyum, beyaz lilyum, pembe lilyum, orkide, papatya, ayçiçeği, lale, karanfil, kasımpatı, sümbül, nergis ve daha fazla çiçek çeşidi ile hizmetinizdeyiz.</p>
-                        </div>
-                        
-                        <div style="padding:1.5rem;background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:12px;border:2px solid #fbbf24;">
-                            <h3 style="font-size:1.2rem;margin-bottom:0.8rem;color:#92400e;font-weight:700;">📦 Çiçek Siparişi</h3>
-                            <p style="color:#334155;line-height:1.7;">Online çiçekçi olarak İstanbul çiçekçi, Ankara çiçekçi, İzmir çiçekçi ve tüm Türkiye'ye çiçek gönderme hizmeti sunuyoruz. Aynı gün çiçek teslimatı yapıyoruz. Doğum günü çiçeği, sevgiliye çiçek, anneler günü çiçeği siparişleriniz için bize ulaşın.</p>
-                        </div>
-                        
-                        <div style="padding:1.5rem;background:linear-gradient(135deg,#fce7f3,#fbcfe8);border-radius:12px;border:2px solid #f472b6;">
-                            <h3 style="font-size:1.2rem;margin-bottom:0.8rem;color:#831843;font-weight:700;">🎉 Özel Günler İçin Çiçek</h3>
-                            <p style="color:#334155;line-height:1.7;">Düğün çiçeği, nikah çiçeği, nişan çiçeği, açılış çiçeği, cenaze çiçeği, hastaya çiçek, mezuniyet çiçeği ve tüm özel günleriniz için çiçek aranjmanları hazırlıyoruz. Ucuz çiçek ve uygun fiyat seçenekleri mevcut.</p>
-                        </div>
-                    </div>
-
-                    <div style="margin-top:2rem;padding:1.5rem;background:#f0f9ff;border-radius:12px;border-left:4px solid #0284c7;">
-                        <h3 style="font-size:1.2rem;margin-bottom:0.8rem;color:#0c4a6e;font-weight:700;">✨ Neden ERN Çiçek?</h3>
-                        <ul style="list-style:none;padding:0;color:#334155;line-height:2;">
-                            <li>✓ Taze ve kaliteli çiçekler</li>
-                            <li>✓ Aynı gün teslimat garantisi</li>
-                            <li>✓ Uygun fiyat seçenekleri</li>
-                            <li>✓ Türkiye geneli hizmet</li>
-                            <li>✓ Güvenli ödeme sistemi</li>
-                            <li>✓ 7/24 müşteri desteği</li>
-                        </ul>
-                    </div>
+                <!-- Hakkımızda Bölümü (Collapsible) -->
+                <section id="hakkimizda" style="max-width:1200px;margin:3rem auto;padding:0;">
+                    <!-- Hakkımızda içeriği başlangıçta gizli, buton altına yerleştirilecek -->
                 </section>
 
                 <footer>
@@ -940,6 +943,38 @@
                     function closeContact() {
                         const btn = document.getElementById('contactBtn');
                         const panel = document.getElementById('contactPanel');
+                        if (!panel) return;
+                        panel.classList.add('hidden');
+                        panel.setAttribute('aria-hidden', 'true');
+                        panel.style.display = 'none';
+                        if (btn) btn.setAttribute('aria-expanded', 'false');
+                    }
+
+                    /* --- About panel toggle --- */
+                    function toggleAbout(e) {
+                        try{ e && e.preventDefault && e.preventDefault(); }catch(err){}
+                        let btn = null;
+                        if (e && e.target) btn = e.target.closest && e.target.closest('[data-action="toggle-about"]');
+                        if (!btn) btn = document.getElementById('aboutBtn');
+                        const panel = document.getElementById('aboutPanel');
+                        if (!panel) return;
+                        const isHidden = panel.classList.contains('hidden');
+                        if (isHidden) {
+                            panel.classList.remove('hidden');
+                            panel.setAttribute('aria-hidden', 'false');
+                            panel.style.display = '';
+                            if (btn) btn.setAttribute('aria-expanded', 'true');
+                        } else {
+                            panel.classList.add('hidden');
+                            panel.setAttribute('aria-hidden', 'true');
+                            panel.style.display = 'none';
+                            if (btn) btn.setAttribute('aria-expanded', 'false');
+                        }
+                    }
+
+                    function closeAbout() {
+                        const btn = document.getElementById('aboutBtn');
+                        const panel = document.getElementById('aboutPanel');
                         if (!panel) return;
                         panel.classList.add('hidden');
                         panel.setAttribute('aria-hidden', 'true');
@@ -1899,10 +1934,12 @@
                                     }
                                     case 'open-cart': { try{ openCart(); }catch(e){console.error(e);} break; }
                                     case 'toggle-contact': { try{ toggleContact(e); }catch(e){} break; }
+                                    case 'toggle-about': { try{ toggleAbout(e); }catch(e){} break; }
                                     case 'open-auth': { try{ openAuthModal(); }catch(e){} break; }
                                     case 'open-account': { try{ openAccountModal(); closeProfileMenu(); }catch(e){} break; }
                                     case 'logout-confirm': { try{ logoutConfirm(); closeProfileMenu(); }catch(e){} break; }
                                     case 'close-contact': { try{ closeContact(); }catch(e){} break; }
+                                    case 'close-about': { try{ closeAbout(); }catch(e){} break; }
                                     case 'close-auth': { try{ closeAuthModal(); }catch(e){} break; }
                                     case 'switch-tab': { try{ const tab = t.dataset.tab; if (tab) switchTab(tab); }catch(e){} break; }
                                     case 'open-admin': { try{ window.open('admin.html','_blank'); }catch(e){} break; }
