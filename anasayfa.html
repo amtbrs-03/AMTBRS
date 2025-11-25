@@ -644,7 +644,8 @@
                             <div style="margin-top:1rem; display:flex; gap:0.5rem;">
                                 <button data-action="close-account" style="flex:1;">Kapat</button>
                                 <button data-action="download-all-invoices" style="flex:1;background:#2563eb;color:#fff">Tüm Faturaları İndir</button>
-                                <button data-action="logout" style="flex:1;background:#e53e3e;color:#fff">Çıkış Yap</button>
+                                <button data-action="logout" style="flex:1;background:#f59e0b;color:#fff">Çıkış Yap</button>
+                                <button data-action="delete-account" style="flex:1;background:#e53e3e;color:#fff">Hesabı Sil</button>
                             </div>
                         </div>
                     </div>
@@ -1080,12 +1081,61 @@
                                         }catch(e){}
                                         // close any open modals and mini cart
                                         try{ closeAuthModal(); }catch(e){}
+                                        try{ closeAccountModal(); }catch(e){}
                                         try{ closeCart(); }catch(e){}
                                         try{ closeBank(); }catch(e){}
                                         try{ hideMiniCart(0); }catch(e){}
                                         // navigate back to homepage top (smooth)
                                         try{ scrollToSection && scrollToSection('home'); }catch(e){ window.location.href = 'anasayfa.html'; }
-                                        console.log('Çıkış yapıldı.');
+                                        alert('Çıkış yapıldı. Tekrar giriş yaparak devam edebilirsiniz.');
+                    }
+
+                    function deleteAccount() {
+                        const user = getCurrentUser();
+                        if (!user || !user.email) {
+                            alert('Silinecek hesap bulunamadı.');
+                            return;
+                        }
+
+                        if (!confirm('Hesabınızı kalıcı olarak silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz ve tüm verileriniz (sipariş geçmişi, sepet, kullanıcı bilgileri) silinecektir.')) {
+                            return;
+                        }
+
+                        const email = user.email;
+                        
+                        // Remove all user data from localStorage
+                        localStorage.removeItem('currentUser');
+                        localStorage.removeItem('user_' + email);
+                        localStorage.removeItem('cart_' + email);
+                        localStorage.removeItem('orders_' + email);
+
+                        // Reset UI
+                        document.getElementById('authContainer').classList.remove('hidden');
+                        document.getElementById('userContainer').classList.add('hidden');
+                        updateCartCount();
+
+                        // Reset auth button
+                        try{
+                            const b = document.getElementById('authBtn');
+                            if (b) {
+                                b.classList.remove('active');
+                                const label = b.querySelector('.auth-label');
+                                if (label) label.textContent = 'Giriş / Kayıt';
+                                b.onclick = openAuthModal;
+                                b.setAttribute('aria-controls', 'authModal');
+                                b.setAttribute('aria-expanded', 'false');
+                            }
+                        }catch(e){}
+
+                        // Close modals
+                        try{ closeAccountModal(); }catch(e){}
+                        try{ closeAuthModal(); }catch(e){}
+                        try{ closeCart(); }catch(e){}
+
+                        alert('Hesabınız başarıyla silindi.');
+                        
+                        // Navigate to homepage
+                        try{ scrollToSection && scrollToSection('home'); }catch(e){ window.location.href = 'anasayfa.html'; }
                     }
 
                     /* --- Orders / account helpers --- */
@@ -1757,12 +1807,26 @@
                                     case 'close-account': { try{ closeAccountModal(); }catch(e){} break; }
                                     case 'download-all-invoices': { try{ downloadAllInvoices(); }catch(e){} break; }
                                     case 'logout': { try{ logout(); }catch(e){} break; }
+                                    case 'delete-account': { try{ deleteAccount(); }catch(e){} break; }
                                     case 'checkout': { try{ checkout(); }catch(e){} break; }
                                     case 'close-order-detail': { try{ closeOrderDetailModal(); }catch(e){} break; }
                                     default: /* already handled in primary handler */ break;
                                 }
                             }catch(err){ console.error('extended delegation error', err); }
                         });
+                    })();
+
+                    // Auto-restore user session on page load (persistent login)
+                    (function(){
+                        try{
+                            const user = getCurrentUser();
+                            if (user && user.name) {
+                                // User is already logged in, restore UI
+                                updateUIAfterLogin(user.name);
+                                updateCartCount();
+                                console.log('Oturum otomatik olarak geri yüklendi:', user.name);
+                            }
+                        }catch(e){ console.error('Auto-restore session failed', e); }
                     })();
 
     </script>
