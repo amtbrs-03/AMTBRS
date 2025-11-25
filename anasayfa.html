@@ -249,7 +249,8 @@
             gap: 2rem;
             transform-style: preserve-3d;
             overflow: visible;
-            padding-top: 16rem;
+            /* Extra top padding to accommodate hover popup appearing above cards */
+            padding-top: 14rem;
         }
 
         .product-card {
@@ -489,9 +490,33 @@
         }
 
         @media (max-width: 480px) {
-            /* On very small screens, hide popup to avoid layout issues */
+            /* On very small screens, use tap-to-show behavior via JS class */
             .product-details-popup {
-                display: none;
+                /* Start hidden, shown via .popup-active class on touch */
+                opacity: 0;
+                visibility: hidden;
+                pointer-events: none;
+            }
+            .product-card:hover .product-details-popup {
+                /* Disable hover on mobile - use tap instead */
+                opacity: 0;
+                visibility: hidden;
+            }
+            .product-card.popup-active .product-details-popup {
+                opacity: 1;
+                visibility: visible;
+                pointer-events: auto;
+                transform: translateX(-50%) translateY(0) rotateX(0) scale(1);
+            }
+            /* Reduce popup size on mobile */
+            .product-details-popup {
+                width: 220px;
+                padding: 0.9rem;
+            }
+            .popup-3d-icon {
+                width: 48px;
+                height: 48px;
+                font-size: 1.6rem;
             }
         }
 
@@ -1770,13 +1795,19 @@
                     }
 
                     // Generate product description based on product data
+                    // Uses product name as fallback key for more maintainable mapping
                     function getProductDescription(p) {
-                        const descriptions = {
-                            '1': 'Özel tasarım hediye paketi ile sunulan kaliteli ürün.',
-                            '2': 'Şık tasarımı ve üstün kalitesiyle dikkat çeken ürün.',
-                            '3': 'Modern ve fonksiyonel tasarımıyla kullanışlı ürün.'
+                        // First check if product has custom description
+                        if (p.description) return p.description;
+                        
+                        // Default descriptions mapped by product ID or name
+                        const descriptionsByName = {
+                            'Ürün 1': 'Özel tasarım hediye paketi ile sunulan kaliteli ürün.',
+                            'Ürün 2': 'Şık tasarımı ve üstün kalitesiyle dikkat çeken ürün.',
+                            'Ürün 3': 'Modern ve fonksiyonel tasarımıyla kullanışlı ürün.'
                         };
-                        return p.description || descriptions[p.id] || 'Yüksek kaliteli, özenle seçilmiş ürün.';
+                        
+                        return descriptionsByName[p.name] || 'Yüksek kaliteli, özenle seçilmiş ürün.';
                     }
 
                     // Generate product features based on product data
@@ -1833,7 +1864,49 @@
                             `;
                             container.appendChild(card);
                         });
+
+                        // Setup mobile tap-to-show popup behavior after rendering
+                        setupMobilePopupHandlers();
                     }
+
+                    // Mobile tap-to-show popup handler
+                    function setupMobilePopupHandlers() {
+                        if (window.innerWidth > 480) return; // Only for mobile
+                        
+                        document.querySelectorAll('.product-card').forEach(card => {
+                            card.addEventListener('click', function(e) {
+                                // Don't trigger if clicking the add-to-cart button
+                                if (e.target.closest('button[data-action="add-to-cart"]')) return;
+                                
+                                // Toggle popup visibility on tap
+                                const wasActive = this.classList.contains('popup-active');
+                                
+                                // Close all other popups first
+                                document.querySelectorAll('.product-card.popup-active').forEach(c => {
+                                    c.classList.remove('popup-active');
+                                });
+                                
+                                // Toggle this popup
+                                if (!wasActive) {
+                                    this.classList.add('popup-active');
+                                }
+                            });
+                        });
+
+                        // Close popup when clicking outside
+                        document.addEventListener('click', function(e) {
+                            if (!e.target.closest('.product-card')) {
+                                document.querySelectorAll('.product-card.popup-active').forEach(c => {
+                                    c.classList.remove('popup-active');
+                                });
+                            }
+                        });
+                    }
+
+                    // Re-setup handlers on resize (in case user changes orientation)
+                    window.addEventListener('resize', function() {
+                        setupMobilePopupHandlers();
+                    });
 
                     // Minimal payment & IBAN helpers
                     function copyIban() {
