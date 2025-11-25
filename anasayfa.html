@@ -1459,39 +1459,51 @@
                         console.log('fetchUserFromRepo: Starting for', email);
                         try{
                             const path = 'users/' + email + '_full.json';
-                            const url = 'https://raw.githubusercontent.com/amtbrs-03/AMTBRS/site-release/' + path;
+                            // Try multiple CDN endpoints for better reliability
+                            const urls = [
+                                `https://raw.githubusercontent.com/amtbrs-03/AMTBRS/site-release/${path}?t=${Date.now()}`,
+                                `https://cdn.jsdelivr.net/gh/amtbrs-03/AMTBRS@site-release/${path}`,
+                            ];
                             
-                            console.log('fetchUserFromRepo: Fetching from URL:', url);
-                            
-                            // Add random query param to bypass cache
-                            const cacheBustUrl = url + '?t=' + Date.now();
-                            
-                            const res = await fetch(cacheBustUrl, { 
-                                cache: 'no-cache', 
-                                headers: { 
-                                    'Cache-Control': 'no-cache',
-                                    'Pragma': 'no-cache'
-                                } 
-                            });
-                            
-                            console.log('fetchUserFromRepo: Response status:', res.status);
-                            
-                            if (!res.ok) {
-                                if (res.status === 404) {
-                                    console.warn('fetchUserFromRepo: User file not found (404) for', email);
-                                } else {
-                                    console.error('fetchUserFromRepo: Failed with status', res.status);
+                            for (let i = 0; i < urls.length; i++) {
+                                const url = urls[i];
+                                console.log(`fetchUserFromRepo: Attempt ${i+1}/${urls.length} - Fetching from:`, url);
+                                
+                                try {
+                                    const res = await fetch(url, { 
+                                        cache: 'no-store',
+                                        mode: 'cors',
+                                        headers: { 
+                                            'Cache-Control': 'no-cache, no-store, must-revalidate',
+                                            'Pragma': 'no-cache',
+                                            'Expires': '0'
+                                        } 
+                                    });
+                                    
+                                    console.log(`fetchUserFromRepo: Attempt ${i+1} - Response status:`, res.status);
+                                    
+                                    if (res.ok) {
+                                        const userData = await res.json();
+                                        console.log('fetchUserFromRepo: SUCCESS ✓ Found user:', userData.email);
+                                        
+                                        // Cache it locally for this device
+                                        localStorage.setItem('user_' + email, JSON.stringify(userData));
+                                        console.log('fetchUserFromRepo: ✓ Cached user to localStorage');
+                                        
+                                        return userData;
+                                    } else if (res.status === 404 && i < urls.length - 1) {
+                                        console.warn(`fetchUserFromRepo: Attempt ${i+1} got 404, trying next URL...`);
+                                        continue;
+                                    }
+                                } catch (fetchErr) {
+                                    console.warn(`fetchUserFromRepo: Attempt ${i+1} failed:`, fetchErr.message);
+                                    if (i < urls.length - 1) continue;
+                                    throw fetchErr;
                                 }
-                                return null;
                             }
-                            const userData = await res.json();
-                            console.log('fetchUserFromRepo: SUCCESS ✓ Found user:', userData.email);
                             
-                            // Cache it locally for this device
-                            localStorage.setItem('user_' + email, JSON.stringify(userData));
-                            console.log('fetchUserFromRepo: ✓ Cached user to localStorage');
-                            
-                            return userData;
+                            console.error('fetchUserFromRepo: All attempts failed for', email);
+                            return null;
                         }catch(err){ 
                             console.error('fetchUserFromRepo: EXCEPTION', err);
                             return null; 
