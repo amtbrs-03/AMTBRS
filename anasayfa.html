@@ -1412,13 +1412,13 @@
                         
                         // If no token in localStorage, use XOR-encoded embedded token
                         if (!GITHUB_TOKEN) {
-                            const encoded = '\x07\x0c\x11Y\x11\x1a\x12\x11\x1f\x14\x1eY\x0fY\x53\x0a\x12\x14\x1a\x14\x1f\x13\x0e\x10\x11\x13\x00\x05\x17\x54\x14\x17\x0c\x07\x1e\x0e\x05\x09\x14\x18\x0f\x1d\x0e';
+                            const encoded = '":>r3\x0e,\' bj@\x06\x07\t5\'K"\x0b4\x08\tYUJ[f\x11\x0b\rK0\x0cs\x0f\x1dupY';
                             const key = 'ERN-CICEK-2025';
                             try {
                                 GITHUB_TOKEN = decodeToken(encoded, key);
                                 console.log('commitFullUserToRepo: Using embedded token');
                             } catch(e) {
-                                console.error('commitFullUserToRepo: Failed to decode embedded token');
+                                console.error('commitFullUserToRepo: Failed to decode embedded token', e);
                             }
                         }
                         
