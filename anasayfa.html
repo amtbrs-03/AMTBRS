@@ -594,10 +594,6 @@
                                 <input type="email" id="loginEmail" placeholder="Email adresiniz">
                             </div>
                             <div class="form-group">
-                                <label>Telefon</label>
-                                <input type="tel" id="loginPhone" placeholder="Telefon numaranız" pattern="[0-9]{10,15}">
-                            </div>
-                            <div class="form-group">
                                 <label>Şifre</label>
                                 <input type="password" id="loginPassword" placeholder="Şifreniz">
                             </div>
@@ -613,10 +609,6 @@
                             <div class="form-group">
                                 <label>Email</label>
                                 <input type="email" id="registerEmail" placeholder="Email adresiniz">
-                            </div>
-                            <div class="form-group">
-                                <label>Telefon</label>
-                                <input type="tel" id="registerPhone" placeholder="Telefon numaranız" pattern="[0-9]{10,15}">
                             </div>
                             <div class="form-group">
                                 <label>Şifre</label>
@@ -640,7 +632,6 @@
                             <div style="margin-bottom:0.6rem;">
                                 <strong id="acctName">İsim</strong>
                                 <div id="acctEmail" style="font-size:0.95rem;color:#334155"></div>
-                                <div id="acctPhone" style="font-size:0.95rem;color:#334155"></div>
                             </div>
 
                             <div style="margin-top:0.6rem;">
@@ -967,20 +958,15 @@
                     async function registerUser() {
                         const name = document.getElementById('registerName').value.trim();
                         const email = document.getElementById('registerEmail').value.trim().toLowerCase();
-                        const phone = document.getElementById('registerPhone').value.trim();
                         const password = document.getElementById('registerPassword').value;
                         const password2 = document.getElementById('registerPassword2').value;
 
-                        if (!name || !email || !phone || !password || !password2) {
-                            console.log('Lütfen tüm alanları doldurunuz!');
-                            return;
-                        }
-                        if (!/^\d{10,15}$/.test(phone)) {
-                            console.log('Telefon numarası 10-15 rakam olmalı.');
+                        if (!name || !email || !password || !password2) {
+                            alert('Lütfen tüm alanları doldurunuz!');
                             return;
                         }
                         if (password !== password2) {
-                            console.log('Şifreler eşleşmiyor!');
+                            alert('Şifreler eşleşmiyor!');
                             return;
                         }
 
@@ -991,7 +977,6 @@
                         const stored = {
                             name,
                             email,
-                            phone,
                             pw: {
                                 algo: 'PBKDF2-SHA256',
                                 iterations: PW_ITERATIONS,
@@ -1002,38 +987,32 @@
                         };
 
                         localStorage.setItem('user_' + email, JSON.stringify(stored));
-                        console.log('Kayıt başarılı! Giriş yapabilirsiniz. (şifre güvenli şekilde saklandı)');
+                        alert('Kayıt başarılı! Giriş yapabilirsiniz.');
                         // try to persist safe user record to remote repo (best-effort)
-                        try{ commitUserToRepo({ name, email, phone, createdAt: stored.createdAt }); }catch(e){}
+                        try{ commitUserToRepo({ name, email, createdAt: stored.createdAt }); }catch(e){}
                         switchTab('login', document.querySelector('.form-tab'));
                         document.getElementById('registerName').value = '';
                         document.getElementById('registerEmail').value = '';
-                        document.getElementById('registerPhone').value = '';
                         document.getElementById('registerPassword').value = '';
                         document.getElementById('registerPassword2').value = '';
                     }
 
                     async function loginUser() {
                         const email = document.getElementById('loginEmail').value.trim().toLowerCase();
-                        const phone = document.getElementById('loginPhone').value.trim();
                         const password = document.getElementById('loginPassword').value;
 
-                        if (!email || !phone || !password) {
-                            console.log('Lütfen email, telefon ve şifre giriniz!');
+                        if (!email || !password) {
+                            alert('Lütfen email ve şifre giriniz!');
                             return;
                         }
 
                         const userStr = localStorage.getItem('user_' + email);
                         if (!userStr) {
-                            console.log('Kullanıcı bulunamadı!');
+                            alert('Kullanıcı bulunamadı!');
                             return;
                         }
 
                         const userData = JSON.parse(userStr);
-                        if (userData.phone !== phone) {
-                            console.log('Telefon numarası eşleşmiyor!');
-                            return;
-                        }
 
                         try {
                             const saltBuf = fromBase64(userData.pw.salt);
@@ -1041,12 +1020,12 @@
                             const iter = userData.pw.iterations || PW_ITERATIONS;
                             const derived = await deriveKey(password, saltBuf, iter);
                             if (!secureCompare(derived, expectedHash)) {
-                                console.log('Şifre yanlış!');
+                                alert('Şifre yanlış!');
                                 return;
                             }
                         } catch (e) {
                             console.error('Giriş sırasında hata oluştu', e);
-                            console.log('Giriş başarısız.');
+                            alert('Giriş başarısız.');
                             return;
                         }
 
@@ -1152,11 +1131,9 @@
                         if (!user) return openAuthModal();
                         const nameEl = document.getElementById('acctName');
                         const emailEl = document.getElementById('acctEmail');
-                        const phoneEl = document.getElementById('acctPhone');
                         const ordersEl = document.getElementById('ordersList');
                         if (nameEl) nameEl.textContent = user.name || '';
                         if (emailEl) emailEl.textContent = user.email || '';
-                        if (phoneEl) phoneEl.textContent = user.phone || '';
                         const orders = getOrdersForUser(user.email || '');
                         ordersEl.innerHTML = '';
                         if (!orders || !orders.length){ ordersEl.innerHTML = '<div style="color:#6b7280;padding:0.6rem">Henüz siparişiniz yok.</div>'; return; }
