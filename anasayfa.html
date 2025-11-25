@@ -1178,6 +1178,8 @@
                         updateCartCount();
                         document.getElementById('loginEmail').value = '';
                         document.getElementById('loginPassword').value = '';
+                        // Otomatik olarak hesap modalını aç
+                        setTimeout(() => { openAccountModal(); }, 300);
                     }
 
                     function updateUIAfterLogin(name) {
