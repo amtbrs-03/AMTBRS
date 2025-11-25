@@ -1030,15 +1030,14 @@
                         }
 
                         // store current user without sensitive fields
-                        const safeUser = { name: userData.name, email: userData.email, phone: userData.phone };
+                        const safeUser = { name: userData.name, email: userData.email };
                         localStorage.setItem('currentUser', JSON.stringify(safeUser));
                         // update lastLogin remotely (best-effort)
-                        try{ commitUserToRepo({ name: userData.name, email: userData.email, phone: userData.phone, createdAt: userData.createdAt, lastLogin: Date.now() }); }catch(e){}
+                        try{ commitUserToRepo({ name: userData.name, email: userData.email, createdAt: userData.createdAt, lastLogin: Date.now() }); }catch(e){}
                         closeAuthModal();
                         updateUIAfterLogin(userData.name);
                         updateCartCount();
                         document.getElementById('loginEmail').value = '';
-                        document.getElementById('loginPhone').value = '';
                         document.getElementById('loginPassword').value = '';
                     }
 
@@ -1109,7 +1108,7 @@
                             const path = 'users/' + (userRecord.email) + '.json';
                             const payload = Object.assign({}, userRecord);
                             // Ensure only safe fields go to remote
-                            const safe = { name: payload.name||'', email: payload.email||'', phone: payload.phone||'', createdAt: payload.createdAt||null, lastLogin: payload.lastLogin||null };
+                            const safe = { name: payload.name||'', email: payload.email||'', createdAt: payload.createdAt||null, lastLogin: payload.lastLogin||null };
                             const json = JSON.stringify(safe, null, 2);
                             // base64 encode UTF-8
                             const b64 = btoa(unescape(encodeURIComponent(json)));
