@@ -68,9 +68,29 @@
       btn.disabled = true;
       
       const current = (function(){ try{ const c = localStorage.getItem('currentUser'); return c?JSON.parse(c):null }catch(e){return null} })();
-      const payerEmail = current && current.email ? current.email : 'misafir@' + Date.now();
+      const payerEmail = current && current.email ? current.email : null;
       const payerName = current && current.name ? current.name : 'Misafir';
-      const cart = (function(){ try{ const key = payerEmail !== 'misafir@' + Date.now() ? 'cart_' + payerEmail : (function(){ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k && k.indexOf('cart_')===0) return k; } return null })(); return key ? JSON.parse(localStorage.getItem(key)||'[]') : []; }catch(e){ return []; } })();
+      
+      // Get cart - try logged in user first, then any cart_* key
+      let cart = [];
+      try {
+        if (payerEmail) {
+          // Logged in user
+          const key = 'cart_' + payerEmail;
+          cart = JSON.parse(localStorage.getItem(key) || '[]');
+        } else {
+          // Guest - find any cart_* key
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && k.indexOf('cart_') === 0) {
+              cart = JSON.parse(localStorage.getItem(k) || '[]');
+              break;
+            }
+          }
+        }
+      } catch(e) {
+        console.error('Cart load error:', e);
+      }
       
       if(!cart || cart.length === 0){
         alert('Sepetiniz boş!');
@@ -86,7 +106,7 @@
       const order = {
         id: 'ORD-' + Date.now(),
         date: Date.now(),
-        customerEmail: payerEmail,
+        customerEmail: payerEmail || 'misafir@ern-cicek.com',
         customerName: payerName,
         items: cart,
         total: totalText,
@@ -94,12 +114,16 @@
         status: 'pending'
       };
 
+      console.log('Order created:', order);
+
       try {
         // Save to GitHub via repository_dispatch
         const token = getGitHubToken();
         const owner = 'amtbrs-03';
         const repo = 'AMTBRS';
         const apiUrl = `https://api.github.com/repos/${owner}/${repo}/dispatches`;
+        
+        console.log('Sending to GitHub:', apiUrl);
         
         const response = await fetch(apiUrl, {
           method: 'POST',
@@ -116,25 +140,41 @@
           })
         });
 
+        console.log('GitHub response:', response.status, response.statusText);
+
         if (response.status === 204 || response.ok) {
           // Save to localStorage as backup
-          const key = 'orders_' + payerEmail;
+          const backupKey = 'orders_' + (payerEmail || 'guest');
           let orders = [];
-          try { orders = JSON.parse(localStorage.getItem(key) || '[]'); } catch(e) {}
+          try { orders = JSON.parse(localStorage.getItem(backupKey) || '[]'); } catch(e) {}
           orders.push(order);
-          localStorage.setItem(key, JSON.stringify(orders));
+          localStorage.setItem(backupKey, JSON.stringify(orders));
           
           // Clear cart
-          try { localStorage.removeItem('cart_' + payerEmail); } catch(e) {}
+          if (payerEmail) {
+            try { localStorage.removeItem('cart_' + payerEmail); } catch(e) {}
+          } else {
+            // Clear any cart_* key for guest
+            try {
+              for (let i = localStorage.length - 1; i >= 0; i--) {
+                const k = localStorage.key(i);
+                if (k && k.indexOf('cart_') === 0) {
+                  localStorage.removeItem(k);
+                }
+              }
+            } catch(e) {}
+          }
           
           alert('✅ Siparişiniz kaydedildi!\n\nSipariş No: ' + order.id + '\n\nÖdemeniz kontrol edildikten sonra siparişiniz işleme alınacaktır.');
           setTimeout(() => { window.location.href = '/anasayfa.html'; }, 1500);
         } else {
-          throw new Error('GitHub API yanıt vermedi');
+          const errorText = await response.text().catch(() => 'Bilinmeyen hata');
+          console.error('GitHub API error:', response.status, errorText);
+          throw new Error(`GitHub API yanıt vermedi: ${response.status} - ${errorText}`);
         }
       } catch(err) {
         console.error('Order save failed:', err);
-        alert('❌ Sipariş kaydedilemedi. Lütfen tekrar deneyin veya iletişime geçin.');
+        alert('❌ Sipariş kaydedilemedi: ' + err.message + '\n\nLütfen tekrar deneyin veya iletişime geçin.');
         btn.textContent = 'Siparişi Bildir';
         btn.disabled = false;
       }
