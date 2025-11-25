@@ -578,6 +578,7 @@
                         <div class="nav-top" style="display:flex;align-items:center;gap:0.6rem;">
                             <ul class="nav-links" style="display:flex;gap:0.6rem;align-items:center;list-style:none;margin:0;padding:0;">
                                 <li><button id="homeBtn" class="contact-btn" aria-controls="home" aria-expanded="false" data-action="scroll" data-target="home">Ana Sayfa</button></li>
+                                <li><button class="contact-btn" data-action="scroll" data-target="hakkimizda">Hakkımızda</button></li>
                                 <li><button id="productsBtn" class="contact-btn" aria-controls="products" aria-expanded="false" data-action="scroll" data-target="products">Ürünler</button></li>
                                 <li id="cartContainer"><button id="cartBtn" class="cart-btn contact-btn" aria-controls="cartModal" aria-expanded="false" data-action="open-cart">Sepet <span id="cartCount" class="cart-count hidden">0</span></button></li>
                                 <li><button id="contactBtn" class="contact-btn" aria-expanded="false" aria-controls="contactPanel" data-action="toggle-contact"><span style="display:inline-block;margin-right:6px;line-height:1">📞</span><span>İletişim</span><span style="margin-left:8px;opacity:0.9">▾</span></button></li>
@@ -838,28 +839,46 @@
                     </section>
                 </div>
 
-                <!-- Hakkımızda bölümü kaldırıldı -->
+                <!-- Hakkımızda Bölümü -->
+                <section id="hakkimizda" style="max-width:1200px;margin:3rem auto;padding:2rem;background:rgba(255,255,255,0.95);border-radius:16px;box-shadow:0 20px 60px rgba(2,6,23,0.15);">
+                    <h2 style="font-size:1.8rem;margin-bottom:1.5rem;color:#0b2f1f;text-align:center;font-weight:800;">Hakkımızda - Çiçekçi</h2>
+                    
+                    <div style="margin-bottom:2rem;text-align:center;color:#334155;font-size:1.05rem;line-height:1.8;max-width:800px;margin-left:auto;margin-right:auto;">
+                        <p style="margin-bottom:1rem;">ERN Çiçek olarak, Türkiye'nin önde gelen online çiçekçisi olma yolunda sizlere hizmet veriyoruz. Taze ve kaliteli çiçekler ile özel günlerinizi unutulmaz kılıyoruz.</p>
+                        <p>Gül buketi, lilyum, orkide ve daha birçok çiçek çeşidi ile aynı gün teslimat garantisi sunuyoruz. İstanbul çiçekçi, Ankara çiçekçi ve tüm Türkiye'ye hizmet veriyoruz.</p>
+                    </div>
 
-                <footer>
-                    <!-- SEO İçerik Bölümü -->
-                    <div style="max-width:1200px;margin:0 auto 2rem;padding:2rem;background:rgba(255,255,255,0.05);border-radius:12px;">
-                        <h2 style="font-size:1.4rem;margin-bottom:1rem;color:#fff">Çiçekçi - Online Çiçek Siparişi</h2>
-                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;color:rgba(255,255,255,0.85);font-size:0.95rem;line-height:1.6;">
-                            <div>
-                                <h3 style="font-size:1.1rem;margin-bottom:0.5rem;color:#8EE7A3">Çiçek Çeşitlerimiz</h3>
-                                <p>Gül buketi, kırmızı gül, beyaz gül, pembe gül, sarı gül, lilyum, beyaz lilyum, pembe lilyum, orkide, papatya, ayçiçeği, lale, karanfil, kasımpatı, sümbül, nergis ve daha fazla çiçek çeşidi ile hizmetinizdeyiz.</p>
-                            </div>
-                            <div>
-                                <h3 style="font-size:1.1rem;margin-bottom:0.5rem;color:#8EE7A3">Çiçek Siparişi</h3>
-                                <p>Online çiçekçi olarak İstanbul çiçekçi, Ankara çiçekçi, İzmir çiçekçi ve tüm Türkiye'ye çiçek gönderme hizmeti sunuyoruz. Aynı gün çiçek teslimatı yapıyoruz. Doğum günü çiçeği, sevgiliye çiçek, anneler günü çiçeği siparişleriniz için bize ulaşın.</p>
-                            </div>
-                            <div>
-                                <h3 style="font-size:1.1rem;margin-bottom:0.5rem;color:#8EE7A3">Özel Günler İçin Çiçek</h3>
-                                <p>Düğün çiçeği, nikah çiçeği, nişan çiçeği, açılış çiçeği, cenaze çiçeği, hastaya çiçek, mezuniyet çiçeği ve tüm özel günleriniz için çiçek aranjmanları hazırlıyoruz. Ucuz çiçek ve uygun fiyat seçenekleri mevcut.</p>
-                            </div>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:2rem;margin-top:2rem;">
+                        <div style="padding:1.5rem;background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-radius:12px;border:2px solid #86efac;">
+                            <h3 style="font-size:1.2rem;margin-bottom:0.8rem;color:#166534;font-weight:700;">🌹 Çiçek Çeşitlerimiz</h3>
+                            <p style="color:#334155;line-height:1.7;">Gül buketi, kırmızı gül, beyaz gül, pembe gül, sarı gül, lilyum, beyaz lilyum, pembe lilyum, orkide, papatya, ayçiçeği, lale, karanfil, kasımpatı, sümbül, nergis ve daha fazla çiçek çeşidi ile hizmetinizdeyiz.</p>
+                        </div>
+                        
+                        <div style="padding:1.5rem;background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:12px;border:2px solid #fbbf24;">
+                            <h3 style="font-size:1.2rem;margin-bottom:0.8rem;color:#92400e;font-weight:700;">📦 Çiçek Siparişi</h3>
+                            <p style="color:#334155;line-height:1.7;">Online çiçekçi olarak İstanbul çiçekçi, Ankara çiçekçi, İzmir çiçekçi ve tüm Türkiye'ye çiçek gönderme hizmeti sunuyoruz. Aynı gün çiçek teslimatı yapıyoruz. Doğum günü çiçeği, sevgiliye çiçek, anneler günü çiçeği siparişleriniz için bize ulaşın.</p>
+                        </div>
+                        
+                        <div style="padding:1.5rem;background:linear-gradient(135deg,#fce7f3,#fbcfe8);border-radius:12px;border:2px solid #f472b6;">
+                            <h3 style="font-size:1.2rem;margin-bottom:0.8rem;color:#831843;font-weight:700;">🎉 Özel Günler İçin Çiçek</h3>
+                            <p style="color:#334155;line-height:1.7;">Düğün çiçeği, nikah çiçeği, nişan çiçeği, açılış çiçeği, cenaze çiçeği, hastaya çiçek, mezuniyet çiçeği ve tüm özel günleriniz için çiçek aranjmanları hazırlıyoruz. Ucuz çiçek ve uygun fiyat seçenekleri mevcut.</p>
                         </div>
                     </div>
-                    
+
+                    <div style="margin-top:2rem;padding:1.5rem;background:#f0f9ff;border-radius:12px;border-left:4px solid #0284c7;">
+                        <h3 style="font-size:1.2rem;margin-bottom:0.8rem;color:#0c4a6e;font-weight:700;">✨ Neden ERN Çiçek?</h3>
+                        <ul style="list-style:none;padding:0;color:#334155;line-height:2;">
+                            <li>✓ Taze ve kaliteli çiçekler</li>
+                            <li>✓ Aynı gün teslimat garantisi</li>
+                            <li>✓ Uygun fiyat seçenekleri</li>
+                            <li>✓ Türkiye geneli hizmet</li>
+                            <li>✓ Güvenli ödeme sistemi</li>
+                            <li>✓ 7/24 müşteri desteği</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <footer>
                     <div style="display:flex;flex-direction:column;gap:0.5rem;align-items:center;">
                         <div style="display:flex;gap:1.5rem;flex-wrap:wrap;justify-content:center;align-items:center;">
                             <div style="text-align:left; min-width:200px;">
