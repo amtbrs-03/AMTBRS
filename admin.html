@@ -170,6 +170,72 @@
   </div>
 
   <script>
+    // XOR decode for GitHub token
+    function decodeToken(encoded, key) {
+      let decoded = '';
+      for (let i = 0; i < encoded.length; i++) {
+        decoded += String.fromCharCode(encoded.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+      }
+      return decoded;
+    }
+
+    // Get GitHub token (from localStorage or embedded)
+    function getGitHubToken() {
+      let token = localStorage.getItem('github_token');
+      if (!token) {
+        const encoded = '":>r3\x0e,\' bj@\x06\x07\t5\'K"\x0b4\x08\tYUJ[f\x11\x0b\rK0\x0cs\x0f\x1dupY';
+        const key = 'ERN-CICEK-2025';
+        try {
+          token = decodeToken(encoded, key);
+        } catch(e) {
+          console.error('Failed to decode GitHub token');
+        }
+      }
+      return token;
+    }
+
+    // Push data to GitHub via Actions workflow
+    async function pushToGitHub(data, message) {
+      const token = getGitHubToken();
+      if (!token) {
+        console.error('No GitHub token available');
+        return { ok: false, error: 'Token not configured' };
+      }
+
+      const owner = 'amtbrs-03';
+      const repo = 'AMTBRS';
+      const url = `https://api.github.com/repos/${owner}/${repo}/dispatches`;
+
+      const payload = {
+        event_type: 'update-products',
+        client_payload: {
+          data: JSON.stringify(data),
+          message: message || 'Admin: update via admin panel'
+        }
+      };
+
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok || res.status === 204) {
+          return { ok: true };
+        } else {
+          const txt = await res.text().catch(() => '');
+          return { ok: false, error: `Status ${res.status}: ${txt}` };
+        }
+      } catch(err) {
+        return { ok: false, error: err.message };
+      }
+    }
+
     // Client-side admin auth: set password first time, then login.
     (function(){
   const AUTH_KEY = 'admin_pass_hash_v1';
@@ -421,7 +487,18 @@
           products[idx].name = name; products[idx].price = price; products[idx].image = img;
         }
         setProducts(products);
-        alert('Ürünler kaydedildi. Lütfen siteyi yenileyin.');
+        
+        // Push to GitHub
+        console.log('Pushing products to GitHub...');
+        const result = await pushToGitHub(products, 'Admin: update products');
+        
+        if (result.ok) {
+          alert('Ürünler kaydedildi ve GitHub\'a gönderildi! ✓');
+        } else {
+          alert('Ürünler kaydedildi (localStorage). GitHub güncellemesi başarısız: ' + (result.error || 'unknown'));
+        }
+        
+        render();
 
         // If enabled, push the products and images to GitHub via serverless function
         try{
