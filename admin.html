@@ -8,160 +8,307 @@
   <title>Admin - ERN-ÇİÇEK</title>
   <style>
     :root{
-      --accent:#6b46c1;
-      --danger:#e53e3e;
+      --green-primary: #10b981;
+      --green-dark: #059669;
+      --green-light: #34d399;
+      --danger:#ef4444;
       --muted:#6b7280;
       --bg-1: rgba(34,197,94,0.10);
       --bg-2: rgba(16,185,129,0.08);
-      --card-bg: rgba(255,255,255,0.96);
+      --card-bg: rgba(255,255,255,0.98);
     }
 
     /* Make admin background visually match the public site */
     body{
       font-family: 'Segoe UI', 'Inter', 'Noto Sans', Tahoma, Arial, sans-serif;
-      padding:2rem;
-      color:#0b1220;
+      padding:0;
+      margin:0;
+      color:#0f172a;
       background: radial-gradient(1200px 600px at 10% 10%, var(--bg-1), transparent),
                   radial-gradient(800px 400px at 90% 90%, var(--bg-2), transparent),
-                  linear-gradient(180deg, #e6f7ec 0%, #064e3b 100%);
+                  linear-gradient(180deg, #ecfdf5 0%, #064e3b 100%);
       -webkit-font-smoothing:antialiased;
       -moz-osx-font-smoothing:grayscale;
       min-height:100vh;
     }
 
-    .page{max-width:1100px;margin:0 auto}
-    h1{margin-bottom:1rem;font-size:1.6rem;color:#fff;text-shadow:0 6px 18px rgba(0,0,0,0.4)}
+    .page{max-width:1200px;margin:0 auto;padding:2rem}
+    h1{margin-bottom:1.5rem;font-size:2rem;color:#064e3b;font-weight:800;letter-spacing:-0.02em}
+    h2{font-size:1.25rem;color:#064e3b;font-weight:700;margin-bottom:1rem}
 
-    /* Card style: elevated, slightly translucent to match site aesthetic */
+    /* Professional Admin Header */
+    .admin-header{
+      background: linear-gradient(135deg, var(--green-primary) 0%, var(--green-dark) 100%);
+      box-shadow: 0 10px 40px rgba(16, 185, 129, 0.3);
+      padding:1.5rem 2rem;
+      margin-bottom:2rem;
+      position:sticky;
+      top:0;
+      z-index:100;
+      backdrop-filter: blur(10px);
+    }
+    .admin-header-content{
+      max-width:1200px;
+      margin:0 auto;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:2rem;
+    }
+    .admin-header .title{
+      font-size:1.5rem;
+      color:white;
+      font-weight:800;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+    .admin-header .subtitle{
+      color:rgba(255,255,255,0.9);
+      font-size:0.875rem;
+      margin-top:0.25rem;
+    }
+
+    /* 3D Green Buttons */
+    .btn{
+      cursor:pointer;
+      padding:0.75rem 1.5rem;
+      border-radius:12px;
+      border:none;
+      background: linear-gradient(135deg, var(--green-primary) 0%, var(--green-dark) 100%);
+      color:white;
+      font-weight:700;
+      font-size:0.95rem;
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4),
+                  0 8px 25px rgba(16, 185, 129, 0.2),
+                  inset 0 -2px 5px rgba(0,0,0,0.1);
+      transform: translateY(0);
+      transition: all 0.2s ease;
+      position:relative;
+      overflow:hidden;
+    }
+    .btn::before{
+      content:'';
+      position:absolute;
+      top:0;
+      left:-100%;
+      width:100%;
+      height:100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      transition: left 0.5s;
+    }
+    .btn:hover::before{
+      left:100%;
+    }
+    .btn:hover{
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5),
+                  0 12px 35px rgba(16, 185, 129, 0.3),
+                  inset 0 -2px 5px rgba(0,0,0,0.15);
+    }
+    .btn:active{
+      transform: translateY(1px);
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3),
+                  inset 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .btn:disabled{
+      opacity:0.5;
+      cursor:not-allowed;
+      transform: translateY(0);
+    }
+
+    .btn-ghost{
+      background: rgba(255,255,255,0.95);
+      color: var(--green-dark);
+      border: 2px solid var(--green-primary);
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.15);
+    }
+    .btn-ghost:hover{
+      background: rgba(255,255,255,1);
+      border-color: var(--green-dark);
+    }
+
+    .btn-danger{
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4),
+                  0 8px 25px rgba(239, 68, 68, 0.2);
+    }
+    .btn-danger:hover{
+      box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
+    }
+
+    /* Action Bar */
+    .action-bar{
+      display:flex;
+      gap:1rem;
+      align-items:center;
+      flex-wrap:wrap;
+      padding:1.5rem;
+      background: rgba(255,255,255,0.5);
+      border-radius:12px;
+      margin-bottom:1.5rem;
+      backdrop-filter: blur(10px);
+    }
+
+    /* Card style: elevated, slightly translucent */
     .card{
       background: var(--card-bg);
-      padding:1.2rem;
-      border-radius:14px;
-      box-shadow: 0 18px 40px rgba(2,6,23,0.12);
-      margin-bottom:1rem;
-      border: 1px solid rgba(10,12,30,0.06);
+      padding:1.5rem;
+      border-radius:16px;
+      box-shadow: 0 10px 30px rgba(2,6,23,0.08),
+                  0 1px 3px rgba(0,0,0,0.05);
+      margin-bottom:1.5rem;
+      border: 1px solid rgba(16,185,129,0.1);
     }
 
-    label{display:block;font-weight:700;margin-bottom:0.35rem;color:#0b1220}
-    input[type=text], input[type=number], input[type=email], input[type=file]{width:100%;padding:0.6rem;border:1px solid #e6e6e6;border-radius:10px}
-    .controls-row{display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap}
-    .products-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:0.9rem}
-    .prod-item{border:1px solid rgba(14,20,30,0.06);padding:0.9rem;border-radius:10px;background:linear-gradient(180deg,#ffffff,#fbfbfd)}
-    .actions{display:flex;gap:0.5rem;margin-top:0.5rem}
-    .btn{cursor:pointer;padding:0.6rem 0.9rem;border-radius:10px;border:none;background:var(--accent);color:white;font-weight:700;box-shadow:0 10px 30px rgba(107,70,193,0.12)}
-    .btn.ghost{background:transparent;color:var(--accent);border:1px solid rgba(107,70,193,0.12)}
-    .danger{background:var(--danger)}
-    .meta{font-size:0.95rem;color:#475569}
-    .thumb{width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid #eee;margin-right:0.6rem}
-    .prod-row{display:flex;align-items:center;gap:0.6rem}
-    .file-preview{width:72px;height:72px;display:inline-block;vertical-align:middle}
-    .small{font-size:0.9rem;color:#475569}
+    label{display:block;font-weight:600;margin-bottom:0.5rem;color:#0f172a;font-size:0.95rem}
+    input[type=text], input[type=number], input[type=email], input[type=password], input[type=file]{
+      width:100%;
+      padding:0.75rem;
+      border:2px solid #e5e7eb;
+      border-radius:10px;
+      font-size:0.95rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input[type=text]:focus, input[type=number]:focus, input[type=email]:focus, input[type=password]:focus{
+      outline:none;
+      border-color:var(--green-primary);
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.1);
+    }
 
-    /* Page header for admin */
-    .admin-header{max-width:1100px;margin:0 auto 1rem;padding:1rem 2rem;display:flex;align-items:center;gap:1rem}
-    .admin-header .title{font-size:1.25rem;color:white;font-weight:800}
-    .admin-top-note{color:rgba(255,255,255,0.85);font-size:0.95rem}
+    .controls-row{display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
+    .products-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1rem}
+    .prod-item{
+      border:1px solid rgba(16,185,129,0.15);
+      padding:1rem;
+      border-radius:12px;
+      background:linear-gradient(180deg,#ffffff,#f9fafb);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .prod-item:hover{
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(16,185,129,0.15);
+    }
+
+    .actions{display:flex;gap:0.5rem;margin-top:0.75rem;flex-wrap:wrap}
+    .meta{font-size:0.875rem;color:#64748b;line-height:1.5}
+    .thumb{width:80px;height:80px;object-fit:cover;border-radius:10px;border:2px solid #e5e7eb;margin-right:0.75rem}
+    .prod-row{display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap}
+    .file-preview{width:80px;height:80px;display:inline-block;vertical-align:middle}
+    .small{font-size:0.875rem;color:#64748b}
 
     @media (max-width:700px){
-      body{padding:1rem}
-      .admin-header{padding:0.6rem 1rem}
-      h1{font-size:1.25rem}
+      .page{padding:1rem}
+      .admin-header{padding:1rem}
+      .admin-header .title{font-size:1.25rem}
+      h1{font-size:1.5rem}
+      .action-bar{padding:1rem}
+      .btn{padding:0.6rem 1.2rem;font-size:0.875rem}
     }
   </style>
+
 </head>
 <body>
   <div class="admin-header">
-    <div>
-      <div class="title">Yönetici Paneli — Ürün Yönetimi</div>
-      <div class="admin-top-note">Bu panel tarayıcı taraflıdır; canlı ortam için sunucu tarafı doğrulama ve güvenli depolama önerilir.</div>
-    </div>
-    <div style="margin-left:auto"><a href="anasayfa.html" class="btn btn-ghost">Siteyi Görüntüle</a></div>
-  </div>
-
-  <!-- Simple admin auth (client-side) -->
-  <div id="authCard" class="card">
-    <div id="authContent"></div>
-  </div>
-
-  <div id="adminUI">
-  <div class="card">
-    <div style="margin-bottom:.5rem">Bu panel, tarayıcıda çalışan basit bir yönetim arayüzüdür. Ürünleriniz yalnızca sizin tarayıcınızda (localStorage) saklanır. Canlı/üretim ortamı için sunucu tarafı kimlik doğrulama ve güvenli depolama gereklidir.</div>
-    <div class="controls-row">
-      <input id="newName" type="text" placeholder="Yeni ürün adı" aria-label="Yeni ürün adı" style="flex:1;min-width:200px" />
-      <input id="newPrice" type="number" placeholder="Fiyat (TL)" step="0.01" aria-label="Fiyat (TL)" style="width:120px" />
-  <input id="newEmoji" type="text" placeholder="Emoji (örn. 🌹) veya boş" style="width:120px" aria-label="Emoji" />
-      <div style="display:flex;flex-direction:column;gap:0.4rem;">
-        <input id="newImage" type="file" accept="image/*" />
-        <div id="newPreview" class="file-preview small" aria-hidden="true"></div>
-      </div>
-      <button id="addBtn" class="btn">Ürün Ekle</button>
-    </div>
-    <div class="small meta">Not: Resim yüklenirse tarayıcıda (data URL) saklanır; büyük resimlerden kaçının.</div>
-  </div>
-
-  <div class="card">
-    <h2>Kayıtlı Ürünler</h2>
-    <div style="display:flex;gap:0.5rem;margin-bottom:0.6rem;align-items:center;">
-      <button id="pushProducts" class="btn">Ürünleri GitHub'a Kaydet</button>
-      <button id="downloadProducts" class="btn btn-ghost">Ürünleri İndir (JSON)</button>
-    </div>
-    <div id="products" class="products-list"></div>
-  </div>
-
-  <div class="card">
-    <h2>Site Ayarları (İletişim & Ödeme)</h2>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;align-items:start;">
+    <div class="admin-header-content">
       <div>
-        <label for="siteEmail">İletişim E-posta</label>
+        <div class="title">🌸 ERN-ÇİÇEK Admin Paneli</div>
+        <div class="subtitle">Ürün, Kullanıcı ve Sipariş Yönetimi</div>
+      </div>
+      <a href="anasayfa.html" class="btn btn-ghost">🏠 Siteyi Görüntüle</a>
+    </div>
+  </div>
+
+  <div class="page">
+    <!-- Simple admin auth (client-side) -->
+    <div id="authCard" class="card">
+      <div id="authContent"></div>
+    </div>
+
+    <div id="adminUI">
+      <!-- Quick Actions Bar -->
+      <div class="action-bar">
+        <button id="saveAll" class="btn">💾 Tüm Değişiklikleri Kaydet</button>
+        <button id="exportJson" class="btn btn-ghost">📥 JSON Dışa Aktar</button>
+        <button id="exportCsv" class="btn btn-ghost">📊 CSV Dışa Aktar</button>
+        <button id="loadUsersBtn" class="btn">👥 Kullanıcıları Yükle</button>
+        <button id="refreshOrders" class="btn btn-ghost">🔄 Siparişleri Yenile</button>
+        <button id="runSelfTest" class="btn btn-ghost">🧪 Test Çalıştır</button>
+      </div>
+
+      <div class="card">
+        <h2>➕ Yeni Ürün Ekle</h2>
+        <div class="controls-row">
+          <input id="newName" type="text" placeholder="Ürün adı" aria-label="Yeni ürün adı" style="flex:1;min-width:200px" />
+          <input id="newPrice" type="number" placeholder="Fiyat (TL)" step="0.01" aria-label="Fiyat (TL)" style="width:140px" />
+          <input id="newEmoji" type="text" placeholder="Emoji 🌹" style="width:100px" aria-label="Emoji" />
+          <input id="newImage" type="file" accept="image/*" style="width:200px" />
+          <button id="addBtn" class="btn">Ürün Ekle</button>
+        </div>
+        <div id="newPreview" class="file-preview small" style="margin-top:0.5rem" aria-hidden="true"></div>
+        <div class="small meta" style="margin-top:0.75rem">📌 Resim yüklenirse tarayıcıda saklanır. Optimal boyut: max 500KB</div>
+      </div>
+
+      <div class="card">
+        <h2>🛍️ Kayıtlı Ürünler</h2>
+        <div id="products" class="products-list"></div>
+      </div>
+
+  <div class="card">
+    <h2>⚙️ Site Ayarları</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:start;">
+      <div>
+        <label for="siteEmail">📧 İletişim E-posta</label>
         <input id="siteEmail" type="email" placeholder="info@example.com" />
       </div>
       <div>
-        <label for="sitePhone">Telefon</label>
+        <label for="sitePhone">📞 Telefon</label>
         <input id="sitePhone" type="text" placeholder="+90 5XX XXX XXXX" />
       </div>
       <div>
-        <label for="siteAddress">Adres</label>
+        <label for="siteAddress">📍 Adres</label>
         <input id="siteAddress" type="text" placeholder="Adresiniz Caddesi 1, Şehir" />
       </div>
       <div>
-        <label for="siteHours">Çalışma Saatleri</label>
+        <label for="siteHours">🕐 Çalışma Saatleri</label>
         <input id="siteHours" type="text" placeholder="Pzt-Cum 09:00-19:00" />
       </div>
       <div>
-        <label for="siteIban">Varsayılan IBAN</label>
+        <label for="siteIban">💳 IBAN</label>
         <input id="siteIbanIn" type="text" placeholder="TRxx xxxx xxxx ..." />
       </div>
       <div>
-        <label for="contactBtnText">İletişim Butonu Metni</label>
+        <label for="contactBtnText">✉️ İletişim Butonu</label>
         <input id="contactBtnText" type="text" placeholder="İletişim" />
       </div>
     </div>
-    <div style="display:flex;gap:0.6rem;margin-top:0.6rem;align-items:center;">
+    <div style="display:flex;gap:0.75rem;margin-top:1rem;align-items:center;flex-wrap:wrap;">
       <button id="saveSettings" class="btn">Ayarları Kaydet</button>
-      <label style="display:flex;align-items:center;gap:0.4rem;"><input id="pushSettingsToGithub" type="checkbox" checked /> GitHub'a da kaydet</label>
+      <label style="display:flex;align-items:center;gap:0.5rem;font-weight:500;">
+        <input id="pushSettingsToGithub" type="checkbox" checked /> GitHub'a da kaydet
+      </label>
       <button id="loadDefaultsSettings" class="btn btn-ghost">Varsayılanları Yükle</button>
     </div>
-    <div class="small meta" style="margin-top:0.5rem">Not: Ayarlar önce tarayıcıda (localStorage) saklanır. "GitHub'a da kaydet" seçilirse site-settings.json dosyası depoya gönderilir (serverless/commit-file endpoint gerekir).</div>
+    <div class="small meta" style="margin-top:0.75rem">💾 Ayarlar tarayıcıda saklanır. "GitHub'a da kaydet" seçili ise site-settings.json güncellenir.</div>
   </div>
 
   <div class="card" id="usersCard">
-    <h2>Kayıtlı Kullanıcılar</h2>
-    <div style="margin-bottom:1rem; display:flex; gap:0.5rem; align-items:center;">
-      <button id="loadUsersBtn" class="btn">GitHub'dan Kullanıcıları Yükle</button>
-      <span id="userCount" style="margin-left:1rem; color:#6b7280;"></span>
+    <h2>👥 Kayıtlı Kullanıcılar</h2>
+    <div style="margin-bottom:1rem; display:flex; gap:0.75rem; align-items:center;">
+      <span id="userCount" style="font-weight:600; color:var(--green-dark);"></span>
     </div>
     <div id="usersList" style="max-height:420px; overflow:auto;"></div>
-    <div class="small meta" style="margin-top:0.5rem">Kullanıcı bilgileri GitHub'dan (users/ klasörü) çekilir. Şifreler hash'lenmiş olarak saklanır.</div>
+    <div class="small meta" style="margin-top:0.75rem">📊 Kullanıcı bilgileri GitHub'dan çekilir. Şifreler güvenli şekilde hash'lenmiş.</div>
   </div>
 
   <div class="card" id="ordersCard">
-    <h2>Siparişler (LocalStorage)</h2>
+    <h2>📦 Siparişler</h2>
     <div id="ordersListAdmin" style="max-height:420px; overflow:auto;"></div>
-    <div style="margin-top:0.6rem; display:flex; gap:0.5rem; align-items:center;">
-      <button id="refreshOrders" class="btn btn-ghost">Yenile</button>
-      <button id="pushStatuses" class="btn">Sunucuya Gönder (opsiyonel)</button>
-      <button id="pushOrdersToGithub" class="btn">Siparişleri GitHub'a Kaydet</button>
-      <label style="margin-left:auto;display:flex;align-items:center;gap:0.4rem;"><input id="autoPushStatus" type="checkbox" /> Otomatik push</label>
+    <div style="margin-top:1rem; display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+      <button id="pushStatuses" class="btn">Durumları Güncelle</button>
+      <button id="pushOrdersToGithub" class="btn btn-ghost">GitHub'a Kaydet</button>
+      <label style="margin-left:auto;display:flex;align-items:center;gap:0.4rem;">
+        <input id="autoPushStatus" type="checkbox" /> Otomatik güncelleme
+      </label>
     </div>
     <div class="small meta" style="margin-top:0.5rem">Buradan kullanıcı siparişlerini görebilir, durum atayabilirsiniz. Durum değişikliği localStorage'a kaydedilir; isterseniz serverless endpoint'e bildirilebilir.</div>
   </div>
