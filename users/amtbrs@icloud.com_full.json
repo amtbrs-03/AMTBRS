@@ -1,0 +1,11 @@
+{
+  "name": "ahmet bursa",
+  "email": "amtbrs@icloud.com",
+  "pw": {
+    "algo": "PBKDF2-SHA256",
+    "iterations": 150000,
+    "salt": "qokieZk05lNOhohdZ2LhOA==",
+    "hash": "gExUKLmjOwg+IUqtV1utbt+1mMKvyEjfquGBLB4jiWs="
+  },
+  "createdAt": 1764107716309
+}
