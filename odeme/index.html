@@ -10,6 +10,69 @@
     .iban{font-family:monospace;font-size:1.25rem;margin-top:0.5rem;word-break:break-all}
     .muted{color:#666;margin-top:0.5rem}
     a.btn{display:inline-block;margin-top:1rem;padding:0.6rem 1rem;background:#2563eb;color:#fff;border-radius:8px;text-decoration:none}
+
+    /* Page transition animations */
+    @keyframes pageEnter {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes pageExit {
+      from {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      to {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    body {
+      opacity: 0;
+      animation: pageEnter 0.4s ease-out forwards;
+    }
+
+    body.page-exit {
+      animation: pageExit 0.3s ease-in forwards;
+    }
+
+    .box {
+      opacity: 0;
+      animation: fadeInUp 0.5s ease-out 0.15s forwards;
+    }
+
+    body, .box {
+      will-change: opacity, transform;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      body, .box {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+      }
+      body.page-exit {
+        animation: none !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -44,6 +107,52 @@
   if(!txt || txt==='(IBAN yok)') { console.log('IBAN bulunamadı'); return; }
   navigator.clipboard?.writeText(txt).then(()=>console.log('IBAN kopyalandı: '+txt)).catch(()=>{ console.log('Lütfen kopyalayın: '+txt); });
     });
+
+    /* --- Page transition animations --- */
+    (function(){
+      function handlePageTransition(e) {
+        const link = e.target.closest('a[href]');
+        if (!link) return;
+        
+        const href = link.getAttribute('href');
+        if (!href) return;
+        
+        if (href.startsWith('#') || 
+            href.startsWith('mailto:') || 
+            href.startsWith('tel:') || 
+            href.startsWith('javascript:') ||
+            link.target === '_blank' ||
+            link.hasAttribute('download')) {
+          return;
+        }
+        
+        try {
+          const url = new URL(href, window.location.origin);
+          if (url.origin !== window.location.origin) return;
+        } catch (err) {}
+        
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          return;
+        }
+        
+        e.preventDefault();
+        document.body.classList.add('page-exit');
+        
+        setTimeout(function() {
+          window.location.href = href;
+        }, 300);
+      }
+      
+      document.addEventListener('click', handlePageTransition);
+      
+      window.addEventListener('pageshow', function(e) {
+        if (e.persisted) {
+          document.body.classList.remove('page-exit');
+          document.body.style.opacity = '';
+          document.body.style.animation = 'pageEnter 0.4s ease-out forwards';
+        }
+      });
+    })();
   </script>
 </body>
 </html>

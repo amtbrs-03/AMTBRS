@@ -26,6 +26,78 @@
     .prod-row{display:flex;align-items:center;gap:0.6rem}
     .file-preview{width:72px;height:72px;display:inline-block;vertical-align:middle}
     .small{font-size:0.9rem;color:#475569}
+
+    /* Page transition animations */
+    @keyframes pageEnter {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes pageExit {
+      from {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      to {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    body {
+      opacity: 0;
+      animation: pageEnter 0.4s ease-out forwards;
+    }
+
+    body.page-exit {
+      animation: pageExit 0.3s ease-in forwards;
+    }
+
+    h1 {
+      opacity: 0;
+      animation: fadeInUp 0.5s ease-out 0.1s forwards;
+    }
+
+    .card {
+      opacity: 0;
+      animation: fadeInUp 0.5s ease-out forwards;
+    }
+
+    .card:nth-of-type(1) { animation-delay: 0.15s; }
+    .card:nth-of-type(2) { animation-delay: 0.25s; }
+    .card:nth-of-type(3) { animation-delay: 0.35s; }
+
+    body, h1, .card {
+      will-change: opacity, transform;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      body, h1, .card {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+      }
+      body.page-exit {
+        animation: none !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -413,6 +485,54 @@
       }
 
       render();
+    })();
+  </script>
+
+  <script>
+    /* --- Page transition animations --- */
+    (function(){
+      function handlePageTransition(e) {
+        const link = e.target.closest('a[href]');
+        if (!link) return;
+        
+        const href = link.getAttribute('href');
+        if (!href) return;
+        
+        if (href.startsWith('#') || 
+            href.startsWith('mailto:') || 
+            href.startsWith('tel:') || 
+            href.startsWith('javascript:') ||
+            link.target === '_blank' ||
+            link.hasAttribute('download')) {
+          return;
+        }
+        
+        try {
+          const url = new URL(href, window.location.origin);
+          if (url.origin !== window.location.origin) return;
+        } catch (err) {}
+        
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          return;
+        }
+        
+        e.preventDefault();
+        document.body.classList.add('page-exit');
+        
+        setTimeout(function() {
+          window.location.href = href;
+        }, 300);
+      }
+      
+      document.addEventListener('click', handlePageTransition);
+      
+      window.addEventListener('pageshow', function(e) {
+        if (e.persisted) {
+          document.body.classList.remove('page-exit');
+          document.body.style.opacity = '';
+          document.body.style.animation = 'pageEnter 0.4s ease-out forwards';
+        }
+      });
     })();
   </script>
 </body>
