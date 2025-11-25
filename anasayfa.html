@@ -1157,6 +1157,29 @@
                             return;
                         }
 
+                        // Check if user already exists in localStorage
+                        const existingUser = localStorage.getItem('user_' + email);
+                        if (existingUser) {
+                            alert('Bu email adresi ile zaten bir kayıt bulunmaktadır. Lütfen giriş yapın.');
+                            switchTab('login', document.querySelector('.form-tab'));
+                            document.getElementById('loginEmail').value = email;
+                            return;
+                        }
+
+                        // Check if user exists in remote GitHub storage
+                        console.log('registerUser: Checking if user exists remotely...');
+                        try {
+                            const remoteUser = await fetchUserFromRepo(email);
+                            if (remoteUser) {
+                                alert('Bu email adresi ile zaten bir kayıt bulunmaktadır. Lütfen giriş yapın.');
+                                switchTab('login', document.querySelector('.form-tab'));
+                                document.getElementById('loginEmail').value = email;
+                                return;
+                            }
+                        } catch(e) {
+                            console.log('registerUser: No remote user found, proceeding with registration');
+                        }
+
                         // generate salt
                         const salt = crypto.getRandomValues(new Uint8Array(SALT_BYTES));
                         const hash = await deriveKey(password, salt.buffer, PW_ITERATIONS);
