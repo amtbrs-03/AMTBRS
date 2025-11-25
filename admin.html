@@ -144,6 +144,16 @@
     <div class="small meta" style="margin-top:0.5rem">Not: Ayarlar önce tarayıcıda (localStorage) saklanır. "GitHub'a da kaydet" seçilirse site-settings.json dosyası depoya gönderilir (serverless/commit-file endpoint gerekir).</div>
   </div>
 
+  <div class="card" id="usersCard">
+    <h2>Kayıtlı Kullanıcılar</h2>
+    <div style="margin-bottom:1rem; display:flex; gap:0.5rem; align-items:center;">
+      <button id="loadUsersBtn" class="btn">GitHub'dan Kullanıcıları Yükle</button>
+      <span id="userCount" style="margin-left:1rem; color:#6b7280;"></span>
+    </div>
+    <div id="usersList" style="max-height:420px; overflow:auto;"></div>
+    <div class="small meta" style="margin-top:0.5rem">Kullanıcı bilgileri GitHub'dan (users/ klasörü) çekilir. Şifreler hash'lenmiş olarak saklanır.</div>
+  </div>
+
   <div class="card" id="ordersCard">
     <h2>Siparişler (LocalStorage)</h2>
     <div id="ordersListAdmin" style="max-height:420px; overflow:auto;"></div>
@@ -470,6 +480,97 @@
     }
 
     document.getElementById('runSelfTest').addEventListener('click', ()=>{ runAdminSelfTest(); });
+
+    // Load users from GitHub
+    document.getElementById('loadUsersBtn').addEventListener('click', async ()=>{
+      const btn = document.getElementById('loadUsersBtn');
+      const countEl = document.getElementById('userCount');
+      const listEl = document.getElementById('usersList');
+      
+      btn.textContent = 'Yükleniyor...';
+      btn.disabled = true;
+      listEl.innerHTML = '<p style="color:#6b7280;">Kullanıcılar GitHub\'dan çekiliyor...</p>';
+      
+      try {
+        // Fetch list of user files from GitHub API
+        const owner = 'amtbrs-03';
+        const repo = 'AMTBRS';
+        const branch = 'site-release';
+        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/users?ref=${branch}`;
+        
+        const res = await fetch(apiUrl, {
+          headers: { 'Accept': 'application/vnd.github.v3+json' }
+        });
+        
+        if (!res.ok) {
+          throw new Error(`GitHub API responded with ${res.status}`);
+        }
+        
+        const files = await res.json();
+        const userFiles = files.filter(f => f.name.endsWith('_full.json'));
+        
+        if (userFiles.length === 0) {
+          listEl.innerHTML = '<p style="color:#6b7280;">Henüz kayıtlı kullanıcı yok.</p>';
+          countEl.textContent = '0 kullanıcı';
+          return;
+        }
+        
+        // Fetch each user file
+        const users = [];
+        for (const file of userFiles) {
+          try {
+            const userRes = await fetch(file.download_url);
+            if (userRes.ok) {
+              const userData = await userRes.json();
+              users.push(userData);
+            }
+          } catch(e) {
+            console.error('Failed to load user:', file.name, e);
+          }
+        }
+        
+        // Display users
+        countEl.textContent = `${users.length} kullanıcı`;
+        
+        if (users.length === 0) {
+          listEl.innerHTML = '<p style="color:#6b7280;">Kullanıcı verileri yüklenemedi.</p>';
+          return;
+        }
+        
+        let html = '<table style="width:100%; border-collapse:collapse;">';
+        html += '<thead><tr style="background:#f3f4f6; text-align:left;">';
+        html += '<th style="padding:0.5rem; border:1px solid #e5e7eb;">Ad</th>';
+        html += '<th style="padding:0.5rem; border:1px solid #e5e7eb;">Email</th>';
+        html += '<th style="padding:0.5rem; border:1px solid #e5e7eb;">Kayıt Tarihi</th>';
+        html += '<th style="padding:0.5rem; border:1px solid #e5e7eb;">Son Giriş</th>';
+        html += '</tr></thead><tbody>';
+        
+        users.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        
+        users.forEach(user => {
+          const createdDate = user.createdAt ? new Date(user.createdAt).toLocaleDateString('tr-TR') : '-';
+          const lastLogin = user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('tr-TR') : '-';
+          
+          html += '<tr>';
+          html += `<td style="padding:0.5rem; border:1px solid #e5e7eb;">${escapeHtml(user.name || '-')}</td>`;
+          html += `<td style="padding:0.5rem; border:1px solid #e5e7eb;">${escapeHtml(user.email || '-')}</td>`;
+          html += `<td style="padding:0.5rem; border:1px solid #e5e7eb;">${createdDate}</td>`;
+          html += `<td style="padding:0.5rem; border:1px solid #e5e7eb;">${lastLogin}</td>`;
+          html += '</tr>';
+        });
+        
+        html += '</tbody></table>';
+        listEl.innerHTML = html;
+        
+      } catch(err) {
+        console.error('Failed to load users:', err);
+        listEl.innerHTML = `<p style="color:#e53e3e;">Hata: ${escapeHtml(err.message)}</p>`;
+        countEl.textContent = '';
+      } finally {
+        btn.textContent = 'GitHub\'dan Kullanıcıları Yükle';
+        btn.disabled = false;
+      }
+    });
   </script>
 
   <script>
