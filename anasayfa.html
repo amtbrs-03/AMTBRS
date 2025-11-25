@@ -1374,11 +1374,13 @@
                         console.log('commitFullUserToRepo: Starting for', userRecord.email);
                         
                         // GitHub repository dispatch için token gerekli
-                        // Not: Bu token'ı güvenli bir şekilde saklamanız önerilir
-                        const GITHUB_TOKEN = localStorage.getItem('github_token') || 'GITHUB_TOKEN_BURAYA';
+                        // Token'ı tarayıcı konsolunda şu komutla kaydedebilirsiniz:
+                        // localStorage.setItem('github_token', 'ghp_YOUR_TOKEN_HERE')
+                        const GITHUB_TOKEN = localStorage.getItem('github_token');
                         
-                        if (GITHUB_TOKEN === 'GITHUB_TOKEN_BURAYA') {
+                        if (!GITHUB_TOKEN) {
                             console.warn('commitFullUserToRepo: GitHub token not configured. Using localStorage only.');
+                            console.warn('To enable cross-device login, set token: localStorage.setItem("github_token", "ghp_YOUR_TOKEN")');
                             return false;
                         }
                         
