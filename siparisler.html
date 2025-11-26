@@ -413,7 +413,7 @@
       html += '<th>💰 Toplam</th>';
       html += '<th>📅 Tarih</th>';
       html += '<th>📊 Durum</th>';
-      html += '<th>🏦 IBAN</th>';
+      html += '<th>📍 Adres</th>';
       html += '</tr></thead><tbody>';
       
       orders.forEach(order => {
@@ -439,10 +439,11 @@
         const statusInfo = statusMap[order.status] || statusMap['pending'];
         const statusBadge = `<span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>`;
         
-        // IBAN (last 4 digits)
-        const ibanDisplay = order.iban 
-          ? '...' + order.iban.slice(-4)
-          : '-';
+        // Address display (shortened if too long)
+        const addressText = order.address || '-';
+        const addressShort = addressText.length > 50 
+          ? addressText.substring(0, 47) + '...' 
+          : addressText;
         
         html += '<tr>';
         html += `<td style="font-weight:600;color:var(--green-dark);">${escapeHtml(order.id || '-')}</td>`;
@@ -452,7 +453,7 @@
         html += `<td style="font-weight:600;">₺${escapeHtml(order.total || '0')}</td>`;
         html += `<td style="color:var(--muted);">${orderDate}</td>`;
         html += `<td>${statusBadge}</td>`;
-        html += `<td style="font-family:monospace;color:var(--muted);">${escapeHtml(ibanDisplay)}</td>`;
+        html += `<td style="color:var(--muted);" title="${escapeHtml(addressText)}">${escapeHtml(addressShort)}</td>`;
         html += '</tr>';
       });
       
