@@ -389,7 +389,7 @@
         }
         
         // Fetch each order file
-        orders.forEach(order => {
+        ordersData = [];
         for (const file of orderFiles) {
           try {
             console.log('Fetching order:', file.name);
@@ -401,8 +401,8 @@
             } else {
               console.error('Failed to fetch order file:', file.name, orderRes.status);
             }
-          const itemsText = (order.items || [])
-            .map(item => `${cleanText(item.name)} x${item.qty}`)
+          } catch(fileErr) {
+            console.error('Error processing order file:', file.name, fileErr);
           }
         }
         
@@ -413,10 +413,10 @@
         }
         
         console.log('Total orders loaded:', ordersData.length);
-          const cleanAddress = cleanText(order.address);
         
         // Render table
         renderOrdersTable(ordersData);
+        updateStats(ordersData);
         
         // Update last update time
         const now = new Date().toLocaleString('tr-TR', {
@@ -424,8 +424,8 @@
           month:'2-digit', 
           year:'numeric', 
           hour:'2-digit', 
-          html += `<td style="font-weight:600;color:var(--green-dark);">${escapeHtml(order.id || '-')}</td>`;
-          html += `<td style="font-weight:500;">${escapeHtml(cleanText(order.customerName) || '-')}</td>`;
+          minute:'2-digit'
+        });
         document.getElementById('lastUpdate').textContent = `Son güncelleme: ${now}`;
         
       } catch(err) {
