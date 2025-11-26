@@ -195,6 +195,17 @@
       background:#f0fdf4;
       transform:scale(1.01);
     }
+    
+    /* Faturası oluşan siparişler için soluk stil */
+    #ordersTable tbody tr.has-invoice{
+      opacity:0.5;
+      background:#f5f5f5;
+    }
+    
+    #ordersTable tbody tr.has-invoice:hover{
+      opacity:0.6;
+      background:#e8e8e8;
+    }
 
     .status-badge{
       display:inline-block;
@@ -453,7 +464,11 @@
           ? addressText.substring(0, 47) + '...' 
           : addressText;
         
-        html += '<tr style="cursor:pointer;transition:all 0.2s ease;" onclick="window.location.href=\'siparis-detay.html?id=' + encodeURIComponent(order.id) + '\'">';
+        // Check if order has invoice (status is 'ready' means invoice was created)
+        const hasInvoice = order.status === 'ready' || order.hasInvoice;
+        const rowClass = hasInvoice ? 'has-invoice' : '';
+        
+        html += '<tr class="' + rowClass + '" style="cursor:pointer;transition:all 0.2s ease;" onclick="window.location.href=\'siparis-detay.html?id=' + encodeURIComponent(order.id) + '\'">';
         html += `<td style="font-weight:600;color:var(--green-dark);">${escapeHtml(order.id || '-')}</td>`;
         html += `<td style="font-weight:500;">${escapeHtml(order.customerName || '-')}</td>`;
         html += `<td style="color:var(--muted);">${escapeHtml(order.customerEmail || '-')}</td>`;
