@@ -2758,6 +2758,36 @@
                         }
                     })();
 
+                    // Admin panel secret access: triple click on auth button
+                    (function() {
+                        let clickCount = 0;
+                        let clickTimer = null;
+                        
+                        const authBtn = document.getElementById('authBtn');
+                        if (authBtn) {
+                            authBtn.addEventListener('click', function(e) {
+                                clickCount++;
+                                
+                                if (clickCount === 3) {
+                                    // Triple click detected - open admin panel
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    console.log('🔐 Admin panel erişimi açılıyor...');
+                                    window.location.href = 'admin.html';
+                                    clickCount = 0;
+                                    if (clickTimer) clearTimeout(clickTimer);
+                                    return;
+                                }
+                                
+                                // Reset counter after 1 second
+                                if (clickTimer) clearTimeout(clickTimer);
+                                clickTimer = setTimeout(() => {
+                                    clickCount = 0;
+                                }, 1000);
+                            }, true); // Use capture phase to intercept before other handlers
+                        }
+                    })();
+
     </script>
 </body>
 </html>
