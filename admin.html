@@ -661,7 +661,14 @@
           console.log('Expected hash:', adminData.passwordHash);
           
           // Check credentials - only password check, no email required
+          const failKey = 'admin_failed_attempts';
+          async function incrementAdminFail(){
+            let a = parseInt(localStorage.getItem(failKey) || '0',10) || 0; a += 1; localStorage.setItem(failKey, String(a)); return a;
+          }
+
           if (h === adminData.passwordHash) {
+            // clear failed attempts
+            localStorage.removeItem(failKey);
             // Cache to localStorage
             localStorage.setItem(AUTH_KEY, adminData.passwordHash);
             localStorage.setItem(ADMIN_USER_KEY, adminData.user || 'admin');
@@ -674,7 +681,38 @@
             authContent.innerHTML = '<div style="color:green">Giriş başarılı — yönetici arayüzü yükleniyor...</div>';
             setTimeout(()=>{ renderAuth(); renderAdmin(); }, 400);
           } else {
-            alert('Email veya şifre yanlış');
+            // increment failures and if >=3 offer reset
+            const attempts = await incrementAdminFail();
+            if (attempts >= 3) {
+              localStorage.removeItem(failKey);
+              // offer reset via token-based flow
+              const go = confirm('Parola 3 kez yanlış girildi. Parolayı sıfırlamak ister misiniz? (GitHub token gerekecek)');
+              if (!go) return;
+              // ask for token and new password
+              const token = prompt('Lütfen GitHub personal access token (repo:contents izinli) girin:');
+              if (!token) return alert('Token gerekli. Sıfırlama iptal edildi.');
+              const np1 = prompt('Yeni parolayı girin:');
+              const np2 = prompt('Yeni parolayı tekrar girin:');
+              if (!np1 || np1 !== np2) return alert('Parolalar eşleşmiyor veya boş.');
+              try {
+                const newHash = await hashPassword(np1);
+                const adminPayload = { user: adminData.user || 'admin', passwordHash: newHash, createdAt: Date.now() };
+                // Temporarily set token in localStorage so saveAdminToGitHub uses it
+                const hadToken = !!localStorage.getItem('github_token');
+                const prevToken = localStorage.getItem('github_token');
+                localStorage.setItem('github_token', token);
+                const res = await saveAdminToGitHub(adminPayload);
+                if (!hadToken) { localStorage.removeItem('github_token'); } else { localStorage.setItem('github_token', prevToken); }
+                if (res && res.ok) {
+                  alert('Parola sıfırlandı ve GitHub\'a kaydedildi. Lütfen yeni parolayla giriş yapın.');
+                } else {
+                  alert('Sıfırlama başarısız: ' + (res && res.error ? res.error : 'Bilinmeyen hata'));
+                }
+              } catch(err){ console.error('admin reset error', err); alert('Sıfırlama sırasında hata: ' + (err && err.message)); }
+              return;
+            } else {
+              alert('Email veya şifre yanlış (' + attempts + '/3)');
+            }
           }
         };
       }

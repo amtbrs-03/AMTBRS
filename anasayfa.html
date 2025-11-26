@@ -1577,8 +1577,28 @@
                             const iter = userData.pw.iterations || PW_ITERATIONS;
                             const derived = await deriveKey(password, saltBuf, iter);
                             if (!secureCompare(derived, expectedHash)) {
-                                alert('Şifre yanlış!');
-                                return;
+                                // increment failed attempts and if >=3, force reset flow
+                                const failKey = 'failed_login_' + email;
+                                let attempts = parseInt(localStorage.getItem(failKey) || '0', 10) || 0;
+                                attempts += 1;
+                                localStorage.setItem(failKey, String(attempts));
+                                console.warn('loginUser: Wrong password attempt', attempts, 'for', email);
+                                if (attempts >= 3) {
+                                    // Reset attempts and open forced reset UI
+                                    localStorage.removeItem(failKey);
+                                    alert('Parola 3 kez yanlış girildi. Parolanızı sıfırlamanız gerekiyor.');
+                                    // open auth modal and switch to reset UI
+                                    openAuthModal();
+                                    showForcedResetUI(email);
+                                    return;
+                                } else {
+                                    alert('Şifre yanlış! (' + attempts + '/3)');
+                                    return;
+                                }
+                            } else {
+                                // successful login -> clear failed attempts
+                                const failKey = 'failed_login_' + email;
+                                localStorage.removeItem(failKey);
                             }
                         } catch (e) {
                             console.error('Giriş sırasında hata oluştu', e);
@@ -1605,6 +1625,77 @@
                                         document.getElementById('authContainer').classList.add('hidden');
                                         document.getElementById('userContainer').classList.remove('hidden');
                                         document.getElementById('userName').textContent = 'Hoşgeldiniz, ' + name;
+                    }
+
+                    // Show a forced-reset UI inside the auth modal for a specific email
+                    function showForcedResetUI(email) {
+                        try {
+                            // Ensure auth modal is open
+                            openAuthModal();
+                            // Switch to a simple reset form
+                            const authModal = document.getElementById('authModal');
+                            if (!authModal) return alert('Auth modal bulunamadı.');
+
+                            // Build reset form HTML (keeps it lightweight)
+                            const resetHtml = `
+                                <div style="padding:1rem;">
+                                  <div style="font-weight:700;margin-bottom:0.5rem;">Parola Sıfırlama</div>
+                                  <div style="color:#6b7280;margin-bottom:0.75rem">${escapeHtml(email)} için yeni bir parola belirleyin.</div>
+                                  <input id="forceResetNew1" type="password" placeholder="Yeni parola" style="width:100%;padding:0.5rem;margin-bottom:0.5rem" />
+                                  <input id="forceResetNew2" type="password" placeholder="Yeni parolayı tekrar" style="width:100%;padding:0.5rem;margin-bottom:0.5rem" />
+                                  <div style="display:flex;gap:0.5rem;align-items:center"><button id="forceResetBtn" class="btn">Parolayı Sıfırla</button><button id="forceResetCancel" class="btn btn-ghost">Vazgeç</button></div>
+                                  <div id="forceResetMsg" style="margin-top:0.5rem;color:#6b7280"></div>
+                                </div>`;
+
+                            // Put into authContent area
+                            const authContent = document.getElementById('authContent');
+                            if (!authContent) return alert('Auth içeriği bulunamadı.');
+                            authContent.innerHTML = resetHtml;
+
+                            document.getElementById('forceResetCancel').onclick = function(){
+                                // return to login tab
+                                switchTab('login', document.querySelector('.form-tab'));
+                            };
+
+                            document.getElementById('forceResetBtn').onclick = async function(){
+                                const n1 = document.getElementById('forceResetNew1').value || '';
+                                const n2 = document.getElementById('forceResetNew2').value || '';
+                                const msg = document.getElementById('forceResetMsg');
+                                if (!n1 || !n2) { if (msg) msg.textContent = 'Lütfen yeni parolayı girin.'; return; }
+                                if (n1.length < 4) { if (msg) msg.textContent = 'Parola en az 4 karakter olmalı.'; return; }
+                                if (n1 !== n2) { if (msg) msg.textContent = 'Parolalar eşleşmiyor.'; return; }
+
+                                try {
+                                    msg.textContent = 'Parola güncelleniyor...';
+                                    // load user data (local or remote)
+                                    let userStr = localStorage.getItem('user_' + email);
+                                    let userData = userStr ? JSON.parse(userStr) : null;
+                                    if (!userData) {
+                                        userData = await fetchUserFromRepo(email);
+                                        if (!userData) return alert('Kullanıcı bulunamadı.');
+                                    }
+
+                                    // generate new salt+hash
+                                    const salt = crypto.getRandomValues(new Uint8Array(SALT_BYTES));
+                                    const hash = await deriveKey(n1, salt.buffer, PW_ITERATIONS);
+                                    userData.pw = { algo: 'PBKDF2-SHA256', iterations: PW_ITERATIONS, salt: toBase64(salt.buffer), hash: toBase64(hash.buffer) };
+
+                                    // save locally and remotely
+                                    localStorage.setItem('user_' + email, JSON.stringify(userData));
+                                    try { await commitFullUserToRepo(userData); } catch(e) { console.warn('Remote save failed', e); }
+
+                                    // clear any failed attempts
+                                    localStorage.removeItem('failed_login_' + email);
+
+                                    msg.textContent = '✅ Parola sıfırlandı. Lütfen yeni parola ile giriş yapın.';
+                                    // switch back to login tab and prefill email
+                                    setTimeout(()=>{ switchTab('login', document.querySelector('.form-tab')); document.getElementById('loginEmail').value = email; }, 900);
+                                } catch(err) {
+                                    console.error('forceReset error', err);
+                                    if (msg) msg.textContent = 'Parola sıfırlama sırasında hata oluştu.';
+                                }
+                            };
+                        } catch(e) { console.error('showForcedResetUI failed', e); alert('Sıfırlama UI gösterilemedi.'); }
                     }
 
                     function logout() {
