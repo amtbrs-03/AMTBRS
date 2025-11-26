@@ -304,6 +304,13 @@
     .modal-body {
       margin-bottom: 1rem;
     }
+
+    /* Small detail modal variant */
+    .modal-content.small-modal { max-width: 560px; }
+    .kv { display:flex; gap:0.5rem; margin:0.25rem 0; align-items:flex-start; }
+    .kv b { min-width: 140px; color:#0f172a; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.9rem; }
+    .wrap { word-break: break-word; overflow-wrap: anywhere; }
   </style>
 
 </head>
@@ -1222,6 +1229,9 @@
           }catch(_){ return ''; }
         };
 
+        // Cache users for detail popover
+        window.__adminUsersCache = users.slice();
+
         let html = '<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.1); border-radius:8px; overflow:hidden;">';
         html += '<thead><tr style="background:linear-gradient(135deg, var(--green-primary), var(--green-dark)); color:white; text-align:left;">';
         html += '<th style="padding:0.75rem 1rem; font-weight:600; border-bottom:2px solid rgba(255,255,255,0.2);">👤 Ad</th>';
@@ -1239,7 +1249,7 @@
           const lastLogin = user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('tr-TR', {day:'2-digit', month:'2-digit', year:'numeric'}) : '-';
           const rowBg = idx % 2 === 0 ? '#f9fafb' : '#ffffff';
           
-          html += `<tr style="background:${rowBg}; transition:all 0.2s ease;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='${rowBg}'">`;
+          html += `<tr style="background:${rowBg}; transition:all 0.2s ease; cursor:pointer;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='${rowBg}'" onclick="openUserDetail(${idx})">`;
           html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; font-weight:500;">${escapeHtml(user.name || '-')}</td>`;
           html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; color:#6b7280;">${escapeHtml(user.email || '-')}</td>`;
           const addr = formatUserAddress(user);
@@ -1248,7 +1258,7 @@
           html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; color:#6b7280;">${createdDate}</td>`;
           html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; color:#6b7280;">${lastLogin}</td>`;
           html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; text-align:center;">`;
-          html += `<button onclick="deleteUser('${escapeHtml(user.email)}', '${escapeHtml(user.name || 'Kullanıcı')}', this)" style="background:#ef4444; color:white; border:none; padding:0.4rem 0.8rem; border-radius:6px; cursor:pointer; font-size:0.85rem; transition:all 0.2s;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">🗑️ Sil</button>`;
+          html += `<button onclick="event.stopPropagation(); deleteUser('${escapeHtml(user.email)}', '${escapeHtml(user.name || 'Kullanıcı')}', this)" style="background:#ef4444; color:white; border:none; padding:0.4rem 0.8rem; border-radius:6px; cursor:pointer; font-size:0.85rem; transition:all 0.2s;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">🗑️ Sil</button>`;
           html += `</td>`;
           html += '</tr>';
         });
@@ -1702,6 +1712,19 @@
     </div>
   </div>
 
+  <!-- User Detail Modal (small) -->
+  <div id="userDetailModal" class="modal" aria-hidden="true">
+    <div class="modal-content small-modal">
+      <div class="modal-header">
+        <h2>👤 Kullanıcı Detayı</h2>
+        <button class="close-modal" onclick="closeUserDetailModal()">✕ Kapat</button>
+      </div>
+      <div id="userDetailBody" class="modal-body">
+        <!-- Filled dynamically -->
+      </div>
+    </div>
+  </div>
+
   <script>
     // Modal functions (orders modal removed - now on separate page)
     function openUsersModal() {
@@ -1713,12 +1736,92 @@
       document.getElementById('usersModal').classList.remove('active');
       document.body.style.overflow = 'auto';
     }
+
+    function openUserDetail(idx){
+      try{
+        const users = window.__adminUsersCache || [];
+        const u = users[idx];
+        if (!u) return;
+        const body = document.getElementById('userDetailBody');
+
+        // Local helpers
+        const fmtDate = (ms)=> ms ? new Date(ms).toLocaleString('tr-TR') : '-';
+        const fmtAddr = (userObj)=>{
+          try{
+            let s = '';
+            if (Array.isArray(userObj.addresses) && userObj.addresses.length) {
+              const def = userObj.addresses.find(a=>a && a.default) || userObj.addresses[0];
+              if (def && typeof def === 'object') {
+                const parts = [def.addressDetail, def.neighborhood, def.district, def.city, def.postalCode ? ('PK: ' + def.postalCode) : ''].filter(Boolean);
+                s = parts.join(', ');
+              } else if (typeof def === 'string') {
+                s = def;
+              }
+            } else if (userObj.address && typeof userObj.address === 'object') {
+              const a = userObj.address;
+              const parts = [a.addressDetail, a.neighborhood, a.district, a.city, a.postalCode ? ('PK: ' + a.postalCode) : ''].filter(Boolean);
+              s = parts.join(', ');
+            } else if (typeof userObj.address === 'string') {
+              s = userObj.address;
+            }
+            s = String(s||'');
+            try{ if (/%[0-9A-Fa-f]{2}/.test(s) || s.includes('+')) s = decodeURIComponent(s.replace(/\+/g,' ')); }catch(_){}
+            try{ const ta = document.createElement('textarea'); ta.innerHTML = s; s = ta.value; }catch(_){}
+            return s.replace(/\s+/g,' ').trim();
+          }catch(_){ return ''; }
+        };
+
+        const addressText = fmtAddr(u) || '-';
+        const created = fmtDate(u.createdAt);
+        const lastLogin = fmtDate(u.lastLogin);
+
+        let html = '';
+        html += `<div class="kv"><b>Ad:</b><span class="wrap">${escapeHtml(u.name||'-')}</span></div>`;
+        html += `<div class="kv"><b>Email:</b><span class="wrap">${escapeHtml(u.email||'-')}</span></div>`;
+        html += `<div class="kv"><b>Kayıt Tarihi:</b><span>${escapeHtml(created)}</span></div>`;
+        html += `<div class="kv"><b>Son Giriş:</b><span>${escapeHtml(lastLogin)}</span></div>`;
+        html += `<div class="kv"><b>Adres(ler):</b><span class="wrap">${escapeHtml(addressText)}</span></div>`;
+
+        // Show detailed addresses array if exists
+        if (Array.isArray(u.addresses) && u.addresses.length){
+          html += '<div class="kv"><b>Adres Listesi:</b><span class="wrap">';
+          html += '<ul style="margin:0.25rem 0 0 1rem; padding:0;">'
+          + u.addresses.map((a,i)=>{
+              if (a && typeof a === 'object'){
+                const parts = [a.addressDetail,a.neighborhood,a.district,a.city,a.postalCode?('PK: '+a.postalCode):''].filter(Boolean).join(', ');
+                const label = a.default ? ' (varsayılan)' : '';
+                return `<li>${escapeHtml(parts||'-')}${label}</li>`;
+              }
+              return `<li>${escapeHtml(String(a||'-'))}</li>`;
+            }).join('') + '</ul></span></div>';
+        }
+
+        // Raw JSON for reference
+        html += '<details style="margin-top:0.75rem">\n<summary class="mono">Ham JSON</summary>\n'
+             + `<pre class="mono" style="white-space:pre-wrap; background:#f8fafc; padding:0.75rem; border-radius:8px; border:1px solid #e5e7eb;">${escapeHtml(JSON.stringify(u, null, 2))}</pre>`
+             + '</details>';
+
+        body.innerHTML = html;
+        document.getElementById('userDetailModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+      }catch(e){ console.error('openUserDetail error', e); }
+    }
+
+    function closeUserDetailModal(){
+      document.getElementById('userDetailModal').classList.remove('active');
+      document.body.style.overflow = 'auto';
+    }
     
     // Close modal when clicking outside (only users modal now)
     document.getElementById('usersModal').addEventListener('click', function(e) {
       if (e.target === this) {
         closeUsersModal();
       }
+    });
+
+    // Close user detail when clicking outside
+    document.getElementById('userDetailModal').addEventListener('click', function(e){
+      if (e.target === this) closeUserDetailModal();
     });
     
     // Close modal with ESC key (only users modal now)
@@ -1727,6 +1830,10 @@
         const usersModal = document.getElementById('usersModal');
         if (usersModal.classList.contains('active')) {
           closeUsersModal();
+        }
+        const userDetail = document.getElementById('userDetailModal');
+        if (userDetail.classList.contains('active')) {
+          closeUserDetailModal();
         }
       }
     });
