@@ -281,7 +281,10 @@
 
   <script>
     function escapeHtml(s){ 
-      return (s||'').replace(/[&<>\"']/g, function(m){
+      if (typeof s !== 'string') {
+        s = String(s || '');
+      }
+      return s.replace(/[&<>\"']/g, function(m){
         return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]
       }) 
     }
