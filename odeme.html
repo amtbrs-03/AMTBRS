@@ -28,11 +28,11 @@
   <script>
     console.log('=== ÖDEME SAYFASI AÇILDI ===');
     console.log('URL:', window.location.href);
-    console.log('localStorage keys:', Object.keys(localStorage));
+    console.log('localStorage anahtarları:', Object.keys(localStorage));
     
     // Check currentUser
     const currentUser = (function(){ try{ const c = localStorage.getItem('currentUser'); return c?JSON.parse(c):null }catch(e){return null} })();
-    console.log('currentUser from localStorage:', currentUser);
+    console.log('localStorage\'dan currentUser:', currentUser);
     
     // Check all cart_ keys
     const cartKeys = [];
@@ -40,18 +40,18 @@
       const k = localStorage.key(i);
       if (k && k.indexOf('cart_') === 0) {
         cartKeys.push(k);
-        console.log('Found cart key:', k, '-> value:', localStorage.getItem(k));
+        console.log('Sepet anahtarı bulundu:', k, '-> değer:', localStorage.getItem(k));
       }
     }
-    console.log('All cart keys:', cartKeys);
+    console.log('Tüm sepet anahtarları:', cartKeys);
     
     function qs(key){
       try{const u=new URL(location.href); return u.searchParams.get(key);}catch(e){return null}
     }
     const iban = qs('iban') || qs('IBAN') || '';
     const total = qs('total') || qs('amount') || '';
-    console.log('IBAN from URL:', iban);
-    console.log('Total from URL:', total);
+    console.log('URL\'den IBAN:', iban);
+    console.log('URL\'den Toplam:', total);
     
     if(iban){
       document.getElementById('iban').textContent = iban;
@@ -93,9 +93,9 @@
       const payerEmail = current && current.email ? current.email : null;
       const payerName = current && current.name ? current.name : 'Misafir';
       
-      console.log('Current user:', current);
-      console.log('Payer email:', payerEmail);
-      console.log('Payer name:', payerName);
+      console.log('Geçerli kullanıcı:', current);
+      console.log('Ödeyen e-posta:', payerEmail);
+      console.log('Ödeyen isim:', payerName);
       
       // Get cart - try logged in user first, then any cart_* key
       let cart = [];
@@ -104,29 +104,29 @@
         if (payerEmail) {
           // Logged in user
           cartKey = 'cart_' + payerEmail;
-          console.log('Looking for cart key:', cartKey);
+          console.log('Sepet anahtarı aranıyor:', cartKey);
           cart = JSON.parse(localStorage.getItem(cartKey) || '[]');
-          console.log('Cart loaded for user:', cart);
+          console.log('Kullanıcı için sepet yüklendi:', cart);
         } else {
           // Guest - find any cart_* key
-          console.log('No user found, looking for any cart_* key...');
+          console.log('Kullanıcı bulunamadı, herhangi bir cart_* anahtarı aranıyor...');
           for (let i = 0; i < localStorage.length; i++) {
             const k = localStorage.key(i);
-            console.log('Checking key:', k);
+            console.log('Anahtar kontrol ediliyor:', k);
             if (k && k.indexOf('cart_') === 0) {
               cartKey = k;
               cart = JSON.parse(localStorage.getItem(k) || '[]');
-              console.log('Found cart key:', k, 'with items:', cart);
+              console.log('Sepet anahtarı bulundu:', k, 'öğeler:', cart);
               break;
             }
           }
         }
       } catch(e) {
-        console.error('Cart load error:', e);
+        console.error('Sepet yükleme hatası:', e);
       }
       
-      console.log('Final cart:', cart);
-      console.log('Cart length:', cart ? cart.length : 0);
+      console.log('Nihai sepet:', cart);
+      console.log('Sepet uzunluğu:', cart ? cart.length : 0);
       
       if(!cart || cart.length === 0){
         alert('Sepetiniz boş!');
@@ -150,7 +150,7 @@
         status: 'pending'
       };
 
-      console.log('Order created:', order);
+      console.log('Sipariş oluşturuldu:', order);
 
       try {
         // Save to GitHub via repository_dispatch
@@ -159,7 +159,7 @@
         const repo = 'AMTBRS';
         const apiUrl = `https://api.github.com/repos/${owner}/${repo}/dispatches`;
         
-        console.log('Sending to GitHub:', apiUrl);
+        console.log('GitHub\'a gönderiliyor:', apiUrl);
         
         const response = await fetch(apiUrl, {
           method: 'POST',
@@ -176,7 +176,7 @@
           })
         });
 
-        console.log('GitHub response:', response.status, response.statusText);
+        console.log('GitHub yanıtı:', response.status, response.statusText);
 
         if (response.status === 204 || response.ok) {
           // Save to localStorage as backup
@@ -205,11 +205,11 @@
           setTimeout(() => { window.location.href = '/anasayfa.html'; }, 1500);
         } else {
           const errorText = await response.text().catch(() => 'Bilinmeyen hata');
-          console.error('GitHub API error:', response.status, errorText);
+          console.error('GitHub API hatası:', response.status, errorText);
           throw new Error(`GitHub API yanıt vermedi: ${response.status} - ${errorText}`);
         }
       } catch(err) {
-        console.error('Order save failed:', err);
+        console.error('Sipariş kaydı başarısız:', err);
         alert('❌ Sipariş kaydedilemedi: ' + err.message + '\n\nLütfen tekrar deneyin veya iletişime geçin.');
         btn.textContent = 'Siparişi Bildir';
         btn.disabled = false;

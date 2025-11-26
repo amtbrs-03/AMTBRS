@@ -410,7 +410,7 @@
         try {
           token = decodeToken(encoded, key);
         } catch(e) {
-          console.error('Failed to decode GitHub token');
+          console.error('GitHub token çözümlenemedi');
         }
       }
       return token;
@@ -420,7 +420,7 @@
     async function pushToGitHub(data, message) {
       const token = getGitHubToken();
       if (!token) {
-        console.error('No GitHub token available');
+        console.error('Kullanılabilir GitHub token yok');
         return { ok: false, error: 'Token not configured' };
       }
 
@@ -432,7 +432,7 @@
         event_type: 'update-products',
         client_payload: {
           data: JSON.stringify(data),
-          message: message || 'Admin: update via admin panel'
+          message: message || 'Admin: admin panelinden güncelle'
         }
       };
 
@@ -523,62 +523,62 @@
         `https://cdn.jsdelivr.net/gh/amtbrs-03/AMTBRS@site-release/admin-config.json`,
       ];
 
-      console.log('🔍 Attempting to fetch admin config from GitHub (raw/cdn first, then API)...');
+      console.log('🔍 Admin yapılandırması GitHub’dan çekiliyor (önce raw/CDN, sonra API)...');
 
       // Try raw and CDN first (simple JSON)
       for (let url of urls) {
         try {
-          console.log('Trying URL:', url);
+          console.log('Deneme URL’si:', url);
           const res = await fetch(url, { cache: 'no-store' });
-          console.log('Response status:', res.status, res.statusText);
+          console.log('Yanıt durumu:', res.status, res.statusText);
 
           if (res.ok) {
             try {
               const data = await res.json();
-              console.log('✅ Admin config fetched successfully (raw/cdn):', data);
+              console.log('✅ Admin yapılandırması başarıyla alındı (raw/CDN):', data);
               return data;
             } catch (parseErr) {
-              console.warn('⚠️ Fetched content but JSON.parse failed for', url, parseErr.message);
+              console.warn('⚠️ İçerik alındı ancak JSON.parse başarısız oldu:', url, parseErr.message);
               // continue to next fallback
             }
           } else {
-            console.warn('❌ Failed to fetch from:', url, 'Status:', res.status);
+            console.warn('❌ Buradan alınamadı:', url, 'Durum:', res.status);
           }
         } catch (e) {
-          console.error('❌ Exception fetching from:', url, 'Error:', e && e.message ? e.message : e);
+          console.error('❌ Çekme sırasında istisna:', url, 'Hata:', e && e.message ? e.message : e);
         }
       }
 
       // Fallback: use GitHub Contents API to retrieve file and decode base64
       try {
         const apiUrl = `https://api.github.com/repos/amtbrs-03/AMTBRS/contents/admin-config.json?ref=site-release`;
-        console.log('Trying GitHub Contents API fallback:', apiUrl);
+        console.log('GitHub Contents API yedeği deneniyor:', apiUrl);
         const apiRes = await fetch(apiUrl, { headers: { 'Accept': 'application/vnd.github.v3+json' } });
-        console.log('API response status:', apiRes.status, apiRes.statusText);
+        console.log('API yanıt durumu:', apiRes.status, apiRes.statusText);
         if (apiRes.ok) {
           const apiData = await apiRes.json();
           if (apiData && apiData.content) {
             try {
               const decoded = atob(apiData.content.replace(/\n/g, ''));
               const parsed = JSON.parse(decoded);
-              console.log('✅ Admin config fetched via API and decoded:', parsed);
+              console.log('✅ Admin yapılandırması API ile alındı ve çözüldü:', parsed);
               return parsed;
             } catch (e) {
-              console.error('❌ Failed to decode/parse admin-config from API content:', e.message);
+              console.error('❌ API içeriğinden admin-config çözümlenemedi/parse edilemedi:', e.message);
             }
           } else {
-            console.warn('⚠️ API returned no content for admin-config.json', apiData);
+            console.warn('⚠️ API admin-config.json için içerik döndürmedi', apiData);
           }
         } else {
-          console.warn('❌ GitHub Contents API fetch failed:', apiRes.status, apiRes.statusText);
+          console.warn('❌ GitHub Contents API çekimi başarısız:', apiRes.status, apiRes.statusText);
           const txt = await apiRes.text().catch(()=>'');
-          console.warn('API response body:', txt);
+          console.warn('API yanıt gövdesi:', txt);
         }
       } catch (e) {
-        console.error('❌ Exception while fetching admin-config via API:', e && e.message ? e.message : e);
+        console.error('❌ API ile admin-config çekilirken istisna:', e && e.message ? e.message : e);
       }
 
-      console.error('❌ All admin config fetch attempts failed. Returning null.');
+      console.error('❌ Tüm admin yapılandırma çekme denemeleri başarısız. null dönülüyor.');
       return null;
     }
 
@@ -662,10 +662,10 @@
           const h = await hashPassword(pw);
           
           // Always fetch from GitHub first
-          console.log('🔑 Fetching admin credentials from GitHub...');
+          console.log('🔑 Admin bilgileri GitHub’dan çekiliyor...');
           const adminData = await fetchAdminFromGitHub();
           
-          console.log('Admin data received:', adminData);
+          console.log('Admin verisi alındı:', adminData);
           
           if (!adminData) {
             alert('❌ Admin bilgileri GitHub\'dan alınamadı.\n\nLütfen:\n1. İnternet bağlantınızı kontrol edin\n2. Console\'u açıp hata detaylarını inceleyin (F12)\n3. Tekrar deneyin');
@@ -674,13 +674,13 @@
           
           if (!adminData.passwordHash) {
             alert('❌ Admin config dosyası geçersiz (passwordHash eksik).\n\nConsole\'u kontrol edin.');
-            console.error('Invalid admin config:', adminData);
+            console.error('Geçersiz admin yapılandırması:', adminData);
             return;
           }
           
-          console.log('Checking password...');
-          console.log('Entered hash:', h);
-          console.log('Expected hash:', adminData.passwordHash);
+          console.log('Parola kontrol ediliyor...');
+          console.log('Girilen özet:', h);
+          console.log('Beklenen özet:', adminData.passwordHash);
           
           // Check credentials - only password check, no email required
           const failKey = 'admin_failed_attempts';
@@ -714,7 +714,7 @@
                 const msgEl = document.getElementById('modal_tokenMsg');
                 if (msgEl) msgEl.textContent = 'Parola 3 kez yanlış girildi. Aşağıdaki bölümden GitHub token kullanarak parolayı sıfırlayın. (Güvenli ortamda token girin)';
                 const tokenInput = document.getElementById('modal_token'); if (tokenInput) tokenInput.focus();
-              }catch(e){ console.warn('Could not focus modal token input', e); }
+              }catch(e){ console.warn('Modal token alanına odaklanılamadı', e); }
               return;
             } else {
               alert('Email veya şifre yanlış (' + attempts + '/3)');
@@ -794,7 +794,7 @@
             wrapper.innerHTML = pwCardHtml;
             adminUI.appendChild(wrapper.firstElementChild);
           }
-        } catch(e) { console.error('Render admin pw UI failed', e); }
+        } catch(e) { console.error('Admin parola arayüzü oluşturulamadı', e); }
 
         // Attach handlers
         const changeBtn = document.getElementById('changePwBtn');
@@ -840,7 +840,7 @@
               showMessage('Parola GitHub\'a kaydedilemedi: ' + (res && res.error ? res.error : ''), true);
             }
           } catch(err) {
-            console.error('changeAdminPassword error', err);
+            console.error('changeAdminPassword hatası', err);
             showMessage('Hata: ' + (err.message || err), true);
           }
         }
@@ -873,7 +873,7 @@
               showMessage('Sıfırlama başarısız: ' + (res && res.error ? res.error : ''), true);
             }
           } catch(err) {
-            console.error('resetAdminPassword error', err);
+            console.error('resetAdminPassword hatası', err);
             showMessage('Hata: ' + (err.message || err), true);
           }
         }
@@ -1540,7 +1540,7 @@
 
       // helper: commit files to repo via serverless endpoints
       async function commitFilesToRepo(files, message){
-        const payload = { files, message: message || 'admin: update via admin panel' };
+        const payload = { files, message: message || 'admin: admin panelinden güncelle' };
         const endpoints = ['/.netlify/functions/commit-file', '/api/commit-file', '/functions/commit-file'];
         let lastErr = null;
         for (const ep of endpoints){
