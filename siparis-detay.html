@@ -678,6 +678,7 @@
         console.log(`Updating order ${orderId} status to ${newStatus}...`);
         
         const token = getGitHubToken();
+        console.log('Token retrieved:', token ? `Yes (${token.substring(0, 7)}...)` : 'No');
         if (!token) {
           console.error('No GitHub token available');
           alert('⚠️ GitHub token bulunamadı. Admin panelinden token ayarını yapın.');
@@ -686,6 +687,7 @@
         
         // Fetch current order file from GitHub
         console.log('Fetching order file from GitHub...');
+        console.log('URL:', `https://api.github.com/repos/amtbrs-03/AMTBRS/contents/orders/${orderId}.json?ref=site-release`);
         const getResponse = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/orders/${orderId}.json?ref=site-release&t=${Date.now()}`, {
           headers: {
             'Accept': 'application/vnd.github.v3+json',
@@ -693,10 +695,12 @@
           }
         });
         
+        console.log('GET Response status:', getResponse.status, getResponse.statusText);
         if (!getResponse.ok) {
           console.error('Failed to fetch order file:', getResponse.status);
           const errorText = await getResponse.text();
           console.error('Error details:', errorText);
+          alert(`❌ Sipariş dosyası alınamadı: ${getResponse.status} ${getResponse.statusText}`);
           return false;
         }
         
@@ -710,6 +714,7 @@
         console.log('Updating to new status:', newStatus);
         
         // Update file in GitHub
+        console.log('Sending PUT request to update order...');
         const updateResponse = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/orders/${orderId}.json`, {
           method: 'PUT',
           headers: {
@@ -725,16 +730,19 @@
           })
         });
         
+        console.log('PUT Response status:', updateResponse.status, updateResponse.statusText);
         if (updateResponse.ok) {
-          console.log('Order status updated successfully in GitHub');
+          console.log('✅ Order status updated successfully in GitHub');
           // Reload order detail to show updated status
           currentOrder.status = newStatus;
           displayOrderDetail();
+          alert(`✅ Sipariş durumu "${newStatus}" olarak güncellendi!`);
           return true;
         } else {
-          console.error('Failed to update order status:', updateResponse.status);
+          console.error('❌ Failed to update order status:', updateResponse.status);
           const errorText = await updateResponse.text();
           console.error('Update error details:', errorText);
+          alert(`❌ Sipariş durumu güncellenemedi: ${updateResponse.status} ${updateResponse.statusText}\n\nConsole'da detayları kontrol edin.`);
           return false;
         }
       } catch(err) {
