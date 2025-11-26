@@ -136,7 +136,8 @@
     }
 
     .status-pending{ background:#f59e0b; }
-    .status-paid{ background:#10b981; }
+    .status-ready{ background:#10b981; }
+    .status-paid{ background:#22c55e; }
     .status-processing{ background:#3b82f6; }
     .status-shipped{ background:#8b5cf6; }
 
@@ -345,6 +346,7 @@
     function renderOrderDetail(order) {
       const statusMap = {
         'pending': { text: 'Beklemede', class: 'status-pending' },
+        'ready': { text: 'Hazır', class: 'status-ready' },
         'paid': { text: 'Ödendi', class: 'status-paid' },
         'processing': { text: 'İşleniyor', class: 'status-processing' },
         'shipped': { text: 'Gönderildi', class: 'status-shipped' }
@@ -455,6 +457,7 @@
       // Create invoice HTML
       const statusMap = {
         'pending': 'Beklemede',
+        'ready': 'Hazır',
         'paid': 'Ödendi',
         'processing': 'İşleniyor',
         'shipped': 'Gönderildi'
@@ -643,12 +646,81 @@
         
         if (response.ok || response.status === 204) {
           console.log('Invoice saved to GitHub successfully');
+          
+          // Update order status to "ready" (hazır)
+          await updateOrderStatus(orderId, 'ready');
         } else {
           console.warn('Invoice save response:', response.status);
         }
       } catch(err) {
         console.error('Failed to save invoice to GitHub:', err);
         // Don't show error to user, just log it
+      }
+    }
+    
+    async function updateOrderStatus(orderId, newStatus) {
+      try {
+        console.log(`Updating order ${orderId} status to ${newStatus}...`);
+        
+        // XOR encoding for token
+        function xorDecode(encoded, key) {
+          const decoded = atob(encoded);
+          let result = '';
+          for (let i = 0; i < decoded.length; i++) {
+            result += String.fromCharCode(decoded.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+          }
+          return result;
+        }
+        
+        const encodedToken = 'HgsdCwEUXVkADRFYEQ==';
+        const secretKey = 'ERN-CICEK-2025';
+        const token = xorDecode(encodedToken, secretKey);
+        
+        // Fetch current order file from GitHub
+        const getResponse = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/orders/${orderId}.json?ref=site-release&t=${Date.now()}`, {
+          headers: {
+            'Accept': 'application/vnd.github.v3+json',
+            'Authorization': `token ${token}`
+          }
+        });
+        
+        if (!getResponse.ok) {
+          console.error('Failed to fetch order file:', getResponse.status);
+          return;
+        }
+        
+        const fileData = await getResponse.json();
+        const orderContent = JSON.parse(atob(fileData.content));
+        
+        // Update status
+        orderContent.status = newStatus;
+        
+        // Update file in GitHub
+        const updateResponse = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/orders/${orderId}.json`, {
+          method: 'PUT',
+          headers: {
+            'Accept': 'application/vnd.github.v3+json',
+            'Authorization': `token ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: `Sipariş durumu güncellendi: ${orderId} → ${newStatus}`,
+            content: btoa(unescape(encodeURIComponent(JSON.stringify(orderContent, null, 2)))),
+            sha: fileData.sha,
+            branch: 'site-release'
+          })
+        });
+        
+        if (updateResponse.ok) {
+          console.log('Order status updated successfully');
+          // Reload order detail to show updated status
+          currentOrder.status = newStatus;
+          displayOrderDetail();
+        } else {
+          console.error('Failed to update order status:', updateResponse.status);
+        }
+      } catch(err) {
+        console.error('Failed to update order status:', err);
       }
     }
 
