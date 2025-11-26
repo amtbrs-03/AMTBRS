@@ -1501,23 +1501,21 @@
                         localStorage.setItem('user_' + email, JSON.stringify(stored));
                         console.log('registerUser: Saved to localStorage for', email);
                         
-                        // GitHub'a tam kullanıcı verisiyle kaydet (Contents API)
-                        console.log('registerUser: GitHub içeriklerine kaydediliyor...');
-                        try{
-                            const remoteSuccess = await commitFullUserToRepo(stored);
-                            if (remoteSuccess) {
-                                alert('Kayıt başarılı! GitHub\'a kaydedildi. Farklı cihazlardan giriş yapabilirsiniz.');
-                                console.log('registerUser: ✓ GitHub kaydı başarılı');
-                            } else {
-                                alert('Kayıt başarılı! (Yerel kayıt tamamlandı. GitHub senkronizasyonu başarısız oldu.)');
-                                console.warn('registerUser: Remote save failed but localStorage OK');
-                            }
-                        }catch(e){
-                            console.error('registerUser: Remote save exception', e);
-                            alert('Kayıt başarılı! (Yerel olarak kaydedildi)');
-                        }
-                        
-                        switchTab('login', document.querySelector('.form-tab'));
+        // GitHub'a tam kullanıcı verisiyle kaydet (Contents API)
+        console.log('registerUser: GitHub içeriklerine kaydediliyor...');
+        try{
+            const remoteSuccess = await commitFullUserToRepo(stored);
+            if (remoteSuccess) {
+                console.log('registerUser: ✓ GitHub kaydı başarılı');
+            } else {
+                console.warn('registerUser: Remote save failed but localStorage OK');
+            }
+        }catch(e){
+            console.error('registerUser: Remote save exception', e);
+        }
+        
+        // Tek bildirim göster
+        alert('Kayıt başarılı!');                        switchTab('login', document.querySelector('.form-tab'));
                         document.getElementById('registerName').value = '';
                         document.getElementById('registerEmail').value = '';
                         document.getElementById('registerPassword').value = '';
