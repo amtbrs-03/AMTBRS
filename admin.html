@@ -329,7 +329,7 @@
       <div class="action-bar">
         <button id="saveAll" class="btn">💾 Tüm Değişiklikleri Kaydet</button>
         <button id="loadUsersBtn" class="btn">👥 Kullanıcıları Yükle</button>
-        <button id="loadOrdersBtn" class="btn">📦 Müşteri Siparişleri</button>
+        <a href="siparisler.html" class="btn" style="text-decoration:none;">📦 Müşteri Siparişleri</a>
       </div>
 
       <div class="card">
@@ -1043,191 +1043,9 @@
       // load settings when admin UI ready
       try{ loadSettingsIntoForm(); }catch(e){}
 
-      // Orders admin: fetch from GitHub
-      async function renderOrdersAdmin(){
-        console.log('=== renderOrdersAdmin ÇAĞRILDI ===');
-        const container = document.getElementById('ordersListModal'); 
-        const countEl = document.getElementById('orderCountModal');
-        console.log('Container element:', container);
-        console.log('Count element:', countEl);
-        
-        if (!container) {
-          console.error('ordersListModal element not found!');
-          return;
-        }
-        
-        container.innerHTML = '<p style="color:#6b7280;">Siparişler GitHub\'dan çekiliyor...</p>';
-        
-        try {
-          // Fetch orders from GitHub with cache busting
-          const owner = 'amtbrs-03';
-          const repo = 'AMTBRS';
-          const branch = 'site-release';
-          const cacheBuster = Date.now();
-          const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/orders?ref=${branch}&_cb=${cacheBuster}`;
-          
-          console.log('Fetching orders from:', apiUrl);
-          
-          const res = await fetch(apiUrl, {
-            headers: { 
-              'Accept': 'application/vnd.github.v3+json',
-              'Cache-Control': 'no-cache, no-store, must-revalidate',
-              'Pragma': 'no-cache'
-            },
-            cache: 'no-store'
-          });
-          
-          console.log('GitHub API response:', res.status, res.statusText);
-          
-          if (!res.ok) {
-            const errorText = await res.text().catch(() => '');
-            console.error('GitHub API error:', res.status, errorText);
-            throw new Error(`GitHub API responded with ${res.status}: ${res.statusText}`);
-          }
-          
-          const files = await res.json();
-          console.log('Files in orders/:', files.length, files.map(f => f.name));
-          
-          const orderFiles = files.filter(f => f.name.endsWith('.json') && f.name !== '.gitkeep');
-          console.log('Order files:', orderFiles.length);
-          
-          if (orderFiles.length === 0) {
-            container.innerHTML = '<p style="color:#6b7280;">Henüz sipariş yok. (orders/ klasöründe .json dosyası bulunamadı)</p>';
-            if (countEl) countEl.textContent = '0 sipariş';
-            return;
-          }
-          
-          // Fetch each order file
-          const allOrders = [];
-          for (const file of orderFiles) {
-            try {
-              console.log('Fetching order:', file.name, file.download_url);
-              const orderRes = await fetch(file.download_url);
-              if (orderRes.ok) {
-                const orderData = await orderRes.json();
-                console.log('Order loaded:', orderData.id);
-                allOrders.push(orderData);
-              } else {
-                console.error('Failed to fetch order file:', file.name, orderRes.status);
-              }
-            } catch(e) {
-              console.error('Failed to load order:', file.name, e);
-            }
-          }
-          
-          if (allOrders.length === 0) {
-            container.innerHTML = '<p style="color:#6b7280;">Sipariş verileri yüklenemedi. Console\'u kontrol edin.</p>';
-            if (countEl) countEl.textContent = '0 sipariş';
-            return;
-          }
-          
-          console.log('Total orders loaded:', allOrders.length);
-          
-          // Sort by date (newest first)
-          allOrders.sort((a, b) => (b.date || 0) - (a.date || 0));
-          
-          // Display count
-          if (countEl) countEl.textContent = `${allOrders.length} sipariş`;
-          
-          // Build table
-          let html = '<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.1); border-radius:8px; overflow:hidden;">';
-          html += '<thead><tr style="background:linear-gradient(135deg, var(--green-primary), var(--green-dark)); color:white; text-align:left;">';
-          html += '<th style="padding:0.75rem 1rem; font-weight:600; border-bottom:2px solid rgba(255,255,255,0.2);">🆔 Sipariş No</th>';
-          html += '<th style="padding:0.75rem 1rem; font-weight:600; border-bottom:2px solid rgba(255,255,255,0.2);">👤 Müşteri</th>';
-          html += '<th style="padding:0.75rem 1rem; font-weight:600; border-bottom:2px solid rgba(255,255,255,0.2);">📧 Email</th>';
-          html += '<th style="padding:0.75rem 1rem; font-weight:600; border-bottom:2px solid rgba(255,255,255,0.2);">🛒 Ürünler</th>';
-          html += '<th style="padding:0.75rem 1rem; font-weight:600; border-bottom:2px solid rgba(255,255,255,0.2);">💰 Toplam</th>';
-          html += '<th style="padding:0.75rem 1rem; font-weight:600; border-bottom:2px solid rgba(255,255,255,0.2);">📅 Tarih</th>';
-          html += '<th style="padding:0.75rem 1rem; font-weight:600; border-bottom:2px solid rgba(255,255,255,0.2);">📊 Durum</th>';
-          html += '</tr></thead><tbody>';
-          
-          allOrders.forEach((order, idx) => {
-            const orderDate = order.date ? new Date(order.date).toLocaleDateString('tr-TR', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'}) : '-';
-            const rowBg = idx % 2 === 0 ? '#f9fafb' : '#ffffff';
-            
-            // Format items
-            const itemsText = (order.items || []).map(item => `${item.name} x${item.qty}`).join(', ') || '-';
-            const itemsShort = itemsText.length > 40 ? itemsText.substring(0, 37) + '...' : itemsText;
-            
-            // Status badge
-            const statusMap = {
-              'pending': { text: 'Beklemede', color: '#f59e0b' },
-              'paid': { text: 'Ödendi', color: '#10b981' },
-              'processing': { text: 'İşleniyor', color: '#3b82f6' },
-              'shipped': { text: 'Gönderildi', color: '#8b5cf6' }
-            };
-            const statusInfo = statusMap[order.status] || statusMap['pending'];
-            const statusBadge = `<span style="display:inline-block; padding:0.25rem 0.75rem; background:${statusInfo.color}; color:white; border-radius:12px; font-size:0.85rem; font-weight:600;">${statusInfo.text}</span>`;
-            
-            html += `<tr style="background:${rowBg}; transition:all 0.2s ease;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='${rowBg}'">`;
-            html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; font-weight:600; color:var(--green-dark);">${escapeHtml(order.id || '-')}</td>`;
-            html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; font-weight:500;">${escapeHtml(order.customerName || '-')}</td>`;
-            html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; color:#6b7280;">${escapeHtml(order.customerEmail || '-')}</td>`;
-            html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; color:#6b7280;" title="${escapeHtml(itemsText)}">${escapeHtml(itemsShort)}</td>`;
-            html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; font-weight:600;">₺${escapeHtml(order.total || '0')}</td>`;
-            html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; color:#6b7280;">${orderDate}</td>`;
-            html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb;">${statusBadge}</td>`;
-            html += '</tr>';
-          });
-          
-          html += '</tbody></table></div>';
-          container.innerHTML = html;
-          
-        } catch(err) {
-          console.error('Failed to load orders:', err);
-          container.innerHTML = `<p style="color:#e53e3e;">Hata: ${escapeHtml(err.message)}</p>`;
-          if (countEl) countEl.textContent = '';
-        }
-      }
-
-      document.getElementById('loadOrdersBtn').addEventListener('click', async ()=>{
-        console.log('=== MÜŞTERI SİPARİŞLERİ BUTONU TIKLANDI ===');
-        
-        // Hard open modal - force display
-        const modalEl = document.getElementById('ordersModal');
-        if (!modalEl) {
-          alert('HATA: ordersModal elementi bulunamadı!');
-          return;
-        }
-        
-        console.log('Modal element found:', modalEl);
-        
-        // Force modal to show with inline styles as backup
-        modalEl.classList.add('active');
-        modalEl.style.display = 'flex';
-        modalEl.style.opacity = '1';
-        modalEl.style.visibility = 'visible';
-        
-        console.log('Modal forced open - classList:', modalEl.classList.toString());
-        console.log('Modal computed display:', window.getComputedStyle(modalEl).display);
-        
-        // Force repaint
-        void modalEl.offsetHeight;
-        
-        try {
-          console.log('Loading orders...');
-          await renderOrdersAdmin();
-          console.log('Orders loaded successfully');
-        } catch(err) {
-          console.error('Error loading orders:', err);
-          alert('Siparişler yüklenirken hata: ' + err.message);
-        }
-      });
+      // Note: Orders admin moved to siparisler.html (separate page)
+      // renderOrdersAdmin() function removed
       
-      // Wait for DOM to be ready before attaching modal button handler
-      setTimeout(() => {
-        const refreshBtn = document.getElementById('refreshOrdersBtn');
-        console.log('refreshOrdersBtn element:', refreshBtn);
-        if (refreshBtn) {
-          refreshBtn.addEventListener('click', async ()=>{
-            console.log('=== SİPARİŞLERİ YENİLE BUTONU TIKLANDI ===');
-            await renderOrdersAdmin();
-          });
-        } else {
-          console.warn('refreshOrdersBtn not found in DOM');
-        }
-      }, 100);
-
       document.getElementById('resetDefault').addEventListener('click', ()=>{
         if (!confirm('Varsayılan ürünlere geri dönülsün mü?')) return;
         const defaults = [
@@ -1329,22 +1147,7 @@
     })();
   </script>
 
-  <!-- Orders Modal -->
-  <div id="ordersModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 style="margin:0; display:flex; align-items:center; gap:0.5rem;">📦 Müşteri Siparişleri <span id="orderCountModal" style="color:var(--green-dark); font-size:0.9em;"></span></h2>
-        <button class="close-modal" onclick="closeOrdersModal()" aria-label="Modalı Kapat">✕</button>
-      </div>
-      <div class="modal-body">
-        <div style="margin-bottom:1rem;">
-          <button id="refreshOrdersBtn" class="btn" style="font-size:0.9rem; padding:0.5rem 1rem;">🔄 Siparişleri Yenile</button>
-        </div>
-        <div id="ordersListModal" style="max-height:60vh; overflow:auto;"></div>
-        <div class="small meta" style="margin-top:0.75rem; color:#6b7280;">📦 Sipariş bilgileri GitHub'dan çekilir. Müşteriler ödeme sayfasından sipariş bildirimi yapar.</div>
-      </div>
-    </div>
-  </div>
+  <!-- Note: Orders Modal removed - now on separate page (siparisler.html) -->
 
   <!-- Users Modal -->
   <div id="usersModal" class="modal">
@@ -1370,25 +1173,7 @@
   </div>
 
   <script>
-    // Modal functions with hard display control
-    function openOrdersModal() {
-      const modal = document.getElementById('ordersModal');
-      modal.classList.add('active');
-      modal.style.display = 'flex';
-      modal.style.opacity = '1';
-      modal.style.visibility = 'visible';
-      document.body.style.overflow = 'hidden';
-      console.log('openOrdersModal: Modal forced open');
-    }
-    
-    function closeOrdersModal() {
-      const modal = document.getElementById('ordersModal');
-      modal.classList.remove('active');
-      modal.style.display = 'none';
-      document.body.style.overflow = 'auto';
-      console.log('closeOrdersModal: Modal closed');
-    }
-    
+    // Modal functions (orders modal removed - now on separate page)
     function openUsersModal() {
       document.getElementById('usersModal').classList.add('active');
       document.body.style.overflow = 'hidden';
@@ -1399,27 +1184,18 @@
       document.body.style.overflow = 'auto';
     }
     
-    // Close modal when clicking outside
-    document.getElementById('ordersModal').addEventListener('click', function(e) {
-      if (e.target === this) {
-        closeOrdersModal();
-      }
-    });
-    
+    // Close modal when clicking outside (only users modal now)
     document.getElementById('usersModal').addEventListener('click', function(e) {
       if (e.target === this) {
         closeUsersModal();
       }
     });
     
-    // Close modal with ESC key
+    // Close modal with ESC key (only users modal now)
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') {
-        const ordersModal = document.getElementById('ordersModal');
         const usersModal = document.getElementById('usersModal');
-        if (ordersModal.classList.contains('active')) {
-          closeOrdersModal();
-        } else if (usersModal.classList.contains('active')) {
+        if (usersModal.classList.contains('active')) {
           closeUsersModal();
         }
       }
@@ -1427,12 +1203,8 @@
     
     // Check modal elements on page load
     console.log('=== ADMIN PANELİ YÜKLENDİ ===');
-    console.log('ordersModal element:', document.getElementById('ordersModal'));
-    console.log('ordersListModal element:', document.getElementById('ordersListModal'));
-    console.log('orderCountModal element:', document.getElementById('orderCountModal'));
-    console.log('loadOrdersBtn element:', document.getElementById('loadOrdersBtn'));
-    console.log('refreshOrdersBtn element:', document.getElementById('refreshOrdersBtn'));
-    console.log('Modal elementleri hazır. "Müşteri Siparişleri" butonuna tıklayarak siparişleri görüntüleyin.');
+    console.log('usersModal element:', document.getElementById('usersModal'));
+    console.log('Note: Orders moved to siparisler.html');
   </script>
 </body>
 </html>
