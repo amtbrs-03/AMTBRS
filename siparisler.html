@@ -315,7 +315,7 @@
         const cacheBuster = Date.now();
         const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/orders?ref=${branch}&_cb=${cacheBuster}`;
         
-        console.log('Fetching orders from:', apiUrl);
+        console.log('Siparişler şu adresten çekiliyor:', apiUrl);
         
         const res = await fetch(apiUrl, {
           headers: { 
@@ -323,19 +323,19 @@
           }
         });
         
-        console.log('GitHub API response:', res.status, res.statusText);
+        console.log('GitHub API yanıtı:', res.status, res.statusText);
         
         if (!res.ok) {
           const errorText = await res.text().catch(() => '');
-          console.error('GitHub API error details:', errorText);
-          throw new Error(`GitHub API responded with ${res.status}: ${res.statusText}. ${errorText ? 'Details: ' + errorText : ''}`);
+          console.error('GitHub API hata detayları:', errorText);
+          throw new Error(`GitHub API şu yanıtı verdi: ${res.status} - ${res.statusText}${errorText ? ' — Detay: ' + errorText : ''}`);
         }
         
         const files = await res.json();
-        console.log('Files in orders/:', files.length);
+        console.log('orders/ klasöründe dosya sayısı:', files.length);
         
         const orderFiles = files.filter(f => f.name.endsWith('.json') && f.name !== '.gitkeep');
-        console.log('Order files:', orderFiles.length);
+        console.log('Sipariş dosyaları:', orderFiles.length);
         
         if (orderFiles.length === 0) {
           contentEl.innerHTML = '<div class="empty">📭 Henüz sipariş yok.</div>';
