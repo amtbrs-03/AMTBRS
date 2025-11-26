@@ -593,8 +593,41 @@
       saveInvoiceToGitHub(currentOrder.id, invoiceHTML);
     }
     
+    // Token management functions (same as admin.html)
+    function decodeToken(encoded, key) {
+      let result = '';
+      for (let i = 0; i < encoded.length; i++) {
+        result += String.fromCharCode(encoded.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+      }
+      return result;
+    }
+
+    function getGitHubToken() {
+      let token = localStorage.getItem('github_token');
+      if (!token) {
+        const encoded = '":>r3\x0e,\' bj@\x06\x07\t5\'K"\x0b4\x08\tYUJ[f\x11\x0b\rK0\x0cs\x0f\x1dupY';
+        const key = 'ERN-CICEK-2025';
+        try {
+          token = decodeToken(encoded, key);
+        } catch(e) {
+          console.error('Failed to decode GitHub token');
+        }
+      }
+      return token;
+    }
+
     async function saveInvoiceToGitHub(orderId, invoiceHTML) {
       try {
+        // First, update order status to "ready" immediately
+        console.log('Updating order status to ready before saving invoice...');
+        const statusUpdateResult = await updateOrderStatus(orderId, 'ready');
+        console.log('Status update result:', statusUpdateResult);
+        
+        if (!statusUpdateResult) {
+          alert('⚠️ Sipariş durumu güncellenemedi. Lütfen console\'u kontrol edin.');
+          return;
+        }
+        
         const invoiceData = {
           orderId: orderId,
           createdAt: Date.now(),
@@ -604,28 +637,12 @@
         
         console.log('Saving invoice to GitHub...');
         
-        // XOR encoding for token (same as order save)
-        function xorEncode(str, key) {
-          let result = '';
-          for (let i = 0; i < str.length; i++) {
-            result += String.fromCharCode(str.charCodeAt(i) ^ key.charCodeAt(i % key.length));
-          }
-          return btoa(result);
+        const token = getGitHubToken();
+        if (!token) {
+          console.error('No GitHub token available');
+          alert('⚠️ GitHub token bulunamadı. Admin panelinden token ayarını yapın.');
+          return;
         }
-        
-        function xorDecode(encoded, key) {
-          const decoded = atob(encoded);
-          let result = '';
-          for (let i = 0; i < decoded.length; i++) {
-            result += String.fromCharCode(decoded.charCodeAt(i) ^ key.charCodeAt(i % key.length));
-          }
-          return result;
-        }
-        
-        // Encoded token (replace with your actual token)
-        const encodedToken = 'HgsdCwEUXVkADRFYEQ=='; // This is a placeholder
-        const secretKey = 'ERN-CICEK-2025';
-        const token = xorDecode(encodedToken, secretKey);
         
         // GitHub dispatch event to save invoice
         const response = await fetch('https://api.github.com/repos/amtbrs-03/AMTBRS/dispatches', {
@@ -646,14 +663,9 @@
         
         if (response.ok || response.status === 204) {
           console.log('Invoice saved to GitHub successfully');
-          
-          // Update order status to "ready" (hazır)
-          console.log('Now updating order status to ready...');
-          const statusUpdateResult = await updateOrderStatus(orderId, 'ready');
-          console.log('Status update completed:', statusUpdateResult);
         } else {
           console.warn('Invoice save response:', response.status);
-          alert('Fatura kaydedildi ancak durum güncellenemedi. Lütfen sayfayı yenileyin.');
+          console.log('Note: Invoice may not be saved to GitHub, but order status was updated to ready.');
         }
       } catch(err) {
         console.error('Failed to save invoice to GitHub:', err);
@@ -665,19 +677,12 @@
       try {
         console.log(`Updating order ${orderId} status to ${newStatus}...`);
         
-        // XOR encoding for token
-        function xorDecode(encoded, key) {
-          const decoded = atob(encoded);
-          let result = '';
-          for (let i = 0; i < decoded.length; i++) {
-            result += String.fromCharCode(decoded.charCodeAt(i) ^ key.charCodeAt(i % key.length));
-          }
-          return result;
+        const token = getGitHubToken();
+        if (!token) {
+          console.error('No GitHub token available');
+          alert('⚠️ GitHub token bulunamadı. Admin panelinden token ayarını yapın.');
+          return false;
         }
-        
-        const encodedToken = 'HgsdCwEUXVkADRFYEQ==';
-        const secretKey = 'ERN-CICEK-2025';
-        const token = xorDecode(encodedToken, secretKey);
         
         // Fetch current order file from GitHub
         console.log('Fetching order file from GitHub...');
