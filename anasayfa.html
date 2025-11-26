@@ -2309,6 +2309,20 @@
 
                                     function openPrintableInvoice(order){
                                         const user = getCurrentUser() || {};
+                                        // müşteri varsayılan adresini hazırla
+                                        let customerAddress = '';
+                                        try{
+                                            const addrs = getUserAddresses();
+                                            if (addrs && addrs.length){
+                                                const a = addrs.find(x=>x && x.isDefault) || addrs[0];
+                                                const loc = [a.city, a.district, a.neighborhood].filter(Boolean).join(' / ');
+                                                const parts = [];
+                                                if (loc) parts.push(loc);
+                                                if (a.addressDetail) parts.push(a.addressDetail);
+                                                if (a.postalCode) parts.push('PK: ' + a.postalCode);
+                                                customerAddress = parts.join(', ');
+                                            }
+                                        }catch(e){}
                                         const rows = (order.items||[]).map(function(it){
                                             return '<tr><td>'+escapeHtml(it.name)+'</td><td>'+(it.qty||1)+'</td><td>'+Number(it.price||0).toFixed(2)+'</td><td>'+((it.price||0)*(it.qty||1)).toFixed(2)+'</td></tr>';
                                         }).join('');
@@ -2317,7 +2331,7 @@
                                         htmlParts.push('<style>body{font-family:Arial, Helvetica, sans-serif;padding:20px;color:#0b1220}header{display:flex;justify-content:space-between;align-items:center}h1{margin:0}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f7f7fb}tfoot td{font-weight:800}</style>');
                                         htmlParts.push('</head><body>');
                                         htmlParts.push('<header><div><h1>ERN Tropikal Çiçek</h1><div style="font-size:0.9rem;color:#334155">Adresiniz Caddesi 1, Şehir</div></div><div style="text-align:right"><div>Fatura #: '+escapeHtml(order.id)+'</div><div>'+new Date(order.date||0).toLocaleString()+'</div></div></header>');
-                                        htmlParts.push('<section style="margin-top:14px"><strong>Müşteri</strong><div>'+escapeHtml(user.name||'')+'</div><div>'+escapeHtml(user.email||'')+'</div><div>'+escapeHtml(user.phone||'')+'</div></section>');
+                                        htmlParts.push('<section style="margin-top:14px"><strong>Müşteri</strong><div>'+escapeHtml(user.name||'')+'</div><div>'+escapeHtml(user.email||'')+'</div>' + (customerAddress?('<div>'+escapeHtml(customerAddress)+'</div>'):'') + '</section>');
                                         htmlParts.push('<table><thead><tr><th>Ürün</th><th>Adet</th><th>Birim (₺)</th><th>Tutar (₺)</th></tr></thead><tbody>');
                                         htmlParts.push(rows);
                                         htmlParts.push('</tbody><tfoot><tr><td colspan="3">Toplam</td><td>₺'+Number(order.total||0).toFixed(2)+'</td></tr></tfoot></table>');

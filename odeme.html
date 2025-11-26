@@ -138,6 +138,29 @@
       const ibanText = (document.getElementById('iban').textContent || '').trim();
       const totalText = (document.getElementById('total').textContent || '').replace(/[^0-9.,]/g, '');
       
+      // Kullanıcı varsayılan adresini çöz (varsa)
+      function buildDefaultAddressFor(email){
+        if (!email) return '';
+        try{
+          const raw = localStorage.getItem('user_' + email);
+          if (!raw) return '';
+          const user = JSON.parse(raw);
+          let addr = null;
+          if (Array.isArray(user.addresses) && user.addresses.length){
+            addr = user.addresses.find(a=>a && a.isDefault) || user.addresses[0];
+          } else if (user.address) {
+            addr = user.address;
+          }
+          if (!addr) return '';
+          const parts = [];
+          const loc = [addr.city, addr.district, addr.neighborhood].filter(Boolean).join(' / ');
+          if (loc) parts.push(loc);
+          if (addr.addressDetail) parts.push(addr.addressDetail);
+          if (addr.postalCode) parts.push('PK: ' + addr.postalCode);
+          return parts.join(', ');
+        }catch(e){ return ''; }
+      }
+
       // Create order object
       const order = {
         id: 'ORD-' + Date.now(),
@@ -147,7 +170,8 @@
         items: cart,
         total: totalText,
         iban: ibanText,
-        status: 'pending'
+        status: 'pending',
+        address: buildDefaultAddressFor(payerEmail)
       };
 
       console.log('Sipariş oluşturuldu:', order);
