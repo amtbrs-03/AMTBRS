@@ -7,11 +7,11 @@
   "items": [
     {
       "id": "2",
-      "name": "Ürün 2",
+      "name": "ÃrÃ¼n 2",
       "price": 199.99,
       "qty": 1
     }
   ],
-  "status": "pending",
+  "status": "ready",
   "total": "199.99"
 }
