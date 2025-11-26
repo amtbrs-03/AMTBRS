@@ -1176,12 +1176,27 @@
 
       document.getElementById('loadOrdersBtn').addEventListener('click', async ()=>{
         console.log('=== MÜŞTERI SİPARİŞLERİ BUTONU TIKLANDI ===');
-        console.log('Modal element:', document.getElementById('ordersModal'));
-        console.log('Opening modal...');
-        openOrdersModal();
-        console.log('Loading orders...');
-        await renderOrdersAdmin();
-        console.log('Orders loaded');
+        
+        const btn = document.getElementById('loadOrdersBtn');
+        const modalEl = document.getElementById('ordersModal');
+        
+        console.log('Modal element:', modalEl);
+        console.log('Modal classList:', modalEl ? modalEl.classList.toString() : 'null');
+        
+        try {
+          console.log('Opening modal...');
+          openOrdersModal();
+          
+          console.log('Modal opened, classList after:', modalEl.classList.toString());
+          console.log('Loading orders...');
+          
+          await renderOrdersAdmin();
+          
+          console.log('Orders loaded successfully');
+        } catch(err) {
+          console.error('Error loading orders:', err);
+          alert('Siparişler yüklenirken hata: ' + err.message);
+        }
       });
       
       // Wait for DOM to be ready before attaching modal button handler
