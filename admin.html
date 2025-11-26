@@ -580,36 +580,39 @@
       }
 
       function showLogin(){
-        const savedUser = localStorage.getItem(ADMIN_USER_KEY) || '';
         authContent.innerHTML = `<div style="margin-bottom:1.5rem;text-align:center;font-size:1.75rem;font-weight:800;padding:1rem 2rem;background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:white;border-radius:12px;box-shadow:0 4px 15px rgba(16,185,129,0.4),0 8px 25px rgba(16,185,129,0.2),inset 0 -2px 5px rgba(0,0,0,0.1);text-shadow:0 2px 4px rgba(0,0,0,0.2);">🔐 Yönetici Girişi</div>
-          <input id="loginUser" type="text" placeholder="Kullanıcı adı (opsiyonel)" value="${savedUser}" style="width:60%; padding:0.5rem;" />
-          <input id="loginPw" type="password" placeholder="Parola" style="width:60%; padding:0.5rem; margin-top:0.5rem;" />
+          <input id="loginEmail" type="email" placeholder="Admin Email" style="width:60%; padding:0.5rem;" />
+          <input id="loginPw" type="password" placeholder="Şifre" style="width:60%; padding:0.5rem; margin-top:0.5rem;" />
           <label style="display:block;margin-top:0.5rem;"><input id="rememberMe" type="checkbox" /> Beni hatırla</label>
           <div style="margin-top:1rem;"><button id="loginBtn" style="padding:1rem 2.5rem;font-size:1.1rem;font-weight:700;border-radius:12px;border:none;background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:white;cursor:pointer;box-shadow:0 4px 15px rgba(16,185,129,0.4),0 8px 25px rgba(16,185,129,0.2),inset 0 -2px 5px rgba(0,0,0,0.1);transition:all 0.2s ease;">Giriş Yap</button></div>`;
         document.getElementById('loginBtn').onclick = async ()=>{
           const pw = document.getElementById('loginPw').value;
-          const user = (document.getElementById('loginUser').value || '').trim();
+          const email = (document.getElementById('loginEmail').value || '').trim().toLowerCase();
           const remember = !!document.getElementById('rememberMe').checked;
-          const h = await hashPassword(pw);
           
-          // Try localStorage first
-          let storedHash = localStorage.getItem(AUTH_KEY);
-          
-          // If not in localStorage, try fetching from GitHub
-          if (!storedHash) {
-            console.log('Admin credentials not in localStorage, fetching from GitHub...');
-            const adminData = await fetchAdminFromGitHub();
-            if (adminData && adminData.passwordHash) {
-              storedHash = adminData.passwordHash;
-              // Cache to localStorage
-              localStorage.setItem(AUTH_KEY, storedHash);
-              if (adminData.user) localStorage.setItem(ADMIN_USER_KEY, adminData.user);
-              console.log('Admin credentials fetched and cached');
-            }
+          if (!email || !pw) {
+            alert('Lütfen email ve şifre girin');
+            return;
           }
           
-          if (h === storedHash){
-            if (user) localStorage.setItem(ADMIN_USER_KEY, user);
+          const h = await hashPassword(pw);
+          
+          // Always fetch from GitHub first
+          console.log('Fetching admin credentials from GitHub...');
+          const adminData = await fetchAdminFromGitHub();
+          
+          if (!adminData || !adminData.passwordHash) {
+            alert('Admin bilgileri GitHub\'dan alınamadı. Lütfen tekrar deneyin.');
+            return;
+          }
+          
+          // Check credentials
+          if (h === adminData.passwordHash && email === (adminData.email || '').toLowerCase()) {
+            // Cache to localStorage
+            localStorage.setItem(AUTH_KEY, adminData.passwordHash);
+            localStorage.setItem(ADMIN_USER_KEY, adminData.user || 'admin');
+            localStorage.setItem('admin_email', email);
+            
             if (remember) {
               localStorage.setItem('admin_logged_in', '1');
             } else {
@@ -617,19 +620,29 @@
             }
             authContent.innerHTML = '<div style="color:green">Giriş başarılı — yönetici arayüzü yükleniyor...</div>';
             setTimeout(()=>{ renderAuth(); renderAdmin(); }, 400);
-          } else alert('Parola yanlış');
+          } else {
+            alert('Email veya şifre yanlış');
+          }
         };
       }
 
       function renderAuth(){
-        const has = !!localStorage.getItem(AUTH_KEY);
         const logged = !!(localStorage.getItem('admin_logged_in') || sessionStorage.getItem('admin_logged_in'));
         const user = localStorage.getItem(ADMIN_USER_KEY) || 'admin';
-        if (!has) showSetPassword();
-        else if (!logged) showLogin();
-        else {
+        
+        if (!logged) {
+          showLogin();
+        } else {
           authContent.innerHTML = `<div style="color:green;font-size:1.1rem;font-weight:600;"><strong>HOŞ GELDİNİZ ADMİN</strong> <button id="logoutBtn" style="padding:0.75rem 1.5rem;font-size:1rem;font-weight:700;border-radius:12px;border:none;background:linear-gradient(135deg,#ef4444 0%,#dc2626 100%);color:white;cursor:pointer;box-shadow:0 4px 15px rgba(239,68,68,0.4),0 8px 25px rgba(239,68,68,0.2),inset 0 -2px 5px rgba(0,0,0,0.1);transition:all 0.2s ease;margin-left:1rem;">Çıkış Yap</button></div>`;
-          document.getElementById('logoutBtn').onclick = ()=>{ localStorage.removeItem('admin_logged_in'); sessionStorage.removeItem('admin_logged_in'); renderAuth(); adminUI.style.display='none'; };
+          document.getElementById('logoutBtn').onclick = ()=>{ 
+            localStorage.removeItem('admin_logged_in'); 
+            localStorage.removeItem(AUTH_KEY);
+            localStorage.removeItem(ADMIN_USER_KEY);
+            localStorage.removeItem('admin_email');
+            sessionStorage.removeItem('admin_logged_in'); 
+            renderAuth(); 
+            adminUI.style.display='none'; 
+          };
           adminUI.style.display='block';
         }
       }
@@ -649,6 +662,79 @@
       return (s||'').replace(/[&<>\"']/g, function(m){
         return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]
       }) 
+    }
+
+    // Delete user from GitHub
+    async function deleteUser(email, name) {
+      if (!confirm(`"${name}" (${email}) kullanıcısını silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz!`)) {
+        return;
+      }
+
+      try {
+        const repoInput = document.getElementById('repoInput');
+        const branchInput = document.getElementById('branchInput');
+        const tokenInput = document.getElementById('tokenInput');
+        
+        if (!repoInput.value || !tokenInput.value) {
+          alert('Lütfen önce repository ve token bilgilerini girin!');
+          return;
+        }
+
+        const [owner, repo] = repoInput.value.split('/');
+        const branch = branchInput.value || 'main';
+        const token = tokenInput.value;
+
+        console.log('Deleting user:', email);
+
+        // Get file SHA first
+        const fileName = `${email}_full.json`;
+        const getUrl = `https://api.github.com/repos/${owner}/${repo}/contents/users/${fileName}?ref=${branch}`;
+        
+        const getResponse = await fetch(getUrl, {
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
+
+        if (!getResponse.ok) {
+          throw new Error(`Kullanıcı dosyası bulunamadı: ${getResponse.status}`);
+        }
+
+        const fileData = await getResponse.json();
+        console.log('File SHA:', fileData.sha);
+
+        // Delete the file
+        const deleteUrl = `https://api.github.com/repos/${owner}/${repo}/contents/users/${fileName}`;
+        const deleteResponse = await fetch(deleteUrl, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: `Kullanıcı silindi: ${name} (${email})`,
+            sha: fileData.sha,
+            branch: branch
+          })
+        });
+
+        if (!deleteResponse.ok) {
+          const errorText = await deleteResponse.text();
+          throw new Error(`Silme başarısız: ${deleteResponse.status} - ${errorText}`);
+        }
+
+        console.log('User deleted successfully');
+        alert(`✅ "${name}" kullanıcısı başarıyla silindi!`);
+        
+        // Reload users list
+        document.getElementById('loadUsersBtn').click();
+
+      } catch(err) {
+        console.error('Delete user error:', err);
+        alert(`❌ Hata: ${err.message}`);
+      }
     }
 
     // Load users from GitHub - now opens modal
@@ -732,6 +818,7 @@
         html += '<th style="padding:0.75rem 1rem; font-weight:600; border-bottom:2px solid rgba(255,255,255,0.2);">📧 Email</th>';
         html += '<th style="padding:0.75rem 1rem; font-weight:600; border-bottom:2px solid rgba(255,255,255,0.2);">📅 Kayıt Tarihi</th>';
         html += '<th style="padding:0.75rem 1rem; font-weight:600; border-bottom:2px solid rgba(255,255,255,0.2);">🕐 Son Giriş</th>';
+        html += '<th style="padding:0.75rem 1rem; font-weight:600; border-bottom:2px solid rgba(255,255,255,0.2); text-align:center;">⚙️ İşlem</th>';
         html += '</tr></thead><tbody>';
         
         users.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
@@ -746,6 +833,9 @@
           html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; color:#6b7280;">${escapeHtml(user.email || '-')}</td>`;
           html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; color:#6b7280;">${createdDate}</td>`;
           html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; color:#6b7280;">${lastLogin}</td>`;
+          html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; text-align:center;">`;
+          html += `<button onclick="deleteUser('${escapeHtml(user.email)}', '${escapeHtml(user.name || 'Kullanıcı')}')" style="background:#ef4444; color:white; border:none; padding:0.4rem 0.8rem; border-radius:6px; cursor:pointer; font-size:0.85rem; transition:all 0.2s;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">🗑️ Sil</button>`;
+          html += `</td>`;
           html += '</tr>';
         });
         
