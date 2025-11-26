@@ -1142,7 +1142,7 @@
     }
 
     // Delete user from GitHub (Contents API)
-    async function deleteUser(email, name) {
+    async function deleteUser(email, name, btnEl) {
       if (!confirm(`"${name}" (${email}) kullanıcısını silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz!`)) {
         return;
       }
@@ -1156,6 +1156,16 @@
         const branch = 'site-release';
 
         console.log('Deleting user:', email);
+
+        // UI: disable button and show progress
+        let originalText = '';
+        if (btnEl) {
+          originalText = btnEl.textContent;
+          btnEl.disabled = true;
+          btnEl.style.opacity = '0.7';
+          btnEl.style.cursor = 'not-allowed';
+          btnEl.textContent = '⏳ Siliniyor...';
+        }
 
         // Get file SHA first
         const fileName = `${email}_full.json`;
@@ -1214,6 +1224,13 @@
       } catch(err) {
         console.error('Delete user error:', err);
         alert(`❌ Hata: ${err && err.message ? err.message : err}`);
+      } finally {
+        if (btnEl) {
+          btnEl.disabled = false;
+          btnEl.style.opacity = '';
+          btnEl.style.cursor = 'pointer';
+          btnEl.textContent = originalText || '🗑️ Sil';
+        }
       }
     }
 
@@ -1314,7 +1331,7 @@
           html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; color:#6b7280;">${createdDate}</td>`;
           html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; color:#6b7280;">${lastLogin}</td>`;
           html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; text-align:center;">`;
-          html += `<button onclick="deleteUser('${escapeHtml(user.email)}', '${escapeHtml(user.name || 'Kullanıcı')}')" style="background:#ef4444; color:white; border:none; padding:0.4rem 0.8rem; border-radius:6px; cursor:pointer; font-size:0.85rem; transition:all 0.2s;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">🗑️ Sil</button>`;
+          html += `<button onclick="deleteUser('${escapeHtml(user.email)}', '${escapeHtml(user.name || 'Kullanıcı')}', this)" style="background:#ef4444; color:white; border:none; padding:0.4rem 0.8rem; border-radius:6px; cursor:pointer; font-size:0.85rem; transition:all 0.2s;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">🗑️ Sil</button>`;
           html += `</td>`;
           html += '</tr>';
         });
