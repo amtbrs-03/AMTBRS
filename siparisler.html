@@ -313,7 +313,9 @@
         console.log('GitHub API response:', res.status, res.statusText);
         
         if (!res.ok) {
-          throw new Error(`GitHub API responded with ${res.status}: ${res.statusText}`);
+          const errorText = await res.text().catch(() => '');
+          console.error('GitHub API error details:', errorText);
+          throw new Error(`GitHub API responded with ${res.status}: ${res.statusText}. ${errorText ? 'Details: ' + errorText : ''}`);
         }
         
         const files = await res.json();
@@ -375,7 +377,14 @@
         
       } catch(err) {
         console.error('Failed to load orders:', err);
-        contentEl.innerHTML = `<div class="error">❌ Hata: ${escapeHtml(err.message)}</div>`;
+        let errorMsg = err.message;
+        
+        // Check if it's a network error
+        if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
+          errorMsg = 'Ağ hatası: GitHub API\'ye erişilemiyor. İnternet bağlantınızı kontrol edin veya birkaç dakika sonra tekrar deneyin. (GitHub API rate limit aşılmış olabilir)';
+        }
+        
+        contentEl.innerHTML = `<div class="error">❌ Hata: ${escapeHtml(errorMsg)}<br><br><small>Console\'u açıp detayları görebilirsiniz (F12)</small></div>`;
         updateStats([]);
       }
     }
