@@ -491,37 +491,72 @@
       }
     }
 
-    // Fetch admin credentials from GitHub
+    // Fetch admin credentials from GitHub with multiple fallbacks
     async function fetchAdminFromGitHub() {
       const urls = [
         `https://raw.githubusercontent.com/amtbrs-03/AMTBRS/site-release/admin-config.json?t=${Date.now()}`,
         `https://cdn.jsdelivr.net/gh/amtbrs-03/AMTBRS@site-release/admin-config.json`,
       ];
 
-      console.log('🔍 Attempting to fetch admin config from GitHub...');
-      
+      console.log('🔍 Attempting to fetch admin config from GitHub (raw/cdn first, then API)...');
+
+      // Try raw and CDN first (simple JSON)
       for (let url of urls) {
         try {
           console.log('Trying URL:', url);
-          const res = await fetch(url, { 
+          const res = await fetch(url, {
             cache: 'no-store',
             headers: { 'Cache-Control': 'no-cache' }
           });
           console.log('Response status:', res.status, res.statusText);
-          
+
           if (res.ok) {
-            const data = await res.json();
-            console.log('✅ Admin config fetched successfully:', data);
-            return data;
+            try {
+              const data = await res.json();
+              console.log('✅ Admin config fetched successfully (raw/cdn):', data);
+              return data;
+            } catch (parseErr) {
+              console.warn('⚠️ Fetched content but JSON.parse failed for', url, parseErr.message);
+              // continue to next fallback
+            }
           } else {
             console.warn('❌ Failed to fetch from:', url, 'Status:', res.status);
           }
-        } catch(e) {
-          console.error('❌ Exception fetching from:', url, 'Error:', e.message);
+        } catch (e) {
+          console.error('❌ Exception fetching from:', url, 'Error:', e && e.message ? e.message : e);
         }
       }
-      
-      console.error('❌ All fetch attempts failed. Returning null.');
+
+      // Fallback: use GitHub Contents API to retrieve file and decode base64
+      try {
+        const apiUrl = `https://api.github.com/repos/amtbrs-03/AMTBRS/contents/admin-config.json?ref=site-release`;
+        console.log('Trying GitHub Contents API fallback:', apiUrl);
+        const apiRes = await fetch(apiUrl, { headers: { 'Accept': 'application/vnd.github.v3+json' } });
+        console.log('API response status:', apiRes.status, apiRes.statusText);
+        if (apiRes.ok) {
+          const apiData = await apiRes.json();
+          if (apiData && apiData.content) {
+            try {
+              const decoded = atob(apiData.content.replace(/\n/g, ''));
+              const parsed = JSON.parse(decoded);
+              console.log('✅ Admin config fetched via API and decoded:', parsed);
+              return parsed;
+            } catch (e) {
+              console.error('❌ Failed to decode/parse admin-config from API content:', e.message);
+            }
+          } else {
+            console.warn('⚠️ API returned no content for admin-config.json', apiData);
+          }
+        } else {
+          console.warn('❌ GitHub Contents API fetch failed:', apiRes.status, apiRes.statusText);
+          const txt = await apiRes.text().catch(()=>'');
+          console.warn('API response body:', txt);
+        }
+      } catch (e) {
+        console.error('❌ Exception while fetching admin-config via API:', e && e.message ? e.message : e);
+      }
+
+      console.error('❌ All admin config fetch attempts failed. Returning null.');
       return null;
     }
 
