@@ -759,7 +759,11 @@
           // Reload order detail to show updated status
           currentOrder.status = newStatus;
           renderOrderDetail(currentOrder);
-          alert(`✅ Sipariş durumu "${newStatus}" olarak güncellendi!`);
+          if (newStatus === 'ready') {
+            alert('✅ FATURA OLUŞTURULDU');
+          } else {
+            alert(`✅ Sipariş durumu "${newStatus}" olarak güncellendi!`);
+          }
           return true;
         } else {
           console.error('❌ Failed to update order status:', updateResponse.status);
