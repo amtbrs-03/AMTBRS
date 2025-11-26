@@ -1,13 +1,17 @@
 {
   "name": "Ahmet BURSA",
   "email": "amtbrs@icloud.com",
-  "phone": "5384179081",
-  "pw": {
-    "algo": "PBKDF2-SHA256",
-    "iterations": 150000,
-    "salt": "AvH4P+m74prLTnBLCJNRjQ==",
-    "hash": "Ge9Dak51dk0kn17u0MpNh0RYpY6t05UiNzoP8oSxr5E="
-  },
-  "createdAt": 1763762433877,
-  "lastLogin": 1764136524187
+  "addresses": [
+    {
+      "id": "addr_1764136615181",
+      "title": "Ev",
+      "city": "İstanbul",
+      "district": "Kağıthane",
+      "neighborhood": "Çağlayan",
+      "addressDetail": "Fevziçakmak cad. No:47",
+      "postalCode": "34100",
+      "isDefault": true,
+      "createdAt": 1764136615181
+    }
+  ]
 }
