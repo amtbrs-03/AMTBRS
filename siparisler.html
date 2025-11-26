@@ -445,7 +445,7 @@
           ? addressText.substring(0, 47) + '...' 
           : addressText;
         
-        html += '<tr>';
+        html += '<tr style="cursor:pointer;transition:all 0.2s ease;" onclick="window.location.href=\'siparis-detay.html?id=' + encodeURIComponent(order.id) + '\'">';
         html += `<td style="font-weight:600;color:var(--green-dark);">${escapeHtml(order.id || '-')}</td>`;
         html += `<td style="font-weight:500;">${escapeHtml(order.customerName || '-')}</td>`;
         html += `<td style="color:var(--muted);">${escapeHtml(order.customerEmail || '-')}</td>`;
