@@ -1834,7 +1834,7 @@
                         }
                     }
 
-                    function renderAccountModal(){
+                    async function renderAccountModal(){
                         const user = getCurrentUser();
                         if (!user) return openAuthModal();
                         const nameEl = document.getElementById('acctName');
@@ -1844,8 +1844,8 @@
                         if (nameEl) nameEl.textContent = user.name || '';
                         if (emailEl) emailEl.textContent = user.email || '';
                         
-                        // Load addresses
-                        loadUserAddresses();
+                        // Load addresses from GitHub
+                        await loadUserAddresses();
                         
                         const orders = getOrdersForUser(user.email || '');
                         ordersEl.innerHTML = '';
@@ -1862,8 +1862,8 @@
                         });
                     }
 
-                    function openAccountModal(){
-                        renderAccountModal();
+                    async function openAccountModal(){
+                        await renderAccountModal();
                         const m = document.getElementById('accountModal'); if (!m) return;
                         m.style.display = 'block';
                         try{ const b = document.getElementById('authBtn'); if (b) b.setAttribute('aria-expanded','true'); }catch(e){}
