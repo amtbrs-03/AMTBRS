@@ -1,0 +1,18 @@
+{
+  "address": "çağlayan mah. fevziçakmak cad. no:47, çağlayan, kağıthane, İstanbul, Posta Kodu 34100",
+  "customerEmail": "amtbrs@icloud.com",
+  "customerName": "Ahmet BURSA",
+  "date": 1764194147513,
+  "iban": "TR33 0006 1005 1978 6457 8413 26",
+  "id": "ORD-1764194147513",
+  "items": [
+    {
+      "id": "2",
+      "name": "Ürün 2",
+      "price": 199.99,
+      "qty": 1
+    }
+  ],
+  "status": "pending",
+  "total": "199.99"
+}
