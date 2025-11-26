@@ -735,7 +735,7 @@
           console.log('✅ Order status updated successfully in GitHub');
           // Reload order detail to show updated status
           currentOrder.status = newStatus;
-          displayOrderDetail();
+          renderOrderDetail(currentOrder);
           alert(`✅ Sipariş durumu "${newStatus}" olarak güncellendi!`);
           return true;
         } else {
