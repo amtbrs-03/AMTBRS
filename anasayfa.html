@@ -2047,69 +2047,69 @@
                     
                     // Address Management Functions
                     function getUserAddresses() {
-                        const user = getCurrentUser();
-                        if (!user || !user.email) return [];
-                        
-                        // Get addresses from user object
-                        if (user.addresses && Array.isArray(user.addresses)) {
-                            return user.addresses;
+                        const cu = getCurrentUser();
+                        if (!cu || !cu.email) return [];
+                        try {
+                            const raw = localStorage.getItem('user_' + cu.email);
+                            if (!raw) return [];
+                            const full = JSON.parse(raw);
+                            // Prefer array form
+                            if (Array.isArray(full.addresses)) return full.addresses;
+                            // Legacy: single object -> array
+                            if (full.address && typeof full.address === 'object') {
+                                return [{ id: 'default', title: 'Varsayılan Adres', ...full.address, isDefault: true }];
+                            }
+                        } catch (e) {
+                            console.warn('getUserAddresses parse error:', e && e.message ? e.message : e);
                         }
-                        
-                        // Legacy: if user has single address object, convert to array
-                        if (user.address) {
-                            return [{
-                                id: 'default',
-                                title: 'Varsayılan Adres',
-                                ...user.address,
-                                isDefault: true
-                            }];
-                        }
-                        
                         return [];
                     }
                     
                     async function saveUserAddresses(addresses) {
-                        const user = getCurrentUser();
-                        if (!user || !user.email) return false;
-                        
-                        user.addresses = addresses;
-                        
-                        // Save to localStorage
-                        localStorage.setItem('user_' + user.email, JSON.stringify(user));
-                        
-                        // GitHub'a asenkron kaydet
-                        console.log('Adresler GitHub\'a kaydediliyor:', user.email);
+                        const cu = getCurrentUser();
+                        if (!cu || !cu.email) return false;
+                        let full = null;
+                        try { full = JSON.parse(localStorage.getItem('user_' + cu.email) || 'null'); } catch(_) {}
+                        if (!full || typeof full !== 'object') { full = { name: cu.name, email: cu.email }; }
+                        full.addresses = addresses;
+                        try { localStorage.setItem('user_' + cu.email, JSON.stringify(full)); } catch(_) {}
+                        console.log('Adresler GitHub\'a kaydediliyor:', cu.email);
                         try {
-                            const success = await commitFullUserToRepo(user);
-                            if (success) {
-                                console.log('Adresler GitHub\'a başarıyla kaydedildi');
-                                return true;
-                            } else {
-                                console.warn('GitHub kaydı başarısız ancak localStorage güncellendi');
-                                return true; // Still return true as localStorage succeeded
-                            }
+                            const ok = await commitFullUserToRepo(full);
+                            if (!ok) console.warn('GitHub kaydı başarısız ancak localStorage güncellendi');
+                            return true;
                         } catch(e) {
                             console.error('GitHub\'a kaydetme başarısız:', e);
-                            return true; // Still return true as localStorage succeeded
+                            return true;
                         }
                     }
                     
                     async function loadUserAddressesFromGitHub() {
-                        const user = getCurrentUser();
-                        if (!user || !user.email) {
+                        const cu = getCurrentUser();
+                        if (!cu || !cu.email) {
                             console.log('Giriş yapmış kullanıcı yok, GitHub\'dan adres yüklenemiyor');
                             return false;
                         }
-                        
-                        console.log('GitHub\'dan adresler yükleniyor:', user.email);
+                        console.log('GitHub\'dan adresler yükleniyor:', cu.email);
                         try {
-                            const remoteUser = await fetchUserFromRepo(user.email);
-                            if (remoteUser && remoteUser.addresses) {
-                                console.log('GitHub\'dan adresler yüklendi:', remoteUser.addresses.length, 'adres');
-                                // Update user in localStorage with GitHub data
-                                user.addresses = remoteUser.addresses;
-                                localStorage.setItem('user_' + user.email, JSON.stringify(user));
-                                return true;
+                            const remoteUser = await fetchUserFromRepo(cu.email);
+                            if (remoteUser) {
+                                // Merge remote into local full record; prefer remote addresses or legacy address
+                                let localFull = null;
+                                try { localFull = JSON.parse(localStorage.getItem('user_' + cu.email) || 'null'); } catch(_) {}
+                                if (!localFull || typeof localFull !== 'object') localFull = { name: cu.name, email: cu.email };
+                                if (Array.isArray(remoteUser.addresses)) {
+                                    localFull.addresses = remoteUser.addresses;
+                                } else if (remoteUser.address && typeof remoteUser.address === 'object') {
+                                    localFull.addresses = [{ id: 'default', title: 'Varsayılan Adres', ...remoteUser.address, isDefault: true }];
+                                }
+                                // Keep other remote fields if present
+                                if (remoteUser.pw) localFull.pw = remoteUser.pw;
+                                if (remoteUser.createdAt) localFull.createdAt = remoteUser.createdAt;
+                                if (remoteUser.lastLogin) localFull.lastLogin = remoteUser.lastLogin;
+                                localStorage.setItem('user_' + cu.email, JSON.stringify(localFull));
+                                console.log('GitHub\'dan adresler yerel kayda işlendi');
+                                return !!localFull.addresses && localFull.addresses.length > 0;
                             } else {
                                 console.log('Bu kullanıcı için GitHub\'da adres bulunamadı');
                                 return false;
