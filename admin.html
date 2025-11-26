@@ -330,7 +330,6 @@
         <button id="saveAll" class="btn">💾 Tüm Değişiklikleri Kaydet</button>
         <button id="loadUsersBtn" class="btn">👥 Kullanıcıları Yükle</button>
         <button id="loadOrdersBtn" class="btn">📦 Müşteri Siparişleri</button>
-        <button id="runSelfTest" class="btn btn-ghost">🧪 Test Çalıştır</button>
       </div>
 
       <div class="card">
@@ -644,55 +643,6 @@
   </script>
 
   <script>
-    // Automated self-test for admin UI (runs in-browser when user clicks the test button)
-  async function runAdminSelfTest(){
-      const out = document.getElementById('selfTestResults') || (function(){
-        const el = document.createElement('div'); el.id='selfTestResults'; el.className='card'; el.style.marginTop='1rem'; el.innerHTML = '<h3>Otomatik Test Sonuçları</h3><div id="selfTestLog"></div>'; document.querySelector('.page')?.appendChild(el) || document.body.appendChild(el); return el; })();
-      const log = out.querySelector('#selfTestLog'); log.innerHTML = '';
-      function append(msg, ok){ const p = document.createElement('div'); p.style.padding='.35rem 0'; p.textContent = (ok? '✅ ':'❌ ') + msg; log.appendChild(p); }
-
-      try{
-        // basic element checks
-        const ids = ['saveAll','importFile','addBtn','newImage','newPreview','products'];
-        ids.forEach(id=> append(id + ' bulundu', !!document.getElementById(id)) );
-
-        // localStorage get/set
-        const PRODUCTS_KEY = 'products_v1';
-        const before = (function(){ try{ return JSON.parse(localStorage.getItem(PRODUCTS_KEY))||[] }catch(e){return []}})();
-        append('localStorage okunabildi', true);
-
-        // add a temporary test product and save via existing flow
-        const temp = { id: ('t_'+Math.random().toString(36).slice(2,8)), name: '__selftest__', price: 1.23, image: '' };
-        const cur = getProducts();
-        setProducts(cur.concat([temp]));
-        render();
-        append('Geçici ürün eklendi ve render edildi', true);
-
-        // trigger saveAll which updates localStorage from DOM
-        document.getElementById('saveAll').click();
-        await new Promise(r=>setTimeout(r,250));
-        const after = getProducts();
-        const found = after.some(p=>p.name === '__selftest__');
-        append('saveAll ile ürün kaydedildi', found);
-
-        // restore original
-        setProducts(before);
-        render();
-        append('localStorage geri yüklendi', true);
-
-  // JSON export test
-  try{ const json = JSON.stringify(getProducts()); append('JSON dışa aktarımı oluşturuldu', !!json); }catch(e){ append('JSON dışa aktarımı başarısız: '+e.message,false); }
-
-        // basic API availability
-  append('FileReader ve toDataURL mevcut', (typeof FileReader !== 'undefined' && typeof toDataURL === 'function'));
-
-        append('Test tamamlandı — detaylar yukarıda', true);
-      }catch(err){ append('Test çalıştırırken hata: '+err.message, false); }
-      out.scrollIntoView({behavior:'smooth'});
-    }
-
-    document.getElementById('runSelfTest').addEventListener('click', ()=>{ runAdminSelfTest(); });
-
     // Utility function for HTML escaping
     function escapeHtml(s){ 
       return (s||'').replace(/[&<>\"']/g, function(m){
