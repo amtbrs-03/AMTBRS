@@ -296,6 +296,28 @@
 
         .form-content { display: none; }
         .form-content.active { display: block; }
+        
+        /* Account Tab Styles */
+        .account-tab {
+            padding: 0.7rem 1.2rem;
+            border: none;
+            background: #f3f4f6;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #6b7280;
+            transition: all 0.2s;
+        }
+        .account-tab:hover {
+            background: #e5e7eb;
+        }
+        .account-tab.active {
+            background: #10b981;
+            color: white;
+        }
+        .account-tab-content {
+            animation: fadeIn 0.3s;
+        }
 
         /* Products scene */
         .products-wrapper {
@@ -880,40 +902,182 @@
 
                 <!-- Account Modal: shows profile + orders/invoices for logged-in users -->
                 <div id="accountModal" class="modal">
-                    <div class="modal-content">
+                    <div class="modal-content" style="max-width:800px;">
                         <span class="close" data-action="close-account">&times;</span>
                         <h2 style="margin-bottom: 1rem; color: #0b1220;">Üye Hesabım</h2>
+                        
+                        <!-- Tab Navigation -->
+                        <div style="display:flex; gap:0.5rem; margin-bottom:1.5rem; border-bottom:2px solid #e5e7eb; padding-bottom:0.5rem;">
+                            <button id="tabProfile" class="account-tab active" onclick="switchAccountTab('profile')">👤 Profil</button>
+                            <button id="tabAddresses" class="account-tab" onclick="switchAccountTab('addresses')">📍 Adreslerim</button>
+                            <button id="tabOrders" class="account-tab" onclick="switchAccountTab('orders')">📦 Siparişlerim</button>
+                        </div>
+                        
                         <div id="accountBody">
-                            <div style="margin-bottom:0.6rem;">
-                                <strong id="acctName">İsim</strong>
-                                <div id="acctEmail" style="font-size:0.95rem;color:#334155"></div>
-                            </div>
-                            
-                            <!-- Adres Bilgileri -->
-                            <div id="accountAddress" style="margin-top:1rem; padding:1rem; background:#f0fdf4; border-radius:8px; border-left:4px solid #10b981;">
-                                <strong style="color:#064e3b; font-size:0.95rem;">📍 Kayıtlı Adres</strong>
-                                <div id="addressContent" style="margin-top:0.5rem; font-size:0.9rem; color:#334155; line-height:1.5;">
-                                    Adres bilgisi yükleniyor...
+                            <!-- Profile Tab -->
+                            <div id="profileTab" class="account-tab-content">
+                                <div style="margin-bottom:0.6rem;">
+                                    <strong id="acctName">İsim</strong>
+                                    <div id="acctEmail" style="font-size:0.95rem;color:#334155"></div>
+                                </div>
+
+                                <div style="margin-top:1rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+                                    <button data-action="close-account" style="flex:1; min-width:120px;">Kapat</button>
+                                    <button data-action="logout" style="flex:1; min-width:120px; background:#f59e0b;color:#fff">Çıkış Yap</button>
+                                </div>
+
+                                <div style="margin-top:1rem; padding-top:1rem; border-top:2px solid #fee2e2;">
+                                    <div style="color:#991b1b; font-size:0.9rem; margin-bottom:0.5rem; font-weight:600;">⚠️ Hesap Silme</div>
+                                    <div style="color:#6b7280; font-size:0.85rem; margin-bottom:0.6rem;">Hesabınızı kalıcı olarak silmek istiyorsanız aşağıdaki butonu kullanın. Bu işlem geri alınamaz.</div>
+                                    <button data-action="delete-account" style="width:100%; background:#dc2626; color:#fff; font-weight:700;">🗑️ Hesabı Kalıcı Olarak Sil</button>
                                 </div>
                             </div>
-
-                            <div style="margin-top:0.6rem;">
-                                <strong>Siparişlerim</strong>
+                            
+                            <!-- Addresses Tab -->
+                            <div id="addressesTab" class="account-tab-content" style="display:none;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                                    <h3 style="margin:0; color:#064e3b;">Kayıtlı Adreslerim</h3>
+                                    <button onclick="showAddAddressForm()" style="background:#10b981; color:white; padding:0.5rem 1rem; border:none; border-radius:8px; cursor:pointer; font-weight:600;">+ Yeni Adres Ekle</button>
+                                </div>
+                                
+                                <div id="addressesList" style="display:flex; flex-direction:column; gap:1rem;">
+                                    <!-- Addresses will be loaded here -->
+                                </div>
+                                
+                                <!-- Add Address Form (hidden by default) -->
+                                <div id="addAddressForm" style="display:none; margin-top:1.5rem; padding:1.5rem; background:#f9fafb; border-radius:12px; border:2px solid #10b981;">
+                                    <h4 style="margin-top:0; color:#064e3b;">Yeni Adres Ekle</h4>
+                                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                                        <div>
+                                            <label style="display:block; margin-bottom:0.3rem; font-weight:600; color:#334155;">Adres Başlığı *</label>
+                                            <input type="text" id="newAddressTitle" placeholder="Örn: Ev, İş, Ofis" style="width:100%; padding:0.7rem; border:1px solid #d1d5db; border-radius:8px;">
+                                        </div>
+                                        <div>
+                                            <label style="display:block; margin-bottom:0.3rem; font-weight:600; color:#334155;">İl *</label>
+                                            <select id="newAddressCity" style="width:100%; padding:0.7rem; border:1px solid #d1d5db; border-radius:8px; background:white;">
+                                                <option value="">İl Seçiniz</option>
+                                                <option value="Adana">Adana</option>
+                                                <option value="Adıyaman">Adıyaman</option>
+                                                <option value="Afyonkarahisar">Afyonkarahisar</option>
+                                                <option value="Ağrı">Ağrı</option>
+                                                <option value="Amasya">Amasya</option>
+                                                <option value="Ankara">Ankara</option>
+                                                <option value="Antalya">Antalya</option>
+                                                <option value="Artvin">Artvin</option>
+                                                <option value="Aydın">Aydın</option>
+                                                <option value="Balıkesir">Balıkesir</option>
+                                                <option value="Bilecik">Bilecik</option>
+                                                <option value="Bingöl">Bingöl</option>
+                                                <option value="Bitlis">Bitlis</option>
+                                                <option value="Bolu">Bolu</option>
+                                                <option value="Burdur">Burdur</option>
+                                                <option value="Bursa">Bursa</option>
+                                                <option value="Çanakkale">Çanakkale</option>
+                                                <option value="Çankırı">Çankırı</option>
+                                                <option value="Çorum">Çorum</option>
+                                                <option value="Denizli">Denizli</option>
+                                                <option value="Diyarbakır">Diyarbakır</option>
+                                                <option value="Edirne">Edirne</option>
+                                                <option value="Elazığ">Elazığ</option>
+                                                <option value="Erzincan">Erzincan</option>
+                                                <option value="Erzurum">Erzurum</option>
+                                                <option value="Eskişehir">Eskişehir</option>
+                                                <option value="Gaziantep">Gaziantep</option>
+                                                <option value="Giresun">Giresun</option>
+                                                <option value="Gümüşhane">Gümüşhane</option>
+                                                <option value="Hakkari">Hakkari</option>
+                                                <option value="Hatay">Hatay</option>
+                                                <option value="Isparta">Isparta</option>
+                                                <option value="Mersin">Mersin</option>
+                                                <option value="İstanbul">İstanbul</option>
+                                                <option value="İzmir">İzmir</option>
+                                                <option value="Kars">Kars</option>
+                                                <option value="Kastamonu">Kastamonu</option>
+                                                <option value="Kayseri">Kayseri</option>
+                                                <option value="Kırklareli">Kırklareli</option>
+                                                <option value="Kırşehir">Kırşehir</option>
+                                                <option value="Kocaeli">Kocaeli</option>
+                                                <option value="Konya">Konya</option>
+                                                <option value="Kütahya">Kütahya</option>
+                                                <option value="Malatya">Malatya</option>
+                                                <option value="Manisa">Manisa</option>
+                                                <option value="Kahramanmaraş">Kahramanmaraş</option>
+                                                <option value="Mardin">Mardin</option>
+                                                <option value="Muğla">Muğla</option>
+                                                <option value="Muş">Muş</option>
+                                                <option value="Nevşehir">Nevşehir</option>
+                                                <option value="Niğde">Niğde</option>
+                                                <option value="Ordu">Ordu</option>
+                                                <option value="Rize">Rize</option>
+                                                <option value="Sakarya">Sakarya</option>
+                                                <option value="Samsun">Samsun</option>
+                                                <option value="Siirt">Siirt</option>
+                                                <option value="Sinop">Sinop</option>
+                                                <option value="Sivas">Sivas</option>
+                                                <option value="Tekirdağ">Tekirdağ</option>
+                                                <option value="Tokat">Tokat</option>
+                                                <option value="Trabzon">Trabzon</option>
+                                                <option value="Tunceli">Tunceli</option>
+                                                <option value="Şanlıurfa">Şanlıurfa</option>
+                                                <option value="Uşak">Uşak</option>
+                                                <option value="Van">Van</option>
+                                                <option value="Yozgat">Yozgat</option>
+                                                <option value="Zonguldak">Zonguldak</option>
+                                                <option value="Aksaray">Aksaray</option>
+                                                <option value="Bayburt">Bayburt</option>
+                                                <option value="Karaman">Karaman</option>
+                                                <option value="Kırıkkale">Kırıkkale</option>
+                                                <option value="Batman">Batman</option>
+                                                <option value="Şırnak">Şırnak</option>
+                                                <option value="Bartın">Bartın</option>
+                                                <option value="Ardahan">Ardahan</option>
+                                                <option value="Iğdır">Iğdır</option>
+                                                <option value="Yalova">Yalova</option>
+                                                <option value="Karabük">Karabük</option>
+                                                <option value="Kilis">Kilis</option>
+                                                <option value="Osmaniye">Osmaniye</option>
+                                                <option value="Düzce">Düzce</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label style="display:block; margin-bottom:0.3rem; font-weight:600; color:#334155;">İlçe *</label>
+                                            <input type="text" id="newAddressDistrict" placeholder="İlçe" style="width:100%; padding:0.7rem; border:1px solid #d1d5db; border-radius:8px;">
+                                        </div>
+                                        <div>
+                                            <label style="display:block; margin-bottom:0.3rem; font-weight:600; color:#334155;">Mahalle</label>
+                                            <input type="text" id="newAddressNeighborhood" placeholder="Mahalle" style="width:100%; padding:0.7rem; border:1px solid #d1d5db; border-radius:8px;">
+                                        </div>
+                                        <div style="grid-column:1/-1;">
+                                            <label style="display:block; margin-bottom:0.3rem; font-weight:600; color:#334155;">Adres Detayı *</label>
+                                            <textarea id="newAddressDetail" placeholder="Sokak, cadde, bina no, daire no vb." rows="3" style="width:100%; padding:0.7rem; border:1px solid #d1d5db; border-radius:8px; resize:vertical;"></textarea>
+                                        </div>
+                                        <div>
+                                            <label style="display:block; margin-bottom:0.3rem; font-weight:600; color:#334155;">Posta Kodu</label>
+                                            <input type="text" id="newAddressPostalCode" placeholder="Posta Kodu" style="width:100%; padding:0.7rem; border:1px solid #d1d5db; border-radius:8px;">
+                                        </div>
+                                        <div style="display:flex; align-items:flex-end;">
+                                            <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;">
+                                                <input type="checkbox" id="newAddressDefault" style="width:18px; height:18px; cursor:pointer;">
+                                                <span style="font-weight:600; color:#334155;">Varsayılan adres olarak ayarla</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div style="display:flex; gap:0.5rem; margin-top:1rem;">
+                                        <button onclick="saveNewAddress()" style="flex:1; background:#10b981; color:white; padding:0.7rem; border:none; border-radius:8px; cursor:pointer; font-weight:700;">💾 Adresi Kaydet</button>
+                                        <button onclick="cancelAddAddress()" style="flex:1; background:#6b7280; color:white; padding:0.7rem; border:none; border-radius:8px; cursor:pointer; font-weight:700;">❌ İptal</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Orders Tab -->
+                            <div id="ordersTab" class="account-tab-content" style="display:none;">
+                                <h3 style="margin-top:0; color:#064e3b;">Siparişlerim</h3>
                                 <div id="ordersList" style="margin-top:0.5rem;">
                                     <div style="color:#6b7280;padding:0.6rem">Siparişiniz bulunmuyor.</div>
                                 </div>
-                            </div>
-
-                            <div style="margin-top:1rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
-                                <button data-action="close-account" style="flex:1; min-width:120px;">Kapat</button>
-                                <button data-action="download-all-invoices" style="flex:1; min-width:120px; background:#2563eb;color:#fff">Tüm Faturaları İndir</button>
-                                <button data-action="logout" style="flex:1; min-width:120px; background:#f59e0b;color:#fff">Çıkış Yap</button>
-                            </div>
-
-                            <div style="margin-top:1rem; padding-top:1rem; border-top:2px solid #fee2e2;">
-                                <div style="color:#991b1b; font-size:0.9rem; margin-bottom:0.5rem; font-weight:600;">⚠️ Hesap Silme</div>
-                                <div style="color:#6b7280; font-size:0.85rem; margin-bottom:0.6rem;">Hesabınızı kalıcı olarak silmek istiyorsanız aşağıdaki butonu kullanın. Bu işlem geri alınamaz.</div>
-                                <button data-action="delete-account" style="width:100%; background:#dc2626; color:#fff; font-weight:700;">🗑️ Hesabı Kalıcı Olarak Sil</button>
+                                <div style="margin-top:1rem;">
+                                    <button data-action="download-all-invoices" style="width:100%; background:#2563eb;color:#fff; padding:0.7rem; border:none; border-radius:8px; cursor:pointer; font-weight:700;">📥 Tüm Faturaları İndir</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1675,30 +1839,13 @@
                         if (!user) return openAuthModal();
                         const nameEl = document.getElementById('acctName');
                         const emailEl = document.getElementById('acctEmail');
-                        const addressContentEl = document.getElementById('addressContent');
                         const ordersEl = document.getElementById('ordersList');
                         
                         if (nameEl) nameEl.textContent = user.name || '';
                         if (emailEl) emailEl.textContent = user.email || '';
                         
-                        // Display address information
-                        if (addressContentEl && user.address) {
-                            const addr = user.address;
-                            let addressHTML = '';
-                            if (addr.city) addressHTML += `<div><strong>İl:</strong> ${addr.city}</div>`;
-                            if (addr.district) addressHTML += `<div><strong>İlçe:</strong> ${addr.district}</div>`;
-                            if (addr.neighborhood) addressHTML += `<div><strong>Mahalle:</strong> ${addr.neighborhood}</div>`;
-                            if (addr.addressDetail) addressHTML += `<div><strong>Adres:</strong> ${addr.addressDetail}</div>`;
-                            if (addr.postalCode) addressHTML += `<div><strong>Posta Kodu:</strong> ${addr.postalCode}</div>`;
-                            
-                            if (addressHTML) {
-                                addressContentEl.innerHTML = addressHTML;
-                            } else {
-                                addressContentEl.innerHTML = '<div style="color:#6b7280;">Adres bilgisi bulunamadı.</div>';
-                            }
-                        } else if (addressContentEl) {
-                            addressContentEl.innerHTML = '<div style="color:#6b7280;">Adres bilgisi bulunamadı.</div>';
-                        }
+                        // Load addresses
+                        loadUserAddresses();
                         
                         const orders = getOrdersForUser(user.email || '');
                         ordersEl.innerHTML = '';
@@ -1724,6 +1871,197 @@
                     function closeAccountModal(){
                         const m = document.getElementById('accountModal'); if (!m) return; m.style.display='none';
                         try{ const b = document.getElementById('authBtn'); if (b) b.setAttribute('aria-expanded','false'); }catch(e){}
+                    }
+                    
+                    // Account Tab Switching
+                    function switchAccountTab(tabName) {
+                        // Hide all tabs
+                        const tabs = ['profile', 'addresses', 'orders'];
+                        tabs.forEach(tab => {
+                            const tabEl = document.getElementById(tab + 'Tab');
+                            const btnEl = document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1));
+                            if (tabEl) tabEl.style.display = 'none';
+                            if (btnEl) btnEl.classList.remove('active');
+                        });
+                        
+                        // Show selected tab
+                        const selectedTab = document.getElementById(tabName + 'Tab');
+                        const selectedBtn = document.getElementById('tab' + tabName.charAt(0).toUpperCase() + tabName.slice(1));
+                        if (selectedTab) selectedTab.style.display = 'block';
+                        if (selectedBtn) selectedBtn.classList.add('active');
+                    }
+                    
+                    // Address Management Functions
+                    function getUserAddresses() {
+                        const user = getCurrentUser();
+                        if (!user || !user.email) return [];
+                        
+                        // Get addresses from user object
+                        if (user.addresses && Array.isArray(user.addresses)) {
+                            return user.addresses;
+                        }
+                        
+                        // Legacy: if user has single address object, convert to array
+                        if (user.address) {
+                            return [{
+                                id: 'default',
+                                title: 'Varsayılan Adres',
+                                ...user.address,
+                                isDefault: true
+                            }];
+                        }
+                        
+                        return [];
+                    }
+                    
+                    function saveUserAddresses(addresses) {
+                        const user = getCurrentUser();
+                        if (!user || !user.email) return false;
+                        
+                        user.addresses = addresses;
+                        
+                        // Save to localStorage
+                        localStorage.setItem('user_' + user.email, JSON.stringify(user));
+                        
+                        // Save to GitHub
+                        commitFullUserToRepo(user);
+                        
+                        return true;
+                    }
+                    
+                    function loadUserAddresses() {
+                        const addresses = getUserAddresses();
+                        const listEl = document.getElementById('addressesList');
+                        
+                        if (!listEl) return;
+                        
+                        if (addresses.length === 0) {
+                            listEl.innerHTML = '<div style="padding:1rem; text-align:center; color:#6b7280;">Kayıtlı adres bulunmuyor. Yeni adres ekleyebilirsiniz.</div>';
+                            return;
+                        }
+                        
+                        listEl.innerHTML = '';
+                        addresses.forEach(addr => {
+                            const card = document.createElement('div');
+                            card.style.cssText = 'padding:1rem; background:#f9fafb; border-radius:12px; border:2px solid ' + (addr.isDefault ? '#10b981' : '#e5e7eb') + ';';
+                            
+                            let html = '<div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:0.5rem;">';
+                            html += '<div>';
+                            html += '<strong style="color:#064e3b; font-size:1.1rem;">' + (addr.title || 'Adres') + '</strong>';
+                            if (addr.isDefault) {
+                                html += ' <span style="background:#10b981; color:white; padding:0.2rem 0.5rem; border-radius:4px; font-size:0.75rem; margin-left:0.5rem;">Varsayılan</span>';
+                            }
+                            html += '</div>';
+                            html += '<div style="display:flex; gap:0.5rem;">';
+                            if (!addr.isDefault) {
+                                html += '<button onclick="setDefaultAddress(\'' + addr.id + '\')" style="background:#3b82f6; color:white; border:none; padding:0.4rem 0.8rem; border-radius:6px; cursor:pointer; font-size:0.85rem;">Varsayılan Yap</button>';
+                            }
+                            html += '<button onclick="deleteAddress(\'' + addr.id + '\')" style="background:#ef4444; color:white; border:none; padding:0.4rem 0.8rem; border-radius:6px; cursor:pointer; font-size:0.85rem;">Sil</button>';
+                            html += '</div></div>';
+                            
+                            html += '<div style="color:#334155; font-size:0.9rem; line-height:1.6;">';
+                            if (addr.city) html += '<div>' + addr.city;
+                            if (addr.district) html += ' / ' + addr.district;
+                            if (addr.neighborhood) html += ' / ' + addr.neighborhood;
+                            html += '</div>';
+                            if (addr.addressDetail) html += '<div>' + addr.addressDetail + '</div>';
+                            if (addr.postalCode) html += '<div><strong>Posta Kodu:</strong> ' + addr.postalCode + '</div>';
+                            html += '</div>';
+                            
+                            card.innerHTML = html;
+                            listEl.appendChild(card);
+                        });
+                    }
+                    
+                    function showAddAddressForm() {
+                        document.getElementById('addAddressForm').style.display = 'block';
+                        // Clear form
+                        document.getElementById('newAddressTitle').value = '';
+                        document.getElementById('newAddressCity').value = '';
+                        document.getElementById('newAddressDistrict').value = '';
+                        document.getElementById('newAddressNeighborhood').value = '';
+                        document.getElementById('newAddressDetail').value = '';
+                        document.getElementById('newAddressPostalCode').value = '';
+                        document.getElementById('newAddressDefault').checked = false;
+                    }
+                    
+                    function cancelAddAddress() {
+                        document.getElementById('addAddressForm').style.display = 'none';
+                    }
+                    
+                    function saveNewAddress() {
+                        const title = document.getElementById('newAddressTitle').value.trim();
+                        const city = document.getElementById('newAddressCity').value.trim();
+                        const district = document.getElementById('newAddressDistrict').value.trim();
+                        const neighborhood = document.getElementById('newAddressNeighborhood').value.trim();
+                        const addressDetail = document.getElementById('newAddressDetail').value.trim();
+                        const postalCode = document.getElementById('newAddressPostalCode').value.trim();
+                        const isDefault = document.getElementById('newAddressDefault').checked;
+                        
+                        if (!title || !city || !district || !addressDetail) {
+                            alert('Lütfen zorunlu alanları doldurun (Başlık, İl, İlçe, Adres Detayı)');
+                            return;
+                        }
+                        
+                        const addresses = getUserAddresses();
+                        
+                        const newAddress = {
+                            id: 'addr_' + Date.now(),
+                            title,
+                            city,
+                            district,
+                            neighborhood,
+                            addressDetail,
+                            postalCode,
+                            isDefault: isDefault || addresses.length === 0,
+                            createdAt: Date.now()
+                        };
+                        
+                        // If this is set as default, remove default from others
+                        if (newAddress.isDefault) {
+                            addresses.forEach(addr => addr.isDefault = false);
+                        }
+                        
+                        addresses.push(newAddress);
+                        
+                        if (saveUserAddresses(addresses)) {
+                            alert('Adres başarıyla kaydedildi!');
+                            cancelAddAddress();
+                            loadUserAddresses();
+                        } else {
+                            alert('Adres kaydedilemedi!');
+                        }
+                    }
+                    
+                    function setDefaultAddress(addressId) {
+                        const addresses = getUserAddresses();
+                        addresses.forEach(addr => {
+                            addr.isDefault = (addr.id === addressId);
+                        });
+                        
+                        if (saveUserAddresses(addresses)) {
+                            alert('Varsayılan adres güncellendi!');
+                            loadUserAddresses();
+                        }
+                    }
+                    
+                    function deleteAddress(addressId) {
+                        if (!confirm('Bu adresi silmek istediğinizden emin misiniz?')) return;
+                        
+                        let addresses = getUserAddresses();
+                        const deletedAddr = addresses.find(a => a.id === addressId);
+                        
+                        addresses = addresses.filter(addr => addr.id !== addressId);
+                        
+                        // If deleted address was default and there are other addresses, make first one default
+                        if (deletedAddr && deletedAddr.isDefault && addresses.length > 0) {
+                            addresses[0].isDefault = true;
+                        }
+                        
+                        if (saveUserAddresses(addresses)) {
+                            alert('Adres silindi!');
+                            loadUserAddresses();
+                        }
                     }
 
                     // Profile menu helpers
