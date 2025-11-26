@@ -262,6 +262,10 @@
         <div class="number" id="pendingOrders">0</div>
       </div>
       <div class="stat-card">
+        <div class="label">✅ Hazır</div>
+        <div class="number" id="readyOrders">0</div>
+      </div>
+      <div class="stat-card">
         <div class="label">💰 Toplam Tutar</div>
         <div class="number" id="totalAmount">₺0</div>
       </div>
@@ -390,10 +394,12 @@
     function updateStats(orders) {
       const total = orders.length;
       const pending = orders.filter(o => o.status === 'pending').length;
+      const ready = orders.filter(o => o.status === 'ready').length;
       const totalAmount = orders.reduce((sum, o) => sum + parseFloat(o.total || 0), 0);
       
       document.getElementById('totalOrders').textContent = total;
       document.getElementById('pendingOrders').textContent = pending;
+      document.getElementById('readyOrders').textContent = ready;
       document.getElementById('totalAmount').textContent = '₺' + totalAmount.toFixed(2);
     }
 
