@@ -529,10 +529,7 @@
       for (let url of urls) {
         try {
           console.log('Trying URL:', url);
-          const res = await fetch(url, {
-            cache: 'no-store',
-            headers: { 'Cache-Control': 'no-cache' }
-          });
+          const res = await fetch(url, { cache: 'no-store' });
           console.log('Response status:', res.status, res.statusText);
 
           if (res.ok) {
@@ -1197,12 +1194,8 @@
         const fileName = `${email}_full.json`;
         const getUrl = `https://api.github.com/repos/${owner}/${repo}/contents/users/${encodeURIComponent(fileName)}?ref=${encodeURIComponent(branch)}`;
         
-        const getResponse = await fetch(getUrl, {
-          headers: {
-            'Authorization': `token ${token}`,
-            'Accept': 'application/vnd.github.v3+json'
-          }
-        });
+        // Avoid CORS preflight issues by not sending Authorization on GET (public repo read)
+        const getResponse = await fetch(getUrl);
 
         if (getResponse.status === 404) {
           alert('Kullanıcı dosyası bulunamadı (zaten silinmiş olabilir).');
@@ -1468,7 +1461,8 @@
         document.getElementById('newName').value=''; document.getElementById('newPrice').value=''; document.getElementById('newEmoji').value=''; document.getElementById('newImage').value='';
       });
 
-      document.getElementById('saveAll').addEventListener('click', async (ev)=>{
+      const saveAllBtn = document.getElementById('saveAll');
+      if (saveAllBtn) saveAllBtn.addEventListener('click', async (ev)=>{
         const btn = ev.currentTarget;
         await withProgress(btn, '⏳ Kaydediliyor...', async ()=>{
           // gather edited fields and file uploads
@@ -1560,7 +1554,8 @@
       }
 
       // Push products explicitly (uses same flow as saveAll push)
-      document.getElementById('pushProducts').addEventListener('click', async (ev)=>{
+      const pushProductsBtn = document.getElementById('pushProducts');
+      if (pushProductsBtn) pushProductsBtn.addEventListener('click', async (ev)=>{
         const btn = ev.currentTarget;
         await withProgress(btn, '⏳ GitHub\'a kaydediliyor...', async ()=>{
           try{
@@ -1615,7 +1610,8 @@
         document.getElementById('contactBtnText').value = s.contactBtnText || 'İletişim';
       }
 
-      document.getElementById('saveSettings').addEventListener('click', async (ev)=>{
+      const saveSettingsBtn = document.getElementById('saveSettings');
+      if (saveSettingsBtn) saveSettingsBtn.addEventListener('click', async (ev)=>{
         const btn = ev.currentTarget;
         await withProgress(btn, '⏳ Ayarlar kaydediliyor...', async ()=>{
           const s = {
@@ -1651,7 +1647,8 @@
         });
       });
 
-      document.getElementById('loadDefaultsSettings').addEventListener('click', (ev)=>{
+      const loadDefaultsSettingsBtn = document.getElementById('loadDefaultsSettings');
+      if (loadDefaultsSettingsBtn) loadDefaultsSettingsBtn.addEventListener('click', (ev)=>{
         const btn = ev.currentTarget;
         withProgress(btn, '⏳ Yükleniyor...', ()=>{
           if (!confirm('Varsayılan site ayarları yüklensin mi?')) return;
@@ -1675,7 +1672,8 @@
       // Note: Orders admin moved to siparisler.html (separate page)
       // renderOrdersAdmin() function removed
       
-      document.getElementById('resetDefault').addEventListener('click', (ev)=>{
+      const resetDefaultBtn = document.getElementById('resetDefault');
+      if (resetDefaultBtn) resetDefaultBtn.addEventListener('click', (ev)=>{
         const btn = ev.currentTarget;
         withProgress(btn, '⏳ Yükleniyor...', ()=>{
           if (!confirm('Varsayılan ürünlere geri dönülsün mü?')) return;
