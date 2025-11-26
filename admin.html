@@ -1141,6 +1141,28 @@
       }) 
     }
 
+    // Generic helper: run async action with button progress state
+    async function withProgress(btn, text, action){
+      if (btn) {
+        btn.dataset.originalText = btn.textContent;
+        btn.disabled = true;
+        btn.style.opacity = '0.7';
+        btn.style.cursor = 'not-allowed';
+        if (text) btn.textContent = text;
+      }
+      try{
+        return await action();
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.style.opacity = '';
+          btn.style.cursor = 'pointer';
+          if (btn.dataset && btn.dataset.originalText) btn.textContent = btn.dataset.originalText;
+          if (btn.dataset) delete btn.dataset.originalText;
+        }
+      }
+    }
+
     // Delete user from GitHub (Contents API)
     async function deleteUser(email, name, btnEl) {
       if (!confirm(`"${name}" (${email}) kullanıcısını silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz!`)) {
@@ -1443,77 +1465,80 @@
         document.getElementById('newName').value=''; document.getElementById('newPrice').value=''; document.getElementById('newEmoji').value=''; document.getElementById('newImage').value='';
       });
 
-      document.getElementById('saveAll').addEventListener('click', async ()=>{
-        // gather edited fields and file uploads
-        const products = getProducts();
-        const items = Array.from(document.querySelectorAll('.prod-item'));
-        for (let i=0;i<items.length;i++){
-          const el = items[i];
-          const idx = i;
-          const name = el.querySelector('.pname').value.trim();
-          const price = parseFloat(el.querySelector('.pprice').value) || 0;
-          const emoji = el.querySelector('.pemoji').value.trim();
-          const file = el.querySelector('.pimage').files[0];
-          let img = emoji || '';
-          if (file){ img = await toDataURL(file); }
-          products[idx].name = name; products[idx].price = price; products[idx].image = img;
-        }
-        setProducts(products);
-        
-        // Push to GitHub
-        console.log('Pushing products to GitHub...');
-        const result = await pushToGitHub(products, 'Admin: update products');
-        
-        if (result.ok) {
-          alert('Ürünler kaydedildi ve GitHub\'a gönderildi! ✓');
-        } else {
-          alert('Ürünler kaydedildi (localStorage). GitHub güncellemesi başarısız: ' + (result.error || 'unknown'));
-        }
-        
-        render();
+      document.getElementById('saveAll').addEventListener('click', async (ev)=>{
+        const btn = ev.currentTarget;
+        await withProgress(btn, '⏳ Kaydediliyor...', async ()=>{
+          // gather edited fields and file uploads
+          const products = getProducts();
+          const items = Array.from(document.querySelectorAll('.prod-item'));
+          for (let i=0;i<items.length;i++){
+            const el = items[i];
+            const idx = i;
+            const name = el.querySelector('.pname').value.trim();
+            const price = parseFloat(el.querySelector('.pprice').value) || 0;
+            const emoji = el.querySelector('.pemoji').value.trim();
+            const file = el.querySelector('.pimage').files[0];
+            let img = emoji || '';
+            if (file){ img = await toDataURL(file); }
+            products[idx].name = name; products[idx].price = price; products[idx].image = img;
+          }
+          setProducts(products);
+          
+          // Push to GitHub
+          console.log('Pushing products to GitHub...');
+          const result = await pushToGitHub(products, 'Admin: update products');
+          
+          if (result.ok) {
+            alert('Ürünler kaydedildi ve GitHub\'a gönderildi! ✓');
+          } else {
+            alert('Ürünler kaydedildi (localStorage). GitHub güncellemesi başarısız: ' + (result.error || 'bilinmiyor'));
+          }
+          
+          render();
 
-        // If enabled, push the products and images to GitHub via serverless function
-        try{
-          const push = !!document.getElementById('pushToGithub') && document.getElementById('pushToGithub').checked;
-          if (!push) return;
-          // Build files: products.json (root) and any images (data URLs) as separate files in repo root
-          const prods = getProducts();
-          const files = [];
-          // products.json
-          const productsJson = JSON.stringify(prods, null, 2);
-          files.push({ path: 'products.json', contentBase64: btoa(unescape(encodeURIComponent(productsJson))) });
-          // images embedded as data URLs: convert to base64 content and add as files
-          for (const p of prods){
-            if (p.image && typeof p.image === 'string' && p.image.indexOf('data:') === 0){
-              const match = p.image.match(/^data:(image\/(png|jpeg|jpg|webp));base64,(.*)$/i);
-              if (match){
-                const mime = match[1];
-                const ext = (match[2] && match[2].toLowerCase() === 'jpeg') ? 'jpg' : (match[2] || 'png');
-                const content = match[3];
-                const filename = `product-${p.id}.${ext}`;
-                files.push({ path: filename, contentBase64: content });
-                // update product image reference to filename so site can load it
-                p.image = filename;
+          // If enabled, push the products and images to GitHub via serverless function
+          try{
+            const push = !!document.getElementById('pushToGithub') && document.getElementById('pushToGithub').checked;
+            if (!push) return;
+            // Build files: products.json (root) and any images (data URLs) as separate files in repo root
+            const prods = getProducts();
+            const files = [];
+            // products.json
+            const productsJson = JSON.stringify(prods, null, 2);
+            files.push({ path: 'products.json', contentBase64: btoa(unescape(encodeURIComponent(productsJson))) });
+            // images embedded as data URLs: convert to base64 content and add as files
+            for (const p of prods){
+              if (p.image && typeof p.image === 'string' && p.image.indexOf('data:') === 0){
+                const match = p.image.match(/^data:(image\/(png|jpeg|jpg|webp));base64,(.*)$/i);
+                if (match){
+                  const mime = match[1];
+                  const ext = (match[2] && match[2].toLowerCase() === 'jpeg') ? 'jpg' : (match[2] || 'png');
+                  const content = match[3];
+                  const filename = `product-${p.id}.${ext}`;
+                  files.push({ path: filename, contentBase64: content });
+                  // update product image reference to filename so site can load it
+                  p.image = filename;
+                }
               }
             }
-          }
-          // If we updated product image references, update products.json again
-          const updatedProductsJson = JSON.stringify(prods, null, 2);
-          files[0].contentBase64 = btoa(unescape(encodeURIComponent(updatedProductsJson)));
+            // If we updated product image references, update products.json again
+            const updatedProductsJson = JSON.stringify(prods, null, 2);
+            files[0].contentBase64 = btoa(unescape(encodeURIComponent(updatedProductsJson)));
 
-          const payload = { files, message: 'admin: update products and images via admin panel' };
-          const endpoints = ['/.netlify/functions/commit-file', '/api/commit-file', '/functions/commit-file'];
-          let ok = false; let lastRes = null;
-          for (const ep of endpoints){
-            try{
-              const res = await fetch(ep, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
-              lastRes = res;
-              if (res.ok){ ok = true; break; }
-            }catch(e){ lastRes = e; }
-          }
-          if (ok) alert('Değişiklikler GitHub deposuna işlendi.');
-          else alert('GitHub kaydı başarısız: ' + (lastRes && lastRes.statusText ? lastRes.statusText : (lastRes && lastRes.message) || 'bilinmiyor'));
-        }catch(err){ console.error('push to github failed', err); alert('GitHub kaydı sırasında hata: ' + err.message); }
+            const payload = { files, message: 'admin: update products and images via admin panel' };
+            const endpoints = ['/.netlify/functions/commit-file', '/api/commit-file', '/functions/commit-file'];
+            let ok = false; let lastRes = null;
+            for (const ep of endpoints){
+              try{
+                const res = await fetch(ep, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+                lastRes = res;
+                if (res.ok){ ok = true; break; }
+              }catch(e){ lastRes = e; }
+            }
+            if (ok) alert('Değişiklikler GitHub deposuna işlendi.');
+            else alert('GitHub kaydı başarısız: ' + (lastRes && lastRes.statusText ? lastRes.statusText : (lastRes && lastRes.message) || 'bilinmiyor'));
+          }catch(err){ console.error('push to github failed', err); alert('GitHub kaydı sırasında hata: ' + err.message); }
+        });
       });
 
       // helper: commit files to repo via serverless endpoints
@@ -1532,8 +1557,10 @@
       }
 
       // Push products explicitly (uses same flow as saveAll push)
-      document.getElementById('pushProducts').addEventListener('click', async ()=>{
-        try{
+      document.getElementById('pushProducts').addEventListener('click', async (ev)=>{
+        const btn = ev.currentTarget;
+        await withProgress(btn, '⏳ GitHub\'a kaydediliyor...', async ()=>{
+          try{
           const prods = getProducts();
           if (!prods || !prods.length) return alert('Kayıtlı ürün yok');
           const files = [];
@@ -1555,8 +1582,9 @@
           files[0].contentBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(prods, null, 2))));
           const r = await commitFilesToRepo(files, 'admin: push products via admin panel');
           if (r.ok) alert('Ürünler GitHub deposuna kaydedildi');
-          else alert('Ürün push başarısız: ' + (r.err && r.err.statusText ? r.err.statusText : (r.err && r.err.message) || 'unknown'));
-        }catch(err){ console.error(err); alert('Ürün push sırasında hata: ' + err.message); }
+          else alert('Ürün push başarısız: ' + (r.err && r.err.statusText ? r.err.statusText : (r.err && r.err.message) || 'bilinmiyor'));
+          }catch(err){ console.error(err); alert('Ürün push sırasında hata: ' + err.message); }
+        });
       });
 
       // Download products JSON locally
@@ -1584,52 +1612,58 @@
         document.getElementById('contactBtnText').value = s.contactBtnText || 'İletişim';
       }
 
-      document.getElementById('saveSettings').addEventListener('click', async ()=>{
-        const s = {
+      document.getElementById('saveSettings').addEventListener('click', async (ev)=>{
+        const btn = ev.currentTarget;
+        await withProgress(btn, '⏳ Ayarlar kaydediliyor...', async ()=>{
+          const s = {
           email: document.getElementById('siteEmail').value.trim(),
           phone: document.getElementById('sitePhone').value.trim(),
           address: document.getElementById('siteAddress').value.trim(),
           hours: document.getElementById('siteHours').value.trim(),
           iban: document.getElementById('siteIbanIn').value.trim(),
           contactBtnText: document.getElementById('contactBtnText').value.trim() || 'İletişim'
-        };
-        setSiteSettings(s);
-        alert('Ayarlar tarayıcıda kaydedildi.');
+          };
+          setSiteSettings(s);
+          alert('Ayarlar tarayıcıda kaydedildi.');
 
-        // If user requested, push site-settings.json to GitHub via serverless commit-file
-        try{
-          const push = !!document.getElementById('pushSettingsToGithub') && document.getElementById('pushSettingsToGithub').checked;
-          if (!push) return;
-          const json = JSON.stringify(s, null, 2);
-          const files = [{ path: 'site-settings.json', contentBase64: btoa(unescape(encodeURIComponent(json))) }];
-          const payload = { files, message: 'admin: update site-settings.json via admin panel' };
-          const endpoints = ['/.netlify/functions/commit-file', '/api/commit-file', '/functions/commit-file'];
-          let ok = false; let lastRes = null;
-          for (const ep of endpoints){
-            try{
-              const res = await fetch(ep, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
-              lastRes = res;
-              if (res.ok){ ok = true; break; }
-            }catch(e){ lastRes = e; }
-          }
-          if (ok) alert('Ayarlar GitHub deposuna işlendi.');
-          else alert('GitHub kaydı başarısız: ' + (lastRes && lastRes.statusText ? lastRes.statusText : (lastRes && lastRes.message) || 'bilinmiyor'));
-        }catch(err){ console.error('push settings failed', err); alert('Ayarlar push edilirken hata: ' + err.message); }
+          // If user requested, push site-settings.json to GitHub via serverless commit-file
+          try{
+            const push = !!document.getElementById('pushSettingsToGithub') && document.getElementById('pushSettingsToGithub').checked;
+            if (!push) return;
+            const json = JSON.stringify(s, null, 2);
+            const files = [{ path: 'site-settings.json', contentBase64: btoa(unescape(encodeURIComponent(json))) }];
+            const payload = { files, message: 'admin: update site-settings.json via admin panel' };
+            const endpoints = ['/.netlify/functions/commit-file', '/api/commit-file', '/functions/commit-file'];
+            let ok = false; let lastRes = null;
+            for (const ep of endpoints){
+              try{
+                const res = await fetch(ep, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+                lastRes = res;
+                if (res.ok){ ok = true; break; }
+              }catch(e){ lastRes = e; }
+            }
+            if (ok) alert('Ayarlar GitHub deposuna işlendi.');
+            else alert('GitHub kaydı başarısız: ' + (lastRes && lastRes.statusText ? lastRes.statusText : (lastRes && lastRes.message) || 'bilinmiyor'));
+          }catch(err){ console.error('push settings failed', err); alert('Ayarlar push edilirken hata: ' + err.message); }
+        });
       });
 
-      document.getElementById('loadDefaultsSettings').addEventListener('click', ()=>{
-        if (!confirm('Varsayılan site ayarları yüklensin mi?')) return;
-        const defaults = {
+      document.getElementById('loadDefaultsSettings').addEventListener('click', (ev)=>{
+        const btn = ev.currentTarget;
+        withProgress(btn, '⏳ Yükleniyor...', ()=>{
+          if (!confirm('Varsayılan site ayarları yüklensin mi?')) return;
+          const defaults = {
           email: 'amtbrs@icloud.com',
           phone: '+90 5XX XXX XXXX',
           address: 'Adresiniz Caddesi 1, Şehir, TR',
           hours: 'Pzt-Cum 09:00-19:00',
           iban: 'TR33 0006 1005 1978 6457 8413 26',
           contactBtnText: 'İletişim'
-        };
-        setSiteSettings(defaults);
-        loadSettingsIntoForm();
-        alert('Varsayılan ayarlar yüklendi ve kaydedildi.');
+          };
+          setSiteSettings(defaults);
+          loadSettingsIntoForm();
+          alert('Varsayılan ayarlar yüklendi ve kaydedildi.');
+        });
       });
 
       // load settings when admin UI ready
@@ -1638,16 +1672,19 @@
       // Note: Orders admin moved to siparisler.html (separate page)
       // renderOrdersAdmin() function removed
       
-      document.getElementById('resetDefault').addEventListener('click', ()=>{
-        if (!confirm('Varsayılan ürünlere geri dönülsün mü?')) return;
-        const defaults = [
+      document.getElementById('resetDefault').addEventListener('click', (ev)=>{
+        const btn = ev.currentTarget;
+        withProgress(btn, '⏳ Yükleniyor...', ()=>{
+          if (!confirm('Varsayılan ürünlere geri dönülsün mü?')) return;
+          const defaults = [
           { id: uid(), name: 'Kırmızı Gül Buketi', price: 149.00, image: '🌹' },
           { id: uid(), name: 'Beyaz Lilyum', price: 129.00, image: '🌸' },
           { id: uid(), name: 'Mevsim Buketi', price: 99.00, image: '💐' }
-        ];
-        setProducts(defaults);
-        alert('Varsayılan ürünler yüklendi.');
-        render();
+          ];
+          setProducts(defaults);
+          alert('Varsayılan ürünler yüklendi.');
+          render();
+        });
       });
 
       // Export CSV (simple))
