@@ -1,5 +1,8 @@
 name: Save Order
 
+permissions:
+  contents: write
+
 on:
   repository_dispatch:
     types: [save-order]
@@ -13,6 +16,8 @@ jobs:
         with:
           ref: site-release
           token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true
+          fetch-depth: 0
 
       - name: Create orders directory
         run: mkdir -p orders
