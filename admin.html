@@ -451,43 +451,68 @@
           return { ok: true };
         } else {
           const txt = await res.text().catch(() => '');
-          return { ok: false, error: `Status ${res.status}: ${txt}` };
+          return { ok: false, error: `Durum ${res.status}: ${txt}` };
         }
       } catch(err) {
-        return { ok: false, error: err.message };
+        return { ok: false, error: 'İstek hatası: ' + (err && err.message ? err.message : err) };
       }
     }
 
-    // Save admin credentials to GitHub
+    // Save admin credentials to GitHub (Contents API - real time)
     async function saveAdminToGitHub(adminData) {
       const token = getGitHubToken();
-      if (!token) return { ok: false, error: 'No token' };
+      if (!token) return { ok: false, error: 'Token yapılandırılmadı' };
 
       const owner = 'amtbrs-03';
       const repo = 'AMTBRS';
-      const url = `https://api.github.com/repos/${owner}/${repo}/dispatches`;
+      const path = 'admin-config.json';
+      const branch = 'site-release';
+      const getUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`;
+      const putUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}`;
 
-      const payload = {
-        event_type: 'save-admin',
-        client_payload: {
-          admin_data: JSON.stringify(adminData, null, 2)
+      // Prepare base64 content
+      const json = JSON.stringify(adminData, null, 2);
+      const contentBase64 = btoa(unescape(encodeURIComponent(json)));
+
+      let sha = undefined;
+      try {
+        const resGet = await fetch(getUrl, { headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }, cache: 'no-store' });
+        if (resGet.ok) {
+          const data = await resGet.json();
+          if (data && data.sha) sha = data.sha;
+        } else if (resGet.status !== 404) {
+          const txt = await resGet.text().catch(()=> '');
+          return { ok: false, error: `İçerik alınamadı: Durum ${resGet.status} ${txt}` };
         }
+      } catch(err) {
+        return { ok: false, error: 'İçerik sorgusu hatası: ' + (err && err.message ? err.message : err) };
+      }
+
+      const body = {
+        message: 'chore(admin): admin-config.json güncelle (panelden)'
+          + (sha ? '' : ' [yeni dosya]'),
+        content: contentBase64,
+        branch
       };
+      if (sha) body.sha = sha;
 
       try {
-        const res = await fetch(url, {
-          method: 'POST',
+        const resPut = await fetch(putUrl, {
+          method: 'PUT',
           headers: {
             'Authorization': `token ${token}`,
             'Accept': 'application/vnd.github.v3+json',
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(body)
         });
-
-        return res.ok || res.status === 204 ? { ok: true } : { ok: false, error: `Status ${res.status}` };
+        if (!resPut.ok) {
+          const txt = await resPut.text().catch(()=> '');
+          return { ok: false, error: `Kaydetme hatası: Durum ${resPut.status} ${txt}` };
+        }
+        return { ok: true };
       } catch(err) {
-        return { ok: false, error: err.message };
+        return { ok: false, error: 'İstek hatası: ' + (err && err.message ? err.message : err) };
       }
     }
 
@@ -615,7 +640,7 @@
           if (result.ok) {
             alert('Parola kaydedildi ve GitHub\'a gönderildi. Yönetici hesabı oluşturuldu.');
           } else {
-            alert('Parola kaydedildi (yerel). GitHub senkronizasyonu başarısız: ' + (result.error || 'unknown'));
+            alert('Parola kaydedildi (yerel). GitHub senkronizasyonu başarısız: ' + (result.error || 'bilinmiyor'));
           }
           
           renderAuth();
@@ -684,31 +709,15 @@
             // increment failures and if >=3 offer reset
             const attempts = await incrementAdminFail();
             if (attempts >= 3) {
+              // clear counter and open the admin management modal so admin can reset securely
               localStorage.removeItem(failKey);
-              // offer reset via token-based flow
-              const go = confirm('Parola 3 kez yanlış girildi. Parolayı sıfırlamak ister misiniz? (GitHub token gerekecek)');
-              if (!go) return;
-              // ask for token and new password
-              const token = prompt('Lütfen GitHub personal access token (repo:contents izinli) girin:');
-              if (!token) return alert('Token gerekli. Sıfırlama iptal edildi.');
-              const np1 = prompt('Yeni parolayı girin:');
-              const np2 = prompt('Yeni parolayı tekrar girin:');
-              if (!np1 || np1 !== np2) return alert('Parolalar eşleşmiyor veya boş.');
-              try {
-                const newHash = await hashPassword(np1);
-                const adminPayload = { user: adminData.user || 'admin', passwordHash: newHash, createdAt: Date.now() };
-                // Temporarily set token in localStorage so saveAdminToGitHub uses it
-                const hadToken = !!localStorage.getItem('github_token');
-                const prevToken = localStorage.getItem('github_token');
-                localStorage.setItem('github_token', token);
-                const res = await saveAdminToGitHub(adminPayload);
-                if (!hadToken) { localStorage.removeItem('github_token'); } else { localStorage.setItem('github_token', prevToken); }
-                if (res && res.ok) {
-                  alert('Parola sıfırlandı ve GitHub\'a kaydedildi. Lütfen yeni parolayla giriş yapın.');
-                } else {
-                  alert('Sıfırlama başarısız: ' + (res && res.error ? res.error : 'Bilinmeyen hata'));
-                }
-              } catch(err){ console.error('admin reset error', err); alert('Sıfırlama sırasında hata: ' + (err && err.message)); }
+              openAdminManageModal();
+              // provide guidance in the modal token area
+              try{
+                const msgEl = document.getElementById('modal_tokenMsg');
+                if (msgEl) msgEl.textContent = 'Parola 3 kez yanlış girildi. Aşağıdaki bölümden GitHub token kullanarak parolayı sıfırlayın. (Güvenli ortamda token girin)';
+                const tokenInput = document.getElementById('modal_token'); if (tokenInput) tokenInput.focus();
+              }catch(e){ console.warn('Could not focus modal token input', e); }
               return;
             } else {
               alert('Email veya şifre yanlış (' + attempts + '/3)');
@@ -726,7 +735,8 @@
         } else {
           authContent.innerHTML = `<div style="color:green;font-size:1.1rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;"><strong>HOŞ GELDİNİZ ADMİN</strong>
             <div style=\"display:flex;gap:0.5rem;align-items:center;margin-left:0.5rem;\">
-              <button id=\"adminSettingsBtn\" title=\"Yönetici Ayarları\" style=\"padding:0.5rem 0.9rem;border-radius:10px;border:none;background:#ffffff;color:#064e3b;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.08);\">⚙️ Ayarlar</button>
+              <button id=\"adminSettingsBtn\" title=\"Yönetici Ayarları\" style=\"padding:0.5rem 0.9rem;border-radius:10px;border:none;background:#f3f4f6;color:#064e3b;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.06);\">PAROLA YÖNET</button>
+              <button id=\"lockSessionBtn\" title=\"Kilidi Kapat\" style=\"padding:0.5rem 0.9rem;border-radius:10px;border:none;background:#f3f4f6;color:#064e3b;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.06);\">🔒 Kilidi Kapat</button>
               <button id=\"logoutBtn\" style=\"padding:0.75rem 1.5rem;font-size:1rem;font-weight:700;border-radius:12px;border:none;background:linear-gradient(135deg,#ef4444 0%,#dc2626 100%);color:white;cursor:pointer;box-shadow:0 4px 15px rgba(239,68,68,0.4),0 8px 25px rgba(239,68,68,0.2),inset 0 -2px 5px rgba(0,0,0,0.1);transition:all 0.2s ease;margin-left:0.25rem;\">Çıkış Yap</button>
             </div></div>`;
           document.getElementById('logoutBtn').onclick = ()=>{ 
@@ -739,6 +749,8 @@
             adminUI.style.display='none'; 
           };
           document.getElementById('adminSettingsBtn').onclick = ()=>{ openAdminManageModal(); };
+          const lockBtn = document.getElementById('lockSessionBtn');
+          if (lockBtn) lockBtn.onclick = ()=>{ sessionStorage.removeItem('admin_unlocked'); localStorage.removeItem('admin_unlocked'); alert('Admin arayüzü kilitlendi.'); renderAuth(); };
           adminUI.style.display='block';
         }
       }
@@ -979,6 +991,11 @@
     // Modal helpers
     function openAdminManageModal(){
       const m = document.getElementById('adminManageModal'); if (!m) return; m.classList.add('active'); m.setAttribute('aria-hidden','false');
+      // Autofocus first relevant input by default
+      setTimeout(()=>{
+        const cur = document.getElementById('modal_currentPw');
+        if (cur && m.classList.contains('active')) { try { cur.focus(); } catch(_){} }
+      }, 50);
     }
     function closeAdminManageModal(){
       const m = document.getElementById('adminManageModal'); if (!m) return; m.classList.remove('active'); m.setAttribute('aria-hidden','true');
@@ -989,76 +1006,84 @@
       // change password
       const el = document.getElementById('modal_changePwBtn');
       if (el) el.onclick = async function(){
+        const btn = el; btn.disabled = true;
         const cur = document.getElementById('modal_currentPw').value || '';
         const n1 = document.getElementById('modal_newPw1').value || '';
         const n2 = document.getElementById('modal_newPw2').value || '';
         const msg = document.getElementById('modal_changePwMsg');
-        if (!cur || !n1 || !n2) return (msg && (msg.textContent='Lütfen tüm alanları doldurun'));
-        if (n1 !== n2) return (msg && (msg.textContent='Parolalar eşleşmiyor'));
+        if (!cur || !n1 || !n2) { if (msg) msg.textContent='Lütfen tüm alanları doldurun'; btn.disabled=false; return; }
+        if (n1 !== n2) { if (msg) msg.textContent='Parolalar eşleşmiyor'; btn.disabled=false; return; }
         try{
-          msg.textContent = 'Doğrulanıyor...';
-          const adminData = await fetchAdminFromGitHub(); if (!adminData) return (msg && (msg.textContent='Admin verisi alınamadı'));
-          const curHash = await hashPassword(cur); if (curHash !== adminData.passwordHash) return (msg && (msg.textContent='Mevcut parola yanlış'));
+          msg.textContent = '⏳ Doğrulanıyor...';
+          const adminData = await fetchAdminFromGitHub(); if (!adminData) { if (msg) msg.textContent='Admin verisi alınamadı'; return; }
+          const curHash = await hashPassword(cur); if (curHash !== adminData.passwordHash) { if (msg) msg.textContent='Mevcut parola yanlış'; return; }
           const newHash = await hashPassword(n1); adminData.passwordHash = newHash;
-          msg.textContent = 'Kaydediliyor...';
+          msg.textContent = '⏳ Kaydediliyor...';
           const res = await saveAdminToGitHub(adminData);
           if (res && res.ok){ msg.textContent='✅ Parola değiştirildi'; document.getElementById('modal_currentPw').value=''; document.getElementById('modal_newPw1').value=''; document.getElementById('modal_newPw2').value=''; }
           else msg.textContent = 'Kaydetme başarısız: ' + (res && res.error || '');
         }catch(e){ console.error(e); if (msg) msg.textContent='Hata oluştu'; }
+        finally{ btn.disabled = false; }
       };
 
       // set unlock
       const setUnlock = document.getElementById('modal_setUnlockBtn');
       if (setUnlock) setUnlock.onclick = async function(){
+        const btn = setUnlock; btn.disabled = true;
         const u1 = document.getElementById('modal_unlockNew1').value || '';
         const u2 = document.getElementById('modal_unlockNew2').value || '';
         const msg = document.getElementById('modal_unlockMsg');
-        if (!u1 || !u2) return (msg && (msg.textContent='Lütfen kilit parolasını girin'));
-        if (u1 !== u2) return (msg && (msg.textContent='Kilitleme parolaları eşleşmiyor'));
+        if (!u1 || !u2) { if (msg) msg.textContent='Lütfen kilit parolasını girin'; btn.disabled=false; return; }
+        if (u1 !== u2) { if (msg) msg.textContent='Kilitleme parolaları eşleşmiyor'; btn.disabled=false; return; }
         try{
-          msg.textContent='Hash hesaplanıyor...';
+          msg.textContent='⏳ Hash hesaplanıyor...';
           const unlockHash = await hashPassword(u1);
-          const adminData = await fetchAdminFromGitHub(); if (!adminData) return (msg && (msg.textContent='Admin verisi alınamadı'));
+          const adminData = await fetchAdminFromGitHub(); if (!adminData) { if (msg) msg.textContent='Admin verisi alınamadı'; return; }
           adminData.unlockHash = unlockHash;
-          msg.textContent='Kaydediliyor...';
+          msg.textContent='⏳ Kaydediliyor...';
           const res = await saveAdminToGitHub(adminData);
           if (res && res.ok){ msg.textContent='✅ Kilit kaydedildi'; document.getElementById('modal_unlockNew1').value=''; document.getElementById('modal_unlockNew2').value=''; }
           else msg.textContent='Kaydetme başarısız: '+(res && res.error||'');
         }catch(e){ console.error(e); if (msg) msg.textContent='Hata'; }
+        finally{ btn.disabled = false; }
       };
 
       // clear unlock
       const clearUnlock = document.getElementById('modal_clearUnlockBtn');
       if (clearUnlock) clearUnlock.onclick = async function(){
+        const btn = clearUnlock; btn.disabled = true;
         const msg = document.getElementById('modal_unlockMsg');
-        try{ const adminData = await fetchAdminFromGitHub(); if (!adminData) return (msg && (msg.textContent='Admin verisi alınamadı'));
-          delete adminData.unlockHash; msg.textContent='Kaydediliyor...'; const res = await saveAdminToGitHub(adminData);
+        try{ const adminData = await fetchAdminFromGitHub(); if (!adminData) { if (msg) msg.textContent='Admin verisi alınamadı'; return; }
+          delete adminData.unlockHash; msg.textContent='⏳ Kaydediliyor...'; const res = await saveAdminToGitHub(adminData);
           if (res && res.ok) msg.textContent='✅ Kilit kaldırıldı'; else msg.textContent='Başarısız: '+(res && res.error||'');
         }catch(e){ console.error(e); if (msg) msg.textContent='Hata'; }
+        finally{ btn.disabled = false; }
       };
 
       // token reset
       const tokenReset = document.getElementById('modal_tokenResetBtn');
       if (tokenReset) tokenReset.onclick = async function(){
+        const btn = tokenReset; btn.disabled = true;
         const token = document.getElementById('modal_token').value || '';
         const n1 = document.getElementById('modal_tokenNew1').value || '';
         const n2 = document.getElementById('modal_tokenNew2').value || '';
         const msg = document.getElementById('modal_tokenMsg');
-        if (!token || !n1 || !n2) return (msg && (msg.textContent='Tüm alanları doldurun'));
-        if (n1 !== n2) return (msg && (msg.textContent='Parolalar eşleşmiyor'));
+        if (!token || !n1 || !n2) { if (msg) msg.textContent='Tüm alanları doldurun'; btn.disabled=false; return; }
+        if (n1 !== n2) { if (msg) msg.textContent='Parolalar eşleşmiyor'; btn.disabled=false; return; }
         try{
-          msg.textContent='Hash hesaplanıyor...';
+          msg.textContent='⏳ Hash hesaplanıyor...';
           const newHash = await hashPassword(n1);
           const adminPayload = { user: 'admin', passwordHash: newHash, createdAt: Date.now() };
           // set token temporarily
           const prev = localStorage.getItem('github_token'); localStorage.setItem('github_token', token);
-          msg.textContent='GitHub\'a kaydediliyor...';
+          msg.textContent='⏳ GitHub\'a kaydediliyor...';
           const res = await saveAdminToGitHub(adminPayload);
           // restore token
           if (prev === null) localStorage.removeItem('github_token'); else localStorage.setItem('github_token', prev);
           if (res && res.ok){ msg.textContent='✅ Parola başarıyla sıfırlandı'; document.getElementById('modal_token').value=''; document.getElementById('modal_tokenNew1').value=''; document.getElementById('modal_tokenNew2').value=''; }
           else msg.textContent='Kaydetme başarısız: '+(res && res.error||'');
         }catch(e){ console.error(e); if (msg) msg.textContent='Hata oluştu'; }
+        finally{ btn.disabled = false; }
       };
     })();
   </script>
@@ -1463,7 +1488,7 @@
             }catch(e){ lastRes = e; }
           }
           if (ok) alert('Değişiklikler GitHub deposuna işlendi.');
-          else alert('GitHub kaydı başarısız: ' + (lastRes && lastRes.statusText ? lastRes.statusText : (lastRes && lastRes.message) || 'unknown'));
+          else alert('GitHub kaydı başarısız: ' + (lastRes && lastRes.statusText ? lastRes.statusText : (lastRes && lastRes.message) || 'bilinmiyor'));
         }catch(err){ console.error('push to github failed', err); alert('GitHub kaydı sırasında hata: ' + err.message); }
       });
 
@@ -1564,7 +1589,7 @@
             }catch(e){ lastRes = e; }
           }
           if (ok) alert('Ayarlar GitHub deposuna işlendi.');
-          else alert('GitHub kaydı başarısız: ' + (lastRes && lastRes.statusText ? lastRes.statusText : (lastRes && lastRes.message) || 'unknown'));
+          else alert('GitHub kaydı başarısız: ' + (lastRes && lastRes.statusText ? lastRes.statusText : (lastRes && lastRes.message) || 'bilinmiyor'));
         }catch(err){ console.error('push settings failed', err); alert('Ayarlar push edilirken hata: ' + err.message); }
       });
 
