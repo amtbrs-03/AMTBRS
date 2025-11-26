@@ -498,21 +498,30 @@
         `https://cdn.jsdelivr.net/gh/amtbrs-03/AMTBRS@site-release/admin-config.json`,
       ];
 
+      console.log('🔍 Attempting to fetch admin config from GitHub...');
+      
       for (let url of urls) {
         try {
+          console.log('Trying URL:', url);
           const res = await fetch(url, { 
             cache: 'no-store',
             headers: { 'Cache-Control': 'no-cache' }
           });
+          console.log('Response status:', res.status, res.statusText);
+          
           if (res.ok) {
             const data = await res.json();
-            console.log('Admin config fetched from GitHub');
+            console.log('✅ Admin config fetched successfully:', data);
             return data;
+          } else {
+            console.warn('❌ Failed to fetch from:', url, 'Status:', res.status);
           }
         } catch(e) {
-          console.warn('Failed to fetch from:', url);
+          console.error('❌ Exception fetching from:', url, 'Error:', e.message);
         }
       }
+      
+      console.error('❌ All fetch attempts failed. Returning null.');
       return null;
     }
 
@@ -596,13 +605,25 @@
           const h = await hashPassword(pw);
           
           // Always fetch from GitHub first
-          console.log('Fetching admin credentials from GitHub...');
+          console.log('🔑 Fetching admin credentials from GitHub...');
           const adminData = await fetchAdminFromGitHub();
           
-          if (!adminData || !adminData.passwordHash) {
-            alert('Admin bilgileri GitHub\'dan alınamadı. Lütfen tekrar deneyin.');
+          console.log('Admin data received:', adminData);
+          
+          if (!adminData) {
+            alert('❌ Admin bilgileri GitHub\'dan alınamadı.\n\nLütfen:\n1. İnternet bağlantınızı kontrol edin\n2. Console\'u açıp hata detaylarını inceleyin (F12)\n3. Tekrar deneyin');
             return;
           }
+          
+          if (!adminData.passwordHash) {
+            alert('❌ Admin config dosyası geçersiz (passwordHash eksik).\n\nConsole\'u kontrol edin.');
+            console.error('Invalid admin config:', adminData);
+            return;
+          }
+          
+          console.log('Checking password...');
+          console.log('Entered hash:', h);
+          console.log('Expected hash:', adminData.passwordHash);
           
           // Check credentials - only password check, no email required
           if (h === adminData.passwordHash) {
