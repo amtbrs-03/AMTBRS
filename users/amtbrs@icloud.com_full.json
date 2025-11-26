@@ -1,12 +1,17 @@
 {
   "name": "AHMET BURSA",
   "email": "amtbrs@icloud.com",
-  "pw": {
-    "algo": "PBKDF2-SHA256",
-    "iterations": 150000,
-    "salt": "U4ji/ZQ0QhRAwLS/lkpyKA==",
-    "hash": "r6Y9p6jn5hZPAATYl2EUZFPt21eo5AbYlg+lTOtnBec="
-  },
-  "createdAt": 1764106662229,
-  "lastLogin": 1764123045862
+  "addresses": [
+    {
+      "id": "addr_1764123131529",
+      "title": "ev",
+      "city": "İstanbul",
+      "district": "kağıthane",
+      "neighborhood": "fevziçakmak caddesi",
+      "addressDetail": "fevziçakmak caddesi no:47",
+      "postalCode": "34100",
+      "isDefault": true,
+      "createdAt": 1764123131529
+    }
+  ]
 }
