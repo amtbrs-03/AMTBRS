@@ -888,7 +888,8 @@
           await withProgress(btn, '⏳ Kaydediliyor...', async ()=>{
             try {
               const logged = !!(localStorage.getItem('admin_logged_in') || sessionStorage.getItem('admin_logged_in'));
-              const cur = document.getElementById('currentPw').value || '';
+              const curEl = document.getElementById('currentPw');
+              const cur = (curEl && curEl.value) || '';
               const u1 = document.getElementById('unlockNew1').value || '';
               const u2 = document.getElementById('unlockNew2').value || '';
               if (!u1 || !u2) { showMessage('Kilidi ayarlamak için yeni parolayı girin.', true); return; }
@@ -920,7 +921,8 @@
           await withProgress(btn, '⏳ Kaldırılıyor...', async ()=>{
             try {
               const logged = !!(localStorage.getItem('admin_logged_in') || sessionStorage.getItem('admin_logged_in'));
-              const cur = document.getElementById('currentPw').value || '';
+              const curEl = document.getElementById('currentPw');
+              const cur = (curEl && curEl.value) || '';
               const adminData = await fetchAdminFromGitHub();
               if (!adminData || !adminData.passwordHash) { showMessage('Admin verisi alınamadı.', true); return; }
               if (!logged) {
