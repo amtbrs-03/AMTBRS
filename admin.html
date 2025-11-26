@@ -1141,48 +1141,51 @@
       }) 
     }
 
-    // Delete user from GitHub
+    // Delete user from GitHub (Contents API)
     async function deleteUser(email, name) {
       if (!confirm(`"${name}" (${email}) kullanıcısını silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz!`)) {
         return;
       }
 
       try {
-        const repoInput = document.getElementById('repoInput');
-        const branchInput = document.getElementById('branchInput');
-        const tokenInput = document.getElementById('tokenInput');
-        
-        if (!repoInput.value || !tokenInput.value) {
-          alert('Lütfen önce repository ve token bilgilerini girin!');
-          return;
-        }
+        const token = getGitHubToken();
+        if (!token) { alert('GitHub token bulunamadı. Lütfen ayarlarda token tanımlayın.'); return; }
 
-        const [owner, repo] = repoInput.value.split('/');
-        const branch = branchInput.value || 'main';
-        const token = tokenInput.value;
+        const owner = 'amtbrs-03';
+        const repo = 'AMTBRS';
+        const branch = 'site-release';
 
         console.log('Deleting user:', email);
 
         // Get file SHA first
         const fileName = `${email}_full.json`;
-        const getUrl = `https://api.github.com/repos/${owner}/${repo}/contents/users/${fileName}?ref=${branch}`;
+        const getUrl = `https://api.github.com/repos/${owner}/${repo}/contents/users/${encodeURIComponent(fileName)}?ref=${encodeURIComponent(branch)}`;
         
         const getResponse = await fetch(getUrl, {
           headers: {
             'Authorization': `token ${token}`,
-            'Accept': 'application/vnd.github.v3+json'
+            'Accept': 'application/vnd.github.v3+json',
+            'Cache-Control': 'no-cache'
           }
         });
 
+        if (getResponse.status === 404) {
+          alert('Kullanıcı dosyası bulunamadı (zaten silinmiş olabilir).');
+          // Yine de listeyi yenileyelim
+          const btn = document.getElementById('loadUsersBtn'); if (btn) btn.click();
+          return;
+        }
         if (!getResponse.ok) {
-          throw new Error(`Kullanıcı dosyası bulunamadı: ${getResponse.status}`);
+          const txt = await getResponse.text().catch(()=> '');
+          throw new Error(`Kullanıcı dosyası alınamadı: Durum ${getResponse.status} ${txt}`);
         }
 
         const fileData = await getResponse.json();
-        console.log('File SHA:', fileData.sha);
+        const sha = fileData && fileData.sha;
+        if (!sha) throw new Error('Dosya SHA bilgisi alınamadı');
 
         // Delete the file
-        const deleteUrl = `https://api.github.com/repos/${owner}/${repo}/contents/users/${fileName}`;
+        const deleteUrl = `https://api.github.com/repos/${owner}/${repo}/contents/users/${encodeURIComponent(fileName)}`;
         const deleteResponse = await fetch(deleteUrl, {
           method: 'DELETE',
           headers: {
@@ -1191,26 +1194,26 @@
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            message: `Kullanıcı silindi: ${name} (${email})`,
-            sha: fileData.sha,
-            branch: branch
+            message: `chore(admin): kullanıcı sil (${name} - ${email})`,
+            sha,
+            branch
           })
         });
 
         if (!deleteResponse.ok) {
-          const errorText = await deleteResponse.text();
-          throw new Error(`Silme başarısız: ${deleteResponse.status} - ${errorText}`);
+          const errorText = await deleteResponse.text().catch(()=> '');
+          throw new Error(`Silme başarısız: Durum ${deleteResponse.status} ${errorText}`);
         }
 
         console.log('User deleted successfully');
         alert(`✅ "${name}" kullanıcısı başarıyla silindi!`);
         
         // Reload users list
-        document.getElementById('loadUsersBtn').click();
+        const btn = document.getElementById('loadUsersBtn'); if (btn) btn.click();
 
       } catch(err) {
         console.error('Delete user error:', err);
-        alert(`❌ Hata: ${err.message}`);
+        alert(`❌ Hata: ${err && err.message ? err.message : err}`);
       }
     }
 
