@@ -311,6 +311,39 @@
     .kv b { min-width: 140px; color:#0f172a; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.9rem; }
     .wrap { word-break: break-word; overflow-wrap: anywhere; }
+    
+    /* Responsive */
+    @media(max-width:768px){
+      .admin-header{ padding:1.5rem; }
+      .admin-header h1{ font-size:1.5rem; }
+      .admin-header-content{ flex-direction:column; gap:0.75rem; align-items:flex-start; }
+      .header-actions{ width:100%; justify-content:center; flex-wrap:wrap; }
+      .tabs{ overflow-x:auto; -webkit-overflow-scrolling:touch; flex-wrap:nowrap; }
+      .tab-button{ flex-shrink:0; padding:0.6rem 1rem; font-size:0.9rem; }
+      .admin-section{ padding:1.5rem; }
+      .admin-section h2{ font-size:1.25rem; }
+      .table-container{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+      table{ font-size:0.85rem; min-width:600px; }
+      table th, table td{ padding:0.5rem 0.35rem; }
+      .btn{ padding:0.5rem 0.85rem; font-size:0.85rem; }
+      .modal-content{ width:95%; max-width:95%; margin:1rem auto; padding:1.5rem; }
+      .modal-content.small-modal{ max-width:95%; }
+      .kv{ flex-direction:column; gap:0.25rem; }
+      .kv b{ min-width:auto; }
+      .form-group input, .form-group select, .form-group textarea{ font-size:0.9rem; }
+    }
+    @media(max-width:480px){
+      .admin-header{ padding:1rem; border-radius:12px; }
+      .admin-header h1{ font-size:1.25rem; }
+      .tabs{ gap:0.25rem; padding:0.75rem; }
+      .tab-button{ padding:0.5rem 0.75rem; font-size:0.85rem; }
+      .admin-section{ padding:1rem; border-radius:12px; }
+      .admin-section h2{ font-size:1.1rem; }
+      table{ font-size:0.8rem; }
+      .btn{ padding:0.45rem 0.7rem; font-size:0.8rem; }
+      .modal-content{ padding:1rem; margin:0.5rem auto; }
+      .form-group label{ font-size:0.85rem; }
+    }
   </style>
 
 </head>

@@ -2,6 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Müşteri Siparişleri - ERN-ÇİÇEK Admin</title>
   <style>
@@ -264,9 +265,28 @@
     /* Responsive */
     @media(max-width:768px){
       .page-header h1{ font-size:1.5rem; }
+      .page-header{ padding:1.5rem; flex-direction:column; gap:0.75rem; }
+      .header-actions{ width:100%; justify-content:center; flex-wrap:wrap; }
+      .stats{ grid-template-columns:1fr 1fr; gap:1rem; }
+      .stat-card{ padding:1rem; }
+      .stat-card .number{ font-size:2rem; }
+      .orders-container{ padding:1.5rem; }
+      #ordersTable{ font-size:0.85rem; overflow-x:auto; display:block; }
+      #ordersTable thead, #ordersTable tbody, #ordersTable tr, #ordersTable th, #ordersTable td{ display:block; }
+      #ordersTable thead tr{ position:absolute; top:-9999px; left:-9999px; }
+      #ordersTable tr{ margin-bottom:1rem; border:1px solid #e5e7eb; border-radius:8px; padding:0.75rem; background:white; }
+      #ordersTable td{ border:none; position:relative; padding-left:50%; text-align:right; }
+      #ordersTable td:before{ content:attr(data-label); position:absolute; left:0.75rem; font-weight:700; color:#064e3b; }
+      .btn{ padding:0.6rem 1rem; font-size:0.9rem; }
+    }
+    @media(max-width:480px){
+      .container{ padding:1rem; }
+      .page-header{ padding:1rem; }
+      .page-header h1{ font-size:1.25rem; }
       .stats{ grid-template-columns:1fr; }
-      #ordersTable{ font-size:0.85rem; }
-      #ordersTable th, #ordersTable td{ padding:0.5rem; }
+      .stat-card .number{ font-size:1.75rem; }
+      .orders-container{ padding:1rem; border-radius:12px; }
+      .btn{ padding:0.5rem 0.75rem; font-size:0.85rem; }
     }
   </style>
 </head>
