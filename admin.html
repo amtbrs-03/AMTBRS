@@ -308,7 +308,6 @@
         <button id="exportCsv" class="btn btn-ghost">📊 CSV Dışa Aktar</button>
         <button id="loadUsersBtn" class="btn">👥 Kullanıcıları Yükle</button>
         <button id="loadOrdersBtn" class="btn">📦 Müşteri Siparişleri</button>
-        <button id="refreshOrders" class="btn btn-ghost">🔄 Siparişleri Yenile</button>
         <button id="runSelfTest" class="btn btn-ghost">🧪 Test Çalıştır</button>
       </div>
 
@@ -1214,10 +1213,8 @@
         await renderOrdersAdmin();
       });
       
-      document.getElementById('refreshOrders').addEventListener('click', async ()=>{
-        if (document.getElementById('ordersModal').classList.contains('active')) {
-          await renderOrdersAdmin();
-        }
+      document.getElementById('refreshOrdersBtn').addEventListener('click', async ()=>{
+        await renderOrdersAdmin();
       });
 
       document.getElementById('resetDefault').addEventListener('click', ()=>{
@@ -1348,20 +1345,9 @@
         <button class="close-modal" onclick="closeOrdersModal()" aria-label="Modalı Kapat">✕</button>
       </div>
       <div class="modal-body">
-        <div id="ordersListModal" style="max-height:60vh; overflow:auto;"></div>
-        <div class="small meta" style="margin-top:0.75rem; color:#6b7280;">📦 Sipariş bilgileri GitHub'dan çekilir. Müşteriler ödeme sayfasından sipariş bildirimi yapar.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Orders Modal -->
-  <div id="ordersModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 style="margin:0; display:flex; align-items:center; gap:0.5rem;">📦 Müşteri Siparişleri <span id="orderCountModal" style="color:var(--green-dark); font-size:0.9em;"></span></h2>
-        <button class="close-modal" onclick="closeOrdersModal()" aria-label="Modalı Kapat">✕</button>
-      </div>
-      <div class="modal-body">
+        <div style="margin-bottom:1rem;">
+          <button id="refreshOrdersBtn" class="btn" style="font-size:0.9rem; padding:0.5rem 1rem;">🔄 Siparişleri Yenile</button>
+        </div>
         <div id="ordersListModal" style="max-height:60vh; overflow:auto;"></div>
         <div class="small meta" style="margin-top:0.75rem; color:#6b7280;">📦 Sipariş bilgileri GitHub'dan çekilir. Müşteriler ödeme sayfasından sipariş bildirimi yapar.</div>
       </div>
