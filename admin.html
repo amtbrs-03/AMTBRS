@@ -196,6 +196,30 @@
     .file-preview{width:80px;height:80px;display:inline-block;vertical-align:middle}
     .small{font-size:0.875rem;color:#64748b}
 
+    /* 3D Section Headers */
+    .section-header {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      margin-bottom: 1.5rem;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: white;
+      background: linear-gradient(135deg, var(--green-primary) 0%, var(--green-dark) 100%);
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4),
+                  0 8px 25px rgba(16, 185, 129, 0.2);
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      transform: perspective(500px) rotateX(2deg);
+      transition: all 0.3s ease;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .section-header:hover {
+      transform: perspective(500px) rotateX(0deg) translateY(-2px);
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5),
+                  0 12px 35px rgba(16, 185, 129, 0.3);
+    }
+
     @media (max-width:700px){
       .page{padding:1rem}
       .admin-header{padding:1rem}
@@ -312,7 +336,7 @@
       </div>
 
       <div class="card">
-        <h2>➕ Yeni Ürün Ekle</h2>
+        <div class="section-header">➕ Yeni Ürün Ekle</div>
         <div class="controls-row">
           <input id="newName" type="text" placeholder="Ürün adı" aria-label="Yeni ürün adı" style="flex:1;min-width:200px" />
           <input id="newPrice" type="number" placeholder="Fiyat (TL)" step="0.01" aria-label="Fiyat (TL)" style="width:140px" />
@@ -325,12 +349,12 @@
       </div>
 
       <div class="card">
-        <h2>🛍️ Kayıtlı Ürünler</h2>
+        <div class="section-header">🛍️ Kayıtlı Ürünler</div>
         <div id="products" class="products-list"></div>
       </div>
 
   <div class="card">
-    <h2>⚙️ Site Ayarları</h2>
+    <div class="section-header">⚙️ Site Ayarları</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:start;">
       <div>
         <label for="siteEmail">📧 İletişim E-posta</label>
