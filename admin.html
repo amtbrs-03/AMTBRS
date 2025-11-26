@@ -1059,16 +1059,22 @@
         container.innerHTML = '<p style="color:#6b7280;">Siparişler GitHub\'dan çekiliyor...</p>';
         
         try {
-          // Fetch orders from GitHub
+          // Fetch orders from GitHub with cache busting
           const owner = 'amtbrs-03';
           const repo = 'AMTBRS';
           const branch = 'site-release';
-          const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/orders?ref=${branch}`;
+          const cacheBuster = Date.now();
+          const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/orders?ref=${branch}&_cb=${cacheBuster}`;
           
           console.log('Fetching orders from:', apiUrl);
           
           const res = await fetch(apiUrl, {
-            headers: { 'Accept': 'application/vnd.github.v3+json' }
+            headers: { 
+              'Accept': 'application/vnd.github.v3+json',
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache'
+            },
+            cache: 'no-store'
           });
           
           console.log('GitHub API response:', res.status, res.statusText);
@@ -1177,21 +1183,30 @@
       document.getElementById('loadOrdersBtn').addEventListener('click', async ()=>{
         console.log('=== MÜŞTERI SİPARİŞLERİ BUTONU TIKLANDI ===');
         
-        const btn = document.getElementById('loadOrdersBtn');
+        // Hard open modal - force display
         const modalEl = document.getElementById('ordersModal');
+        if (!modalEl) {
+          alert('HATA: ordersModal elementi bulunamadı!');
+          return;
+        }
         
-        console.log('Modal element:', modalEl);
-        console.log('Modal classList:', modalEl ? modalEl.classList.toString() : 'null');
+        console.log('Modal element found:', modalEl);
+        
+        // Force modal to show with inline styles as backup
+        modalEl.classList.add('active');
+        modalEl.style.display = 'flex';
+        modalEl.style.opacity = '1';
+        modalEl.style.visibility = 'visible';
+        
+        console.log('Modal forced open - classList:', modalEl.classList.toString());
+        console.log('Modal computed display:', window.getComputedStyle(modalEl).display);
+        
+        // Force repaint
+        void modalEl.offsetHeight;
         
         try {
-          console.log('Opening modal...');
-          openOrdersModal();
-          
-          console.log('Modal opened, classList after:', modalEl.classList.toString());
           console.log('Loading orders...');
-          
           await renderOrdersAdmin();
-          
           console.log('Orders loaded successfully');
         } catch(err) {
           console.error('Error loading orders:', err);
@@ -1355,15 +1370,23 @@
   </div>
 
   <script>
-    // Modal functions
+    // Modal functions with hard display control
     function openOrdersModal() {
-      document.getElementById('ordersModal').classList.add('active');
+      const modal = document.getElementById('ordersModal');
+      modal.classList.add('active');
+      modal.style.display = 'flex';
+      modal.style.opacity = '1';
+      modal.style.visibility = 'visible';
       document.body.style.overflow = 'hidden';
+      console.log('openOrdersModal: Modal forced open');
     }
     
     function closeOrdersModal() {
-      document.getElementById('ordersModal').classList.remove('active');
+      const modal = document.getElementById('ordersModal');
+      modal.classList.remove('active');
+      modal.style.display = 'none';
       document.body.style.overflow = 'auto';
+      console.log('closeOrdersModal: Modal closed');
     }
     
     function openUsersModal() {
