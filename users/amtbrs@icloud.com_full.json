@@ -3,15 +3,15 @@
   "email": "amtbrs@icloud.com",
   "addresses": [
     {
-      "id": "addr_1764123131529",
+      "id": "addr_1764123814927",
       "title": "ev",
-      "city": "İstanbul",
-      "district": "kağıthane",
-      "neighborhood": "fevziçakmak caddesi",
-      "addressDetail": "fevziçakmak caddesi no:47",
-      "postalCode": "34100",
+      "city": "Adana",
+      "district": "hasber",
+      "neighborhood": "gkjab djesnx",
+      "addressDetail": "gx nckxssjd",
+      "postalCode": "54200",
       "isDefault": true,
-      "createdAt": 1764123131529
+      "createdAt": 1764123814927
     }
   ]
 }
