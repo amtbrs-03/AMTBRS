@@ -262,6 +262,88 @@
       font-size:1.1rem;
     }
 
+    /* Yeni Sipariş Bildirimi */
+    .notification-toast{
+      position:fixed;
+      top:80px;
+      right:2rem;
+      background:linear-gradient(135deg, #10b981, #059669);
+      color:white;
+      padding:1.5rem 2rem;
+      border-radius:16px;
+      box-shadow:0 20px 60px rgba(16, 185, 129, 0.4), 0 10px 30px rgba(0,0,0,0.3);
+      z-index:9999;
+      animation:slideInRight 0.5s ease-out, shake 0.5s ease-in-out 0.5s;
+      display:flex;
+      align-items:center;
+      gap:1rem;
+      min-width:320px;
+      border:2px solid rgba(255,255,255,0.2);
+    }
+    
+    .notification-toast .icon{
+      font-size:2.5rem;
+      animation:bounce 1s infinite;
+    }
+    
+    .notification-toast .content{
+      flex:1;
+    }
+    
+    .notification-toast .title{
+      font-size:1.2rem;
+      font-weight:800;
+      margin-bottom:0.25rem;
+      text-shadow:0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .notification-toast .message{
+      font-size:0.9rem;
+      opacity:0.95;
+    }
+    
+    .notification-toast .close-btn{
+      background:rgba(255,255,255,0.2);
+      border:none;
+      color:white;
+      width:28px;
+      height:28px;
+      border-radius:50%;
+      cursor:pointer;
+      font-size:1.1rem;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      transition:all 0.2s;
+    }
+    
+    .notification-toast .close-btn:hover{
+      background:rgba(255,255,255,0.3);
+      transform:scale(1.1);
+    }
+    
+    @keyframes slideInRight{
+      from{
+        transform:translateX(400px);
+        opacity:0;
+      }
+      to{
+        transform:translateX(0);
+        opacity:1;
+      }
+    }
+    
+    @keyframes shake{
+      0%, 100%{ transform:translateX(0); }
+      25%{ transform:translateX(-10px); }
+      75%{ transform:translateX(10px); }
+    }
+    
+    @keyframes bounce{
+      0%, 100%{ transform:translateY(0); }
+      50%{ transform:translateY(-10px); }
+    }
+
     /* Responsive */
     @media(max-width:768px){
       .page-header h1{ font-size:1.5rem; }
@@ -278,6 +360,18 @@
       #ordersTable td{ border:none; position:relative; padding-left:50%; text-align:right; }
       #ordersTable td:before{ content:attr(data-label); position:absolute; left:0.75rem; font-weight:700; color:#064e3b; }
       .btn{ padding:0.6rem 1rem; font-size:0.9rem; }
+      
+      /* Bildirim mobil uyumlu */
+      .notification-toast{
+        right:1rem;
+        left:1rem;
+        min-width:auto;
+        padding:1rem 1.5rem;
+        top:70px;
+      }
+      .notification-toast .icon{ font-size:2rem; }
+      .notification-toast .title{ font-size:1rem; }
+      .notification-toast .message{ font-size:0.85rem; }
     }
     @media(max-width:480px){
       .container{ padding:1rem; }
@@ -543,6 +637,121 @@
       btn.disabled = false;
       btn.textContent = '🔄 Siparişleri Yenile';
     });
+
+    // Yeni sipariş bildirimi fonksiyonları
+    let lastOrderCount = 0;
+    let notificationAudio = null;
+    
+    // Bildirim sesini hazırla (Web Audio API ile beep sesi)
+    function createNotificationSound() {
+      try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = 800; // Yüksek frekanslı beep
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.5);
+        
+        // İkinci beep
+        setTimeout(() => {
+          const oscillator2 = audioContext.createOscillator();
+          const gainNode2 = audioContext.createGain();
+          
+          oscillator2.connect(gainNode2);
+          gainNode2.connect(audioContext.destination);
+          
+          oscillator2.frequency.value = 1000;
+          oscillator2.type = 'sine';
+          
+          gainNode2.gain.setValueAtTime(0.3, audioContext.currentTime);
+          gainNode2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+          
+          oscillator2.start(audioContext.currentTime);
+          oscillator2.stop(audioContext.currentTime + 0.5);
+        }, 200);
+      } catch(e) {
+        console.error('Ses çalma hatası:', e);
+      }
+    }
+    
+    // Bildirim toastını göster
+    function showNotification(newOrderCount) {
+      // Eski bildirimi kaldır
+      const oldToast = document.querySelector('.notification-toast');
+      if (oldToast) oldToast.remove();
+      
+      // Yeni bildirim oluştur
+      const toast = document.createElement('div');
+      toast.className = 'notification-toast';
+      toast.innerHTML = `
+        <div class="icon">🔔</div>
+        <div class="content">
+          <div class="title">YENİ SİPARİŞ!</div>
+          <div class="message">${newOrderCount} yeni sipariş geldi</div>
+        </div>
+        <button class="close-btn" onclick="this.parentElement.remove()">✕</button>
+      `;
+      
+      document.body.appendChild(toast);
+      
+      // Ses çal
+      createNotificationSound();
+      
+      // 10 saniye sonra otomatik kapat
+      setTimeout(() => {
+        if (toast.parentElement) {
+          toast.style.animation = 'slideInRight 0.3s ease-out reverse';
+          setTimeout(() => toast.remove(), 300);
+        }
+      }, 10000);
+    }
+    
+    // Periyodik sipariş kontrolü (30 saniyede bir)
+    setInterval(async () => {
+      try {
+        const owner = 'amtbrs-03';
+        const repo = 'AMTBRS';
+        const branch = 'site-release';
+        const cacheBuster = Date.now();
+        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/orders?ref=${branch}&_cb=${cacheBuster}`;
+        
+        const res = await fetch(apiUrl, {
+          headers: { 'Accept': 'application/vnd.github.v3+json' }
+        });
+        
+        if (res.ok) {
+          const files = await res.json();
+          const orderFiles = files.filter(f => f.name.endsWith('.json') && f.name !== '.gitkeep');
+          const currentCount = orderFiles.length;
+          
+          // İlk yüklemede sayıyı kaydet
+          if (lastOrderCount === 0) {
+            lastOrderCount = currentCount;
+          } 
+          // Yeni sipariş varsa bildir
+          else if (currentCount > lastOrderCount) {
+            const newOrders = currentCount - lastOrderCount;
+            console.log(`🔔 ${newOrders} yeni sipariş tespit edildi!`);
+            showNotification(newOrders);
+            lastOrderCount = currentCount;
+            
+            // Sayfayı otomatik yenile
+            await loadOrders();
+          }
+        }
+      } catch(err) {
+        console.error('Sipariş kontrolü hatası:', err);
+      }
+    }, 30000); // 30 saniye
 
     // Load orders on page load
     loadOrders();
