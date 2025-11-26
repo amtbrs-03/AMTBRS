@@ -413,9 +413,9 @@
           const itemTotal = (item.price || 0) * (item.qty || 0);
           html += '<tr>';
           html += `<td>${escapeHtml(item.name || '-')}</td>`;
-          html += `<td style="text-align:center;">${escapeHtml(item.qty || '0')}</td>`;
-          html += `<td style="text-align:right;">₺${escapeHtml((item.price || 0).toFixed(2))}</td>`;
-          html += `<td style="text-align:right;">₺${escapeHtml(itemTotal.toFixed(2))}</td>`;
+          html += `<td style="text-align:center;">${item.qty || 0}</td>`;
+          html += `<td style="text-align:right;">₺${(item.price || 0).toFixed(2)}</td>`;
+          html += `<td style="text-align:right;">₺${itemTotal.toFixed(2)}</td>`;
           html += '</tr>';
         });
       } else {
@@ -424,7 +424,7 @@
       
       html += '<tr class="total-row">';
       html += '<td colspan="3" style="text-align:right;padding-right:2rem;">GENEL TOPLAM</td>';
-      html += `<td style="text-align:right;">₺${escapeHtml(order.total || '0')}</td>`;
+      html += `<td style="text-align:right;">₺${order.total || '0'}</td>`;
       html += '</tr>';
       
       html += '</tbody></table>';
