@@ -1831,11 +1831,6 @@
         html += `<button onclick="deleteUserFromModal('${escapeHtml(u.email)}', '${escapeHtml(u.name||'Kullanıcı')}')" class="btn btn-danger" style="flex:1;">🗑️ Sil</button>`;
         html += '</div>';
 
-        // Raw JSON for reference
-        html += '<details style="margin-top:0.75rem">\n<summary class="mono">Ham JSON</summary>\n'
-             + `<pre class="mono" style="white-space:pre-wrap; background:#f8fafc; padding:0.75rem; border-radius:8px; border:1px solid #e5e7eb;">${escapeHtml(JSON.stringify(u, null, 2))}</pre>`
-             + '</details>';
-
         body.innerHTML = html;
         document.getElementById('userDetailModal').classList.add('active');
         document.body.style.overflow = 'hidden';
