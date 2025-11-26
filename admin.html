@@ -328,8 +328,6 @@
       <!-- Quick Actions Bar -->
       <div class="action-bar">
         <button id="saveAll" class="btn">💾 Tüm Değişiklikleri Kaydet</button>
-        <button id="exportJson" class="btn btn-ghost">📥 JSON Dışa Aktar</button>
-        <button id="exportCsv" class="btn btn-ghost">📊 CSV Dışa Aktar</button>
         <button id="loadUsersBtn" class="btn">👥 Kullanıcıları Yükle</button>
         <button id="loadOrdersBtn" class="btn">📦 Müşteri Siparişleri</button>
         <button id="runSelfTest" class="btn btn-ghost">🧪 Test Çalıştır</button>
@@ -655,7 +653,7 @@
 
       try{
         // basic element checks
-        const ids = ['saveAll','exportJson','exportCsv','importFile','addBtn','newImage','newPreview','products'];
+        const ids = ['saveAll','importFile','addBtn','newImage','newPreview','products'];
         ids.forEach(id=> append(id + ' bulundu', !!document.getElementById(id)) );
 
         // localStorage get/set
@@ -1262,26 +1260,7 @@
         render();
       });
 
-      // Export JSON
-      document.getElementById('exportJson').addEventListener('click', ()=>{
-        const data = JSON.stringify(getProducts(), null, 2);
-        const blob = new Blob([data], {type:'application/json'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = 'products.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-      });
-
-      // Export CSV (simple)
-      document.getElementById('exportCsv').addEventListener('click', ()=>{
-        const prods = getProducts();
-        const esc = v => '"' + (''+ (v==null ? '' : v)).replace(/"/g,'""') + '"';
-        const rows = [ ['id','name','price','image'].map(esc).join(',') ];
-        prods.forEach(p=> rows.push([p.id, p.name, (p.price||0).toFixed(2), p.image||''].map(esc).join(',')));
-        const blob = new Blob([rows.join('\n')], {type:'text/csv;charset=utf-8;'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = 'products.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-      });
-
-      // Import (JSON or CSV)
+      // Export CSV (simple))
       document.getElementById('importFile').addEventListener('change', async (e)=>{
         const f = e.target.files && e.target.files[0];
         if (!f) return;
