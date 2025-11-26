@@ -1398,8 +1398,12 @@
       function attachHandlers(){
         document.querySelectorAll('.remove').forEach(btn=>{
           btn.onclick = ()=>{
+            const original = btn.textContent;
+            btn.disabled = true; btn.style.opacity='0.7'; btn.style.cursor='not-allowed';
+            btn.textContent = '⏳ Siliniyor...';
             const idx = parseInt(btn.getAttribute('data-idx'),10);
             const ps = getProducts(); ps.splice(idx,1); setProducts(ps); render();
+            // No finally block needed; render() rebuilds the list
           }
         });
 
