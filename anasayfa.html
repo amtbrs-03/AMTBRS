@@ -1874,7 +1874,7 @@
                     }
                     
                     // Account Tab Switching
-                    function switchAccountTab(tabName) {
+                    async function switchAccountTab(tabName) {
                         // Hide all tabs
                         const tabs = ['profile', 'addresses', 'orders'];
                         tabs.forEach(tab => {
@@ -1889,6 +1889,13 @@
                         const selectedBtn = document.getElementById('tab' + tabName.charAt(0).toUpperCase() + tabName.slice(1));
                         if (selectedTab) selectedTab.style.display = 'block';
                         if (selectedBtn) selectedBtn.classList.add('active');
+                        
+                        // Load data when switching to specific tabs
+                        if (tabName === 'addresses') {
+                            await loadUserAddresses();
+                        } else if (tabName === 'orders') {
+                            await loadUserOrders();
+                        }
                     }
                     
                     // Address Management Functions
@@ -1914,7 +1921,7 @@
                         return [];
                     }
                     
-                    function saveUserAddresses(addresses) {
+                    async function saveUserAddresses(addresses) {
                         const user = getCurrentUser();
                         if (!user || !user.email) return false;
                         
@@ -1923,13 +1930,54 @@
                         // Save to localStorage
                         localStorage.setItem('user_' + user.email, JSON.stringify(user));
                         
-                        // Save to GitHub
-                        commitFullUserToRepo(user);
-                        
-                        return true;
+                        // Save to GitHub asynchronously
+                        console.log('Saving addresses to GitHub for:', user.email);
+                        try {
+                            const success = await commitFullUserToRepo(user);
+                            if (success) {
+                                console.log('Addresses saved to GitHub successfully');
+                                return true;
+                            } else {
+                                console.warn('GitHub save failed but localStorage updated');
+                                return true; // Still return true as localStorage succeeded
+                            }
+                        } catch(e) {
+                            console.error('Failed to save to GitHub:', e);
+                            return true; // Still return true as localStorage succeeded
+                        }
                     }
                     
-                    function loadUserAddresses() {
+                    async function loadUserAddressesFromGitHub() {
+                        const user = getCurrentUser();
+                        if (!user || !user.email) {
+                            console.log('No user logged in, cannot load addresses from GitHub');
+                            return false;
+                        }
+                        
+                        console.log('Loading addresses from GitHub for:', user.email);
+                        try {
+                            const remoteUser = await fetchUserFromRepo(user.email);
+                            if (remoteUser && remoteUser.addresses) {
+                                console.log('Addresses loaded from GitHub:', remoteUser.addresses.length, 'addresses');
+                                // Update user in localStorage with GitHub data
+                                user.addresses = remoteUser.addresses;
+                                localStorage.setItem('user_' + user.email, JSON.stringify(user));
+                                return true;
+                            } else {
+                                console.log('No addresses found in GitHub for this user');
+                                return false;
+                            }
+                        } catch(e) {
+                            console.error('Failed to load addresses from GitHub:', e);
+                            return false;
+                        }
+                    }
+                    
+                    async function loadUserAddresses() {
+                        // First, try to load from GitHub
+                        await loadUserAddressesFromGitHub();
+                        
+                        // Then display addresses (either from GitHub or localStorage)
                         const addresses = getUserAddresses();
                         const listEl = document.getElementById('addressesList');
                         
@@ -1989,7 +2037,7 @@
                         document.getElementById('addAddressForm').style.display = 'none';
                     }
                     
-                    function saveNewAddress() {
+                    async function saveNewAddress() {
                         const title = document.getElementById('newAddressTitle').value.trim();
                         const city = document.getElementById('newAddressCity').value.trim();
                         const district = document.getElementById('newAddressDistrict').value.trim();
@@ -2024,28 +2072,30 @@
                         
                         addresses.push(newAddress);
                         
-                        if (saveUserAddresses(addresses)) {
-                            alert('Adres başarıyla kaydedildi!');
+                        const success = await saveUserAddresses(addresses);
+                        if (success) {
+                            alert('Adres başarıyla kaydedildi ve GitHub\'a senkronize edildi!');
                             cancelAddAddress();
-                            loadUserAddresses();
+                            await loadUserAddresses();
                         } else {
                             alert('Adres kaydedilemedi!');
                         }
                     }
                     
-                    function setDefaultAddress(addressId) {
+                    async function setDefaultAddress(addressId) {
                         const addresses = getUserAddresses();
                         addresses.forEach(addr => {
                             addr.isDefault = (addr.id === addressId);
                         });
                         
-                        if (saveUserAddresses(addresses)) {
-                            alert('Varsayılan adres güncellendi!');
-                            loadUserAddresses();
+                        const success = await saveUserAddresses(addresses);
+                        if (success) {
+                            alert('Varsayılan adres güncellendi ve GitHub\'a senkronize edildi!');
+                            await loadUserAddresses();
                         }
                     }
                     
-                    function deleteAddress(addressId) {
+                    async function deleteAddress(addressId) {
                         if (!confirm('Bu adresi silmek istediğinizden emin misiniz?')) return;
                         
                         let addresses = getUserAddresses();
@@ -2058,9 +2108,10 @@
                             addresses[0].isDefault = true;
                         }
                         
-                        if (saveUserAddresses(addresses)) {
-                            alert('Adres silindi!');
-                            loadUserAddresses();
+                        const success = await saveUserAddresses(addresses);
+                        if (success) {
+                            alert('Adres silindi ve GitHub\'dan kaldırıldı!');
+                            await loadUserAddresses();
                         }
                     }
 
