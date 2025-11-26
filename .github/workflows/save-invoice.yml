@@ -1,0 +1,37 @@
+name: Save Invoice
+
+permissions:
+  contents: write
+
+on:
+  repository_dispatch:
+    types: [save-invoice]
+
+jobs:
+  save-invoice:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout site-release
+        uses: actions/checkout@v3
+        with:
+          ref: site-release
+          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true
+          fetch-depth: 0
+
+      - name: Create invoices directory
+        run: mkdir -p invoices
+
+      - name: Save invoice file
+        run: |
+          INVOICE_ID="${{ github.event.client_payload.invoiceId }}"
+          INVOICE_JSON='${{ toJson(github.event.client_payload.data) }}'
+          echo "$INVOICE_JSON" > "invoices/${INVOICE_ID}.json"
+
+      - name: Commit and push
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add invoices/
+          git commit -m "Add invoice ${{ github.event.client_payload.invoiceId }}" || echo "No changes"
+          git push origin site-release
