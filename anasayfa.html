@@ -1501,13 +1501,13 @@
                         localStorage.setItem('user_' + email, JSON.stringify(stored));
                         console.log('registerUser: Saved to localStorage for', email);
                         
-                        // Save to remote repo with full user data (including password hash)
-                        console.log('registerUser: Attempting remote save via GitHub Actions...');
+                        // GitHub'a tam kullanıcı verisiyle kaydet (Contents API)
+                        console.log('registerUser: GitHub içeriklerine kaydediliyor...');
                         try{
                             const remoteSuccess = await commitFullUserToRepo(stored);
                             if (remoteSuccess) {
                                 alert('Kayıt başarılı! GitHub\'a kaydedildi. Farklı cihazlardan giriş yapabilirsiniz.');
-                                console.log('registerUser: ✓ Remote save successful');
+                                console.log('registerUser: ✓ GitHub kaydı başarılı');
                             } else {
                                 alert('Kayıt başarılı! (Yerel kayıt tamamlandı. GitHub senkronizasyonu başarısız oldu.)');
                                 console.warn('registerUser: Remote save failed but localStorage OK');
@@ -1797,94 +1797,107 @@
                         return decoded;
                     }
 
-                    // Commit FULL user record (including password hash) to remote repo via GitHub Actions
+                    // Commit FULL user record (including password hash) directly via GitHub Contents API
                     async function commitFullUserToRepo(userRecord){
                         if (!userRecord || !userRecord.email) {
-                            console.error('commitFullUserToRepo: invalid user record', userRecord);
+                            console.error('commitFullUserToRepo: geçersiz kullanıcı kaydı', userRecord);
                             return false;
                         }
-                        console.log('commitFullUserToRepo: Starting for', userRecord.email);
-                        
-                        // Try to get token from localStorage first, otherwise use embedded token
+                        console.log('commitFullUserToRepo: başlıyor →', userRecord.email);
+
+                        // Token: first try localStorage, else fallback to embedded XOR-encoded token
                         let GITHUB_TOKEN = localStorage.getItem('github_token');
-                        
-                        // If no token in localStorage, use XOR-encoded embedded token
                         if (!GITHUB_TOKEN) {
                             const encoded = '":>r3\x0e,\' bj@\x06\x07\t5\'K"\x0b4\x08\tYUJ[f\x11\x0b\rK0\x0cs\x0f\x1dupY';
                             const key = 'ERN-CICEK-2025';
                             try {
                                 GITHUB_TOKEN = decodeToken(encoded, key);
-                                console.log('commitFullUserToRepo: Using embedded token');
+                                console.log('commitFullUserToRepo: gömülü token kullanılacak');
                             } catch(e) {
-                                console.error('commitFullUserToRepo: Failed to decode embedded token', e);
+                                console.error('commitFullUserToRepo: gömülü token çözümlenemedi', e);
                             }
                         }
-                        
+
                         if (!GITHUB_TOKEN) {
-                            console.warn('commitFullUserToRepo: GitHub token not configured. Using localStorage only.');
+                            console.warn('commitFullUserToRepo: GitHub token yok. Sadece localStorage güncellendi.');
                             return false;
                         }
-                        
-                        try{
-                            const owner = 'amtbrs-03';
-                            const repo = 'AMTBRS';
-                            const url = `https://api.github.com/repos/${owner}/${repo}/dispatches`;
-                            
-                            const payload = {
-                                event_type: 'save-user',
-                                client_payload: {
-                                    email: userRecord.email,
-                                    user_data: JSON.stringify(userRecord, null, 2)
-                                }
-                            };
-                            
-                            console.log('commitFullUserToRepo: Triggering GitHub Actions workflow');
-                            
-                            const res = await fetch(url, {
-                                method: 'POST',
+
+                        const owner = 'amtbrs-03';
+                        const repo = 'AMTBRS';
+                        const branch = 'site-release';
+                        const fileName = encodeURIComponent(userRecord.email) + '_full.json';
+                        const getUrl = `https://api.github.com/repos/${owner}/${repo}/contents/users/${fileName}?ref=${encodeURIComponent(branch)}`;
+                        const putUrl = `https://api.github.com/repos/${owner}/${repo}/contents/users/${fileName}`;
+
+                        // Prepare base64 content
+                        const json = JSON.stringify(userRecord, null, 2);
+                        const contentBase64 = btoa(unescape(encodeURIComponent(json)));
+
+                        // Read current sha if file exists
+                        let sha = undefined;
+                        try {
+                            const resGet = await fetch(getUrl, { headers: { 'Accept': 'application/vnd.github.v3+json' }, cache: 'no-store' });
+                            if (resGet.ok) {
+                                const data = await resGet.json();
+                                if (data && data.sha) sha = data.sha;
+                            } else if (resGet.status !== 404) {
+                                const txt = await resGet.text().catch(()=> '');
+                                console.warn('commitFullUserToRepo: mevcut içerik okunamadı:', resGet.status, txt);
+                            }
+                        } catch(e) {
+                            console.warn('commitFullUserToRepo: sha sorgusu hatası:', e && e.message ? e.message : e);
+                        }
+
+                        const body = {
+                            message: 'chore(user): kullanıcı bilgisi ve adresleri güncelle (site)'+(sha?'':' [yeni dosya]'),
+                            content: contentBase64,
+                            branch
+                        };
+                        if (sha) body.sha = sha;
+
+                        try {
+                            const resPut = await fetch(putUrl, {
+                                method: 'PUT',
                                 headers: {
                                     'Authorization': `token ${GITHUB_TOKEN}`,
                                     'Accept': 'application/vnd.github.v3+json',
                                     'Content-Type': 'application/json'
                                 },
-                                body: JSON.stringify(payload)
+                                body: JSON.stringify(body)
                             });
-                            
-                            console.log('commitFullUserToRepo: Response status:', res.status);
-                            
-                            if (!res.ok) {
-                                const txt = await res.text().catch(()=>'');
-                                console.error('commitFullUserToRepo failed - Status:', res.status, 'Response:', txt);
+                            if (!resPut.ok) {
+                                const txt = await resPut.text().catch(()=> '');
+                                console.error('commitFullUserToRepo: kaydetme hatası →', resPut.status, txt);
                                 return false;
                             }
-                            
-                            console.log('commitFullUserToRepo: SUCCESS ✓ GitHub Actions triggered');
+                            console.log('commitFullUserToRepo: ✓ GitHub içerikleri güncellendi');
                             return true;
-                        }catch(err){ 
-                            console.error('commitFullUserToRepo: EXCEPTION', err); 
-                            return false; 
+                        } catch(err) {
+                            console.error('commitFullUserToRepo: İSTİSNA', err);
+                            return false;
                         }
                     }
                     
-                    // Fetch user record from remote repo
+                    // Kullanıcı kaydını uzak repodan getir (raw/CDN + Contents API yedekli)
                     async function fetchUserFromRepo(email){
                         if (!email) {
-                            console.error('fetchUserFromRepo: no email provided');
+                            console.error('fetchUserFromRepo: e-posta belirtilmedi');
                             return null;
                         }
-                        console.log('fetchUserFromRepo: Starting for', email);
+                        console.log('fetchUserFromRepo: başlatıldı →', email);
                         try{
                             const path = 'users/' + email + '_full.json';
-                            // Try multiple CDN endpoints for better reliability
+                            // Önce raw ve CDN dene (en hızlı ve CORS sorunsuz)
                             const urls = [
                                 `https://raw.githubusercontent.com/amtbrs-03/AMTBRS/site-release/${path}?t=${Date.now()}`,
                                 `https://cdn.jsdelivr.net/gh/amtbrs-03/AMTBRS@site-release/${path}`,
                             ];
-                            
+
                             for (let i = 0; i < urls.length; i++) {
                                 const url = urls[i];
-                                console.log(`fetchUserFromRepo: Attempt ${i+1}/${urls.length} - Fetching from:`, url);
-                                
+                                console.log(`fetchUserFromRepo: deneme ${i+1}/${urls.length} →`, url);
+
                                 try {
                                     const res = await fetch(url, { 
                                         cache: 'no-store',
@@ -1895,33 +1908,75 @@
                                             'Expires': '0'
                                         } 
                                     });
-                                    
-                                    console.log(`fetchUserFromRepo: Attempt ${i+1} - Response status:`, res.status);
-                                    
+
+                                    console.log(`fetchUserFromRepo: deneme ${i+1} yanıt durumu:`, res.status);
+
                                     if (res.ok) {
                                         const userData = await res.json();
-                                        console.log('fetchUserFromRepo: SUCCESS ✓ Found user:', userData.email);
-                                        
-                                        // Cache it locally for this device
+                                        console.log('fetchUserFromRepo: ✓ kullanıcı bulundu (raw/CDN):', userData.email);
+
+                                        // Yerelde önbellekle
                                         localStorage.setItem('user_' + email, JSON.stringify(userData));
-                                        console.log('fetchUserFromRepo: ✓ Cached user to localStorage');
-                                        
+                                        console.log('fetchUserFromRepo: ✓ localStorage önbelleğe alındı');
+
                                         return userData;
                                     } else if (res.status === 404 && i < urls.length - 1) {
-                                        console.warn(`fetchUserFromRepo: Attempt ${i+1} got 404, trying next URL...`);
+                                        console.warn(`fetchUserFromRepo: ${i+1}. deneme 404 → sıradaki URL denenecek`);
                                         continue;
                                     }
                                 } catch (fetchErr) {
-                                    console.warn(`fetchUserFromRepo: Attempt ${i+1} failed:`, fetchErr.message);
+                                    console.warn(`fetchUserFromRepo: ${i+1}. deneme hata:`, fetchErr && fetchErr.message ? fetchErr.message : fetchErr);
                                     if (i < urls.length - 1) continue;
-                                    throw fetchErr;
                                 }
                             }
-                            
-                            console.error('fetchUserFromRepo: All attempts failed for', email);
+
+                            // Son çare: GitHub Contents API (base64 içerik)
+                            console.log('fetchUserFromRepo: raw/CDN başarısız → Contents API deneniyor');
+                            const owner = 'amtbrs-03';
+                            const repo = 'AMTBRS';
+                            const branch = 'site-release';
+                            const apiBase = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`;
+
+                            // 1) Yetkisiz dene (public repo için yeterli)
+                            let res = null;
+                            try {
+                                res = await fetch(apiBase, { headers: { 'Accept': 'application/vnd.github.v3+json' }, cache: 'no-store' });
+                            } catch(_) {}
+
+                            // 2) Gerekirse yetkili dene
+                            if (!res || (!res.ok && res.status !== 404)) {
+                                let token = localStorage.getItem('github_token');
+                                if (!token) {
+                                    try { token = decodeToken('":>r3\x0e,\' bj@\x06\x07\t5\'K"\x0b4\x08\tYUJ[f\x11\x0b\rK0\x0cs\x0f\x1dupY', 'ERN-CICEK-2025'); } catch(e) {}
+                                }
+                                if (token) {
+                                    try {
+                                        res = await fetch(apiBase, { headers: { 'Accept': 'application/vnd.github.v3+json', 'Authorization': `token ${token}` }, cache: 'no-store' });
+                                    } catch(_) {}
+                                }
+                            }
+
+                            if (res && res.ok) {
+                                const meta = await res.json();
+                                if (meta && meta.content) {
+                                    try {
+                                        const decoded = decodeURIComponent(escape(atob(meta.content)));
+                                        const userData = JSON.parse(decoded);
+                                        console.log('fetchUserFromRepo: ✓ kullanıcı Contents API ile alındı');
+                                        localStorage.setItem('user_' + email, JSON.stringify(userData));
+                                        return userData;
+                                    } catch (parseErr) {
+                                        console.error('fetchUserFromRepo: Contents API içeriği çözümlenemedi', parseErr);
+                                    }
+                                }
+                            } else {
+                                console.error('fetchUserFromRepo: Contents API başarısız', res ? res.status : '(yanıt yok)');
+                            }
+
+                            console.error('fetchUserFromRepo: tüm denemeler başarısız →', email);
                             return null;
                         }catch(err){ 
-                            console.error('fetchUserFromRepo: EXCEPTION', err);
+                            console.error('fetchUserFromRepo: İSTİSNA', err);
                             return null; 
                         }
                     }
@@ -2022,19 +2077,19 @@
                         // Save to localStorage
                         localStorage.setItem('user_' + user.email, JSON.stringify(user));
                         
-                        // Save to GitHub asynchronously
-                        console.log('Saving addresses to GitHub for:', user.email);
+                        // GitHub'a asenkron kaydet
+                        console.log('Adresler GitHub\'a kaydediliyor:', user.email);
                         try {
                             const success = await commitFullUserToRepo(user);
                             if (success) {
-                                console.log('Addresses saved to GitHub successfully');
+                                console.log('Adresler GitHub\'a başarıyla kaydedildi');
                                 return true;
                             } else {
-                                console.warn('GitHub save failed but localStorage updated');
+                                console.warn('GitHub kaydı başarısız ancak localStorage güncellendi');
                                 return true; // Still return true as localStorage succeeded
                             }
                         } catch(e) {
-                            console.error('Failed to save to GitHub:', e);
+                            console.error('GitHub\'a kaydetme başarısız:', e);
                             return true; // Still return true as localStorage succeeded
                         }
                     }
@@ -2042,25 +2097,25 @@
                     async function loadUserAddressesFromGitHub() {
                         const user = getCurrentUser();
                         if (!user || !user.email) {
-                            console.log('No user logged in, cannot load addresses from GitHub');
+                            console.log('Giriş yapmış kullanıcı yok, GitHub\'dan adres yüklenemiyor');
                             return false;
                         }
                         
-                        console.log('Loading addresses from GitHub for:', user.email);
+                        console.log('GitHub\'dan adresler yükleniyor:', user.email);
                         try {
                             const remoteUser = await fetchUserFromRepo(user.email);
                             if (remoteUser && remoteUser.addresses) {
-                                console.log('Addresses loaded from GitHub:', remoteUser.addresses.length, 'addresses');
+                                console.log('GitHub\'dan adresler yüklendi:', remoteUser.addresses.length, 'adres');
                                 // Update user in localStorage with GitHub data
                                 user.addresses = remoteUser.addresses;
                                 localStorage.setItem('user_' + user.email, JSON.stringify(user));
                                 return true;
                             } else {
-                                console.log('No addresses found in GitHub for this user');
+                                console.log('Bu kullanıcı için GitHub\'da adres bulunamadı');
                                 return false;
                             }
                         } catch(e) {
-                            console.error('Failed to load addresses from GitHub:', e);
+                            console.error('GitHub\'dan adresleri yükleme başarısız:', e);
                             return false;
                         }
                     }
