@@ -1169,6 +1169,7 @@
         return;
       }
 
+      let originalText = '';
       try {
         const token = getGitHubToken();
         if (!token) { alert('GitHub token bulunamadı. Lütfen ayarlarda token tanımlayın.'); return; }
@@ -1180,7 +1181,6 @@
         console.log('Deleting user:', email);
 
         // UI: disable button and show progress
-        let originalText = '';
         if (btnEl) {
           originalText = btnEl.textContent;
           btnEl.disabled = true;
@@ -1196,8 +1196,7 @@
         const getResponse = await fetch(getUrl, {
           headers: {
             'Authorization': `token ${token}`,
-            'Accept': 'application/vnd.github.v3+json',
-            'Cache-Control': 'no-cache'
+            'Accept': 'application/vnd.github.v3+json'
           }
         });
 
