@@ -458,8 +458,14 @@
         const statusInfo = statusMap[order.status] || statusMap['pending'];
         const statusBadge = `<span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>`;
         
-        // Address display (shortened if too long)
-        const addressText = order.address || '-';
+        // Address cleanup: decode URI/enities, then shorten
+        const cleanAddress = (function(s){
+          s = String(s || '');
+          try{ if (/%[0-9A-Fa-f]{2}/.test(s) || s.includes('+')) s = decodeURIComponent(s.replace(/\+/g,' ')); }catch(_){}
+          try{ const ta = document.createElement('textarea'); ta.innerHTML = s; s = ta.value; }catch(_){}
+          return s.replace(/\s+/g,' ').trim();
+        })(order.address);
+        const addressText = cleanAddress || '-';
         const addressShort = addressText.length > 50 
           ? addressText.substring(0, 47) + '...' 
           : addressText;

@@ -414,9 +414,15 @@
       
       // Address
       if (order.address) {
+        const cleanAddress = (function(s){
+          s = String(s || '');
+          try{ if (/%[0-9A-Fa-f]{2}/.test(s) || s.includes('+')) s = decodeURIComponent(s.replace(/\+/g,' ')); }catch(_){}
+          try{ const ta = document.createElement('textarea'); ta.innerHTML = s; s = ta.value; }catch(_){}
+          return s.replace(/\s+/g,' ').trim();
+        })(order.address);
         html += '<div class="info-item" style="margin-bottom:2rem;">';
         html += '<div class="info-label">📍 Teslimat Adresi</div>';
-        html += `<div class="info-value">${escapeHtml(order.address)}</div>`;
+        html += `<div class="info-value">${escapeHtml(cleanAddress)}</div>`;
         html += '</div>';
       }
       
@@ -565,7 +571,7 @@
       <h3>👤 Müşteri Bilgileri</h3>
       <p><strong>${escapeHtml(currentOrder.customerName || '-')}</strong></p>
       <p>${escapeHtml(currentOrder.customerEmail || '-')}</p>
-      ${currentOrder.address ? `<p>${escapeHtml(currentOrder.address)}</p>` : ''}
+      ${currentOrder.address ? `<p>${escapeHtml((function(s){ try{ if (/%[0-9A-Fa-f]{2}/.test(s) || s.includes('+')) s = decodeURIComponent(s.replace(/\+/g,' ')); }catch(_){} try{ const ta = document.createElement('textarea'); ta.innerHTML = s; s = ta.value; }catch(_){} return s.replace(/\s+/g,' ').trim(); })(currentOrder.address))}</p>` : ''}
     </div>
   </div>
 
