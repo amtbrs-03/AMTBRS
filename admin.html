@@ -685,6 +685,13 @@
 
     document.getElementById('runSelfTest').addEventListener('click', ()=>{ runAdminSelfTest(); });
 
+    // Utility function for HTML escaping
+    function escapeHtml(s){ 
+      return (s||'').replace(/[&<>\"']/g, function(m){
+        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]
+      }) 
+    }
+
     // Load users from GitHub - now opens modal
     document.getElementById('loadUsersBtn').addEventListener('click', async ()=>{
       const btn = document.getElementById('loadUsersBtn');
