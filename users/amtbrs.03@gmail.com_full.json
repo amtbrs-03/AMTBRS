@@ -1,0 +1,18 @@
+{
+  "name": "Safiye SOYDAN",
+  "email": "amtbrs.03@gmail.com",
+  "pw": {
+    "algo": "PBKDF2-SHA256",
+    "iterations": 150000,
+    "salt": "rMmXo6/4EN4lSOglPbKF7g==",
+    "hash": "pM2C64UVusuhnfhHIpZl1T8BAcG3j2wElDN6h9uyTVM="
+  },
+  "address": {
+    "city": "Rize",
+    "district": "DEREPAZARİ",
+    "neighborhood": "Maltepe köyü",
+    "addressDetail": "Maltepe köyü",
+    "postalCode": "53268"
+  },
+  "createdAt": 1764195860475
+}
