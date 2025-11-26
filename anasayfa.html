@@ -2714,16 +2714,24 @@
                         const payerEmail = (document.getElementById('payerEmail')||{}).value || '';
                         const cart = loadCart();
                         const total = cart.reduce((s,i)=>s + (i.price||0)*(i.qty||0),0).toFixed(2);
-                        const body = {
-                            email: payerEmail || (getCurrentUser()||{}).email || '',
-                            total: total,
-                            items: cart
-                        };
+        const user = getCurrentUser();
+        const body = {
+            email: payerEmail || (user||{}).email || '',
+            total: total,
+            items: cart
+        };
 
-                        // create order object to persist for user
-                        const order = { id: 'ORD' + Date.now().toString(36), date: Date.now(), items: cart, total: Number(total) };
-
-                        // POST to functions/send-order if available (netlify functions)
+        // create order object to persist for user
+        const order = { 
+            id: 'ORD' + Date.now().toString(36), 
+            date: Date.now(), 
+            customerName: (user||{}).name || 'Misafir',
+            customerEmail: payerEmail || (user||{}).email || '',
+            items: cart, 
+            total: Number(total),
+            address: (user && user.address) ? `${user.address.city || ''}, ${user.address.district || ''}, ${user.address.neighborhood || ''}, ${user.address.addressDetail || ''}`.trim() : 'Adres bilgisi yok',
+            status: 'pending'
+        };                        // POST to functions/send-order if available (netlify functions)
                         fetch('/.netlify/functions/send-order', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) })
                         .then(r=>{ if (!r.ok) throw new Error('send failed'); return r.text(); })
                         .then(()=>{

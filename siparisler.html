@@ -562,7 +562,6 @@
       html += '<th>🆔 Sipariş No</th>';
       html += '<th>👤 Müşteri</th>';
       html += '<th>📧 Email</th>';
-      html += '<th>🛒 Ürünler</th>';
       html += '<th>💰 Toplam</th>';
       html += '<th>📅 Tarih</th>';
       html += '<th>📊 Durum</th>';
@@ -580,43 +579,28 @@
             }) 
           : '-';
         
-        // Format items
-        const itemsText = (order.items || [])
-          .map(item => `${item.name} x${item.qty}`)
-          .join(', ') || '-';
-        const itemsShort = itemsText.length > 50 
-          ? itemsText.substring(0, 47) + '...' 
-          : itemsText;
-        
         // Status badge
         const statusInfo = statusMap[order.status] || statusMap['pending'];
         const statusBadge = `<span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>`;
         
-        // Address cleanup: decode URI/enities, then shorten
-        const cleanAddress = (function(s){
-          s = String(s || '');
-          try{ if (/%[0-9A-Fa-f]{2}/.test(s) || s.includes('+')) s = decodeURIComponent(s.replace(/\+/g,' ')); }catch(_){}
-          try{ const ta = document.createElement('textarea'); ta.innerHTML = s; s = ta.value; }catch(_){}
-          return s.replace(/\s+/g,' ').trim();
-        })(order.address);
-        const addressText = cleanAddress || '-';
-        const addressShort = addressText.length > 50 
-          ? addressText.substring(0, 47) + '...' 
+        // Address - basit metin, temizlenmiş
+        const addressText = String(order.address || '-').replace(/\s+/g, ' ').trim();
+        const addressShort = addressText.length > 60 
+          ? addressText.substring(0, 57) + '...' 
           : addressText;
         
-        // Check if order has invoice (status is 'ready' means invoice was created)
+        // Check if order has invoice
         const hasInvoice = order.status === 'ready' || order.hasInvoice;
         const rowClass = hasInvoice ? 'has-invoice' : '';
         
-        html += '<tr class="' + rowClass + '" style="cursor:pointer;transition:all 0.2s ease;" onclick="window.location.href=\'siparis-detay.html?id=' + encodeURIComponent(order.id) + '\'">';
-        html += `<td style="font-weight:600;color:var(--green-dark);">${escapeHtml(order.id || '-')}</td>`;
-        html += `<td style="font-weight:500;">${escapeHtml(order.customerName || '-')}</td>`;
-        html += `<td style="color:var(--muted);">${escapeHtml(order.customerEmail || '-')}</td>`;
-        html += `<td style="color:var(--muted);" title="${escapeHtml(itemsText)}">${escapeHtml(itemsShort)}</td>`;
-        html += `<td style="font-weight:600;">₺${escapeHtml(order.total || '0')}</td>`;
-        html += `<td style="color:var(--muted);">${orderDate}</td>`;
+        html += '<tr class="' + rowClass + '" style="cursor:pointer;" onclick="window.location.href=\'siparis-detay.html?id=' + encodeURIComponent(order.id) + '\'">';
+        html += `<td style="font-weight:700;color:var(--green-dark);font-size:0.9rem;">${escapeHtml(order.id || '-')}</td>`;
+        html += `<td style="font-weight:600;">${escapeHtml(order.customerName || '-')}</td>`;
+        html += `<td style="color:var(--muted);font-size:0.9rem;">${escapeHtml(order.customerEmail || '-')}</td>`;
+        html += `<td style="font-weight:700;color:#059669;">₺${escapeHtml(order.total || '0')}</td>`;
+        html += `<td style="color:var(--muted);font-size:0.9rem;">${orderDate}</td>`;
         html += `<td>${statusBadge}</td>`;
-        html += `<td style="color:var(--muted);" title="${escapeHtml(addressText)}">${escapeHtml(addressShort)}</td>`;
+        html += `<td style="color:#334155;font-size:0.9rem;" title="${escapeHtml(addressText)}">${escapeHtml(addressShort)}</td>`;
         html += '</tr>';
       });
       
