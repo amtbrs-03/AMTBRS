@@ -648,9 +648,12 @@
           console.log('Invoice saved to GitHub successfully');
           
           // Update order status to "ready" (hazır)
-          await updateOrderStatus(orderId, 'ready');
+          console.log('Now updating order status to ready...');
+          const statusUpdateResult = await updateOrderStatus(orderId, 'ready');
+          console.log('Status update completed:', statusUpdateResult);
         } else {
           console.warn('Invoice save response:', response.status);
+          alert('Fatura kaydedildi ancak durum güncellenemedi. Lütfen sayfayı yenileyin.');
         }
       } catch(err) {
         console.error('Failed to save invoice to GitHub:', err);
@@ -677,6 +680,7 @@
         const token = xorDecode(encodedToken, secretKey);
         
         // Fetch current order file from GitHub
+        console.log('Fetching order file from GitHub...');
         const getResponse = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/orders/${orderId}.json?ref=site-release&t=${Date.now()}`, {
           headers: {
             'Accept': 'application/vnd.github.v3+json',
@@ -686,14 +690,19 @@
         
         if (!getResponse.ok) {
           console.error('Failed to fetch order file:', getResponse.status);
-          return;
+          const errorText = await getResponse.text();
+          console.error('Error details:', errorText);
+          return false;
         }
         
         const fileData = await getResponse.json();
+        console.log('Order file fetched, current SHA:', fileData.sha);
         const orderContent = JSON.parse(atob(fileData.content));
+        console.log('Current order status:', orderContent.status);
         
         // Update status
         orderContent.status = newStatus;
+        console.log('Updating to new status:', newStatus);
         
         // Update file in GitHub
         const updateResponse = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/orders/${orderId}.json`, {
@@ -712,15 +721,20 @@
         });
         
         if (updateResponse.ok) {
-          console.log('Order status updated successfully');
+          console.log('Order status updated successfully in GitHub');
           // Reload order detail to show updated status
           currentOrder.status = newStatus;
           displayOrderDetail();
+          return true;
         } else {
           console.error('Failed to update order status:', updateResponse.status);
+          const errorText = await updateResponse.text();
+          console.error('Update error details:', errorText);
+          return false;
         }
       } catch(err) {
         console.error('Failed to update order status:', err);
+        return false;
       }
     }
 
