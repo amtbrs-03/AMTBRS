@@ -1086,9 +1086,16 @@
 
       // Orders admin: fetch from GitHub
       async function renderOrdersAdmin(){
+        console.log('=== renderOrdersAdmin ÇAĞRILDI ===');
         const container = document.getElementById('ordersListModal'); 
         const countEl = document.getElementById('orderCountModal');
-        if (!container) return;
+        console.log('Container element:', container);
+        console.log('Count element:', countEl);
+        
+        if (!container) {
+          console.error('ordersListModal element not found!');
+          return;
+        }
         
         container.innerHTML = '<p style="color:#6b7280;">Siparişler GitHub\'dan çekiliyor...</p>';
         
@@ -1209,13 +1216,28 @@
       }
 
       document.getElementById('loadOrdersBtn').addEventListener('click', async ()=>{
+        console.log('=== MÜŞTERI SİPARİŞLERİ BUTONU TIKLANDI ===');
+        console.log('Modal element:', document.getElementById('ordersModal'));
+        console.log('Opening modal...');
         openOrdersModal();
+        console.log('Loading orders...');
         await renderOrdersAdmin();
+        console.log('Orders loaded');
       });
       
-      document.getElementById('refreshOrdersBtn').addEventListener('click', async ()=>{
-        await renderOrdersAdmin();
-      });
+      // Wait for DOM to be ready before attaching modal button handler
+      setTimeout(() => {
+        const refreshBtn = document.getElementById('refreshOrdersBtn');
+        console.log('refreshOrdersBtn element:', refreshBtn);
+        if (refreshBtn) {
+          refreshBtn.addEventListener('click', async ()=>{
+            console.log('=== SİPARİŞLERİ YENİLE BUTONU TIKLANDI ===');
+            await renderOrdersAdmin();
+          });
+        } else {
+          console.warn('refreshOrdersBtn not found in DOM');
+        }
+      }, 100);
 
       document.getElementById('resetDefault').addEventListener('click', ()=>{
         if (!confirm('Varsayılan ürünlere geri dönülsün mü?')) return;
