@@ -549,6 +549,20 @@
     }
 
     function renderOrdersTable(orders) {
+      function normalizeText(s){
+        s = String(s || '').trim();
+        if (!s) return s;
+        try {
+          // Fix common mojibake: Latin-1 decoded as UTF-8
+          const fixed = decodeURIComponent(escape(s));
+          if (fixed && fixed !== s) return fixed;
+        } catch(_) {}
+        try {
+          // Decode URI-encoded inputs
+          if (/%[0-9A-Fa-f]{2}/.test(s)) return decodeURIComponent(s);
+        } catch(_) {}
+        return s;
+      }
       const statusMap = {
         'pending': { text: 'Beklemede', class: 'status-pending' },
         'ready': { text: 'Hazır', class: 'status-ready' },
@@ -584,7 +598,7 @@
         const statusBadge = `<span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>`;
         
         // Address - basit metin, temizlenmiş
-        const addressText = String(order.address || '-').replace(/\s+/g, ' ').trim();
+        const addressText = normalizeText(String(order.address || '-')).replace(/\s+/g, ' ').trim();
         const addressShort = addressText.length > 60 
           ? addressText.substring(0, 57) + '...' 
           : addressText;
@@ -594,9 +608,9 @@
         const rowClass = hasInvoice ? 'has-invoice' : '';
         
         html += '<tr class="' + rowClass + '" style="cursor:pointer;" onclick="window.location.href=\'siparis-detay.html?id=' + encodeURIComponent(order.id) + '\'">';
-        html += `<td style="font-weight:700;color:var(--green-dark);font-size:0.9rem;">${escapeHtml(order.id || '-')}</td>`;
-        html += `<td style="font-weight:600;">${escapeHtml(order.customerName || '-')}</td>`;
-        html += `<td style="color:var(--muted);font-size:0.9rem;">${escapeHtml(order.customerEmail || '-')}</td>`;
+        html += `<td style="font-weight:700;color:var(--green-dark);font-size:0.9rem;">${escapeHtml(normalizeText(order.id) || '-')}</td>`;
+        html += `<td style="font-weight:600;">${escapeHtml(normalizeText(order.customerName) || '-')}</td>`;
+        html += `<td style="color:var(--muted);font-size:0.9rem;">${escapeHtml(normalizeText(order.customerEmail) || '-')}</td>`;
         html += `<td style="font-weight:700;color:#059669;">₺${escapeHtml(order.total || '0')}</td>`;
         html += `<td style="color:var(--muted);font-size:0.9rem;">${orderDate}</td>`;
         html += `<td>${statusBadge}</td>`;

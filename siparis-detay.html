@@ -363,6 +363,13 @@
     }
 
     function renderOrderDetail(order) {
+      function normalizeText(s){
+        s = String(s || '').trim();
+        if (!s) return s;
+        try { const fixed = decodeURIComponent(escape(s)); if (fixed && fixed !== s) return fixed; } catch(_) {}
+        try { if (/%[0-9A-Fa-f]{2}/.test(s)) return decodeURIComponent(s); } catch(_) {}
+        return s;
+      }
       const statusMap = {
         'pending': { text: 'Beklemede', class: 'status-pending' },
         'ready': { text: 'Hazır', class: 'status-ready' },
@@ -386,7 +393,7 @@
       
       let html = '<div class="detail-card">';
       html += '<div class="detail-header">';
-      html += `<h2>Sipariş #${escapeHtml(order.id || '-')}</h2>`;
+      html += `<h2>Sipariş #${escapeHtml(normalizeText(order.id) || '-')}</h2>`;
       html += statusBadge;
       html += '</div>';
       
@@ -394,12 +401,12 @@
       html += '<div class="info-grid">';
       html += '<div class="info-item">';
       html += '<div class="info-label">👤 Müşteri Adı</div>';
-      html += `<div class="info-value">${escapeHtml(order.customerName || '-')}</div>`;
+      html += `<div class="info-value">${escapeHtml(normalizeText(order.customerName) || '-')}</div>`;
       html += '</div>';
       
       html += '<div class="info-item">';
       html += '<div class="info-label">📧 Email</div>';
-      html += `<div class="info-value">${escapeHtml(order.customerEmail || '-')}</div>`;
+      html += `<div class="info-value">${escapeHtml(normalizeText(order.customerEmail) || '-')}</div>`;
       html += '</div>';
       
       html += '<div class="info-item">';
@@ -423,7 +430,7 @@
         })(order.address);
         html += '<div class="info-item" style="margin-bottom:2rem;">';
         html += '<div class="info-label">📍 Teslimat Adresi</div>';
-        html += `<div class="info-value">${escapeHtml(cleanAddress)}</div>`;
+        html += `<div class="info-value">${escapeHtml(normalizeText(cleanAddress))}</div>`;
         html += '</div>';
       }
       
@@ -442,7 +449,7 @@
         order.items.forEach(item => {
           const itemTotal = (item.price || 0) * (item.qty || 0);
           html += '<tr>';
-          html += `<td>${escapeHtml(item.name || '-')}</td>`;
+          html += `<td>${escapeHtml(normalizeText(item.name) || '-')}</td>`;
           html += `<td style="text-align:center;">${item.qty || 0}</td>`;
           html += `<td style="text-align:right;">₺${(item.price || 0).toFixed(2)}</td>`;
           html += `<td style="text-align:right;">₺${itemTotal.toFixed(2)}</td>`;
