@@ -470,8 +470,12 @@
       const getUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`;
       const putUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}`;
 
-      // Prepare base64 content
-      const json = JSON.stringify(adminData, null, 2);
+      // Prepare base64 content (ensure legacy unlockHash is not persisted)
+      const cleanAdmin = { ...adminData };
+      if ('unlockHash' in cleanAdmin) {
+        try { delete cleanAdmin.unlockHash; } catch(_) {}
+      }
+      const json = JSON.stringify(cleanAdmin, null, 2);
       const contentBase64 = btoa(unescape(encodeURIComponent(json)));
 
       let sha = undefined;
