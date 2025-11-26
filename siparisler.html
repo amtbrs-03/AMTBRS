@@ -301,6 +301,14 @@
       }) 
     }
 
+    // Normalize text that may contain URI-encoding or HTML entities
+    function cleanText(input){
+      let s = String(input == null ? '' : input);
+      try{ if (/%[0-9A-Fa-f]{2}/.test(s) || s.includes('+')) s = decodeURIComponent(s.replace(/\+/g,' ')); }catch(_){}
+      try{ const ta = document.createElement('textarea'); ta.innerHTML = s; s = ta.value; }catch(_){}
+      return s.replace(/\s+/g,' ').trim();
+    }
+
     let ordersData = [];
 
     async function loadOrders() {
@@ -344,7 +352,7 @@
         }
         
         // Fetch each order file
-        ordersData = [];
+        orders.forEach(order => {
         for (const file of orderFiles) {
           try {
             console.log('Fetching order:', file.name);
@@ -356,8 +364,8 @@
             } else {
               console.error('Failed to fetch order file:', file.name, orderRes.status);
             }
-          } catch(e) {
-            console.error('Failed to load order:', file.name, e);
+          const itemsText = (order.items || [])
+            .map(item => `${cleanText(item.name)} x${item.qty}`)
           }
         }
         
@@ -368,12 +376,7 @@
         }
         
         console.log('Total orders loaded:', ordersData.length);
-        
-        // Sort by date (newest first)
-        ordersData.sort((a, b) => (b.date || 0) - (a.date || 0));
-        
-        // Update stats
-        updateStats(ordersData);
+          const cleanAddress = cleanText(order.address);
         
         // Render table
         renderOrdersTable(ordersData);
@@ -384,8 +387,8 @@
           month:'2-digit', 
           year:'numeric', 
           hour:'2-digit', 
-          minute:'2-digit'
-        });
+          html += `<td style="font-weight:600;color:var(--green-dark);">${escapeHtml(order.id || '-')}</td>`;
+          html += `<td style="font-weight:500;">${escapeHtml(cleanText(order.customerName) || '-')}</td>`;
         document.getElementById('lastUpdate').textContent = `Son güncelleme: ${now}`;
         
       } catch(err) {
