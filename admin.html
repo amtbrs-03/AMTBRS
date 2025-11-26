@@ -1285,25 +1285,30 @@
         const branch = 'site-release';
         const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/users?ref=${branch}`;
         
-        console.log('Fetching users from:', apiUrl);
+        console.log('Kullanıcılar çekiliyor (URL):', apiUrl);
         
         const res = await fetch(apiUrl, {
           headers: { 'Accept': 'application/vnd.github.v3+json' }
         });
         
-        console.log('GitHub API response:', res.status, res.statusText);
+        console.log('GitHub API yanıtı:', res.status, res.statusText);
         
         if (!res.ok) {
+          if (res.status === 404) {
+            listEl.innerHTML = '<p style="color:#6b7280;">Henüz kayıtlı kullanıcı yok. (users/ klasörü bulunamadı)</p>';
+            if (countEl) countEl.textContent = '0 kullanıcı';
+            return;
+          }
           const errorText = await res.text().catch(() => '');
-          console.error('GitHub API error:', res.status, errorText);
-          throw new Error(`GitHub API responded with ${res.status}: ${res.statusText}`);
+          console.error('GitHub API hatası:', res.status, errorText);
+          throw new Error(`GitHub API ${res.status} döndürdü: ${res.statusText}`);
         }
         
         const files = await res.json();
-        console.log('Files in users/:', files.length, files.map(f => f.name));
+        console.log('users/ klasöründeki dosya sayısı:', files.length, files.map(f => f.name));
         
         const userFiles = files.filter(f => f.name.endsWith('_full.json'));
-        console.log('User files:', userFiles.length);
+        console.log('Kullanıcı dosyaları:', userFiles.length);
         
         if (userFiles.length === 0) {
           listEl.innerHTML = '<p style="color:#6b7280;">Henüz kayıtlı kullanıcı yok. (users/ klasöründe _full.json dosyası bulunamadı)</p>';
@@ -1315,17 +1320,17 @@
         const users = [];
         for (const file of userFiles) {
           try {
-            console.log('Fetching user:', file.name, file.download_url);
+            console.log('Kullanıcı dosyası çekiliyor:', file.name, file.download_url);
             const userRes = await fetch(file.download_url);
             if (userRes.ok) {
               const userData = await userRes.json();
-              console.log('User loaded:', userData.email);
+              console.log('Kullanıcı yüklendi:', userData.email);
               users.push(userData);
             } else {
-              console.error('Failed to fetch user file:', file.name, userRes.status);
+              console.error('Kullanıcı dosyası çekilemedi:', file.name, userRes.status);
             }
           } catch(e) {
-            console.error('Failed to load user:', file.name, e);
+            console.error('Kullanıcı yüklenemedi:', file.name, e);
           }
         }
         
@@ -1337,7 +1342,7 @@
           return;
         }
         
-        console.log('Total users loaded:', users.length);
+        console.log('Toplam yüklenen kullanıcı:', users.length);
         
         let html = '<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.1); border-radius:8px; overflow:hidden;">';
         html += '<thead><tr style="background:linear-gradient(135deg, var(--green-primary), var(--green-dark)); color:white; text-align:left;">';
@@ -1597,8 +1602,9 @@
         });
       });
 
-      // Download products JSON locally
-      document.getElementById('downloadProducts').addEventListener('click', ()=>{
+      // Download products JSON locally (guard if button not present)
+      const downloadBtn = document.getElementById('downloadProducts');
+      if (downloadBtn) downloadBtn.addEventListener('click', ()=>{
         const data = JSON.stringify(getProducts(), null, 2);
         const blob = new Blob([data], {type:'application/json'});
         const url = URL.createObjectURL(blob);
