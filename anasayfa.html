@@ -1658,21 +1658,22 @@
                             };
 
                             document.getElementById('forceResetBtn').onclick = async function(){
+                                const btn = document.getElementById('forceResetBtn'); if (btn) btn.disabled = true;
                                 const n1 = document.getElementById('forceResetNew1').value || '';
                                 const n2 = document.getElementById('forceResetNew2').value || '';
                                 const msg = document.getElementById('forceResetMsg');
-                                if (!n1 || !n2) { if (msg) msg.textContent = 'Lütfen yeni parolayı girin.'; return; }
-                                if (n1.length < 4) { if (msg) msg.textContent = 'Parola en az 4 karakter olmalı.'; return; }
-                                if (n1 !== n2) { if (msg) msg.textContent = 'Parolalar eşleşmiyor.'; return; }
+                                if (!n1 || !n2) { if (msg) msg.textContent = 'Lütfen yeni parolayı girin.'; if (btn) btn.disabled = false; return; }
+                                if (n1.length < 4) { if (msg) msg.textContent = 'Parola en az 4 karakter olmalı.'; if (btn) btn.disabled = false; return; }
+                                if (n1 !== n2) { if (msg) msg.textContent = 'Parolalar eşleşmiyor.'; if (btn) btn.disabled = false; return; }
 
                                 try {
-                                    msg.textContent = 'Parola güncelleniyor...';
+                                    if (msg) msg.textContent = '⏳ Parola güncelleniyor...';
                                     // load user data (local or remote)
                                     let userStr = localStorage.getItem('user_' + email);
                                     let userData = userStr ? JSON.parse(userStr) : null;
                                     if (!userData) {
                                         userData = await fetchUserFromRepo(email);
-                                        if (!userData) return alert('Kullanıcı bulunamadı.');
+                                        if (!userData) { alert('Kullanıcı bulunamadı.'); if (btn) btn.disabled = false; return; }
                                     }
 
                                     // generate new salt+hash
@@ -1687,13 +1688,13 @@
                                     // clear any failed attempts
                                     localStorage.removeItem('failed_login_' + email);
 
-                                    msg.textContent = '✅ Parola sıfırlandı. Lütfen yeni parola ile giriş yapın.';
+                                    if (msg) msg.textContent = '✅ Parola sıfırlandı. Lütfen yeni parola ile giriş yapın.';
                                     // switch back to login tab and prefill email
                                     setTimeout(()=>{ switchTab('login', document.querySelector('.form-tab')); document.getElementById('loginEmail').value = email; }, 900);
                                 } catch(err) {
                                     console.error('forceReset error', err);
                                     if (msg) msg.textContent = 'Parola sıfırlama sırasında hata oluştu.';
-                                }
+                                } finally { if (btn) btn.disabled = false; }
                             };
                         } catch(e) { console.error('showForcedResetUI failed', e); alert('Sıfırlama UI gösterilemedi.'); }
                     }
