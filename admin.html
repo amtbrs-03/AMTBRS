@@ -758,6 +758,14 @@
                 <button id="changePwBtn" class="btn">🔁 Parolayı Değiştir</button>
                 <button id="resetPwBtn" class="btn btn-white">♻️ Oturumdayken Sıfırla</button>
               </div>
+              <hr style="border:none;border-top:1px dashed #e6e6eb;margin:0.75rem 0" />
+              <div style="font-size:0.95rem;color:#374151">Kilit parolası (admin arayüzünü gizlemek/çözmek için ayrı parola)</div>
+              <input id="unlockNew1" type="password" placeholder="Yeni kilit parolası" style="width:320px; padding:0.5rem; margin-top:0.25rem;" />
+              <input id="unlockNew2" type="password" placeholder="Yeni kilit parolayı tekrar" style="width:320px; padding:0.5rem; margin-top:0.25rem;" />
+              <div style="display:flex;gap:0.5rem;margin-top:0.25rem;">
+                <button id="setUnlockBtn" class="btn btn-ghost">🔐 Kilidi Ayarla / Güncelle</button>
+                <button id="clearUnlockBtn" class="btn btn-white">🧹 Kilidi Kaldır</button>
+              </div>
               <div id="pwMsg" style="color:#6b7280; font-size:0.95rem;"></div>
             </div>
           </div>`;
@@ -858,6 +866,53 @@
 
         if (changeBtn) changeBtn.onclick = changeAdminPassword;
         if (resetBtn) resetBtn.onclick = resetAdminPassword;
+        const setUnlockBtn = document.getElementById('setUnlockBtn');
+        const clearUnlockBtn = document.getElementById('clearUnlockBtn');
+
+        if (setUnlockBtn) setUnlockBtn.onclick = async function(){
+          try {
+            const cur = document.getElementById('currentPw').value || '';
+            const u1 = document.getElementById('unlockNew1').value || '';
+            const u2 = document.getElementById('unlockNew2').value || '';
+            if (!cur) return showMessage('Mevcut parolanızı girin (doğrulama için).', true);
+            if (!u1 || !u2) return showMessage('Kilidi ayarlamak için yeni parolayı girin.', true);
+            if (u1 !== u2) return showMessage('Kilitleme parolaları eşleşmiyor.', true);
+            const adminData = await fetchAdminFromGitHub();
+            if (!adminData || !adminData.passwordHash) return showMessage('Admin verisi alınamadı.', true);
+            const curHash = await hashPassword(cur);
+            if (curHash !== adminData.passwordHash) return showMessage('Mevcut parola yanlış; kilit ayarlanamadı.', true);
+            const unlockHash = await hashPassword(u1);
+            adminData.unlockHash = unlockHash;
+            showMessage('Kilidi GitHub\'a kaydediliyor...', false);
+            const res = await saveAdminToGitHub(adminData);
+            if (res && res.ok) {
+              showMessage('✅ Kilit başarıyla ayarlandı.', false);
+              document.getElementById('unlockNew1').value = '';
+              document.getElementById('unlockNew2').value = '';
+            } else {
+              showMessage('Kilidi kaydetme başarısız: ' + (res && res.error ? res.error : ''), true);
+            }
+          } catch(err) { console.error('setUnlock error', err); showMessage('Hata: ' + (err && err.message), true); }
+        };
+
+        if (clearUnlockBtn) clearUnlockBtn.onclick = async function(){
+          try {
+            const cur = document.getElementById('currentPw').value || '';
+            if (!cur) return showMessage('Mevcut parolanızı girin (doğrulama için).', true);
+            const adminData = await fetchAdminFromGitHub();
+            if (!adminData || !adminData.passwordHash) return showMessage('Admin verisi alınamadı.', true);
+            const curHash = await hashPassword(cur);
+            if (curHash !== adminData.passwordHash) return showMessage('Mevcut parola yanlış; kilit kaldırılamadı.', true);
+            delete adminData.unlockHash;
+            showMessage('Kilidin kaldırılması GitHub\'a kaydediliyor...', false);
+            const res = await saveAdminToGitHub(adminData);
+            if (res && res.ok) {
+              showMessage('✅ Kilit kaldırıldı.', false);
+            } else {
+              showMessage('Kilidi kaldırma başarısız: ' + (res && res.error ? res.error : ''), true);
+            }
+          } catch(err) { console.error('clearUnlock error', err); showMessage('Hata: ' + (err && err.message), true); }
+        };
       }
 
       // Ensure admin UI isn't casually discoverable: require an unlock step
@@ -869,7 +924,7 @@
         }
 
         // show a minimal gate: ask for admin password to reveal login UI
-        authContent.innerHTML = `<div style="margin-bottom:0.75rem; font-size:1rem; color:#374151">Admin arayüzü gizlenmiştir. Devam etmek için yönetici parolasını girin.</div>
+        authContent.innerHTML = `<div style="margin-bottom:0.75rem; font-size:1rem; color:#374151">Admin arayüzü gizlenmiştir. Devam etmek için yönetici kilit parolasını girin.</div>
           <input id="unlockPw" type="password" placeholder="Yönetici parolası" style="width:60%; padding:0.5rem; margin-top:0.5rem;" />
           <div style="margin-top:0.75rem;"><button id="unlockBtn" style="padding:0.6rem 1.2rem; border-radius:10px; border:none; background:linear-gradient(135deg,#10b981 0%,#059669 100%); color:white; cursor:pointer; font-weight:700;">Erişimi Aç</button></div>
           <div id="unlockMsg" style="margin-top:0.5rem; color:#6b7280; font-size:0.95rem"></div>`;
@@ -882,18 +937,27 @@
           try {
             msgEl.textContent = 'Parola doğrulanıyor...';
             const adminData = await fetchAdminFromGitHub();
-            if (!adminData || !adminData.passwordHash) {
+            if (!adminData) {
               msgEl.textContent = 'Admin bilgileri alınamadı. Console hatalarını kontrol edin.';
               return;
             }
             const h = await hashPassword(pw);
-            if (h === adminData.passwordHash) {
-              // allow session access (sessionStorage by default)
-              sessionStorage.setItem('admin_unlocked', '1');
-              // optionally remember across browser sessions only if user chooses login remember
-              renderAuth();
+            // If unlockHash exists, use it; otherwise fall back to main passwordHash
+            if (adminData.unlockHash) {
+              if (h === adminData.unlockHash) {
+                sessionStorage.setItem('admin_unlocked', '1');
+                renderAuth();
+              } else {
+                msgEl.textContent = 'Kilit parolası yanlış.';
+              }
             } else {
-              msgEl.textContent = 'Parola yanlış.';
+              // no separate unlock configured -> fallback to main admin password
+              if (h === adminData.passwordHash) {
+                sessionStorage.setItem('admin_unlocked', '1');
+                renderAuth();
+              } else {
+                msgEl.textContent = 'Parola yanlış.';
+              }
             }
           } catch(err) {
             console.error('Unlock error', err);
