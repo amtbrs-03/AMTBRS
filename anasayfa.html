@@ -3027,6 +3027,12 @@
                         updateCartCount();
                         // Ürünleri GitHub'dan yüklemeyi dene (varsa)
                         try { await loadProductsFromGitHub(); } catch(e) { console.warn('GitHub ürün yükleme hatası', e); }
+                        // Yalnızca admin (gh_token mevcut) için GitHub’a Kaydet butonunu göster
+                        try{
+                            const hasToken = !!(localStorage.getItem('gh_token')||'').trim();
+                            const saveBtn = document.querySelector('[data-action="save-products-github"]');
+                            if (saveBtn && !hasToken) { saveBtn.style.display = 'none'; }
+                        }catch(_){ }
                     })();
 
                     // Event delegation for cart/product actions (avoids inline onclick parsing issues)
