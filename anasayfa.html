@@ -1207,6 +1207,7 @@
                         <h2 class="products-title">Ürünler</h2>
                         <div class="products-actions">
                             <button class="btn" data-action="open-cart">Sepeti Gör</button>
+                            <button class="btn" style="background:#2563eb" data-action="save-products-github">GitHub’a Kaydet</button>
                         </div>
                     </div>
                     <section class="products" id="products">
@@ -3028,6 +3029,8 @@
                         }catch(e){ console.error('init error', e); }
                         initProducts();
                         updateCartCount();
+                        // Ürünleri GitHub'dan yüklemeyi dene (varsa)
+                        try { await loadProductsFromGitHub(); } catch(e) { console.warn('GitHub ürün yükleme hatası', e); }
                     })();
 
                     // Event delegation for cart/product actions (avoids inline onclick parsing issues)
@@ -3037,6 +3040,17 @@
                             if (!t) return;
                             const action = t.getAttribute('data-action');
                             if (!action) return;
+                            if (action === 'save-products-github') {
+                                e.preventDefault();
+                                const products = exportCurrentProducts();
+                                saveProductsToGitHub(products).then(()=>{
+                                    alert('Ürünler GitHub’a kaydedildi.');
+                                }).catch(err=>{
+                                    console.error('GitHub kaydetme hatası', err);
+                                    alert('GitHub’a kaydetme başarısız: ' + (err && err.message || 'Hata'));
+                                });
+                                return;
+                            }
                             if (action === 'change-qty') {
                                 const id = t.dataset.itemId;
                                 const delta = Number(t.dataset.delta || 0);
@@ -3071,6 +3085,102 @@
 
                     // Diagnostic: check buttons with inline onclick and report missing handlers
                     function checkAllButtons() {
+
+                    // --- Ürün verisi utils ---
+                    function exportCurrentProducts(){
+                        try{
+                            const cards = document.querySelectorAll('.product-card');
+                            const arr = [];
+                            cards.forEach(c=>{
+                                const id = c.getAttribute('data-id');
+                                const name = c.getAttribute('data-name') || c.querySelector('.product-name')?.textContent || '';
+                                const price = Number(c.getAttribute('data-price') || c.querySelector('.product-price')?.textContent?.replace(/[^0-9.,]/g,'')?.replace(',','.') || 0);
+                                const badgeEl = c.querySelector('.badge');
+                                const badge = badgeEl ? (badgeEl.textContent || '').trim() : '';
+                                arr.push({ id, name, price, badge });
+                            });
+                            return { updatedAt: Date.now(), items: arr };
+                        }catch(e){ return { updatedAt: Date.now(), items: [] }; }
+                    }
+
+                    async function loadProductsFromGitHub(){
+                        const owner = 'amtbrs-03';
+                        const repo = 'AMTBRS';
+                        const branch = 'site-release';
+                        const token = (localStorage.getItem('gh_token')||'').trim();
+                        const url = `https://api.github.com/repos/${owner}/${repo}/contents/products.json?ref=${branch}`;
+                        const headers = { 'Accept': 'application/vnd.github+json' };
+                        if (token) headers['Authorization'] = 'Bearer ' + token;
+                        const res = await fetch(url, { headers });
+                        if (res.status === 404) return; // no remote products
+                        if (!res.ok) throw new Error('GitHub yükleme hatası: ' + res.status);
+                        const data = await res.json();
+                        const decoded = atob(data.content || '');
+                        const json = JSON.parse(decoded || '{}');
+                        if (json && Array.isArray(json.items)) {
+                            applyProducts(json.items);
+                        }
+                    }
+
+                    function applyProducts(items){
+                        try{
+                            const container = document.getElementById('products');
+                            if (!container) return;
+                            // Basit render: mevcut içerik yerine yeni liste
+                            container.innerHTML = '';
+                            items.forEach((p,i)=>{
+                                const card = document.createElement('div');
+                                card.className = 'product-card';
+                                card.setAttribute('data-id', p.id || String(i+1));
+                                card.setAttribute('data-name', p.name || `Ürün ${i+1}`);
+                                card.setAttribute('data-price', String(p.price || 0));
+                                const badgeLabel = (p.badge||'').trim();
+                                const hasImg = !!(p.image && p.image.length);
+                                const imgHtml = hasImg
+                                    ? `<img class=\"product-image\" src=\"/${p.image.replace(/^\//,'')}\" alt=\"${(p.name||'Ürün').replace(/"/g,'')}\" loading=\"lazy\"/>`
+                                    : `<div class=\"product-image\">🛍️</div>`;
+                                card.innerHTML = `
+                                    ${badgeLabel ? `<span class=\"badge${badgeLabel==='Yeni'?' badge-green':badgeLabel==='İndirim'?' badge-amber':''}\">${badgeLabel}</span>`:''}
+                                    ${imgHtml}
+                                    <div class=\"product-info\">
+                                        <div class=\"product-name\">${p.name||''}</div>
+                                        <div class=\"product-price\">₺${Number(p.price||0).toFixed(2)}</div>
+                                        <button data-action=\"add-to-cart\" data-product-id=\"${p.id||String(i+1)}\">Sepete Ekle</button>
+                                    </div>
+                                `;
+                                container.appendChild(card);
+                            });
+                        }catch(e){ console.error('applyProducts error', e); }
+                    }
+
+                    async function saveProductsToGitHub(products){
+                        const owner = 'amtbrs-03';
+                        const repo = 'AMTBRS';
+                        const branch = 'site-release';
+                        const path = 'products.json';
+                        const token = (localStorage.getItem('gh_token')||'').trim();
+                        if (!token) throw new Error('GitHub token eksik (localStorage: gh_token).');
+                        const base = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+                        // Mevcut sha al
+                        let sha = undefined;
+                        {
+                            const res = await fetch(base + `?ref=${branch}`, { headers: { 'Authorization': 'Bearer '+token, 'Accept':'application/vnd.github+json' } });
+                            if (res.status === 200) {
+                                const data = await res.json(); sha = data.sha;
+                            } else if (res.status !== 404) {
+                                throw new Error('Mevcut dosya kontrol hatası: ' + res.status);
+                            }
+                        }
+                        const content = btoa(unescape(encodeURIComponent(JSON.stringify(products, null, 2))));
+                        const body = { message: 'chore: products.json güncelleme', content, branch };
+                        if (sha) body.sha = sha;
+                        const put = await fetch(base, { method:'PUT', headers:{ 'Authorization':'Bearer '+token, 'Accept':'application/vnd.github+json', 'Content-Type':'application/json' }, body: JSON.stringify(body) });
+                        if (!put.ok) {
+                            const t = await put.text();
+                            throw new Error('PUT başarısız: ' + put.status + ' ' + t);
+                        }
+                        return true;
+                    }
                         const els = Array.from(document.querySelectorAll('[onclick]'));
                         const report = { total: els.length, checked: 0, missing: [] };
                         els.forEach(el => {

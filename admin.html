@@ -235,6 +235,9 @@
       position: fixed;
       z-index: 1000;
       left: 0;
+        <!-- Product Image Uploader -->
+        <section id="productImageUploader" style="max-width:900px;margin:2rem auto;padding:1rem;border:1px solid #e5e7eb;border-radius:12px;background:#fff">
+          <h2 style="margin-bottom:0.75rem;color:#0b1220">Ürün Fotoğraf Yükleme</h2>
       top: 0;
       width: 100%;
       height: 100%;
@@ -257,6 +260,123 @@
       padding: 2rem;
       border-radius: 20px;
       box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        // ---- Product Image Upload Helpers ----
+        (function(){
+          const MAX_W = 1200, MAX_H = 1200, QUALITY = 0.85;
+          const owner = 'amtbrs-03';
+          const repo = 'AMTBRS';
+          const branch = 'site-release';
+
+          const fileInput = document.getElementById('piuFile');
+          const canvas = document.getElementById('piuPreview');
+          const resizeBtn = document.getElementById('piuResizeBtn');
+          const uploadBtn = document.getElementById('piuUploadBtn');
+          const productIdEl = document.getElementById('piuProductId');
+          const statusEl = document.getElementById('piuStatus');
+
+          let originalImageBitmap = null;
+
+          function setStatus(msg, ok){ if (statusEl) { statusEl.textContent = msg; statusEl.style.color = ok ? '#0b1220' : '#b91c1c'; } }
+
+          async function readFileToBitmap(file){
+            const blob = file instanceof Blob ? file : null;
+            if (!blob) throw new Error('Geçersiz dosya');
+            const bitmap = await createImageBitmap(blob);
+            return bitmap;
+          }
+
+          function drawResized(bitmap){
+            const ctx = canvas.getContext('2d');
+            // kare tuval 1200x1200
+            canvas.width = MAX_W; canvas.height = MAX_H;
+            // kaynak oranını koru ve merkeze yerleştir
+            const srcW = bitmap.width, srcH = bitmap.height;
+            const scale = Math.min(MAX_W/srcW, MAX_H/srcH);
+            const drawW = Math.round(srcW*scale), drawH = Math.round(srcH*scale);
+            const dx = Math.round((MAX_W - drawW)/2), dy = Math.round((MAX_H - drawH)/2);
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,MAX_W,MAX_H);
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(bitmap, 0,0, srcW,srcH, dx,dy, drawW,drawH);
+          }
+
+          async function canvasToJpegBlob(){
+            return await new Promise((resolve)=>{
+              canvas.toBlob((blob)=>resolve(blob), 'image/jpeg', QUALITY);
+            });
+          }
+
+          async function blobToBase64(blob){
+            const arrBuf = await blob.arrayBuffer();
+            // convert to base64
+            const uint8 = new Uint8Array(arrBuf);
+            let binary = '';
+            for (let i=0; i<uint8.length; i++) binary += String.fromCharCode(uint8[i]);
+            return btoa(binary);
+          }
+
+          async function saveImageToGitHub(productId, base64Content){
+            const token = (localStorage.getItem('gh_token')||'').trim();
+            if (!token) throw new Error('GitHub token eksik (localStorage: gh_token).');
+            const path = `images/products/${productId}.jpg`;
+            const base = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+            // mevcut dosya sha kontrolü
+            let sha = undefined;
+            const check = await fetch(base + `?ref=${branch}`, { headers:{ 'Authorization': 'Bearer '+token, 'Accept':'application/vnd.github+json' } });
+            if (check.status === 200) { const j = await check.json(); sha = j.sha; }
+            else if (check.status !== 404) { throw new Error('Mevcut dosya kontrol hatası: '+check.status); }
+
+            const body = { message: `feat: ürün resmi ${productId}.jpg`, content: base64Content, branch };
+            if (sha) body.sha = sha;
+            const put = await fetch(base, { method:'PUT', headers:{ 'Authorization':'Bearer '+token, 'Accept':'application/vnd.github+json', 'Content-Type':'application/json' }, body: JSON.stringify(body) });
+            if (!put.ok) { const t = await put.text(); throw new Error('Yükleme başarısız: '+put.status+' '+t); }
+            return path;
+          }
+
+          async function updateProductsJsonWithImage(productId, imagePath){
+            const token = (localStorage.getItem('gh_token')||'').trim();
+            if (!token) throw new Error('GitHub token eksik (localStorage: gh_token).');
+            const base = `https://api.github.com/repos/${owner}/${repo}/contents/products.json`;
+            // mevcut json çek
+            const res = await fetch(base + `?ref=${branch}`, { headers:{ 'Authorization': 'Bearer '+token, 'Accept':'application/vnd.github+json' } });
+            let items = [], sha = undefined;
+            if (res.status === 200) {
+              const j = await res.json(); sha = j.sha; const decoded = atob(j.content||''); const json = JSON.parse(decoded||'{}'); items = json.items || []; 
+            }
+            // ilgili ürün satırını güncelle
+            let found = false;
+            items = items.map(it=>{ if (String(it.id) === String(productId)) { found = true; return { ...it, image: imagePath }; } return it; });
+            if (!found) items.push({ id: String(productId), name: `Ürün ${productId}`, price: 0, badge: '', image: imagePath });
+            const content = btoa(unescape(encodeURIComponent(JSON.stringify({ updatedAt: Date.now(), items }, null, 2))));
+            const body = { message: `chore: ürün ${productId} resmi yolu eklendi`, content, branch };
+            if (sha) body.sha = sha;
+            const put = await fetch(base, { method:'PUT', headers:{ 'Authorization':'Bearer '+token, 'Accept':'application/vnd.github+json', 'Content-Type':'application/json' }, body: JSON.stringify(body) });
+            if (!put.ok) { const t = await put.text(); throw new Error('products.json güncelleme başarısız: '+put.status+' '+t); }
+          }
+
+          // events
+          fileInput && fileInput.addEventListener('change', async (e)=>{
+            const f = e.target.files && e.target.files[0]; if (!f) return;
+            try{ originalImageBitmap = await readFileToBitmap(f); drawResized(originalImageBitmap); setStatus('Resim yüklendi, önizleme hazır.', true); }catch(err){ setStatus('Resim yükleme hatası: '+(err.message||err), false); }
+          });
+
+          resizeBtn && resizeBtn.addEventListener('click', ()=>{
+            try{ if (!originalImageBitmap) throw new Error('Önce resim seçin.'); drawResized(originalImageBitmap); setStatus('Resim 1200x1200 tuvale boyutlandırıldı.', true); }catch(err){ setStatus(err.message||String(err), false); }
+          });
+
+          uploadBtn && uploadBtn.addEventListener('click', async ()=>{
+            const productId = (productIdEl && productIdEl.value || '').trim();
+            if (!productId) { setStatus('Ürün ID giriniz.', false); return; }
+            try{
+              setStatus('Yükleniyor...', true);
+              const blob = await canvasToJpegBlob();
+              const base64 = await blobToBase64(blob);
+              const imagePath = await saveImageToGitHub(productId, base64);
+              await updateProductsJsonWithImage(productId, imagePath);
+              setStatus('Yükleme başarılı: '+imagePath, true);
+            }catch(err){ setStatus('Yükleme hatası: '+(err.message||err), false); }
+          });
+        })();
+        // ---- /Product Image Upload Helpers ----
       width: 90%;
       max-width: 1000px;
       max-height: 85vh;
