@@ -1800,32 +1800,75 @@
                     }
 
                     function logout() {
-                                        // remove current user and reset UI to public homepage state
-                                        localStorage.removeItem('currentUser');
-                                        document.getElementById('authContainer').classList.remove('hidden');
-                                        document.getElementById('userContainer').classList.add('hidden');
-                                        updateCartCount();
-                                        // reset auth button label and handler
-                                        try{
-                                            const b = document.getElementById('authBtn');
-                                            if (b) {
-                                                b.classList.remove('active');
-                                                const label = b.querySelector('.auth-label');
-                                                if (label) label.textContent = 'Giriş / Kayıt';
-                                                b.onclick = openAuthModal;
-                                                b.setAttribute('aria-controls', 'authModal');
-                                                b.setAttribute('aria-expanded', 'false');
-                                            }
-                                        }catch(e){}
-                                        // close any open modals and mini cart
-                                        try{ closeAuthModal(); }catch(e){}
-                                        try{ closeAccountModal(); }catch(e){}
-                                        try{ closeCart(); }catch(e){}
-                                        try{ closeBank(); }catch(e){}
-                                        try{ hideMiniCart(0); }catch(e){}
-                                        // navigate back to homepage top (smooth)
-                                        try{ scrollToSection && scrollToSection('home'); }catch(e){ window.location.href = 'anasayfa.html'; }
-                                        alert('Çıkış yapıldı. Tekrar giriş yaparak devam edebilirsiniz.');
+                        console.log('logout: Starting logout process...');
+                        
+                        // Get current user email before removing
+                        const currentUser = getCurrentUser();
+                        const userEmail = currentUser ? currentUser.email : null;
+                        
+                        // FULL DATA CLEANUP: Remove all user-related data
+                        try {
+                            // Remove current session
+                            localStorage.removeItem('currentUser');
+                            sessionStorage.removeItem('currentUser');
+                            
+                            // Remove user-specific cached data
+                            if (userEmail) {
+                                localStorage.removeItem('user_' + userEmail);
+                                localStorage.removeItem('cart_' + userEmail);
+                                localStorage.removeItem('orders_' + userEmail);
+                                console.log('logout: Removed data for user:', userEmail);
+                            }
+                            
+                            // Clear all cart data (in case of multiple users)
+                            const allKeys = Object.keys(localStorage);
+                            allKeys.forEach(key => {
+                                if (key.startsWith('cart_') || key.startsWith('user_') || key.startsWith('orders_') || key.startsWith('failed_login_')) {
+                                    localStorage.removeItem(key);
+                                }
+                            });
+                            
+                            // Clear sessionStorage completely
+                            sessionStorage.clear();
+                            
+                            console.log('logout: All user data cleared');
+                        } catch(e) {
+                            console.error('logout: Error clearing data', e);
+                        }
+                        
+                        // Reset UI to logged-out state
+                        document.getElementById('authContainer').classList.remove('hidden');
+                        document.getElementById('userContainer').classList.add('hidden');
+                        updateCartCount();
+                        
+                        // Reset auth button label and handler
+                        try{
+                            const b = document.getElementById('authBtn');
+                            if (b) {
+                                b.classList.remove('active');
+                                const label = b.querySelector('.auth-label');
+                                if (label) label.textContent = 'Giriş / Kayıt';
+                                b.onclick = openAuthModal;
+                                b.setAttribute('aria-controls', 'authModal');
+                                b.setAttribute('aria-expanded', 'false');
+                            }
+                        }catch(e){}
+                        
+                        // Close any open modals and mini cart
+                        try{ closeAuthModal(); }catch(e){}
+                        try{ closeAccountModal(); }catch(e){}
+                        try{ closeCart(); }catch(e){}
+                        try{ closeBank(); }catch(e){}
+                        try{ hideMiniCart(0); }catch(e){}
+                        
+                        // Show logout message
+                        alert('Çıkış yapıldı. Tüm oturum bilgileri temizlendi.');
+                        
+                        // FULL PAGE RESET: Reload page to clear all JavaScript state and cached data
+                        console.log('logout: Reloading page to reset state...');
+                        setTimeout(() => {
+                            window.location.href = window.location.pathname + '?logout=1&t=' + Date.now();
+                        }, 500);
                     }
 
                     function deleteAccount() {
@@ -2866,6 +2909,15 @@
                     // Init behavior
                     (async function(){
                         try{
+                            // Check if user just logged out
+                            const urlParams = new URLSearchParams(window.location.search);
+                            if (urlParams.get('logout') === '1') {
+                                console.log('Page reloaded after logout - state fully reset');
+                                // Clean URL without reload
+                                const cleanUrl = window.location.pathname;
+                                window.history.replaceState({}, document.title, cleanUrl);
+                            }
+                            
                             const cu = getCurrentUser();
                             if (cu) updateUIAfterLogin(cu.name);
                             // load site settings (fetch /site-settings.json or localStorage)
