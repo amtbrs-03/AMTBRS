@@ -921,45 +921,7 @@
         const owner = 'amtbrs-03';
         const repo = 'AMTBRS';
 
-        // Build Password change UI
-        const pwCardHtml = `
-          <div class="card">
-            <div class="section-header">🔐 Yönetici Parolası</div>
-            <div style="display:flex;flex-direction:column;gap:0.5rem;">
-              <div style="font-size:0.95rem;color:#374151">Parolayı değiştirmek için mevcut parolanızı girin.</div>
-              <input id="currentPw" type="password" placeholder="Mevcut Parola" style="width:320px; padding:0.5rem;" />
-              <input id="newPw1" type="password" placeholder="Yeni Parola" style="width:320px; padding:0.5rem;" />
-              <input id="newPw2" type="password" placeholder="Yeni Parolayı Tekrar" style="width:320px; padding:0.5rem;" />
-              <div style="display:flex;gap:0.5rem;margin-top:0.25rem;">
-                <button id="changePwBtn" class="btn">🔁 Parolayı Değiştir</button>
-                <button id="resetPwBtn" class="btn btn-white">♻️ Oturumdayken Sıfırla</button>
-              </div>
-              <div id="pwMsg" style="color:#6b7280; font-size:0.95rem;"></div>
-            </div>
-          </div>`;
-
-        // Insert or replace password card if exists
-        try {
-          // find insertion point after Site Ayarları card
-          const cards = adminUI.getElementsByClassName('card');
-          if (cards && cards.length > 0) {
-            // append pw card at end
-            const wrapper = document.createElement('div');
-            wrapper.innerHTML = pwCardHtml;
-            adminUI.appendChild(wrapper.firstElementChild);
-          }
-        } catch(e) { console.error('Admin parola arayüzü oluşturulamadı', e); }
-
-        // Attach handlers
-        const changeBtn = document.getElementById('changePwBtn');
-        const resetBtn = document.getElementById('resetPwBtn');
-        const pwMsg = document.getElementById('pwMsg');
-
-        async function showMessage(msg, isError){
-          if (!pwMsg) return;
-          pwMsg.textContent = msg;
-          pwMsg.style.color = isError ? '#b91c1c' : '#065f46';
-        }
+        // Parola yönetimi artık yalnız modal içinde gösterilmektedir.
 
         async function changeAdminPassword() {
           try {
