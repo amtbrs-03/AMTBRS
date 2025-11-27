@@ -646,7 +646,7 @@
                         </span><span class="logo-text">ERN Tropikal Çiçek</span></a></div>
                         <div class="nav-top" style="display:flex;align-items:center;gap:0.6rem;">
                             <ul class="nav-links" style="display:flex;gap:0.6rem;align-items:center;list-style:none;margin:0;padding:0;">
-                                <li><button id="homeBtn" class="contact-btn" aria-controls="home" aria-expanded="false" data-action="scroll" data-target="home">Ana Sayfa</button></li>
+                                <li><button id="homeBtn" class="contact-btn" aria-controls="authModal" aria-expanded="false" data-action="open-auth">Ana Sayfa</button></li>
                                 <li><button id="productsBtn" class="contact-btn" aria-controls="products" aria-expanded="false" data-action="scroll" data-target="products">Ürünler</button></li>
                                 <li id="cartContainer"><button id="cartBtn" class="cart-btn contact-btn" aria-controls="cartModal" aria-expanded="false" data-action="open-cart">Sepet <span id="cartCount" class="cart-count hidden">0</span></button></li>
                                 <li><button id="contactBtn" class="contact-btn" aria-expanded="false" aria-controls="contactPanel" data-action="toggle-contact"><span style="display:inline-block;margin-right:6px;line-height:1">📞</span><span>İletişim</span><span style="margin-left:8px;opacity:0.9">▾</span></button></li>
@@ -2959,6 +2959,21 @@
                     // Init behavior
                     (async function(){
                         try{
+                            // Force Ana Sayfa button to always open auth/login
+                            try{
+                                const hb = document.getElementById('homeBtn');
+                                if (hb) {
+                                    hb.addEventListener('click', function(e){
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        openAuthModal();
+                                        // ensure login tab active
+                                        const tabs = document.querySelectorAll('.form-tab');
+                                        const anyTab = tabs && tabs.length ? tabs[0] : null;
+                                        try{ switchTab('login', anyTab || document.querySelector('.form-tab')); }catch(_){}
+                                    }, { capture: true });
+                                }
+                            }catch(_){}
                             // Check if user just logged out
                             const urlParams = new URLSearchParams(window.location.search);
                             if (urlParams.get('logout') === '1') {
