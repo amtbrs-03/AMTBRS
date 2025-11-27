@@ -3022,18 +3022,26 @@
                             await loadSiteSettingsAndApply();
                             // sample default total
                             const bankAmount = document.getElementById('bankAmount'); if (bankAmount) bankAmount.textContent = 'Toplam: ₺0.00';
-                            // Temizlik: Yanlışlıkla HTML'e düşmüş handler metni varsa sil
+                            // Temizlik: Yanlışlıkla HTML'e düşmüş handler metni varsa agresif temizle
                             try {
-                                const badText = "e.preventDefault(); e.stopPropagation();";
+                                const patterns = [
+                                  'e.preventDefault()',
+                                  'e.stopPropagation()',
+                                  'window.location.assign(',
+                                  'window.location.href',
+                                  '{ capture: true }'
+                                ];
                                 const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
                                 const toRemove = [];
                                 while (walker.nextNode()) {
                                     const n = walker.currentNode;
-                                    if (n.nodeValue && n.nodeValue.indexOf(badText) !== -1) {
+                                    const v = (n.nodeValue||'').trim();
+                                    if (!v) continue;
+                                    if (patterns.some(p=> v.includes(p))) {
                                         toRemove.push(n);
                                     }
                                 }
-                                toRemove.forEach(n=>{ try{ n.parentNode && n.parentNode.removeChild(n); }catch(_){ } });
+                                toRemove.forEach(n=>{ try{ if (n.parentNode) n.parentNode.removeChild(n); }catch(_){ } });
                             } catch(_) { }
                         }catch(e){ console.error('init error', e); }
                         initProducts();
