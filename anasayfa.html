@@ -3003,11 +3003,7 @@
                                     hb.addEventListener('click', function(e){
                                         e.preventDefault();
                                         e.stopPropagation();
-                                        openAuthModal();
-                                        // ensure login tab active
-                                        const tabs = document.querySelectorAll('.form-tab');
-                                        const anyTab = tabs && tabs.length ? tabs[0] : null;
-                                        try{ switchTab('login', anyTab || document.querySelector('.form-tab')); }catch(_){}
+                                        try { window.location.assign('/'); } catch(_){ window.location.href = '/'; }
                                     }, { capture: true });
                                 }
                             }catch(_){}
