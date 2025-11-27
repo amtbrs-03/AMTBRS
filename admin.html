@@ -1777,7 +1777,10 @@
     <div class="modal-content">
       <div class="modal-header">
         <h2>👥 Kayıtlı Kullanıcılar</h2>
-        <button class="close-modal" onclick="closeUsersModal()">✕ Kapat</button>
+        <div style="display:flex; gap:0.5rem; align-items:center;">
+          <button id="refreshUsersBtn" class="btn" onclick="refreshUsersList()" style="padding:0.5rem 1rem; font-size:0.9rem;">🔄 Yenile</button>
+          <button class="close-modal" onclick="closeUsersModal()">✕ Kapat</button>
+        </div>
       </div>
       <div class="modal-body">
         <div style="margin-bottom:1rem; display:flex; gap:0.75rem; align-items:center;">
@@ -1800,10 +1803,7 @@
     <div class="modal-content small-modal">
       <div class="modal-header">
         <h2>👤 Kullanıcı Detayı</h2>
-        <div style="display:flex; gap:0.5rem; align-items:center;">
-          <button id="refreshUserBtn" class="btn" onclick="refreshUserDetail()" style="padding:0.5rem 1rem; font-size:0.9rem;">🔄 Yenile</button>
-          <button class="close-modal" onclick="closeUserDetailModal()">✕ Kapat</button>
-        </div>
+        <button class="close-modal" onclick="closeUserDetailModal()">✕ Kapat</button>
       </div>
       <div id="userDetailBody" class="modal-body">
         <!-- Filled dynamically -->
@@ -1897,109 +1897,152 @@
       }catch(e){ console.error('openUserDetail error', e); }
     }
 
-    // Refresh user detail from GitHub
-    async function refreshUserDetail(){
-      try{
-        const idx = window.__currentUserDetailIdx;
-        if (idx === undefined || idx === null) {
-          alert('Kullanıcı bilgisi bulunamadı.');
-          return;
-        }
-
-        const users = window.__adminUsersCache || [];
-        const u = users[idx];
-        if (!u || !u.email) {
-          alert('Kullanıcı email bilgisi bulunamadı.');
-          return;
-        }
-
-        const btn = document.getElementById('refreshUserBtn');
-        const originalText = btn ? btn.textContent : '';
-        if (btn) {
-          btn.disabled = true;
-          btn.textContent = '⏳ Yenileniyor...';
-        }
-
-        console.log('Refreshing user from GitHub:', u.email);
-
-        // Fetch fresh data from GitHub
-        const owner = 'amtbrs-03';
-        const repo = 'AMTBRS';
-        const branch = 'site-release';
-        const fileName = encodeURIComponent(u.email) + '_full.json';
-
-        // Try raw URL first (fastest)
-        let userData = null;
-        try {
-          const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/users/${fileName}?t=${Date.now()}`;
-          const res = await fetch(rawUrl, { cache: 'no-store' });
-          if (res.ok) {
-            userData = await res.json();
-            console.log('✓ User data refreshed from raw URL');
-          }
-        } catch(e) {
-          console.warn('Raw URL fetch failed, trying Contents API');
-        }
-
-        // Fallback to Contents API
-        if (!userData) {
-          const token = getToken();
-          if (!token) {
-            alert('GitHub token bulunamadı.');
-            if (btn) {
-              btn.disabled = false;
-              btn.textContent = originalText;
-            }
-            return;
-          }
-
-          const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/users/${fileName}?ref=${branch}&t=${Date.now()}`;
+    // Refresh users list from GitHub
+    async function refreshUsersList(){
+      const btn = document.getElementById('refreshUsersBtn');
+      if (!btn) return;
+      
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '⏳ Yenileniyor...';
+      
+      try {
+        // Simply trigger the load users button
+        const loadBtn = document.getElementById('loadUsersBtn');
+        if (loadBtn) {
+          // Fetch list without opening modal again (modal is already open)
+          const countEl = document.getElementById('userCountModal');
+          const listEl = document.getElementById('usersListModal');
+          
+          listEl.innerHTML = '<p style="color:#6b7280; text-align:center; padding:2rem;">Kullanıcılar GitHub\'dan çekiliyor...</p>';
+          
+          // Fetch list of user files from GitHub API
+          const owner = 'amtbrs-03';
+          const repo = 'AMTBRS';
+          const branch = 'site-release';
+          const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/users?ref=${branch}&t=${Date.now()}`;
+          
+          console.log('Refreshing users from GitHub...');
+          
           const res = await fetch(apiUrl, {
-            headers: {
-              'Accept': 'application/vnd.github.v3+json',
-              'Authorization': `token ${token}`
-            },
+            headers: { 'Accept': 'application/vnd.github.v3+json' },
             cache: 'no-store'
           });
-
+          
           if (!res.ok) {
-            throw new Error(`GitHub API responded with ${res.status}`);
+            if (res.status === 404) {
+              listEl.innerHTML = '<p style="color:#6b7280;">Henüz kayıtlı kullanıcı yok.</p>';
+              if (countEl) countEl.textContent = '0 kullanıcı';
+              return;
+            }
+            throw new Error(`GitHub API ${res.status} döndürdü`);
           }
+          
+          const files = await res.json();
+          const userFiles = files.filter(f => f.name.endsWith('_full.json'));
+          
+          if (userFiles.length === 0) {
+            listEl.innerHTML = '<p style="color:#6b7280;">Henüz kayıtlı kullanıcı yok.</p>';
+            if (countEl) countEl.textContent = '0 kullanıcı';
+            return;
+          }
+          
+          // Fetch each user file
+          const users = [];
+          for (const file of userFiles) {
+            try {
+              const userRes = await fetch(file.download_url + '?t=' + Date.now(), {cache: 'no-store'});
+              if (userRes.ok) {
+                const userData = await userRes.json();
+                users.push(userData);
+              }
+            } catch(e) {
+              console.error('User load error:', file.name, e);
+            }
+          }
+          
+          // Display users
+          if (countEl) countEl.textContent = `${users.length} kullanıcı`;
+          
+          if (users.length === 0) {
+            listEl.innerHTML = '<p style="color:#6b7280;">Kullanıcı verileri yüklenemedi.</p>';
+            return;
+          }
+          
+          // Helper: format user's address
+          const formatUserAddress = (userObj) => {
+            try{
+              let s = '';
+              if (Array.isArray(userObj.addresses) && userObj.addresses.length) {
+                const def = userObj.addresses.find(a=>a && a.default) || userObj.addresses[0];
+                if (def && typeof def === 'object') {
+                  const parts = [def.addressDetail, def.neighborhood, def.district, def.city, def.postalCode ? ('PK: ' + def.postalCode) : ''].filter(Boolean);
+                  s = parts.join(', ');
+                } else if (typeof def === 'string') {
+                  s = def;
+                }
+              } else if (userObj.address && typeof userObj.address === 'object') {
+                const a = userObj.address;
+                const parts = [a.addressDetail, a.neighborhood, a.district, a.city, a.postalCode ? ('PK: ' + a.postalCode) : ''].filter(Boolean);
+                s = parts.join(', ');
+              } else if (typeof userObj.address === 'string') {
+                s = userObj.address;
+              }
+              s = String(s||'');
+              try{ if (/%[0-9A-Fa-f]{2}/.test(s) || s.includes('+')) s = decodeURIComponent(s.replace(/\+/g,' ')); }catch(_){}
+              try{ const ta = document.createElement('textarea'); ta.innerHTML = s; s = ta.value; }catch(_){}
+              return s.replace(/\s+/g,' ').trim();
+            }catch(_){ return ''; }
+          };
 
-          const fileData = await res.json();
-          const decoded = decodeURIComponent(escape(atob(fileData.content)));
-          userData = JSON.parse(decoded);
-          console.log('✓ User data refreshed from Contents API');
+          // Cache users for detail popover
+          window.__adminUsersCache = users.slice();
+
+          let html = '<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.1); border-radius:8px; overflow:hidden; table-layout:fixed;">';
+          html += '<thead><tr style="background:linear-gradient(135deg, var(--green-primary), var(--green-dark)); color:white;">';
+          html += '<th style="width:18%; padding:0.9rem 0.75rem; text-align:center; font-weight:700; font-size:0.95rem; border-bottom:2px solid rgba(255,255,255,0.2);">👤 Ad</th>';
+          html += '<th style="width:22%; padding:0.9rem 0.75rem; text-align:center; font-weight:700; font-size:0.95rem; border-bottom:2px solid rgba(255,255,255,0.2);">📧 Email</th>';
+          html += '<th style="width:28%; padding:0.9rem 0.75rem; text-align:center; font-weight:700; font-size:0.95rem; border-bottom:2px solid rgba(255,255,255,0.2);">📍 Adres</th>';
+          html += '<th style="width:16%; padding:0.9rem 0.75rem; text-align:center; font-weight:700; font-size:0.95rem; border-bottom:2px solid rgba(255,255,255,0.2);">📅 Kayıt Tarihi</th>';
+          html += '<th style="width:16%; padding:0.9rem 0.75rem; text-align:center; font-weight:700; font-size:0.95rem; border-bottom:2px solid rgba(255,255,255,0.2);">🕐 Son Giriş</th>';
+          html += '</tr></thead><tbody>';
+          
+          users.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+          
+          users.forEach((user, idx) => {
+            const createdDate = user.createdAt ? new Date(user.createdAt).toLocaleDateString('tr-TR', {day:'2-digit', month:'2-digit', year:'numeric'}) : '-';
+            const lastLogin = user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('tr-TR', {day:'2-digit', month:'2-digit', year:'numeric'}) : '-';
+            const rowBg = idx % 2 === 0 ? '#f9fafb' : '#ffffff';
+            
+            html += `<tr style="background:${rowBg}; transition:all 0.2s ease; cursor:pointer;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='${rowBg}'" onclick="openUserDetail(${idx})">`;
+            html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; font-weight:500;">${escapeHtml(user.name || '-')}</td>`;
+            html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; color:#6b7280;">${escapeHtml(user.email || '-')}</td>`;
+            const addr = formatUserAddress(user);
+            const addrShort = addr && addr.length > 60 ? (addr.slice(0,57) + '...') : (addr || '-')
+            html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; color:#6b7280;" title="${escapeHtml(addr || '')}">${escapeHtml(addrShort)}</td>`;
+            html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; color:#6b7280;">${createdDate}</td>`;
+            html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; color:#6b7280;">${lastLogin}</td>`;
+            html += '</tr>';
+          });
+          
+          html += '</tbody></table></div>';
+          listEl.innerHTML = html;
+          
+          console.log('✓ Users list refreshed');
+          
+          // Show success message briefly
+          const successMsg = document.createElement('div');
+          successMsg.style.cssText = 'position:fixed; top:20px; right:20px; background:#10b981; color:white; padding:1rem 1.5rem; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15); z-index:10000; font-weight:600;';
+          successMsg.textContent = '✓ Kullanıcı listesi güncellendi';
+          document.body.appendChild(successMsg);
+          setTimeout(() => successMsg.remove(), 2000);
         }
-
-        // Update cache
-        window.__adminUsersCache[idx] = userData;
-
-        // Re-render detail view
-        openUserDetail(idx);
-
-        if (btn) {
-          btn.disabled = false;
-          btn.textContent = originalText;
-        }
-
-        // Show success message briefly
-        const body = document.getElementById('userDetailBody');
-        const successMsg = document.createElement('div');
-        successMsg.style.cssText = 'position:fixed; top:20px; right:20px; background:#10b981; color:white; padding:1rem 1.5rem; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15); z-index:10000; font-weight:600;';
-        successMsg.textContent = '✓ Kullanıcı bilgisi güncellendi';
-        document.body.appendChild(successMsg);
-        setTimeout(() => successMsg.remove(), 2000);
-
       } catch(e) {
-        console.error('refreshUserDetail error:', e);
-        alert('Kullanıcı bilgisi yenilenirken hata oluştu: ' + (e.message || e));
-        
-        const btn = document.getElementById('refreshUserBtn');
-        if (btn) {
-          btn.disabled = false;
-          btn.textContent = '🔄 Yenile';
-        }
+        console.error('refreshUsersList error:', e);
+        alert('Kullanıcı listesi yenilenirken hata oluştu: ' + (e.message || e));
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
       }
     }
 
