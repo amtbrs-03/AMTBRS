@@ -4,15 +4,28 @@
   "pw": {
     "algo": "PBKDF2-SHA256",
     "iterations": 150000,
-    "salt": "dA8lcJDMKBkBiE5GoF/Nrw==",
-    "hash": "RYncLuDjT7wye1RW0DxComqUGBh094BRbkH6pf21N3k="
+    "salt": "rhE3hOdyBJB7CWuMXbXirQ==",
+    "hash": "oQpOb2H/gwPH2/ZRl7alWdGssCbnw95dx4aCaCAXIF4="
   },
   "address": {
     "city": "İstanbul",
-    "district": "Kağithane",
-    "neighborhood": "Çağlayan",
-    "addressDetail": "Fevziçakmak cad.No:47",
+    "district": "kağıthane",
+    "neighborhood": "çağlayan",
+    "addressDetail": "çağlayan mah. fevziçakmak cad. no:47",
     "postalCode": "34100"
   },
-  "createdAt": 1764239132154
+  "createdAt": 1764188468297,
+  "lastLogin": 1764269230051,
+  "addresses": [
+    {
+      "id": "default",
+      "title": "Varsayılan Adres",
+      "city": "İstanbul",
+      "district": "kağıthane",
+      "neighborhood": "çağlayan",
+      "addressDetail": "çağlayan mah. fevziçakmak cad. no:47",
+      "postalCode": "34100",
+      "isDefault": true
+    }
+  ]
 }
