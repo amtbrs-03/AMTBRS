@@ -1562,27 +1562,81 @@
           contactBtnText: document.getElementById('contactBtnText').value.trim() || 'İletişim'
           };
           setSiteSettings(s);
-          alert('Ayarlar tarayıcıda kaydedildi.');
+          
+          const push = !!document.getElementById('pushSettingsToGithub') && document.getElementById('pushSettingsToGithub').checked;
+          
+          if (!push) {
+            alert('Ayarlar tarayıcıda kaydedildi.');
+            return;
+          }
 
-          // If user requested, push site-settings.json to GitHub via serverless commit-file
+          // Save to GitHub using Contents API
           try{
-            const push = !!document.getElementById('pushSettingsToGithub') && document.getElementById('pushSettingsToGithub').checked;
-            if (!push) return;
-            const json = JSON.stringify(s, null, 2);
-            const files = [{ path: 'site-settings.json', contentBase64: btoa(unescape(encodeURIComponent(json))) }];
-            const payload = { files, message: 'admin: update site-settings.json via admin panel' };
-            const endpoints = ['/.netlify/functions/commit-file', '/api/commit-file', '/functions/commit-file'];
-            let ok = false; let lastRes = null;
-            for (const ep of endpoints){
-              try{
-                const res = await fetch(ep, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
-                lastRes = res;
-                if (res.ok){ ok = true; break; }
-              }catch(e){ lastRes = e; }
+            console.log('Saving site settings to GitHub...');
+            const token = getToken();
+            if (!token) {
+              alert('GitHub token bulunamadı. Ayarlar sadece tarayıcıda kaydedildi.');
+              return;
             }
-            if (ok) alert('Ayarlar GitHub deposuna işlendi.');
-            else alert('GitHub kaydı başarısız: ' + (lastRes && lastRes.statusText ? lastRes.statusText : (lastRes && lastRes.message) || 'bilinmiyor'));
-          }catch(err){ console.error('push settings failed', err); alert('Ayarlar push edilirken hata: ' + err.message); }
+
+            const owner = 'amtbrs-03';
+            const repo = 'AMTBRS';
+            const branch = 'site-release';
+            const fileName = 'site-settings.json';
+            const json = JSON.stringify(s, null, 2);
+            const contentBase64 = btoa(unescape(encodeURIComponent(json)));
+
+            // Get current file SHA (if exists)
+            const getUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${fileName}?ref=${branch}`;
+            let sha = undefined;
+            try {
+              const getRes = await fetch(getUrl, {
+                headers: {
+                  'Accept': 'application/vnd.github.v3+json',
+                  'Authorization': `token ${token}`
+                },
+                cache: 'no-store'
+              });
+              if (getRes.ok) {
+                const fileData = await getRes.json();
+                sha = fileData.sha;
+                console.log('Found existing file with SHA:', sha);
+              }
+            } catch(e) {
+              console.log('File does not exist yet, will create new');
+            }
+
+            // PUT to GitHub
+            const putUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${fileName}`;
+            const putBody = {
+              message: 'admin: update site-settings.json via admin panel',
+              content: contentBase64,
+              branch: branch
+            };
+            if (sha) putBody.sha = sha;
+
+            const putRes = await fetch(putUrl, {
+              method: 'PUT',
+              headers: {
+                'Accept': 'application/vnd.github.v3+json',
+                'Authorization': `token ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(putBody)
+            });
+
+            if (putRes.ok) {
+              console.log('✓ Site settings saved to GitHub');
+              alert('Ayarlar tarayıcıda ve GitHub\'da kaydedildi.');
+            } else {
+              const errorText = await putRes.text();
+              console.error('GitHub save failed:', putRes.status, errorText);
+              alert('Ayarlar tarayıcıda kaydedildi ancak GitHub\'a kaydedilemedi: ' + putRes.status);
+            }
+          }catch(err){ 
+            console.error('GitHub save error', err); 
+            alert('Ayarlar tarayıcıda kaydedildi ancak GitHub\'a kaydederken hata oluştu: ' + err.message); 
+          }
         });
       });
 
