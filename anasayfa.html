@@ -1497,25 +1497,54 @@
                             createdAt: Date.now()
                         };
 
-                        // Save to localStorage
-                        localStorage.setItem('user_' + email, JSON.stringify(stored));
-                        console.log('registerUser: Saved to localStorage for', email);
+                        // Save to localStorage with detailed logging
+                        try {
+                            const storedStr = JSON.stringify(stored);
+                            localStorage.setItem('user_' + email, storedStr);
+                            console.log('registerUser: ✓ Saved to localStorage for', email);
+                            console.log('registerUser: Data structure check:', {
+                                hasName: !!stored.name,
+                                hasEmail: !!stored.email,
+                                hasPw: !!stored.pw,
+                                hasSalt: !!(stored.pw && stored.pw.salt),
+                                hasHash: !!(stored.pw && stored.pw.hash),
+                                hasIterations: !!(stored.pw && stored.pw.iterations)
+                            });
+                            
+                            // Verify we can read it back immediately
+                            const readBack = localStorage.getItem('user_' + email);
+                            if (!readBack) {
+                                console.error('registerUser: ⚠️ localStorage verification FAILED - data not readable immediately after write');
+                            } else {
+                                const parsed = JSON.parse(readBack);
+                                if (!parsed.pw || !parsed.pw.salt || !parsed.pw.hash) {
+                                    console.error('registerUser: ⚠️ localStorage verification FAILED - parsed data missing password fields');
+                                } else {
+                                    console.log('registerUser: ✓ localStorage verification passed');
+                                }
+                            }
+                        } catch(e) {
+                            console.error('registerUser: localStorage save error', e);
+                            alert('Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyin.');
+                            return;
+                        }
                         
-        // GitHub'a tam kullanıcı verisiyle kaydet (Contents API)
-        console.log('registerUser: GitHub içeriklerine kaydediliyor...');
-        try{
-            const remoteSuccess = await commitFullUserToRepo(stored);
-            if (remoteSuccess) {
-                console.log('registerUser: ✓ GitHub kaydı başarılı');
-            } else {
-                console.warn('registerUser: Remote save failed but localStorage OK');
-            }
-        }catch(e){
-            console.error('registerUser: Remote save exception', e);
-        }
-        
-        // Tek bildirim göster
-        alert('Kayıt başarılı!');                        switchTab('login', document.querySelector('.form-tab'));
+                        // GitHub'a tam kullanıcı verisiyle kaydet (Contents API)
+                        console.log('registerUser: GitHub içeriklerine kaydediliyor...');
+                        try{
+                            const remoteSuccess = await commitFullUserToRepo(stored);
+                            if (remoteSuccess) {
+                                console.log('registerUser: ✓ GitHub kaydı başarılı');
+                            } else {
+                                console.warn('registerUser: Remote save failed but localStorage OK');
+                            }
+                        }catch(e){
+                            console.error('registerUser: Remote save exception', e);
+                        }
+                        
+                        // Tek bildirim göster
+                        alert('Kayıt başarılı! Şimdi giriş yapabilirsiniz.');
+                        switchTab('login', document.querySelector('.form-tab'));
                         document.getElementById('registerName').value = '';
                         document.getElementById('registerEmail').value = '';
                         document.getElementById('registerPassword').value = '';
@@ -1536,18 +1565,34 @@
                             return;
                         }
 
-                        console.log('loginUser: Attempting login for', email);
+                        console.log('loginUser: ========== LOGIN ATTEMPT START ==========');
+                        console.log('loginUser: Email:', email);
+                        console.log('loginUser: Device:', navigator.userAgent);
                         
                         // Try localStorage first
                         let userStr = localStorage.getItem('user_' + email);
                         let userData = null;
                         
+                        console.log('loginUser: localStorage check:', userStr ? 'FOUND' : 'NOT FOUND');
+                        
                         if (userStr) {
-                            console.log('loginUser: ✓ User found in localStorage');
+                            console.log('loginUser: Parsing localStorage data...');
                             try {
                                 userData = JSON.parse(userStr);
+                                console.log('loginUser: ✓ Parse successful');
+                                console.log('loginUser: Data structure:', {
+                                    hasName: !!userData.name,
+                                    hasEmail: !!userData.email,
+                                    hasPw: !!userData.pw,
+                                    hasSalt: !!(userData.pw && userData.pw.salt),
+                                    hasHash: !!(userData.pw && userData.pw.hash),
+                                    hasIterations: !!(userData.pw && userData.pw.iterations),
+                                    saltLength: userData.pw && userData.pw.salt ? userData.pw.salt.length : 0,
+                                    hashLength: userData.pw && userData.pw.hash ? userData.pw.hash.length : 0
+                                });
                             } catch(e) {
-                                console.error('loginUser: localStorage parse error', e);
+                                console.error('loginUser: ⚠️ localStorage parse error', e);
+                                console.log('loginUser: Clearing corrupted data and fetching from remote');
                                 localStorage.removeItem('user_' + email);
                                 userStr = null;
                             }
@@ -1555,36 +1600,59 @@
                         
                         // If not in localStorage or parse failed, try fetching from remote
                         if (!userData) {
-                            console.log('loginUser: User NOT in localStorage, fetching from remote...');
+                            console.log('loginUser: Fetching from remote GitHub...');
                             try{
                                 userData = await fetchUserFromRepo(email);
                                 if (userData) {
-                                    console.log('loginUser: ✓ User fetched from remote and ready for verification');
+                                    console.log('loginUser: ✓ Remote fetch successful');
+                                    console.log('loginUser: Remote data structure:', {
+                                        hasName: !!userData.name,
+                                        hasEmail: !!userData.email,
+                                        hasPw: !!userData.pw,
+                                        hasSalt: !!(userData.pw && userData.pw.salt),
+                                        hasHash: !!(userData.pw && userData.pw.hash)
+                                    });
                                     // Cache in localStorage for faster next login
-                                    localStorage.setItem('user_' + email, JSON.stringify(userData));
+                                    try {
+                                        localStorage.setItem('user_' + email, JSON.stringify(userData));
+                                        console.log('loginUser: ✓ Cached to localStorage');
+                                    } catch(e) {
+                                        console.warn('loginUser: Could not cache to localStorage', e);
+                                    }
                                 } else {
-                                    console.warn('loginUser: User not found in remote repo');
+                                    console.error('loginUser: ⚠️ User not found in remote repo');
                                     alert('Kullanıcı bulunamadı! Lütfen önce kayıt olun.');
                                     return;
                                 }
                             }catch(e){
-                                console.error('loginUser: Failed to fetch user from remote', e);
-                                alert('Kullanıcı bulunamadı! Lütfen önce kayıt olun.');
+                                console.error('loginUser: ⚠️ Remote fetch failed', e);
+                                alert('Kullanıcı bulunamadı! Lütfen önce kayıt olun veya internet bağlantınızı kontrol edin.');
                                 return;
                             }
                         }
                         
-                        if (!userData || !userData.pw || !userData.pw.salt || !userData.pw.hash) {
-                            console.error('loginUser: Invalid user data structure', userData);
-                            alert('Kullanıcı verisi hatalı! Lütfen tekrar kayıt olun.');
+                        if (!userData) {
+                            console.error('loginUser: ⚠️ No user data available');
+                            alert('Kullanıcı bulunamadı! Lütfen önce kayıt olun.');
                             return;
                         }
 
+                        if (!userData.pw || !userData.pw.salt || !userData.pw.hash) {
+                            console.error('loginUser: ⚠️ Invalid user data structure - missing password fields');
+                            console.log('loginUser: User data:', JSON.stringify(userData, null, 2));
+                            alert('Kullanıcı verisi hatalı! Lütfen tekrar kayıt olun veya destek ile iletişime geçin.');
+                            return;
+                        }
+
+                        console.log('loginUser: Starting password verification...');
                         try {
                             const saltBuf = fromBase64(userData.pw.salt);
                             const expectedHash = new Uint8Array(fromBase64(userData.pw.hash));
                             const iter = userData.pw.iterations || PW_ITERATIONS;
+                            console.log('loginUser: Deriving key with', iter, 'iterations...');
                             const derived = await deriveKey(password, saltBuf, iter);
+                            console.log('loginUser: Key derived, comparing hashes...');
+                            
                             if (!secureCompare(derived, expectedHash)) {
                                 // increment failed attempts and if >=3, force reset flow
                                 const failKey = 'failed_login_' + email;
@@ -1608,23 +1676,46 @@
                                 // successful login -> clear failed attempts
                                 const failKey = 'failed_login_' + email;
                                 localStorage.removeItem(failKey);
+                                console.log('loginUser: ✓ Password verification successful');
                             }
                         } catch (e) {
-                            console.error('Giriş sırasında hata oluştu', e);
-                            alert('Giriş başarısız.');
+                            console.error('loginUser: ⚠️ Password verification error', e);
+                            console.log('loginUser: Error details:', {
+                                name: e.name,
+                                message: e.message,
+                                stack: e.stack
+                            });
+                            alert('Giriş sırasında bir hata oluştu. Lütfen tekrar deneyin veya destek ile iletişime geçin.');
                             return;
                         }
 
+                        console.log('loginUser: Saving current user session...');
                         // store current user without sensitive fields
                         const safeUser = { name: userData.name, email: userData.email };
-                        localStorage.setItem('currentUser', JSON.stringify(safeUser));
+                        try {
+                            localStorage.setItem('currentUser', JSON.stringify(safeUser));
+                            console.log('loginUser: ✓ Session saved');
+                        } catch(e) {
+                            console.error('loginUser: ⚠️ Session save error', e);
+                        }
+                        
                         // update lastLogin remotely (best-effort)
-                        try{ await commitFullUserToRepo({ ...userData, lastLogin: Date.now() }); }catch(e){}
+                        try{ 
+                            await commitFullUserToRepo({ ...userData, lastLogin: Date.now() }); 
+                            console.log('loginUser: ✓ lastLogin updated remotely');
+                        }catch(e){
+                            console.warn('loginUser: Could not update lastLogin remotely', e);
+                        }
+                        
+                        console.log('loginUser: ✓ LOGIN SUCCESS - updating UI');
                         closeAuthModal();
                         updateUIAfterLogin(userData.name);
                         updateCartCount();
                         document.getElementById('loginEmail').value = '';
                         document.getElementById('loginPassword').value = '';
+                        
+                        console.log('loginUser: ========== LOGIN ATTEMPT END (SUCCESS) ==========');
+                        
                         // Otomatik olarak hesap modalını aç
                         setTimeout(() => { openAccountModal(); }, 300);
                     }

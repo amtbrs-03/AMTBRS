@@ -1746,7 +1746,10 @@
     <div class="modal-content small-modal">
       <div class="modal-header">
         <h2>👤 Kullanıcı Detayı</h2>
-        <button class="close-modal" onclick="closeUserDetailModal()">✕ Kapat</button>
+        <div style="display:flex; gap:0.5rem; align-items:center;">
+          <button id="refreshUserBtn" class="btn" onclick="refreshUserDetail()" style="padding:0.5rem 1rem; font-size:0.9rem;">🔄 Yenile</button>
+          <button class="close-modal" onclick="closeUserDetailModal()">✕ Kapat</button>
+        </div>
       </div>
       <div id="userDetailBody" class="modal-body">
         <!-- Filled dynamically -->
@@ -1768,6 +1771,9 @@
 
     function openUserDetail(idx){
       try{
+        // Store current user index for refresh
+        window.__currentUserDetailIdx = idx;
+        
         const users = window.__adminUsersCache || [];
         const u = users[idx];
         if (!u) return;
@@ -1835,6 +1841,112 @@
         document.getElementById('userDetailModal').classList.add('active');
         document.body.style.overflow = 'hidden';
       }catch(e){ console.error('openUserDetail error', e); }
+    }
+
+    // Refresh user detail from GitHub
+    async function refreshUserDetail(){
+      try{
+        const idx = window.__currentUserDetailIdx;
+        if (idx === undefined || idx === null) {
+          alert('Kullanıcı bilgisi bulunamadı.');
+          return;
+        }
+
+        const users = window.__adminUsersCache || [];
+        const u = users[idx];
+        if (!u || !u.email) {
+          alert('Kullanıcı email bilgisi bulunamadı.');
+          return;
+        }
+
+        const btn = document.getElementById('refreshUserBtn');
+        const originalText = btn ? btn.textContent : '';
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = '⏳ Yenileniyor...';
+        }
+
+        console.log('Refreshing user from GitHub:', u.email);
+
+        // Fetch fresh data from GitHub
+        const owner = 'amtbrs-03';
+        const repo = 'AMTBRS';
+        const branch = 'site-release';
+        const fileName = encodeURIComponent(u.email) + '_full.json';
+
+        // Try raw URL first (fastest)
+        let userData = null;
+        try {
+          const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/users/${fileName}?t=${Date.now()}`;
+          const res = await fetch(rawUrl, { cache: 'no-store' });
+          if (res.ok) {
+            userData = await res.json();
+            console.log('✓ User data refreshed from raw URL');
+          }
+        } catch(e) {
+          console.warn('Raw URL fetch failed, trying Contents API');
+        }
+
+        // Fallback to Contents API
+        if (!userData) {
+          const token = getToken();
+          if (!token) {
+            alert('GitHub token bulunamadı.');
+            if (btn) {
+              btn.disabled = false;
+              btn.textContent = originalText;
+            }
+            return;
+          }
+
+          const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/users/${fileName}?ref=${branch}&t=${Date.now()}`;
+          const res = await fetch(apiUrl, {
+            headers: {
+              'Accept': 'application/vnd.github.v3+json',
+              'Authorization': `token ${token}`
+            },
+            cache: 'no-store'
+          });
+
+          if (!res.ok) {
+            throw new Error(`GitHub API responded with ${res.status}`);
+          }
+
+          const fileData = await res.json();
+          const decoded = decodeURIComponent(escape(atob(fileData.content)));
+          userData = JSON.parse(decoded);
+          console.log('✓ User data refreshed from Contents API');
+        }
+
+        // Update cache
+        window.__adminUsersCache[idx] = userData;
+
+        // Re-render detail view
+        openUserDetail(idx);
+
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = originalText;
+        }
+
+        // Show success message briefly
+        const body = document.getElementById('userDetailBody');
+        const successMsg = document.createElement('div');
+        successMsg.style.cssText = 'position:fixed; top:20px; right:20px; background:#10b981; color:white; padding:1rem 1.5rem; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15); z-index:10000; font-weight:600;';
+        successMsg.textContent = '✓ Kullanıcı bilgisi güncellendi';
+        document.body.appendChild(successMsg);
+        setTimeout(() => successMsg.remove(), 2000);
+
+      } catch(e) {
+        console.error('refreshUserDetail error:', e);
+        alert('Kullanıcı bilgisi yenilenirken hata oluştu: ' + (e.message || e));
+        
+        const btn = document.getElementById('refreshUserBtn');
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = '🔄 Yenile';
+        }
+      }
     }
 
     function closeUserDetailModal(){
