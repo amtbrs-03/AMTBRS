@@ -15,13 +15,11 @@
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Çiçekçi - Online Çiçek Siparişi | Gül Buketi | ERN Çiçek" />
-    <meta property="og:description" content="Taze çiçek siparişi, gül buketi, lilyum, orkide ve tüm çiçek çeşitleri. Aynı gün teslimat. Online çiçekçi hizmeti." />
-    <meta property="og:url" content="https://ern-cicek.com.tr/" />
-    <meta property="og:site_name" content="ERN Çiçek" />
-    <meta property="og:image" content="https://ern-cicek.com.tr/og-image.jpg" />
-    <meta property="og:locale" content="tr_TR" />
-    
-    <!-- Twitter Card -->
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        // kapalı bir SPA olduğundan, kök path'e yönlendiriyoruz
+                                        try { window.location.assign('/'); } catch(_){ window.location.href = '/'; }
+                                    }, { capture: true });
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Çiçekçi - Online Çiçek Siparişi | ERN Çiçek" />
     <meta name="twitter:description" content="Gül, lilyum, orkide ve tüm çiçek çeşitleri. Aynı gün teslimat." />
@@ -329,9 +327,21 @@
         .products {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
+            gap: 1.2rem;
             transform-style: preserve-3d;
         }
+
+        /* Products UI polish */
+        .products-wrapper { padding: 0 2rem 3rem; }
+        .products-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin: 0 0 0.8rem; }
+        .products-title { font-size:1.25rem; font-weight:800; color:#0b1220; }
+        .products-actions { display:flex; gap:8px; }
+        .products-actions .btn { background:#10b981; color:#fff; padding:0.45rem 0.7rem; border-radius:8px; border:none; }
+
+        .product-card { display:flex; flex-direction:column; gap:10px; }
+        .product-image { width:100%; aspect-ratio: 1 / 1; height:auto; }
+        .product-name { font-weight:700; line-height:1.3; }
+        .product-price { font-weight:800; }
 
         .product-card {
             position: relative;
@@ -349,6 +359,23 @@
             cursor: default;
             border: 1px solid rgba(10,12,30,0.06);
         }
+
+        /* Badge / status */
+        .badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: #ef4444;
+            color: #fff;
+            font-size: 0.75rem;
+            font-weight: 800;
+            padding: 4px 8px;
+            border-radius: 999px;
+            box-shadow: 0 6px 14px rgba(239,68,68,0.25);
+            transform: translateZ(80px);
+        }
+        .badge.badge-green { background: #10b981; box-shadow: 0 6px 14px rgba(16,185,129,0.25); }
+        .badge.badge-amber { background: #f59e0b; box-shadow: 0 6px 14px rgba(245,158,11,0.25); }
 
         .product-card::before,
         .product-card::after {
@@ -439,9 +466,9 @@
             .hero p { font-size:1rem; }
 
             /* Products */
-            .products-wrapper { padding: 0 1rem 3rem; }
-            .products { gap:1rem; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); }
-            .product-image { height:140px; font-size:2.4rem }
+            .products-wrapper { padding: 0 1rem 2rem; }
+            .products { gap:0.9rem; grid-template-columns: repeat(auto-fit, minmax(190px,1fr)); }
+            .product-image { aspect-ratio: 1 / 1; font-size:2.2rem }
             .product-card { padding:.8rem; border-radius:10px }
 
             /* Nav and header */
@@ -463,8 +490,8 @@
             .hero h1 { font-size:1.35rem; }
             .hero p { font-size:0.95rem; }
 
-            .products { grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap:0.8rem; }
-            .product-image { height:120px; font-size:1.8rem; }
+            .products { grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap:0.7rem; }
+            .product-image { aspect-ratio: 1 / 1; font-size:1.8rem; }
             .product-price { font-size:1.05rem; }
             .product-name { font-size:0.98rem; }
 
@@ -646,7 +673,7 @@
                         </span><span class="logo-text">ERN Tropikal Çiçek</span></a></div>
                         <div class="nav-top" style="display:flex;align-items:center;gap:0.6rem;">
                             <ul class="nav-links" style="display:flex;gap:0.6rem;align-items:center;list-style:none;margin:0;padding:0;">
-                                <li><button id="homeBtn" class="contact-btn" aria-controls="authModal" aria-expanded="false" data-action="open-auth">Ana Sayfa</button></li>
+                                <li><button id="homeBtn" class="contact-btn" aria-expanded="false" data-action="go-home">Ana Sayfa</button></li>
                                 <li><button id="productsBtn" class="contact-btn" aria-controls="products" aria-expanded="false" data-action="scroll" data-target="products">Ürünler</button></li>
                                 <li id="cartContainer"><button id="cartBtn" class="cart-btn contact-btn" aria-controls="cartModal" aria-expanded="false" data-action="open-cart">Sepet <span id="cartCount" class="cart-count hidden">0</span></button></li>
                                 <li><button id="contactBtn" class="contact-btn" aria-expanded="false" aria-controls="contactPanel" data-action="toggle-contact"><span style="display:inline-block;margin-right:6px;line-height:1">📞</span><span>İletişim</span><span style="margin-left:8px;opacity:0.9">▾</span></button></li>
@@ -1176,8 +1203,15 @@
                 <!-- Hero section removed (big logo/title) per request -->
 
                 <div class="products-wrapper">
+                    <div class="products-header">
+                        <h2 class="products-title">Ürünler</h2>
+                        <div class="products-actions">
+                            <button class="btn" data-action="open-cart">Sepeti Gör</button>
+                        </div>
+                    </div>
                     <section class="products" id="products">
                         <div class="product-card" data-id="1" data-name="Ürün 1" data-price="99.99">
+                            <span class="badge badge-green" aria-label="Yeni ürün">Yeni</span>
                             <div class="product-image">🛍️</div>
                             <div class="product-info">
                                 <div class="product-name">Ürün 1</div>
@@ -1187,6 +1221,7 @@
                         </div>
 
                         <div class="product-card" data-id="2" data-name="Ürün 2" data-price="199.99">
+                            <span class="badge badge-amber" aria-label="İndirim">İndirim</span>
                             <div class="product-image">📱</div>
                             <div class="product-info">
                                 <div class="product-name">Ürün 2</div>
@@ -1196,6 +1231,7 @@
                         </div>
 
                         <div class="product-card" data-id="3" data-name="Ürün 3" data-price="149.99">
+                            <span class="badge" aria-label="Popüler">Popüler</span>
                             <div class="product-image">⌚</div>
                             <div class="product-info">
                                 <div class="product-name">Ürün 3</div>
