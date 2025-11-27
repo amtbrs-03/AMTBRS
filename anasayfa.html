@@ -1451,27 +1451,35 @@
                             return;
                         }
 
-                        // Check if user already exists in localStorage
-                        const existingUser = localStorage.getItem('user_' + email);
-                        if (existingUser) {
-                            alert('Bu email adresi ile zaten bir kayıt bulunmaktadır. Lütfen giriş yapın.');
-                            switchTab('login', document.querySelector('.form-tab'));
-                            document.getElementById('loginEmail').value = email;
-                            return;
-                        }
+                        // MOBILE FIX: Detect mobile device
+                        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                        console.log('registerUser: Device type:', isMobile ? 'MOBILE' : 'DESKTOP');
 
-                        // Check if user exists in remote GitHub storage
+                        // Check if user exists in remote GitHub storage FIRST (most reliable)
                         console.log('registerUser: Checking if user exists remotely...');
                         try {
                             const remoteUser = await fetchUserFromRepo(email);
                             if (remoteUser) {
+                                console.log('registerUser: User already exists in GitHub');
                                 alert('Bu email adresi ile zaten bir kayıt bulunmaktadır. Lütfen giriş yapın.');
                                 switchTab('login', document.querySelector('.form-tab'));
                                 document.getElementById('loginEmail').value = email;
                                 return;
                             }
                         } catch(e) {
-                            console.log('registerUser: No remote user found, proceeding with registration');
+                            console.log('registerUser: No remote user found (good), proceeding with registration');
+                        }
+
+                        // Check localStorage only on desktop (mobile localStorage is unreliable)
+                        if (!isMobile) {
+                            const existingUser = localStorage.getItem('user_' + email);
+                            if (existingUser) {
+                                console.log('registerUser: User exists in localStorage');
+                                alert('Bu email adresi ile zaten bir kayıt bulunmaktadır. Lütfen giriş yapın.');
+                                switchTab('login', document.querySelector('.form-tab'));
+                                document.getElementById('loginEmail').value = email;
+                                return;
+                            }
                         }
 
                         // generate salt
@@ -1497,49 +1505,57 @@
                             createdAt: Date.now()
                         };
 
-                        // Save to localStorage with detailed logging
-                        try {
-                            const storedStr = JSON.stringify(stored);
-                            localStorage.setItem('user_' + email, storedStr);
-                            console.log('registerUser: ✓ Saved to localStorage for', email);
-                            console.log('registerUser: Data structure check:', {
-                                hasName: !!stored.name,
-                                hasEmail: !!stored.email,
-                                hasPw: !!stored.pw,
-                                hasSalt: !!(stored.pw && stored.pw.salt),
-                                hasHash: !!(stored.pw && stored.pw.hash),
-                                hasIterations: !!(stored.pw && stored.pw.iterations)
-                            });
-                            
-                            // Verify we can read it back immediately
-                            const readBack = localStorage.getItem('user_' + email);
-                            if (!readBack) {
-                                console.error('registerUser: ⚠️ localStorage verification FAILED - data not readable immediately after write');
-                            } else {
-                                const parsed = JSON.parse(readBack);
-                                if (!parsed.pw || !parsed.pw.salt || !parsed.pw.hash) {
-                                    console.error('registerUser: ⚠️ localStorage verification FAILED - parsed data missing password fields');
+                        // MOBILE FIX: Save to localStorage only on desktop
+                        if (!isMobile) {
+                            try {
+                                const storedStr = JSON.stringify(stored);
+                                localStorage.setItem('user_' + email, storedStr);
+                                console.log('registerUser: ✓ Saved to localStorage for', email);
+                                console.log('registerUser: Data structure check:', {
+                                    hasName: !!stored.name,
+                                    hasEmail: !!stored.email,
+                                    hasPw: !!stored.pw,
+                                    hasSalt: !!(stored.pw && stored.pw.salt),
+                                    hasHash: !!(stored.pw && stored.pw.hash),
+                                    hasIterations: !!(stored.pw && stored.pw.iterations)
+                                });
+                                
+                                // Verify we can read it back immediately
+                                const readBack = localStorage.getItem('user_' + email);
+                                if (!readBack) {
+                                    console.error('registerUser: ⚠️ localStorage verification FAILED - data not readable immediately after write');
                                 } else {
-                                    console.log('registerUser: ✓ localStorage verification passed');
+                                    const parsed = JSON.parse(readBack);
+                                    if (!parsed.pw || !parsed.pw.salt || !parsed.pw.hash) {
+                                        console.error('registerUser: ⚠️ localStorage verification FAILED - parsed data missing password fields');
+                                    } else {
+                                        console.log('registerUser: ✓ localStorage verification passed');
+                                    }
                                 }
+                            } catch(e) {
+                                console.error('registerUser: localStorage save error', e);
+                                // Don't fail registration on mobile if localStorage fails
+                                console.warn('registerUser: Continuing without localStorage cache');
                             }
-                        } catch(e) {
-                            console.error('registerUser: localStorage save error', e);
-                            alert('Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyin.');
-                            return;
+                        } else {
+                            console.log('registerUser: Mobile device - skipping localStorage, using GitHub only');
                         }
                         
-                        // GitHub'a tam kullanıcı verisiyle kaydet (Contents API)
+                        // GitHub'a tam kullanıcı verisiyle kaydet (Contents API) - ZORUNLU
                         console.log('registerUser: GitHub içeriklerine kaydediliyor...');
                         try{
                             const remoteSuccess = await commitFullUserToRepo(stored);
                             if (remoteSuccess) {
                                 console.log('registerUser: ✓ GitHub kaydı başarılı');
                             } else {
-                                console.warn('registerUser: Remote save failed but localStorage OK');
+                                console.error('registerUser: GitHub kayıt başarısız oldu');
+                                alert('Kayıt sırasında bir hata oluştu. Lütfen internet bağlantınızı kontrol edip tekrar deneyin.');
+                                return;
                             }
                         }catch(e){
-                            console.error('registerUser: Remote save exception', e);
+                            console.error('registerUser: GitHub kayıt hatası', e);
+                            alert('Kayıt sırasında bir hata oluştu: ' + (e.message || 'Bilinmeyen hata') + '. Lütfen internet bağlantınızı kontrol edip tekrar deneyin.');
+                            return;
                         }
                         
                         // Tek bildirim göster
@@ -1569,11 +1585,21 @@
                         console.log('loginUser: Email:', email);
                         console.log('loginUser: Device:', navigator.userAgent);
                         
-                        // Try localStorage first
-                        let userStr = localStorage.getItem('user_' + email);
+                        // MOBILE FIX: Detect mobile and prioritize GitHub
+                        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                        console.log('loginUser: Device type:', isMobile ? 'MOBILE' : 'DESKTOP');
+                        console.log('loginUser: Strategy:', isMobile ? 'GitHub-first' : 'localStorage-first');
+                        
+                        let userStr = null;
                         let userData = null;
                         
-                        console.log('loginUser: localStorage check:', userStr ? 'FOUND' : 'NOT FOUND');
+                        // On mobile, skip localStorage and go straight to GitHub
+                        if (!isMobile) {
+                            userStr = localStorage.getItem('user_' + email);
+                            console.log('loginUser: localStorage check:', userStr ? 'FOUND' : 'NOT FOUND');
+                        } else {
+                            console.log('loginUser: Mobile device - skipping localStorage, will fetch from GitHub');
+                        }
                         
                         if (userStr) {
                             console.log('loginUser: Parsing localStorage data...');
@@ -1612,12 +1638,16 @@
                                         hasSalt: !!(userData.pw && userData.pw.salt),
                                         hasHash: !!(userData.pw && userData.pw.hash)
                                     });
-                                    // Cache in localStorage for faster next login
-                                    try {
-                                        localStorage.setItem('user_' + email, JSON.stringify(userData));
-                                        console.log('loginUser: ✓ Cached to localStorage');
-                                    } catch(e) {
-                                        console.warn('loginUser: Could not cache to localStorage', e);
+                                    // MOBILE FIX: Cache in localStorage only on desktop
+                                    if (!isMobile) {
+                                        try {
+                                            localStorage.setItem('user_' + email, JSON.stringify(userData));
+                                            console.log('loginUser: ✓ Cached to localStorage');
+                                        } catch(e) {
+                                            console.warn('loginUser: Could not cache to localStorage', e);
+                                        }
+                                    } else {
+                                        console.log('loginUser: Mobile device - skipping localStorage cache');
                                     }
                                 } else {
                                     console.error('loginUser: ⚠️ User not found in remote repo');
@@ -1692,11 +1722,31 @@
                         console.log('loginUser: Saving current user session...');
                         // store current user without sensitive fields
                         const safeUser = { name: userData.name, email: userData.email };
+                        
+                        // MOBILE FIX: Try both localStorage and sessionStorage
+                        let sessionSaved = false;
+                        
+                        // Try localStorage first
                         try {
                             localStorage.setItem('currentUser', JSON.stringify(safeUser));
-                            console.log('loginUser: ✓ Session saved');
+                            console.log('loginUser: ✓ Session saved to localStorage');
+                            sessionSaved = true;
                         } catch(e) {
-                            console.error('loginUser: ⚠️ Session save error', e);
+                            console.error('loginUser: ⚠️ localStorage session save error', e);
+                        }
+                        
+                        // Always save to sessionStorage as fallback (especially for mobile)
+                        try {
+                            sessionStorage.setItem('currentUser', JSON.stringify(safeUser));
+                            console.log('loginUser: ✓ Session saved to sessionStorage');
+                            sessionSaved = true;
+                        } catch(e) {
+                            console.error('loginUser: ⚠️ sessionStorage session save error', e);
+                        }
+                        
+                        if (!sessionSaved) {
+                            console.error('loginUser: ⚠️ Could not save session to any storage');
+                            alert('Oturum kaydedilemedi. Tarayıcınızın gizli modu devre dışı mı?');
                         }
                         
                         // update lastLogin remotely (best-effort)
