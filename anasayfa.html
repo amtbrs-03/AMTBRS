@@ -1542,13 +1542,26 @@
                         let userStr = localStorage.getItem('user_' + email);
                         let userData = null;
                         
-                        // If not in localStorage, try fetching from remote
-                        if (!userStr) {
+                        if (userStr) {
+                            console.log('loginUser: ✓ User found in localStorage');
+                            try {
+                                userData = JSON.parse(userStr);
+                            } catch(e) {
+                                console.error('loginUser: localStorage parse error', e);
+                                localStorage.removeItem('user_' + email);
+                                userStr = null;
+                            }
+                        }
+                        
+                        // If not in localStorage or parse failed, try fetching from remote
+                        if (!userData) {
                             console.log('loginUser: User NOT in localStorage, fetching from remote...');
                             try{
                                 userData = await fetchUserFromRepo(email);
                                 if (userData) {
                                     console.log('loginUser: ✓ User fetched from remote and ready for verification');
+                                    // Cache in localStorage for faster next login
+                                    localStorage.setItem('user_' + email, JSON.stringify(userData));
                                 } else {
                                     console.warn('loginUser: User not found in remote repo');
                                     alert('Kullanıcı bulunamadı! Lütfen önce kayıt olun.');
@@ -1559,13 +1572,11 @@
                                 alert('Kullanıcı bulunamadı! Lütfen önce kayıt olun.');
                                 return;
                             }
-                        } else {
-                            console.log('loginUser: ✓ User found in localStorage');
-                            userData = JSON.parse(userStr);
                         }
                         
-                        if (!userData) {
-                            alert('Kullanıcı bulunamadı! Lütfen önce kayıt olun.');
+                        if (!userData || !userData.pw || !userData.pw.salt || !userData.pw.hash) {
+                            console.error('loginUser: Invalid user data structure', userData);
+                            alert('Kullanıcı verisi hatalı! Lütfen tekrar kayıt olun.');
                             return;
                         }
 
@@ -2955,6 +2966,137 @@
                         }
                     })();
 
-    </script>
+                    // --- Encoding normalization helpers (apply to invoice/detail before print) ---
+                    function normalizeText(s){
+                        try{
+                            if (typeof s !== 'string') return s;
+                            return decodeURIComponent(escape(s));
+                        }catch(e){ return s; }
+                    }
+
+                    function normalizeNodeText(root){
+                        try{
+                            if (!root) return;
+                            const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+                            const texts = [];
+                            let node;
+                            while ((node = walker.nextNode())) { texts.push(node); }
+                            for (const t of texts){
+                                const val = t.nodeValue;
+                                const nv = normalizeText(val);
+                                if (nv !== val) t.nodeValue = nv;
+                            }
+                        }catch(e){ /* noop */ }
+                    }
+
+                    (function(){
+                        const odm = document.getElementById('orderDetailModal');
+                        const body = document.getElementById('orderDetailBody');
+                        function normalizeAll(){
+                            normalizeNodeText(body);
+                            const inv = document.getElementById('invoiceContent');
+                            if (inv) normalizeNodeText(inv);
+                        }
+                        if (odm){
+                            odm.addEventListener('transitionend', function(){
+                                if (odm.style.display === 'block') normalizeAll();
+                            });
+                            odm.addEventListener('click', normalizeAll);
+                        }
+                        window.addEventListener('beforeprint', normalizeAll);
+                    })();
+                </script>
+<script>
+// --- Order status: set to 'hazır' when invoice is generated ---
+async function updateOrderStatus(orderId, newStatus){
+    try{
+        if (!orderId) return;
+        const odHeader = document.getElementById('odHeader');
+        if (odHeader) {
+            odHeader.innerHTML = (odHeader.innerHTML || '').replace(/Durum:\s*[^<]*/i, 'Durum: ' + newStatus);
+        }
+        const w = window;
+        if (w && typeof w.updateOrderInRepo === 'function'){
+            await w.updateOrderInRepo(orderId, { status: newStatus });
+            return;
+        }
+        if (w && typeof w.githubSaveOrder === 'function'){
+            await w.githubSaveOrder(orderId, { status: newStatus });
+            return;
+        }
+        const key = 'ordersCache';
+        const raw = localStorage.getItem(key);
+        const list = raw ? JSON.parse(raw) : [];
+        const idx = list.findIndex(o => String(o.id) === String(orderId));
+        if (idx >= 0){
+            list[idx].status = newStatus;
+            localStorage.setItem(key, JSON.stringify(list));
+        }
+    }catch(e){ /* ignore */ }
+}
+
+document.addEventListener('click', function(ev){
+    const t = ev.target;
+    if (!t) return;
+    const action = t.getAttribute && t.getAttribute('data-action');
+    if (action === 'generate-invoice'){
+        try{
+            const odHeader = document.getElementById('odHeader');
+            let orderId = null;
+            if (odHeader){
+                const m = (odHeader.textContent || '').match(/Sipariş\s*ID\s*[:#]?\s*(\S+)/i);
+                if (m) orderId = m[1];
+            }
+            const odm = document.getElementById('orderDetailModal');
+            if (!orderId && odm && odm.dataset && odm.dataset.orderId){
+                orderId = odm.dataset.orderId;
+            }
+            updateOrderStatus(orderId, 'hazır');
+        }catch(e){ /* ignore */ }
+    }
+});
+</script>
+<script>
+// --- Registration notifications: show single success, suppress duplicates ---
+(function(){
+    const originalAlert = window.alert.bind(window);
+    let lastAlert = { msg: null, ts: 0 };
+    let suppressUntil = 0;
+
+    window.alert = function(msg){
+        try{
+            const now = Date.now();
+            // If we recently showed success, suppress other alerts for 5s
+            if (now < suppressUntil){
+                if (String(msg).toLowerCase().includes('kayıt başarılı')){
+                    // allow one success within window if not duplicate
+                    if (lastAlert.msg === msg && (now - lastAlert.ts) < 3000) return;
+                } else {
+                    return; // suppress non-success alerts
+                }
+            }
+            // Deduplicate identical alerts within 3s
+            if (lastAlert.msg === msg && (now - lastAlert.ts) < 3000) return;
+            lastAlert = { msg, ts: now };
+            originalAlert(msg);
+        }catch(e){ originalAlert(msg); }
+    };
+
+    // Intercept register action to set suppression window and ensure one success
+    document.addEventListener('click', function(ev){
+        const t = ev.target;
+        if (!t) return;
+        const action = t.getAttribute && t.getAttribute('data-action');
+        if (action === 'register'){
+            // start a short suppression window to avoid multiple alerts
+            suppressUntil = Date.now() + 5000;
+            // close auth modal after brief delay to avoid overlapping UI alerts
+            setTimeout(function(){
+                try{ document.getElementById('authModal').style.display = 'none'; }catch(e){}
+            }, 300);
+        }
+    });
+})();
+</script>
 </body>
 </html>

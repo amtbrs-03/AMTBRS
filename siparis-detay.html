@@ -1,25 +1,28 @@
 <!doctype html>
 <html lang="tr">
-<head>
-  <meta charset="utf-8" />
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Sipariş Detayı - ERN-ÇİÇEK Admin</title>
-  <style>
-    :root{
-      --green-primary: #10b981;
-      --green-dark: #059669;
-      --green-light: #34d399;
-      --danger:#ef4444;
-      --muted:#6b7280;
-      --bg-1: rgba(34,197,94,0.10);
-      --bg-2: rgba(16,185,129,0.08);
-      --card-bg: rgba(255,255,255,0.98);
-    }
-
-    body{
-      font-family: 'Segoe UI', 'Inter', 'Noto Sans', Tahoma, Arial, sans-serif;
-      padding:0;
+    <script>
+      async function loadOrderDetail(orderId) {
+        try {
+          const res = await fetch(`orders/${orderId}.json`, { cache: 'no-store' });
+          const buf = await res.arrayBuffer();
+          const decoder = new TextDecoder('utf-8');
+          const jsonText = decoder.decode(buf);
+          const order = JSON.parse(jsonText);
+          const normalized = {
+            id: order.id,
+            customerName: order.customerName || '',
+            customerEmail: order.customerEmail || '',
+            address: order.address || '',
+            items: order.items || [],
+            total: order.total || 0,
+            status: order.status || 'bekleme'
+          };
+          renderOrderDetail(normalized);
+        } catch (e) {
+          console.error('Failed to load order detail', e);
+        }
+      }
+    </script>
       margin:0;
       color:#0f172a;
       background: radial-gradient(1200px 600px at 10% 10%, var(--bg-1), transparent),
@@ -273,6 +276,8 @@
       <div class="header-actions">
         <button id="createInvoiceBtn" class="btn btn-orange">🧾 Fatura Oluştur</button>
         <a href="siparisler.html" class="btn btn-white">← Sipariş Listesine Dön</a>
+        <button id="editOrderBtn" class="btn">✏️ Düzenle</button>
+        <button id="deleteOrderBtn" class="btn btn-orange" style="background:#dc2626">🗑️ Sil</button>
       </div>
     </div>
 
@@ -754,6 +759,78 @@
         // Don't show error to user, just log it
       }
     }
+
+    async function editOrder() {
+      if (!currentOrder) { alert('Sipariş yüklenmedi!'); return; }
+      // Simple prompt-based edit of teslimat adresi
+      const newAddress = prompt('Yeni teslimat adresini girin:', currentOrder.address || '');
+      if (newAddress == null) return; // cancelled
+      try {
+        const token = getGitHubToken();
+        if (!token) { alert('⚠️ GitHub token bulunamadı.'); return; }
+        // Fetch file to get SHA
+        const getRes = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/orders/${currentOrder.id}.json?ref=site-release&t=${Date.now()}`,{
+          headers:{ 'Accept':'application/vnd.github.v3+json','Authorization':`token ${token}` }
+        });
+        if (!getRes.ok) { alert('❌ Sipariş dosyası alınamadı.'); return; }
+        const fileData = await getRes.json();
+        const orderObj = JSON.parse(atob(fileData.content));
+        orderObj.address = newAddress;
+        const putRes = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/orders/${currentOrder.id}.json`,{
+          method:'PUT',
+          headers:{ 'Accept':'application/vnd.github.v3+json','Authorization':`token ${token}`,'Content-Type':'application/json' },
+          body: JSON.stringify({
+            message: `Sipariş adresi güncellendi: ${currentOrder.id}`,
+            content: btoa(unescape(encodeURIComponent(JSON.stringify(orderObj, null, 2)))) ,
+            sha: fileData.sha,
+            branch:'site-release'
+          })
+        });
+        if (putRes.ok) {
+          alert('✅ Sipariş adresi güncellendi.');
+          currentOrder.address = newAddress;
+          renderOrderDetail(currentOrder);
+        } else {
+          const txt = await putRes.text();
+          console.error('Edit failed:', putRes.status, txt);
+          alert('❌ Düzenleme başarısız.');
+        }
+      } catch (e) {
+        console.error('Edit error:', e);
+        alert('❌ Düzenleme sırasında hata oluştu.');
+      }
+    }
+
+    async function deleteOrder() {
+      if (!currentOrder) { alert('Sipariş yüklenmedi!'); return; }
+      if (!confirm('Bu siparişi silmek istediğinizden emin misiniz?')) return;
+      try {
+        const token = getGitHubToken();
+        if (!token) { alert('⚠️ GitHub token bulunamadı.'); return; }
+        // Fetch file to get SHA
+        const getRes = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/orders/${currentOrder.id}.json?ref=site-release&t=${Date.now()}`,{
+          headers:{ 'Accept':'application/vnd.github.v3+json','Authorization':`token ${token}` }
+        });
+        if (!getRes.ok) { alert('❌ Sipariş dosyası alınamadı.'); return; }
+        const fileData = await getRes.json();
+        const delRes = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/orders/${currentOrder.id}.json`,{
+          method:'DELETE',
+          headers:{ 'Accept':'application/vnd.github.v3+json','Authorization':`token ${token}`,'Content-Type':'application/json' },
+          body: JSON.stringify({ message: `Sipariş silindi: ${currentOrder.id}`, sha: fileData.sha, branch:'site-release' })
+        });
+        if (delRes.ok) {
+          alert('🗑️ Sipariş silindi.');
+          window.location.href = 'siparisler.html';
+        } else {
+          const txt = await delRes.text();
+          console.error('Delete failed:', delRes.status, txt);
+          alert('❌ Silme başarısız.');
+        }
+      } catch (e) {
+        console.error('Delete error:', e);
+        alert('❌ Silme sırasında hata oluştu.');
+      }
+    }
     
     async function updateOrderStatus(orderId, newStatus) {
       try {
@@ -839,6 +916,8 @@
 
     // Event Listeners
     document.getElementById('createInvoiceBtn').addEventListener('click', createInvoice);
+    document.getElementById('editOrderBtn').addEventListener('click', editOrder);
+    document.getElementById('deleteOrderBtn').addEventListener('click', deleteOrder);
 
     // Load order on page load
     loadOrderDetail();

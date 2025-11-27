@@ -1,0 +1,14 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Normalize orders JSON",
+			"type": "shell",
+			"command": "node scripts/normalize-orders.js",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "run"
+		}
+	]
+}
