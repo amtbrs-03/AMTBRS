@@ -418,6 +418,7 @@
           </label>
           <span id="liveCartsStatus" class="small" style="color:#64748b;">Hazır</span>
           <button id="liveCartsCleanup" class="btn btn-ghost" type="button" title="24 saatten eski sepet dosyalarını sil">🧹 Eski (>24s) Temizle</button>
+          <button id="liveCartsCreateDummy" class="btn btn-ghost" type="button" title="Örnek bir sepet snapshotı oluştur">🧪 Dummy Sepet</button>
         </div>
         <div id="liveCartsList" style="overflow-x:auto; border:2px solid #e5e7eb; border-radius:10px; min-height:80px; background:#f9fafb; padding:0.5rem;"></div>
       </div>
@@ -2441,10 +2442,46 @@
 
       if(btn) btn.addEventListener('click', loadLiveCarts);
       const cleanupBtn = document.getElementById('liveCartsCleanup'); if(cleanupBtn) cleanupBtn.addEventListener('click', cleanupOldCarts);
+      const dummyBtn = document.getElementById('liveCartsCreateDummy'); if(dummyBtn) dummyBtn.addEventListener('click', createDummyCartSnapshot);
       if(autoChk) autoChk.addEventListener('change', ()=>{ if(autoChk.checked){ startAuto(); loadLiveCarts(); } else { stopAuto(); } });
       // İlk yükleme (auth sonrası görülebilir)
       setTimeout(()=>{ loadLiveCarts(); }, 1500);
     })();
+
+    async function createDummyCartSnapshot(){
+      try{
+        setStatus('Dummy oluşturuluyor...', true);
+        const dummy = {
+          email: 'dummy@example.com',
+          name: 'Dummy Kullanıcı',
+          updatedAt: Date.now(),
+          totalQty: 3,
+          totalPrice: 149.97,
+          items: [
+            { id: 'p_test1', name: 'Test Ürün 1', price: 49.99, qty: 1 },
+            { id: 'p_test2', name: 'Test Ürün 2', price: 59.99, qty: 2 }
+          ]
+        };
+        const json = JSON.stringify(dummy);
+        const contentBase64 = btoa(unescape(encodeURIComponent(json)));
+        const payload = { files: [{ path: 'carts/dummy@example.com.json', contentBase64 }], message: 'chore: dummy cart snapshot' };
+        const endpoints = ['/.netlify/functions/commit-file','/api/commit-file','/functions/commit-file'];
+        let ok = false;
+        for (const ep of endpoints){
+          try{
+            const res = await fetch(ep, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+            if (res.ok){ ok = true; break; }
+          }catch(e){ /* ignore */ }
+        }
+        if(!ok) throw new Error('Endpoint erişilemedi');
+        setStatus('Dummy oluşturuldu', true);
+        loadLiveCarts();
+      }catch(e){
+        console.error('Dummy sepet hatası', e);
+        setStatus('Dummy hata: '+ (e.message||e), false);
+        alert('Dummy sepet oluşturulamadı: ' + (e.message||e));
+      }
+    }
   </script>
 </body>
 </html>
