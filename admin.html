@@ -550,7 +550,21 @@
                   </div>
                 </div>
                 <div class='actions'>
-                  <button class='btn' onclick='openProductEditPanel(${JSON.stringify(p)})'>Düzenle</button>
+                  <button class='btn' onclick='openProductEditPanelById("${p.id}")'>Düzenle</button>
+                          // ID ile ürün düzenleme paneli aç
+                          async function openProductEditPanelById(id) {
+                            try {
+                              const res = await fetch('products.json?' + Date.now());
+                              if (!res.ok) throw new Error('products.json alınamadı!');
+                              const data = await res.json();
+                              const products = Array.isArray(data.items) ? data.items : (Array.isArray(data) ? data : []);
+                              const p = products.find(x => String(x.id) === String(id));
+                              if (p) openProductEditPanel(p);
+                              else alert('Ürün bulunamadı!');
+                            } catch (err) {
+                              alert('Hata: ' + err.message);
+                            }
+                          }
                   <button class='btn btn-danger' onclick='deleteAdminProduct("${p.id}")'>Sil</button>
                 </div>
               `;
