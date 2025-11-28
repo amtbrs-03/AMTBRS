@@ -420,6 +420,7 @@
           <button id="liveCartsCleanup" class="btn btn-ghost" type="button" title="24 saatten eski sepet dosyalarını sil">🧹 Eski (>24s) Temizle</button>
           <button id="liveCartsCreateDummy" class="btn btn-ghost" type="button" title="Örnek bir sepet snapshotı oluştur">🧪 Dummy Sepet</button>
         </div>
+        <div id="liveCartsDiag" class="small" style="margin:-0.25rem 0 0.5rem 0;color:#6b7280"></div>
         <div id="liveCartsList" style="overflow-x:auto; border:2px solid #e5e7eb; border-radius:10px; min-height:80px; background:#f9fafb; padding:0.5rem;"></div>
       </div>
 
@@ -2378,12 +2379,31 @@
       function fmtTL(v){ return '₺' + (v||0).toFixed(2); }
       function humanAgo(ts){ if(!ts) return '-'; const d = Date.now()-ts; const s = Math.floor(d/1000); if(s<60) return s+'sn'; const m=Math.floor(s/60); if(m<60) return m+'dk'; const h=Math.floor(m/60); if(h<24) return h+'sa'; const g=Math.floor(h/24); return g+'g'; }
 
+      function renderSnapshotDiag(){
+        const dEl = document.getElementById('liveCartsDiag');
+        if(!dEl) return;
+        const st = window.__lastCartSnapshotStatus;
+        if(!st){ dEl.textContent = 'Henüz snapshot denemesi yok.'; return; }
+        const ageMs = Date.now() - st.time;
+        const ageS = Math.floor(ageMs/1000);
+        const ago = ageS < 60 ? ageS + 'sn' : (Math.floor(ageS/60) + 'dk');
+        dEl.textContent = `Son snapshot: ${st.email} • durum: ${st.committed ? '✓ yazıldı' : '× yazılamadı'} • ${ago} önce`;
+      }
+
       async function loadLiveCarts(){
         try{
           setStatus('Yükleniyor...', true);
           if(listEl) listEl.innerHTML = '';
           const url = `https://api.github.com/repos/${owner}/${repo}/contents/carts?ref=${encodeURIComponent(branch)}`;
           let res = await fetch(url, { headers:{ 'Accept':'application/vnd.github.v3+json' }, cache:'no-store' });
+          // Private repo 404 olabilir; token varsa tekrar dene
+          if(res.status === 404){
+            const token404 = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
+            if(token404){
+              const res2 = await fetch(url, { headers:{ 'Accept':'application/vnd.github.v3+json', 'Authorization': `token ${token404}` }, cache:'no-store' });
+              if(res2.status !== 404) res = res2; // farklı cevap geldiyse kullan
+            }
+          }
           if(res.status === 403){
             // Rate limit veya private repo erişimi için token ile tekrar dene
             const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
@@ -2403,11 +2423,11 @@
               return;
             }
           }
-          if(res.status === 404){ if(listEl) listEl.innerHTML = '<div style="padding:0.5rem;color:#6b7280">Henüz sepet snapshotı yok.</div>'; setStatus('Boş', true); return; }
+          if(res.status === 404){ if(listEl) listEl.innerHTML = '<div style="padding:0.5rem;color:#6b7280">Henüz sepet snapshotı yok veya erişim yok (token gerekli olabilir).</div>'; setStatus('Boş', true); renderSnapshotDiag(); return; }
           if(!res.ok){ throw new Error('Liste alınamadı: '+res.status); }
           const files = await res.json();
           const cartFiles = Array.isArray(files) ? files.filter(f=>/\.json$/i.test(f.name)) : [];
-          if(!cartFiles.length){ if(listEl) listEl.innerHTML = '<div style="padding:0.5rem;color:#6b7280">Sepet dosyası bulunamadı.</div>'; setStatus('Boş', true); return; }
+          if(!cartFiles.length){ if(listEl) listEl.innerHTML = '<div style="padding:0.5rem;color:#6b7280">Sepet dosyası bulunamadı.</div>'; setStatus('Boş', true); renderSnapshotDiag(); return; }
           window.__liveCartsCache = []; // reset cache
           let rowsHtml = '<table style="width:100%;border-collapse:collapse;font-size:0.75rem;">';
           rowsHtml += '<thead><tr style="background:#f3f4f6"><th style="text-align:left;padding:4px;">Email</th><th style="text-align:left;padding:4px;">Ad</th><th style="text-align:left;padding:4px;">Ürünler</th><th style="padding:4px;">Adet</th><th style="padding:4px;">Toplam</th><th style="padding:4px;">Güncellendi</th></tr></thead><tbody>';
@@ -2432,9 +2452,11 @@
           rowsHtml += '</tbody></table>';
           if(listEl) listEl.innerHTML = rowsHtml;
           setStatus('Güncel', true);
+          renderSnapshotDiag();
         }catch(e){
           console.error('loadLiveCarts hata', e); setStatus('Hata', false);
           if(listEl) listEl.innerHTML = '<div style="padding:0.5rem;color:#b91c1c">Yükleme hatası: '+escapeHtml(e.message||String(e))+'</div>';
+          renderSnapshotDiag();
         }
       }
 
@@ -2488,12 +2510,12 @@
       function startAuto(){ if(autoTimer) clearInterval(autoTimer); autoTimer = setInterval(loadLiveCarts, 30000); }
       function stopAuto(){ if(autoTimer) { clearInterval(autoTimer); autoTimer = null; } }
 
-      if(btn) btn.addEventListener('click', loadLiveCarts);
+      if(btn) btn.addEventListener('click', ()=>{ loadLiveCarts(); renderSnapshotDiag(); });
       const cleanupBtn = document.getElementById('liveCartsCleanup'); if(cleanupBtn) cleanupBtn.addEventListener('click', cleanupOldCarts);
       const dummyBtn = document.getElementById('liveCartsCreateDummy'); if(dummyBtn) dummyBtn.addEventListener('click', createDummyCartSnapshot);
       if(autoChk) autoChk.addEventListener('change', ()=>{ if(autoChk.checked){ startAuto(); loadLiveCarts(); } else { stopAuto(); } });
       // İlk yükleme (auth sonrası görülebilir)
-      setTimeout(()=>{ loadLiveCarts(); }, 1500);
+      setTimeout(()=>{ loadLiveCarts(); renderSnapshotDiag(); }, 1500);
     })();
 
     async function createDummyCartSnapshot(){
