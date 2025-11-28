@@ -528,7 +528,7 @@
       </div>
       <div style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;">
         <a href="anasayfa.html" class="btn btn-ghost" title="Siteyi yeni sekmede aç">🏠 Siteyi Görüntüle</a>
-        <button id="pageRefreshBtn" class="btn btn-ghost" type="button" title="Admin sayfasını yenile">🔄 Yenile</button>
+        <button id="pageRefreshBtn" class="btn btn-ghost" type="button" title="Admin sayfasını yenile" onclick="window.location.reload()">🔄 Yenile</button>
       </div>
     </div>
   </div>
@@ -1282,7 +1282,7 @@
       function renderAuth(){
         const logged = !!(localStorage.getItem('admin_logged_in') || sessionStorage.getItem('admin_logged_in'));
         const user = localStorage.getItem(ADMIN_USER_KEY) || 'admin';
-        
+        if (typeof authContent === 'undefined' || typeof adminUI === 'undefined' || !authContent || !adminUI) return;
         if (!logged) {
           showLogin();
           adminUI.style.display = 'none';
@@ -1399,7 +1399,9 @@
         renderAuth();
       }
 
-      window.addEventListener('DOMContentLoaded', renderAuth);
+      window.addEventListener('DOMContentLoaded', function(){
+        renderAuth();
+      });
     })();
   </script>
 
