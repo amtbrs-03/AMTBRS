@@ -520,6 +520,12 @@
 
 </head>
 <body>
+    <div id="tokenCard" class="card" style="max-width:480px;margin:2rem auto 0 auto;">
+      <div style="font-weight:700;font-size:1.1rem;margin-bottom:0.5rem;">GitHub API Token</div>
+      <input id="githubTokenInput" type="password" placeholder="GitHub Token" style="width:80%;padding:0.75rem;font-size:1.1rem;border-radius:8px;border:1px solid #ddd;" />
+      <button id="saveTokenBtn" style="margin-top:0.5rem;padding:0.5rem 1.5rem;font-size:1rem;font-weight:700;border-radius:8px;border:none;background:linear-gradient(135deg,#6366f1 0%,#2563eb 100%);color:white;cursor:pointer;">Kaydet</button>
+      <div id="tokenMsg" style="color:red;font-weight:bold;margin-top:0.5rem;"></div>
+    </div>
   <div class="admin-header">
     <div class="admin-header-content">
       <div>
@@ -1251,12 +1257,8 @@
             // Cache to localStorage
             localStorage.setItem(AUTH_KEY, adminData.passwordHash);
             localStorage.setItem(ADMIN_USER_KEY, adminData.user || 'admin');
-            
-            if (remember) {
-              localStorage.setItem('admin_logged_in', '1');
-            } else {
-              sessionStorage.setItem('admin_logged_in', '1');
-            }
+            // Always persist session until explicit logout
+            localStorage.setItem('admin_logged_in', '1');
             authContent.innerHTML = '<div style="color:green">Giriş başarılı — yönetici arayüzü yükleniyor...</div>';
             setTimeout(()=>{ renderAuth(); renderAdmin(); }, 400);
           } else {
@@ -1285,7 +1287,7 @@
       }
 
       function renderAuth(){
-        const logged = !!(localStorage.getItem('admin_logged_in') || sessionStorage.getItem('admin_logged_in'));
+        const logged = !!localStorage.getItem('admin_logged_in');
         const user = localStorage.getItem(ADMIN_USER_KEY) || 'admin';
         if (typeof authContent === 'undefined' || typeof adminUI === 'undefined' || !authContent || !adminUI) {
           document.body.innerHTML += '<div style="color:red;font-weight:bold;padding:2rem;">HATA: Giriş ekranı yüklenemedi. Lütfen sayfayı yeniden yükleyin veya tarayıcı önbelleğini temizleyin.</div>';
@@ -1984,14 +1986,25 @@
           }
         };
             for (const ep of endpoints){
-              try{
-                const res = await fetch(ep, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+              try {
+                const token = localStorage.github_token || localStorage.gh_token;
+                const headers = { 'Content-Type': 'application/json' };
+                if (token) headers['Authorization'] = 'token ' + token;
+                const res = await fetch(ep, { method: 'POST', headers, body: JSON.stringify(payload) });
                 lastRes = res;
-                if (res.ok){ ok = true; break; }
-              }catch(e){ lastRes = e; }
+                if (res.ok) { ok = true; break; }
+              } catch (e) { lastRes = e; }
             }
-            if (ok) alert('Değişiklikler GitHub deposuna işlendi.');
-            else alert('GitHub kaydı başarısız: ' + (lastRes && lastRes.statusText ? lastRes.statusText : (lastRes && lastRes.message) || 'bilinmiyor'));
+            if (ok) {
+              alert('Değişiklikler GitHub deposuna işlendi.');
+            } else {
+              let errMsg = 'bilinmiyor';
+              if (lastRes) {
+                if (lastRes.statusText) errMsg = lastRes.statusText;
+                else if (lastRes.message) errMsg = lastRes.message;
+              }
+              alert('GitHub kaydı başarısız: ' + errMsg);
+            }
           }catch(err){ console.error('push to github failed', err); alert('GitHub kaydı sırasında hata: ' + err.message); }
         });
       });
@@ -2001,12 +2014,15 @@
         const payload = { files, message: message || 'admin: admin panelinden güncelle' };
         const endpoints = ['/.netlify/functions/commit-file', '/api/commit-file', '/functions/commit-file'];
         let lastErr = null;
-        for (const ep of endpoints){
-          try{
-            const res = await fetch(ep, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
-            if (res.ok) return { ok:true, res };
+        for (const ep of endpoints) {
+          try {
+            const token = localStorage.github_token || localStorage.gh_token;
+            const headers = { 'Content-Type': 'application/json' };
+            if (token) headers['Authorization'] = 'token ' + token;
+            const res = await fetch(ep, { method: 'POST', headers, body: JSON.stringify(payload) });
+            if (res.ok) return { ok: true, res };
             lastErr = res;
-          }catch(e){ lastErr = e; }
+          } catch (e) { lastErr = e; }
         }
         return { ok:false, err: lastErr };
       }
@@ -2359,6 +2375,45 @@
   </div>
 
   <script>
+    // Token kaydetme ve kontrol
+    document.addEventListener('DOMContentLoaded', function(){
+      var saveBtn = document.getElementById('saveTokenBtn');
+      var input = document.getElementById('githubTokenInput');
+      var msg = document.getElementById('tokenMsg');
+      if(saveBtn && input){
+        saveBtn.onclick = function(){
+          var val = input.value.trim();
+          if(val.length < 20){
+            msg.textContent = 'Geçerli bir GitHub token girin.';
+            return;
+          }
+          localStorage.setItem('github_token', val);
+          msg.style.color = 'green';
+          msg.textContent = 'Token kaydedildi.';
+        };
+      }
+    });
+
+    // API çağrısı öncesi token kontrolü
+    function getGitHubToken(){
+      return localStorage.getItem('github_token') || '';
+    }
+
+    // Örnek: API çağrısı yaparken
+    async function fetchCarts(){
+      var token = getGitHubToken();
+      if(!token){
+        alert('GitHub API token girilmedi!');
+        return;
+      }
+      const url = 'https://api.github.com/repos/amtbrs-03/AMTBRS/contents/carts?ref=site-release';
+      const res = await fetch(url, { headers: { 'Authorization': 'token ' + token } });
+      if(res.status === 403){
+        alert('GitHub API erişimi reddedildi (403). Token geçersiz veya yetkisiz.');
+        return;
+      }
+      // ...devamı
+    }
     // Basit giriş kontrolü: admin şifresi "cicek2025" ise giriş başarılı
     document.addEventListener('DOMContentLoaded', function(){
       var btn = document.getElementById('loginBtn');

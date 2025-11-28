@@ -467,9 +467,12 @@
         console.log('Siparişler şu adresten çekiliyor:', apiUrl);
         
         const res = await fetch(apiUrl, {
-          headers: { 
-            'Accept': 'application/vnd.github.v3+json'
-          }
+          headers: (() => {
+            const token = localStorage.github_token || localStorage.gh_token;
+            const h = { 'Accept': 'application/vnd.github.v3+json' };
+            if (token) h['Authorization'] = 'token ' + token;
+            return h;
+          })()
         });
         
         console.log('GitHub API yanıtı:', res.status, res.statusText);
@@ -497,7 +500,9 @@
         for (const file of orderFiles) {
           try {
             console.log('Fetching order:', file.name);
-            const orderRes = await fetch(file.download_url);
+            const token = localStorage.github_token || localStorage.gh_token;
+            const headers = token ? { 'Authorization': 'token ' + token } : {};
+            const orderRes = await fetch(file.download_url, { headers });
             if (orderRes.ok) {
               const orderData = await orderRes.json();
               console.log('Order loaded:', orderData.id);
@@ -733,7 +738,12 @@
         const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/orders?ref=${branch}&_cb=${cacheBuster}`;
         
         const res = await fetch(apiUrl, {
-          headers: { 'Accept': 'application/vnd.github.v3+json' }
+          headers: (() => {
+            const token = localStorage.github_token || localStorage.gh_token;
+            const h = { 'Accept': 'application/vnd.github.v3+json' };
+            if (token) h['Authorization'] = 'token ' + token;
+            return h;
+          })()
         });
         
         if (res.ok) {
