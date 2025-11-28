@@ -467,6 +467,13 @@
   <script>
     // XOR decode for GitHub token
     function decodeToken(encoded, key) {
+      let decoded = '';
+      for (let i = 0; i < encoded.length; i++) {
+        decoded += String.fromCharCode(encoded.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+      }
+      return decoded;
+    }
+
     // GitHub web upload adapter: open upload UI and persist image path into products.json
     async function updateProductsJsonImage(productId, imagePath){
       const token = getGitHubToken();
@@ -592,12 +599,6 @@
         console.error('[admin] GH upload bölümünde kritik hata', err);
       }
     })();
-      let decoded = '';
-      for (let i = 0; i < encoded.length; i++) {
-        decoded += String.fromCharCode(encoded.charCodeAt(i) ^ key.charCodeAt(i % key.length));
-      }
-      return decoded;
-    }
 
     // Get GitHub token (from localStorage or embedded)
     function getGitHubToken() {
