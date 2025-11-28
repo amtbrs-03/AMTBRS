@@ -2794,14 +2794,40 @@
                             }
                             lastCartSnapshotJson = json; lastCartSnapshotTime = now;
                             const contentBase64 = btoa(unescape(encodeURIComponent(json)));
-                            const payload = { files: [{ path: `carts/${encodeURIComponent(user.email)}.json`, contentBase64 }], message: `chore: cart snapshot ${user.email}` };
+                            // Dosya yolu: email'i encode etme; GitHub '@' karakterini destekler.
+                            const filePath = `carts/${user.email}.json`;
+                            const payload = { files: [{ path: filePath, contentBase64 }], message: `chore: cart snapshot ${user.email}` };
                             const endpoints = ['/.netlify/functions/commit-file','/api/commit-file','/functions/commit-file'];
+                            let committed = false;
                             for (const ep of endpoints) {
                                 try {
                                     const res = await fetch(ep, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
-                                    if (res.ok) break;
+                                    if (res.ok) { committed = true; break; }
                                 } catch(e) { /* ignore */ }
                             }
+                            // GitHub token varsa doğrudan API üzerinden fallback commit dene (ör: serverless çalışmıyorsa)
+                            if(!committed){
+                                try {
+                                    const token = localStorage.getItem('github_token') || '';
+                                    if(token){
+                                        const owner = 'amtbrs-03';
+                                        const repo = 'AMTBRS';
+                                        const branch = 'site-release';
+                                        const ghUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`;
+                                        // Önce mevcut dosyanın SHA'sını almaya çalış (güncelleme için)
+                                        let sha = null;
+                                        try {
+                                            const headRes = await fetch(`${ghUrl}?ref=${encodeURIComponent(branch)}`, { headers:{ 'Authorization': `token ${token}` } });
+                                            if(headRes.ok){ const headData = await headRes.json(); sha = headData.sha; }
+                                        } catch(_){}
+                                        const putBody = { message: `chore: cart snapshot ${user.email}`, content: contentBase64, branch, sha: sha || undefined };
+                                        const putRes = await fetch(ghUrl, { method:'PUT', headers:{ 'Content-Type':'application/json', 'Authorization': `token ${token}` }, body: JSON.stringify(putBody) });
+                                        committed = putRes.ok;
+                                    }
+                                } catch(e){ /* sessiz */ }
+                            }
+                            // Debug bilgisi: son commit durumu
+                            window.__lastCartSnapshotStatus = { time: Date.now(), email: user.email, committed };
                         } catch(e) { /* sessiz */ }
                     }
 
