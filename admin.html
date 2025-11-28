@@ -2365,7 +2365,26 @@
           setStatus('Yükleniyor...', true);
           if(listEl) listEl.innerHTML = '';
           const url = `https://api.github.com/repos/${owner}/${repo}/contents/carts?ref=${encodeURIComponent(branch)}`;
-          const res = await fetch(url, { headers:{ 'Accept':'application/vnd.github.v3+json' }, cache:'no-store' });
+          let res = await fetch(url, { headers:{ 'Accept':'application/vnd.github.v3+json' }, cache:'no-store' });
+          if(res.status === 403){
+            // Rate limit veya private repo erişimi için token ile tekrar dene
+            const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
+            if(token){
+              res = await fetch(url, { headers:{ 'Accept':'application/vnd.github.v3+json', 'Authorization': `token ${token}` }, cache:'no-store' });
+            }
+            if(res.status === 403){
+              const rl = res.headers.get('X-RateLimit-Remaining');
+              const reset = res.headers.get('X-RateLimit-Reset');
+              let extra = '';
+              if(rl === '0' && reset){
+                const dt = new Date(parseInt(reset,10)*1000);
+                extra = ' Limit sıfırlanacak: ' + dt.toLocaleTimeString('tr-TR');
+              }
+              if(listEl) listEl.innerHTML = '<div style="padding:0.5rem;color:#b91c1c">403: Erişim reddedildi. GitHub token gerekli veya limit doldu.'+extra+'</div>';
+              setStatus('403 hata', false);
+              return;
+            }
+          }
           if(res.status === 404){ if(listEl) listEl.innerHTML = '<div style="padding:0.5rem;color:#6b7280">Henüz sepet snapshotı yok.</div>'; setStatus('Boş', true); return; }
           if(!res.ok){ throw new Error('Liste alınamadı: '+res.status); }
           const files = await res.json();
