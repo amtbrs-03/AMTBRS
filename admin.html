@@ -1633,6 +1633,13 @@
         document.getElementById('contactBtnText').value = s.contactBtnText || 'İletişim';
       }
 
+      // Backward compatibility: some older code calls getToken(); provide alias.
+      if (typeof getToken !== 'function') {
+        function getToken(){
+          return (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
+        }
+      }
+
       const saveSettingsBtn = document.getElementById('saveSettings');
       if (saveSettingsBtn) saveSettingsBtn.addEventListener('click', async (ev)=>{
         const btn = ev.currentTarget;
