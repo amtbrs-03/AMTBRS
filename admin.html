@@ -44,7 +44,7 @@
   <script defer>
   // Sayfa yüklendiğinde ve her işlemde oturum kontrolü
   function isAdminLoggedIn() {
-    return !!(localStorage.getItem('admin_logged_in') || sessionStorage.getItem('admin_logged_in'));
+    return !!localStorage.getItem('admin_logged_in');
   }
   window.addEventListener('DOMContentLoaded', function(){
     var adminUI = document.getElementById('adminUI');
@@ -1200,12 +1200,8 @@
             });
           }
         }, 500);
-          if (remember) {
-            // persist logged-in state
-            localStorage.setItem('admin_logged_in', '1');
-          } else {
-            sessionStorage.setItem('admin_logged_in', '1');
-          }
+          // Her zaman kalıcı oturum
+          localStorage.setItem('admin_logged_in', '1');
           
           // Save to GitHub
           const adminData = {
@@ -1360,7 +1356,6 @@
               localStorage.removeItem(AUTH_KEY);
               localStorage.removeItem(ADMIN_USER_KEY);
               localStorage.removeItem('admin_email');
-              sessionStorage.removeItem('admin_logged_in');
               setTimeout(() => { renderAuth(); adminUI.style.display = 'none'; btn.innerHTML = origText; btn.disabled = false; }, 300);
             };
           }, 100);
