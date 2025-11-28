@@ -533,7 +533,13 @@
           const branch = 'site-release';
           // Path'te tüm slash'ları encode etmek 404'a yol açar; ham path kullanılmalı
           const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`;
-          const res = await fetch(url, { headers: { 'Accept':'application/vnd.github.v3+json' }, cache: 'no-store' });
+          let res = await fetch(url, { headers: { 'Accept':'application/vnd.github.v3+json' }, cache: 'no-store' });
+          if (res.status === 403 || res.status === 404){
+            const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
+            if (token){
+              res = await fetch(url, { headers: { 'Accept':'application/vnd.github.v3+json', 'Authorization': `token ${token}` }, cache: 'no-store' });
+            }
+          }
           if (!res.ok) return false;
           const j = await res.json();
           return !!(j && j.type === 'file');
