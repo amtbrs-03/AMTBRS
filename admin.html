@@ -1285,6 +1285,7 @@
         
         if (!logged) {
           showLogin();
+          adminUI.style.display = 'none';
         } else {
           authContent.innerHTML = `<div style=\"color:green;font-size:1.1rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;\"><strong>HOŞ GELDİNİZ ADMİN</strong>
             <div style=\"display:flex;gap:0.5rem;align-items:center;margin-left:0.5rem;\">
@@ -1304,7 +1305,7 @@
             setTimeout(() => { renderAuth(); adminUI.style.display='none'; btn.innerHTML = origText; btn.disabled = false; }, 300);
           };
           document.getElementById('adminSettingsBtn').onclick = ()=>{ openAdminManageModal(); };
-          // Kilit özelliği kaldırıldı
+          // Admin arayüzü her zaman görünür olsun
           adminUI.style.display='block';
         }
       }
@@ -1398,7 +1399,7 @@
         renderAuth();
       }
 
-      ensureUnlocked();
+      window.addEventListener('DOMContentLoaded', renderAuth);
     })();
   </script>
 
