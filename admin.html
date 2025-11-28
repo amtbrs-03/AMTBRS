@@ -44,7 +44,7 @@
   <script defer>
   // Sayfa yüklendiğinde ve her işlemde oturum kontrolü
   function isAdminLoggedIn() {
-    return !!(sessionStorage.getItem('admin_logged_in'));
+    return !!(localStorage.getItem('admin_logged_in') || sessionStorage.getItem('admin_logged_in'));
   }
   window.addEventListener('DOMContentLoaded', function(){
     var adminUI = document.getElementById('adminUI');
@@ -807,17 +807,16 @@
             // Kilidi kaldır
             setTimeout(function(){ lock.style.display = 'none'; }, 600);
           }
-                location.reload(true); // Hard reload
-              } catch(_) {
-                // Fallback: cache busting
-                try {
-                  const base = location.href.split('#')[0].split('?')[0];
-                  const bust = 'ts=' + Date.now();
-                  const next = base + '?' + bust;
-                  console.log('[admin] Page refresh: cache-bust to', next);
-                  window.location.replace(next);
-                } catch(__) {
-                  // Son çare
+          // location.reload(true); // Hard reload
+          // Fallback: cache busting
+          try {
+            const base = location.href.split('#')[0].split('?')[0];
+            const bust = 'ts=' + Date.now();
+            const next = base + '?' + bust;
+            console.log('[admin] Page refresh: cache-bust to', next);
+            window.location.replace(next);
+          } catch(__) {
+            // Son çare
                   window.location.href = window.location.href;
                 }
               }
@@ -1187,6 +1186,18 @@
             handleLogin();
           }
         });
+        // Parola yönetimi modalında da Enter ile çalışsın
+        setTimeout(() => {
+          const modalCurrentPw = document.getElementById('modal_currentPw');
+          const modalChangePwBtn = document.getElementById('modal_changePwBtn');
+          if (modalCurrentPw && modalChangePwBtn) {
+            modalCurrentPw.addEventListener('keydown', function(e) {
+              if (e.key === 'Enter') {
+                modalChangePwBtn.click();
+              }
+            });
+          }
+        }, 500);
           if (remember) {
             // persist logged-in state
             localStorage.setItem('admin_logged_in', '1');
@@ -2013,29 +2024,26 @@
             btn.innerHTML = 'Kaydet';
           }
         };
-            for (const ep of endpoints){
-              try {
-                const token = localStorage.github_token || localStorage.gh_token;
-                const headers = { 'Content-Type': 'application/json' };
-                if (token) headers['Authorization'] = 'token ' + token;
-                const res = await fetch(ep, { method: 'POST', headers, body: JSON.stringify(payload) });
-                lastRes = res;
-                if (res.ok) { ok = true; break; }
-              } catch (e) { lastRes = e; }
-            }
-            if (ok) {
-              alert('Değişiklikler GitHub deposuna işlendi.');
-            } else {
-              let errMsg = 'bilinmiyor';
-              if (lastRes) {
-                if (lastRes.statusText) errMsg = lastRes.statusText;
-                else if (lastRes.message) errMsg = lastRes.message;
-              }
-              alert('GitHub kaydı başarısız: ' + errMsg);
-            }
-          }catch(err){ console.error('push to github failed', err); alert('GitHub kaydı sırasında hata: ' + err.message); }
-        });
-      });
+        for (const ep of endpoints) {
+          try {
+            const token = localStorage.github_token || localStorage.gh_token;
+            const headers = { 'Content-Type': 'application/json' };
+            if (token) headers['Authorization'] = 'token ' + token;
+            const res = await fetch(ep, { method: 'POST', headers, body: JSON.stringify(payload) });
+            lastRes = res;
+            if (res.ok) { ok = true; break; }
+          } catch (e) { lastRes = e; }
+        }
+        if (ok) {
+          alert('Değişiklikler GitHub deposuna işlendi.');
+        } else {
+          let errMsg = 'bilinmiyor';
+          if (lastRes) {
+            if (lastRes.statusText) errMsg = lastRes.statusText;
+            else if (lastRes.message) errMsg = lastRes.message;
+          }
+          alert('GitHub kaydı başarısız: ' + errMsg);
+        }
 
       // helper: commit files to repo via serverless endpoints
       async function commitFilesToRepo(files, message){
