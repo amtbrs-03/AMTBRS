@@ -519,7 +519,10 @@
       </div>
 
       <div class="card">
-        <div class="section-header">🛍️ Kayıtlı Ürünler</div>
+        <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+          <span>🛍️ Kayıtlı Ürünler</span>
+          <button id="refreshProductsBtn" class="btn btn-ghost" type="button" style="font-size:0.95rem;">🔄 Yenile</button>
+        </div>
         <div id="products" class="products-list"></div>
         <script>
         // Kayıtlı ürünleri dinamik ve ayarlanabilir şekilde göster
@@ -593,7 +596,19 @@
           }
         }
         // Sayfa yüklendiğinde ürünleri göster
-        window.addEventListener('DOMContentLoaded', renderAdminProducts);
+        window.addEventListener('DOMContentLoaded', function(){
+          renderAdminProducts();
+          var btn = document.getElementById('refreshProductsBtn');
+          if(btn){
+            btn.onclick = function(){
+              btn.disabled = true;
+              var orig = btn.innerHTML;
+              btn.innerHTML = '⏳ Yenileniyor...';
+              renderAdminProducts();
+              setTimeout(function(){ btn.disabled = false; btn.innerHTML = orig; }, 1200);
+            };
+          }
+        });
         window.renderAdminProducts = renderAdminProducts;
         </script>
       </div>
