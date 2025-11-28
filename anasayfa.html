@@ -461,28 +461,47 @@
         .cart-total { text-align:right; margin-top:1rem; font-weight:700; color:#0b1220 }
 
         @media (max-width:700px) {
-            /* General spacing and layout tweaks for small screens */
-            .hero { padding: 3rem 1rem 4rem; }
-            .hero h1 { font-size:1.6rem; line-height:1.15; }
-            .hero p { font-size:1rem; }
-
-            /* Products */
-            .products-wrapper { padding: 0 1rem 2rem; }
-            .products { gap:0.9rem; grid-template-columns: repeat(auto-fit, minmax(190px,1fr)); }
-            .product-image { aspect-ratio: 1 / 1; font-size:2.2rem }
-            .product-card { padding:.8rem; border-radius:10px }
-
-            /* Nav and header */
-            header nav { padding: 0 1rem; }
-            .nav-links { gap:0.6rem; flex-wrap:wrap; align-items:center; }
-            .nav-links li { margin-bottom: 0.3rem; }
+            /* Mobilde nav butonları yatayda kaydırılabilir ve dokunmatik dostu */
+            header nav { padding: 0 0.5rem; }
+            .nav-links {
+                gap:0.4rem;
+                flex-wrap:nowrap;
+                overflow-x:auto;
+                -webkit-overflow-scrolling:touch;
+                align-items:center;
+                padding-bottom:0.5rem;
+            }
+            .nav-links li {
+                margin-bottom: 0;
+                flex-shrink:0;
+            }
+            .contact-btn {
+                padding: 1rem 1.2rem;
+                font-size: 1.08rem;
+                min-width: 110px;
+                border-radius: 14px;
+            }
+            .cart-btn, .auth-btn {
+                padding: 1rem 1.2rem;
+                font-size: 1.08rem;
+                min-width: 110px;
+                border-radius: 14px;
+            }
             .nav-bottom { margin-top: 0.5rem; }
 
-            /* Modals and widgets */
-            .modal-content { width:95%; max-width:520px; margin:6% auto; }
-            #paymentWidget { right: 0.5rem; left: 0.5rem; width: auto; bottom: 1rem; }
-            .cart-btn, .auth-btn { padding: 0.4rem 0.6rem; font-size: 0.95rem; }
-            body { padding-bottom: 5rem; }
+            /* Hero ve grid mobil optimize */
+            .hero { padding: 2.2rem 0.7rem 3rem; }
+            .hero h1 { font-size:1.25rem; line-height:1.15; }
+            .hero p { font-size:0.98rem; }
+            .products-wrapper { padding: 0 0.5rem 1.2rem; }
+            .products { gap:0.6rem; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); }
+            .product-image { aspect-ratio: 1 / 1; font-size:1.6rem; height:120px; }
+            .product-card { padding:.6rem; border-radius:8px }
+
+            /* Modals ve widgetlar mobilde tam ekran ve büyük padding */
+            .modal-content { width:98%; max-width:98%; margin:4% auto; padding:1.2rem; border-radius:16px; }
+            #paymentWidget { right: 0.3rem; left: 0.3rem; width: auto; bottom: 0.7rem; }
+            body { padding-bottom: 6rem; }
         }
 
         @media (max-width:480px) {
