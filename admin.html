@@ -1652,11 +1652,11 @@
         document.getElementById('contactBtnText').value = s.contactBtnText || 'İletişim';
       }
 
-      // Backward compatibility: some older code calls getToken(); provide alias.
-      if (typeof getToken !== 'function') {
-        function getToken(){
+      // Backward compatibility: define global token accessor (Safari/old browsers block-scope fix)
+      if (!('getToken' in window)) {
+        window.getToken = function(){
           return (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
-        }
+        };
       }
 
       const saveSettingsBtn = document.getElementById('saveSettings');
