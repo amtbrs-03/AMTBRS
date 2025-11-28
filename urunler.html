@@ -4,41 +4,218 @@
   <meta charset="UTF-8">
   <title>Ürünler</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <style>
-    body { font-family: 'Inter', Arial, sans-serif; background: #f7fafc; margin:0; }
-    .container { max-width: 1100px; margin: 2.5rem auto; padding: 0 1.5rem; }
-    h1 { font-size:2.1rem; font-weight:800; color:#0b1220; margin-bottom:2rem; }
-    .products-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1.5rem; }
-    .product-card { background:#fff; border-radius:12px; box-shadow:0 2px 16px #0001; padding:1.2rem; display:flex; flex-direction:column; align-items:center; }
-    .product-image { width:100%; max-width:180px; aspect-ratio:1/1; border-radius:8px; background:#e0e7ef; margin-bottom:1rem; background-size:cover; background-position:center 70%; display:flex; align-items:center; justify-content:center; font-size:2.5rem; }
-    .product-name { font-weight:700; font-size:1.15rem; margin-bottom:0.5rem; text-align:center; }
-    .product-price { font-weight:800; color:#059669; font-size:1.08rem; margin-bottom:0.5rem; }
-    .product-badge { background:#10b981; color:#fff; font-size:0.92rem; font-weight:600; border-radius:6px; padding:2px 10px; margin-bottom:0.5rem; }
-    @media (max-width:600px) { .container{padding:0 0.5rem;} .products-grid{gap:0.7rem;} }
-  </style>
+    <style>
+    /* ...existing code from anasayfa.html <style> ... */
+    html, body { height: 100%; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: #0b2f1f;
+      background: radial-gradient(1200px 600px at 10% 10%, rgba(34,197,94,0.10), transparent),
+            radial-gradient(800px 400px at 90% 90%, rgba(16,185,129,0.08), transparent),
+            linear-gradient(180deg, #e6f7ec 0%, #064e3b 100%);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      min-height: 100%;
+      padding-bottom: 4rem;
+    }
+    header {
+      background: rgba(30, 143, 85, 0.6);
+      color: white;
+      padding: 1rem 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(6px);
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 2rem;
+      position: relative;
+    }
+    .logo { 
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.12rem 0.5rem;
+      border-radius: 10px;
+      position: relative;
+      transform-style: preserve-3d;
+      perspective: 800px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+    }
+    .logo-icon { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; }
+    .logo-icon svg{ display:block; width:28px; height:28px; filter: drop-shadow(0 6px 10px rgba(3,37,18,0.06)); transform: translateZ(6px); animation: floatLogo 6s ease-in-out infinite; }
+    @keyframes floatLogo { 0% { transform: translateZ(6px) translateY(0) rotateZ(0deg); } 50% { transform: translateZ(8px) translateY(-4px) rotateZ(-2deg); } 100% { transform: translateZ(6px) translateY(0) rotateZ(0deg); } }
+    .logo-text { font-size: 1.05rem; font-weight: 800; letter-spacing: 0.4px; display:inline-block; line-height:1; background-image: linear-gradient(90deg, #ffffff 0%, #d4fff0 45%, #b8f4c9 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 10px 18px rgba(3,37,18,0.18), 0 2px 6px rgba(0,0,0,0.08); transition: transform 220ms cubic-bezier(.2,.9,.2,1), text-shadow 220ms; transform: translateZ(0); }
+    .logo:hover .logo-text{ transform: translateY(-4px) rotateX(6deg) scale(1.02); text-shadow: 0 20px 30px rgba(3,37,18,0.22); }
+    .nav-links { list-style: none; display: flex; gap: 1.5rem; align-items: center; }
+    .nav-links a { color: rgba(255,255,255,0.9); text-decoration: none; transition: 0.25s; }
+    .nav-links a:hover { color: #b8d4ff; transform: translateY(-2px); }
+    .contact-btn {
+      background: linear-gradient(90deg,#10b981,#059669);
+      color: white;
+      padding: 0.45rem 0.7rem;
+      border-radius: 10px;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      font-weight:700;
+      box-shadow: 0 8px 22px rgba(16,185,129,0.18);
+    }
+    .contact-btn.active {
+      box-shadow: 0 10px 30px rgba(16,185,129,0.28);
+      transform: translateY(-1px);
+      border: 1px solid rgba(16,185,129,0.12);
+    }
+    .contact-btn:focus { outline: 3px solid rgba(16,185,129,0.18); }
+    /* Products grid and card styles from anasayfa */
+    .products-wrapper {
+      max-width: 1200px;
+      margin: 6rem auto 0;
+      padding: 0 2rem 3rem;
+      perspective: 1400px;
+    }
+    .products {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.2rem;
+      transform-style: preserve-3d;
+    }
+    .product-card {
+      position: relative;
+      background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(245,245,255,0.9));
+      border-radius: 12px;
+      overflow: visible;
+      padding: 1rem;
+      box-shadow:
+        0 30px 60px rgba(2,6,23,0.6),
+        0 8px 18px rgba(2,6,23,0.35),
+        inset 0 1px 0 rgba(255,255,255,0.6);
+      transform-style: preserve-3d;
+      transition: transform 400ms cubic-bezier(.2,.9,.2,1), box-shadow 300ms;
+      will-change: transform;
+      cursor: pointer;
+      border: 1px solid rgba(10,12,30,0.06);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .product-image {
+      width: 100%;
+      max-width: 180px;
+      height: 180px;
+      background: linear-gradient(135deg, rgba(102,126,234,0.12), rgba(118,75,162,0.08));
+      background-position: center 72% !important;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.2rem;
+      transform: translateZ(60px);
+      transition: transform 350ms cubic-bezier(.2,.9,.2,1);
+      box-shadow: 0 18px 40px rgba(102,126,234,0.12), inset 0 -6px 18px rgba(0,0,0,0.06);
+      margin-bottom: .9rem;
+      user-select: none;
+    }
+    .product-card:hover .product-image {
+      transform: translateZ(90px) translateY(-6px) rotateZ(-2deg);
+    }
+    .product-name {
+      font-size: 1.05rem;
+      margin-bottom: .5rem;
+      color: #0b1220;
+      font-weight: 600;
+      letter-spacing: .2px;
+      text-align: center;
+    }
+    .product-price {
+      color: #6b46c1;
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      text-shadow: 0 6px 18px rgba(107,70,193,0.08);
+      text-align: center;
+    }
+    .product-badge {
+      background:#10b981; color:#fff; font-size:0.92rem; font-weight:600; border-radius:6px; padding:2px 10px; margin-bottom:0.5rem; text-align:center;
+    }
+    @media (max-width:700px) {
+      header nav { padding: 0 1rem; }
+      .products-wrapper { padding: 0 1rem 2rem; }
+      .products { gap:0.9rem; grid-template-columns: repeat(auto-fit, minmax(190px,1fr)); }
+      .product-image { aspect-ratio: 1 / 1; font-size:2.2rem }
+      .product-card { padding:.8rem; border-radius:10px }
+    }
+    @media (max-width:480px) {
+      header nav { padding: 0 0.8rem; }
+      .products { grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap:0.7rem; }
+      .product-image { aspect-ratio: 1 / 1; font-size:1.8rem; }
+      .product-price { font-size:1.05rem; }
+      .product-name { font-size:0.98rem; }
+      .product-card { padding:.7rem; border-radius:8px }
+    }
+    </style>
 </head>
-<body>
-  <div class="container">
-    <h1>Ürünler</h1>
-    <div id="productsGrid" class="products-grid"></div>
-    <div id="errorMsg" style="color:#c00;margin-top:2rem;font-weight:600"></div>
-    <!-- Ürün detay modalı -->
-    <div id="productModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.18);z-index:99;align-items:center;justify-content:center;">
-      <div id="productModalContent" style="background:#fff;border-radius:10px;box-shadow:0 2px 16px #0002;padding:24px 20px;max-width:340px;width:96vw;position:relative;">
-        <button id="closeProductModal" style="position:absolute;top:8px;right:8px;background:#eee;border:none;border-radius:6px;padding:4px 10px;font-size:1.1rem;cursor:pointer;">✕</button>
-        <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:1rem;">
-          <button id="imgPrevBtn" style="background:#eee;border:none;border-radius:6px;padding:4px 10px;font-size:1.1rem;cursor:pointer;">◀</button>
-          <div id="modalImage" style="width:160px;height:160px;border-radius:8px;background:#e0e7ef;background-size:cover;background-position:center 70%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;overflow:hidden;"></div>
-          <button id="imgNextBtn" style="background:#eee;border:none;border-radius:6px;padding:4px 10px;font-size:1.1rem;cursor:pointer;">▶</button>
-        </div>
-        <div id="modalThumbs" style="display:flex;gap:6px;justify-content:center;margin-bottom:0.7rem;"></div>
-        <div id="modalBadge" style="margin-bottom:0.5rem;"></div>
-        <div id="modalName" style="font-weight:700;font-size:1.15rem;margin-bottom:0.5rem;text-align:center;"></div>
-        <div id="modalPrice" style="font-weight:800;color:#059669;font-size:1.08rem;margin-bottom:0.5rem;text-align:center;"></div>
-        <div id="modalDesc" style="color:#334155;font-size:0.98rem;margin-top:0.7rem;text-align:center;"></div>
+  <body>
+    <header>
+      <nav>
+        <div class="logo"><a href="/" style="color:inherit;text-decoration:none"><span class="logo-icon" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="28" height="28" role="img" aria-label="ERN logo" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="g1" x1="0" x2="1" y1="0" y2="1">
+                <stop offset="0%" stop-color="#8EE7A3" />
+                <stop offset="100%" stop-color="#32A852" />
+              </linearGradient>
+              <linearGradient id="g2" x1="0" x2="1" y1="0" y2="1">
+                <stop offset="0%" stop-color="#FFD6E0" />
+                <stop offset="100%" stop-color="#FF9AB3" />
+              </linearGradient>
+            </defs>
+            <path d="M36.8 10.2c-6.6 1-13.6 5.5-18.6 10.6-5 5-8.6 11.9-7.6 18.5 6.7-1 13.8-5.6 18.9-10.7 5-5 8.6-11.8 7.3-18.4z" fill="url(#g1)" opacity="0.98"/>
+            <path d="M13 34c6-6 14-13 22-16" stroke="#0A6A2B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.9"/>
+            <g transform="translate(34,10)">
+              <circle cx="0" cy="0" r="3.2" fill="url(#g2)" stroke="#FF6F8E" stroke-width="0.6"/>
+              <path d="M-1.2 -1.2c1-1 2-1.2 2.8 0" stroke="#FF6F8E" stroke-width="0.6" stroke-linecap="round" fill="none"/>
+            </g>
+          </svg>
+        </span><span class="logo-text">ERN Tropikal Çiçek</span></a></div>
+        <ul class="nav-links">
+          <li><a class="contact-btn" href="/">Ana Sayfa</a></li>
+          <li><a class="contact-btn active" href="urunler.html">Ürünler</a></li>
+        </ul>
+      </nav>
+    </header>
+    <main>
+      <div class="products-wrapper">
+        <div class="products-header"><span class="products-title">Ürünler</span></div>
+        <div id="productsGrid" class="products"></div>
+        <div id="errorMsg" style="color:#c00;margin-top:2rem;font-weight:600"></div>
       </div>
-    </div>
-  </div>
+      <!-- Ürün detay modalı -->
+      <div id="productModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.18);z-index:99;align-items:center;justify-content:center;">
+        <div id="productModalContent" style="background:#fff;border-radius:10px;box-shadow:0 2px 16px #0002;padding:24px 20px;max-width:340px;width:96vw;position:relative;">
+          <button id="closeProductModal" style="position:absolute;top:8px;right:8px;background:#eee;border:none;border-radius:6px;padding:4px 10px;font-size:1.1rem;cursor:pointer;">✕</button>
+          <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:1rem;">
+            <button id="imgPrevBtn" style="background:#eee;border:none;border-radius:6px;padding:4px 10px;font-size:1.1rem;cursor:pointer;">◀</button>
+            <div id="modalImage" style="width:160px;height:160px;border-radius:8px;background:#e0e7ef;background-size:cover;background-position:center 70%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;overflow:hidden;"></div>
+            <button id="imgNextBtn" style="background:#eee;border:none;border-radius:6px;padding:4px 10px;font-size:1.1rem;cursor:pointer;">▶</button>
+          </div>
+          <div id="modalThumbs" style="display:flex;gap:6px;justify-content:center;margin-bottom:0.7rem;"></div>
+          <div id="modalBadge" style="margin-bottom:0.5rem;"></div>
+          <div id="modalName" style="font-weight:700;font-size:1.15rem;margin-bottom:0.5rem;text-align:center;"></div>
+          <div id="modalPrice" style="font-weight:800;color:#059669;font-size:1.08rem;margin-bottom:0.5rem;text-align:center;"></div>
+          <div id="modalDesc" style="color:#334155;font-size:0.98rem;margin-top:0.7rem;text-align:center;"></div>
+        </div>
+      </div>
+    </main>
   <script>
     let modalImgIdx = 0, modalImgs = [];
     function showProductModal(p) {
