@@ -754,7 +754,7 @@
                 
 
                 <!-- Contact dropdown panel (hidden by default) -->
-                <div id="contactPanel" class="contact-panel hidden" role="region" aria-hidden="true" aria-labelledby="contactBtn">
+                <div id="contactPanel" class="contact-panel hidden" role="region" aria-hidden="true" aria-labelledby="contactBtn" style="position:fixed;left:0;top:0;transform:translate(-9999px,-9999px);background:rgba(255,255,255,0.98);border-radius:12px;box-shadow:0 20px 60px rgba(2,6,23,0.2);padding:0;z-index:1001;border:2px solid rgba(11,47,31,0.1);">
                     <div style="padding:0.8rem 1rem; max-width:360px;">
                         <strong id="contactPanelTitle" style="display:block; margin-bottom:0.4rem; color:#0b1220">İletişim</strong>
                         <div id="contactPanelDesc" style="font-size:0.95rem; color:#334155; margin-bottom:0.5rem">Bizimle iletişime geçmek için aşağıdaki seçenekleri kullanabilirsiniz.</div>
@@ -1296,6 +1296,27 @@
                             panel.classList.remove('hidden');
                             panel.setAttribute('aria-hidden', 'false');
                             panel.style.display = '';
+                            // Position panel near the button (popover style)
+                                                        try{
+                                                                const rect = btn.getBoundingClientRect();
+                                                                const gap = 8;
+                                                                const maxWidth = 360;
+                                                                let left = rect.left;
+                                                                let top = rect.bottom + gap;
+                                                                // Flip horizontally if overflow on the right
+                                                                if (left + maxWidth + 8 > window.innerWidth) {
+                                                                    left = Math.max(8, window.innerWidth - maxWidth - 8);
+                                                                }
+                                                                // Flip vertically if overflow at bottom: place above button
+                                                                const panelHeight = Math.min(260, window.innerHeight - 40);
+                                                                if (top + panelHeight + 8 > window.innerHeight) {
+                                                                    top = Math.max(8, rect.top - gap - panelHeight);
+                                                                }
+                                                                panel.style.transform = 'translate(0,0)';
+                                                                panel.style.left = Math.max(8, left) + 'px';
+                                                                panel.style.top = Math.max(8, top) + 'px';
+                                                                panel.style.maxWidth = maxWidth + 'px';
+                                                            }catch(_){/* ignore */}
                             if (btn) btn.setAttribute('aria-expanded', 'true');
                             // focus first focusable element inside panel for accessibility
                             const focusable = panel.querySelector('a, button, [tabindex]:not([tabindex="-1"])');
@@ -1315,6 +1336,8 @@
                         panel.classList.add('hidden');
                         panel.setAttribute('aria-hidden', 'true');
                         panel.style.display = 'none';
+                        // Reset offscreen transform so next open positions fresh
+                        panel.style.transform = 'translate(-9999px,-9999px)';
                         if (btn) btn.setAttribute('aria-expanded', 'false');
                     }
 
@@ -2621,6 +2644,7 @@
                         const user = getCurrentUser();
                         if (!user) return;
                         localStorage.setItem(cartKeyForUser(user.email), JSON.stringify(cart));
+                        try { persistCartSnapshot(cart, user); } catch(e) { /* sessiz */ }
                     }
 
                     // showToast is suppressed (no-op) to avoid UI notifications
@@ -2744,6 +2768,41 @@
                         saveCart(cart);
                         renderCart();
                         updateCartCount();
+                    }
+
+                    /* --- Cart snapshot persistence (admin canlı sepet takibi) --- */
+                    // carts/<email>.json dosyasına snapshot yazar. Aynı içerik veya çok sık yazım engellenir.
+                    let lastCartSnapshotJson = null;
+                    let lastCartSnapshotTime = 0;
+                    const CART_MIN_INTERVAL_MS = 15000; // 15 sn altı yazım yok
+
+                    async function persistCartSnapshot(cart, user){
+                        if (!user || !user.email) return;
+                        try {
+                            const snapshot = {
+                                email: user.email,
+                                name: user.name || '',
+                                updatedAt: Date.now(),
+                                totalQty: cart.reduce((s,i)=> s + (i.qty||0), 0),
+                                totalPrice: cart.reduce((s,i)=> s + (i.price||0) * (i.qty||0), 0),
+                                items: cart.map(i=>({ id: i.id, name: i.name, price: i.price, qty: i.qty||1 }))
+                            };
+                            const json = JSON.stringify(snapshot);
+                            const now = Date.now();
+                            if (json === lastCartSnapshotJson && (now - lastCartSnapshotTime) < CART_MIN_INTERVAL_MS) {
+                                return; // değişiklik yok veya çok sık
+                            }
+                            lastCartSnapshotJson = json; lastCartSnapshotTime = now;
+                            const contentBase64 = btoa(unescape(encodeURIComponent(json)));
+                            const payload = { files: [{ path: `carts/${encodeURIComponent(user.email)}.json`, contentBase64 }], message: `chore: cart snapshot ${user.email}` };
+                            const endpoints = ['/.netlify/functions/commit-file','/api/commit-file','/functions/commit-file'];
+                            for (const ep of endpoints) {
+                                try {
+                                    const res = await fetch(ep, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+                                    if (res.ok) break;
+                                } catch(e) { /* ignore */ }
+                            }
+                        } catch(e) { /* sessiz */ }
                     }
 
                     /* --- Mini cart rendering & behavior --- */

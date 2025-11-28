@@ -235,9 +235,6 @@
       position: fixed;
       z-index: 1000;
       left: 0;
-        <!-- Product Image Uploader -->
-        <section id="productImageUploader" style="max-width:900px;margin:2rem auto;padding:1rem;border:1px solid #e5e7eb;border-radius:12px;background:#fff">
-          <h2 style="margin-bottom:0.75rem;color:#0b1220">Ürün Fotoğraf Yükleme</h2>
       top: 0;
       width: 100%;
       height: 100%;
@@ -260,123 +257,6 @@
       padding: 2rem;
       border-radius: 20px;
       box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        // ---- Product Image Upload Helpers ----
-        (function(){
-          const MAX_W = 1200, MAX_H = 1200, QUALITY = 0.85;
-          const owner = 'amtbrs-03';
-          const repo = 'AMTBRS';
-          const branch = 'site-release';
-
-          const fileInput = document.getElementById('piuFile');
-          const canvas = document.getElementById('piuPreview');
-          const resizeBtn = document.getElementById('piuResizeBtn');
-          const uploadBtn = document.getElementById('piuUploadBtn');
-          const productIdEl = document.getElementById('piuProductId');
-          const statusEl = document.getElementById('piuStatus');
-
-          let originalImageBitmap = null;
-
-          function setStatus(msg, ok){ if (statusEl) { statusEl.textContent = msg; statusEl.style.color = ok ? '#0b1220' : '#b91c1c'; } }
-
-          async function readFileToBitmap(file){
-            const blob = file instanceof Blob ? file : null;
-            if (!blob) throw new Error('Geçersiz dosya');
-            const bitmap = await createImageBitmap(blob);
-            return bitmap;
-          }
-
-          function drawResized(bitmap){
-            const ctx = canvas.getContext('2d');
-            // kare tuval 1200x1200
-            canvas.width = MAX_W; canvas.height = MAX_H;
-            // kaynak oranını koru ve merkeze yerleştir
-            const srcW = bitmap.width, srcH = bitmap.height;
-            const scale = Math.min(MAX_W/srcW, MAX_H/srcH);
-            const drawW = Math.round(srcW*scale), drawH = Math.round(srcH*scale);
-            const dx = Math.round((MAX_W - drawW)/2), dy = Math.round((MAX_H - drawH)/2);
-            ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,MAX_W,MAX_H);
-            ctx.imageSmoothingQuality = 'high';
-            ctx.drawImage(bitmap, 0,0, srcW,srcH, dx,dy, drawW,drawH);
-          }
-
-          async function canvasToJpegBlob(){
-            return await new Promise((resolve)=>{
-              canvas.toBlob((blob)=>resolve(blob), 'image/jpeg', QUALITY);
-            });
-          }
-
-          async function blobToBase64(blob){
-            const arrBuf = await blob.arrayBuffer();
-            // convert to base64
-            const uint8 = new Uint8Array(arrBuf);
-            let binary = '';
-            for (let i=0; i<uint8.length; i++) binary += String.fromCharCode(uint8[i]);
-            return btoa(binary);
-          }
-
-          async function saveImageToGitHub(productId, base64Content){
-            const token = (localStorage.getItem('gh_token')||'').trim();
-            if (!token) throw new Error('GitHub token eksik (localStorage: gh_token).');
-            const path = `images/products/${productId}.jpg`;
-            const base = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
-            // mevcut dosya sha kontrolü
-            let sha = undefined;
-            const check = await fetch(base + `?ref=${branch}`, { headers:{ 'Authorization': 'Bearer '+token, 'Accept':'application/vnd.github+json' } });
-            if (check.status === 200) { const j = await check.json(); sha = j.sha; }
-            else if (check.status !== 404) { throw new Error('Mevcut dosya kontrol hatası: '+check.status); }
-
-            const body = { message: `feat: ürün resmi ${productId}.jpg`, content: base64Content, branch };
-            if (sha) body.sha = sha;
-            const put = await fetch(base, { method:'PUT', headers:{ 'Authorization':'Bearer '+token, 'Accept':'application/vnd.github+json', 'Content-Type':'application/json' }, body: JSON.stringify(body) });
-            if (!put.ok) { const t = await put.text(); throw new Error('Yükleme başarısız: '+put.status+' '+t); }
-            return path;
-          }
-
-          async function updateProductsJsonWithImage(productId, imagePath){
-            const token = (localStorage.getItem('gh_token')||'').trim();
-            if (!token) throw new Error('GitHub token eksik (localStorage: gh_token).');
-            const base = `https://api.github.com/repos/${owner}/${repo}/contents/products.json`;
-            // mevcut json çek
-            const res = await fetch(base + `?ref=${branch}`, { headers:{ 'Authorization': 'Bearer '+token, 'Accept':'application/vnd.github+json' } });
-            let items = [], sha = undefined;
-            if (res.status === 200) {
-              const j = await res.json(); sha = j.sha; const decoded = atob(j.content||''); const json = JSON.parse(decoded||'{}'); items = json.items || []; 
-            }
-            // ilgili ürün satırını güncelle
-            let found = false;
-            items = items.map(it=>{ if (String(it.id) === String(productId)) { found = true; return { ...it, image: imagePath }; } return it; });
-            if (!found) items.push({ id: String(productId), name: `Ürün ${productId}`, price: 0, badge: '', image: imagePath });
-            const content = btoa(unescape(encodeURIComponent(JSON.stringify({ updatedAt: Date.now(), items }, null, 2))));
-            const body = { message: `chore: ürün ${productId} resmi yolu eklendi`, content, branch };
-            if (sha) body.sha = sha;
-            const put = await fetch(base, { method:'PUT', headers:{ 'Authorization':'Bearer '+token, 'Accept':'application/vnd.github+json', 'Content-Type':'application/json' }, body: JSON.stringify(body) });
-            if (!put.ok) { const t = await put.text(); throw new Error('products.json güncelleme başarısız: '+put.status+' '+t); }
-          }
-
-          // events
-          fileInput && fileInput.addEventListener('change', async (e)=>{
-            const f = e.target.files && e.target.files[0]; if (!f) return;
-            try{ originalImageBitmap = await readFileToBitmap(f); drawResized(originalImageBitmap); setStatus('Resim yüklendi, önizleme hazır.', true); }catch(err){ setStatus('Resim yükleme hatası: '+(err.message||err), false); }
-          });
-
-          resizeBtn && resizeBtn.addEventListener('click', ()=>{
-            try{ if (!originalImageBitmap) throw new Error('Önce resim seçin.'); drawResized(originalImageBitmap); setStatus('Resim 1200x1200 tuvale boyutlandırıldı.', true); }catch(err){ setStatus(err.message||String(err), false); }
-          });
-
-          uploadBtn && uploadBtn.addEventListener('click', async ()=>{
-            const productId = (productIdEl && productIdEl.value || '').trim();
-            if (!productId) { setStatus('Ürün ID giriniz.', false); return; }
-            try{
-              setStatus('Yükleniyor...', true);
-              const blob = await canvasToJpegBlob();
-              const base64 = await blobToBase64(blob);
-              const imagePath = await saveImageToGitHub(productId, base64);
-              await updateProductsJsonWithImage(productId, imagePath);
-              setStatus('Yükleme başarılı: '+imagePath, true);
-            }catch(err){ setStatus('Yükleme hatası: '+(err.message||err), false); }
-          });
-        })();
-        // ---- /Product Image Upload Helpers ----
       width: 90%;
       max-width: 1000px;
       max-height: 85vh;
@@ -474,7 +354,10 @@
         <div class="title">🌸 ERN-ÇİÇEK Admin Paneli</div>
         <div class="subtitle">Ürün, Kullanıcı ve Sipariş Yönetimi</div>
       </div>
-      <a href="anasayfa.html" class="btn btn-ghost">🏠 Siteyi Görüntüle</a>
+      <div style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;">
+        <a href="anasayfa.html" class="btn btn-ghost" title="Siteyi yeni sekmede aç">🏠 Siteyi Görüntüle</a>
+        <button id="pageRefreshBtn" class="btn btn-ghost" type="button" title="Admin sayfasını yenile">🔄 Yenile</button>
+      </div>
     </div>
   </div>
 
@@ -509,6 +392,34 @@
       <div class="card">
         <div class="section-header">🛍️ Kayıtlı Ürünler</div>
         <div id="products" class="products-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="section-header">🖼️ GitHub Web Üzerinden Resim Yükleme</div>
+        <div class="small" style="color:#64748b;margin-bottom:0.75rem">GitHub’ın web yükleme arayüzünü açar. Yüklediğiniz dosyayı <code>images/products/&lt;id&gt;.jpg</code> yoluna koyun, ardından aşağıdan ürünle eşleştirin.</div>
+        <div class="controls-row">
+          <input id="ghUploadProductId" type="text" placeholder="Ürün ID (ör. p_abc123)" style="flex:1;min-width:220px" />
+          <button id="openGhUpload" class="btn">GitHub Yüklemeyi Aç</button>
+        </div>
+        <div class="controls-row" style="margin-top:0.75rem">
+          <input id="ghUploadedPath" type="text" placeholder="images/products/&lt;id&gt;.jpg" style="flex:1;min-width:280px" />
+          <button id="applyGhImagePath" class="btn">products.json’a Kaydet</button>
+        </div>
+        <div id="ghUploadMsg" class="small" style="margin-top:0.5rem;color:#64748b"></div>
+      </div>
+
+      <div class="card">
+        <div class="section-header">🛒 Canlı Sepet Takibi</div>
+        <div class="small" style="color:#64748b;margin-bottom:0.75rem">Kullanıcıların son sepetteki ürünlerini görüntüler. Anasayfa her değişiklikte sepeti GitHub'a (carts/<email>.json) yazar.</div>
+        <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;margin-bottom:0.5rem;">
+          <button id="liveCartsRefresh" class="btn" type="button">🔄 Yenile</button>
+          <label style="display:flex;align-items:center;gap:0.4rem;font-weight:500;">
+            <input id="liveCartsAuto" type="checkbox" /> Otomatik (30sn)
+          </label>
+          <span id="liveCartsStatus" class="small" style="color:#64748b;">Hazır</span>
+          <button id="liveCartsCleanup" class="btn btn-ghost" type="button" title="24 saatten eski sepet dosyalarını sil">🧹 Eski (>24s) Temizle</button>
+        </div>
+        <div id="liveCartsList" style="overflow-x:auto; border:2px solid #e5e7eb; border-radius:10px; min-height:80px; background:#f9fafb; padding:0.5rem;"></div>
       </div>
 
   <div class="card">
@@ -554,6 +465,86 @@
   <script>
     // XOR decode for GitHub token
     function decodeToken(encoded, key) {
+    // GitHub web upload adapter: open upload UI and persist image path into products.json
+    async function updateProductsJsonImage(productId, imagePath){
+      const token = getGitHubToken();
+      if (!token) throw new Error('GitHub token yok. Ayarlardan yapılandırın.');
+      const owner = 'amtbrs-03';
+      const repo = 'AMTBRS';
+      const branch = 'site-release';
+      const url = `https://api.github.com/repos/${owner}/${repo}/contents/products.json`;
+      const getRes = await fetch(url + `?ref=${branch}`, { headers: { 'Accept':'application/vnd.github.v3+json', 'Authorization': `token ${token}` }, cache: 'no-store' });
+      let items = [], sha = undefined;
+      if (getRes.status === 200){
+        const j = await getRes.json(); sha = j.sha; const decoded = atob((j.content||'').replace(/\n/g,''));
+        try{ const parsed = JSON.parse(decoded); items = Array.isArray(parsed.items) ? parsed.items : (Array.isArray(parsed) ? parsed : []); }catch(_){ items = []; }
+      }
+      let found = false;
+      items = items.map(it => { if (String(it.id) === String(productId)) { found = true; return { ...it, image: imagePath }; } return it; });
+      if (!found) items.push({ id: String(productId), name: `Ürün ${productId}`, price: 0, badge: '', image: imagePath });
+      const nextJson = (items[0] && items[0].name !== undefined) ? { updatedAt: Date.now(), items } : items;
+      const contentBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(nextJson, null, 2))));
+      const body = { message: `chore: ${productId} için resim yolu eklendi (${imagePath})`, content: contentBase64, branch };
+      if (sha) body.sha = sha;
+      const putRes = await fetch(url, { method:'PUT', headers:{ 'Accept':'application/vnd.github.v3+json', 'Authorization': `token ${token}`, 'Content-Type':'application/json' }, body: JSON.stringify(body) });
+      if (!putRes.ok){ const t = await putRes.text().catch(()=> ''); throw new Error(`Kaydetme başarısız: ${putRes.status} ${t}`); }
+      return true;
+    }
+    // Header refresh button wiring
+    (function(){
+      try{
+        const rBtn = document.getElementById('pageRefreshBtn');
+        if (rBtn){
+          rBtn.addEventListener('click', ()=>{
+            // Cache-bypass param ekleyerek sert yenileme (isteğe bağlı)
+            try{ location.reload(); }catch(_){ location.href = location.href.split('#')[0]; }
+          });
+        }
+      }catch(e){ console.warn('Yenile butonu bağlanamadı:', e); }
+    })();
+
+    (function(){
+      const openBtn = document.getElementById('openGhUpload');
+      const applyBtn = document.getElementById('applyGhImagePath');
+      async function verifyGitHubPathExists(path){
+        try{
+          const owner = 'amtbrs-03';
+          const repo = 'AMTBRS';
+          const branch = 'site-release';
+          const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`;
+          const res = await fetch(url, { headers: { 'Accept':'application/vnd.github.v3+json' }, cache: 'no-store' });
+          if (!res.ok) return false;
+          const j = await res.json();
+          return !!(j && j.type === 'file');
+        }catch(_){ return false; }
+      }
+      const pidEl = document.getElementById('ghUploadProductId');
+      const pathEl = document.getElementById('ghUploadedPath');
+      const msgEl = document.getElementById('ghUploadMsg');
+      function setMsg(m, ok){ if (msgEl){ msgEl.textContent = m; msgEl.style.color = ok ? '#065f46' : '#b91c1c'; } }
+      if (openBtn) openBtn.addEventListener('click', ()=>{
+        const pid = (pidEl && pidEl.value || '').trim();
+        const base = 'https://github.com/amtbrs-03/AMTBRS/upload/site-release';
+        const url = base + (pid ? `?suggested_path=images/products/${encodeURIComponent(pid)}.jpg` : '');
+        window.open(url, '_blank', 'noopener');
+        setMsg('GitHub yükleme sayfası açıldı. Dosyayı yükledikten sonra dosya yolunu aşağıya girin.', true);
+      });
+      if (applyBtn) applyBtn.addEventListener('click', async ()=>{
+        const pid = (pidEl && pidEl.value || '').trim();
+        const pth = (pathEl && pathEl.value || '').trim();
+        if (!pid){ setMsg('Ürün ID gerekli.', false); return; }
+        if (!pth || !/^images\/(products|)\/.+\.(jpg|jpeg|png|webp)$/i.test(pth)){ setMsg('Geçerli dosya yolu girin: images/products/<id>.jpg', false); return; }
+        try{
+          setMsg('Doğrulanıyor...', true);
+          const exists = await verifyGitHubPathExists(pth);
+          if (!exists){ setMsg('Dosya depo içinde bulunamadı. Lütfen yükleme yolunu kontrol edin.', false); return; }
+          setMsg('Kaydediliyor...', true);
+          await updateProductsJsonImage(pid, pth);
+          setMsg('✓ products.json güncellendi: ' + pth, true);
+        }
+        catch(e){ setMsg('Hata: ' + (e.message||e), false); }
+      });
+    })();
       let decoded = '';
       for (let i = 0; i < encoded.length; i++) {
         decoded += String.fromCharCode(encoded.charCodeAt(i) ^ key.charCodeAt(i % key.length));
@@ -765,6 +756,8 @@
         const hash = await crypto.subtle.digest('SHA-256', data);
         return toHex(hash);
       }
+      // Parola yönetimi modalındaki scriptler tarafından erişilmesi için globale aç
+      try{ window.hashPassword = hashPassword; }catch(_){}
 
       function showSetPassword(){
         const savedUser = localStorage.getItem(ADMIN_USER_KEY) || '';
@@ -994,9 +987,7 @@
           }
         }
 
-        if (changeBtn) changeBtn.onclick = changeAdminPassword;
-        if (resetBtn) resetBtn.onclick = resetAdminPassword;
-        // Kilit parola yönetimi kaldırıldı
+        // Parola yönetimi işlemleri modal içinde bağlanmaktadır
       }
 
       // Ensure admin UI isn't casually discoverable: require an unlock step
@@ -1241,9 +1232,15 @@
     // Load users from GitHub - now opens modal
     document.getElementById('loadUsersBtn').addEventListener('click', async ()=>{
       const btn = document.getElementById('loadUsersBtn');
-      
-      // Open modal first
-      openUsersModal();
+      // Modalı güvenli şekilde aç (fonksiyon henüz tanımlı değilse inline aç)
+      try{
+        if (typeof openUsersModal === 'function') {
+          openUsersModal();
+        } else {
+          const m = document.getElementById('usersModal');
+          if (m){ m.classList.add('active'); document.body.style.overflow='hidden'; }
+        }
+      }catch(e){ console.warn('users modal açılamadı', e); }
       
       const countEl = document.getElementById('userCountModal');
       const listEl = document.getElementById('usersListModal');
@@ -1893,6 +1890,19 @@
     </div>
   </div>
 
+  <!-- Live Cart Detail Modal -->
+  <div id="liveCartDetailModal" class="modal" aria-hidden="true">
+    <div class="modal-content small-modal">
+      <div class="modal-header">
+        <h2>🛒 Sepet Detayı</h2>
+        <button class="close-modal" onclick="closeLiveCartDetailModal()">✕ Kapat</button>
+      </div>
+      <div id="liveCartDetailBody" class="modal-body" style="max-height:60vh;overflow:auto;">
+        <!-- Dinamik doldurulur -->
+      </div>
+    </div>
+  </div>
+
   <script>
     // Modal functions (orders modal removed - now on separate page)
     function openUsersModal() {
@@ -2289,6 +2299,152 @@
     console.log('=== ADMIN PANELİ YÜKLENDİ ===');
     console.log('usersModal element:', document.getElementById('usersModal'));
     console.log('Note: Orders moved to siparisler.html');
+    // Sepet detayı modal fonksiyonları
+    function openLiveCartDetailModal(email){
+      try{
+        const cache = window.__liveCartsCache || [];
+        const data = cache.find(c=>c.email===email);
+        if(!data) return;
+        const body = document.getElementById('liveCartDetailBody');
+        let html = '';
+        html += `<div style="display:flex;flex-direction:column;gap:0.5rem;margin-bottom:0.75rem;">`;
+        html += `<div style=\"font-weight:600;color:#065f46;\">${escapeHtml(data.email||'')}</div>`;
+        html += `<div style=\"color:#64748b;font-size:0.8rem;\">Güncellendi: ${new Date(data.updatedAt).toLocaleString('tr-TR')}</div>`;
+        html += `<div style=\"display:flex;gap:0.75rem;flex-wrap:wrap;font-size:0.85rem;\"><span><b>Toplam Ürün:</b> ${data.totalQty||0}</span><span><b>Tutar:</b> ₺${(data.totalPrice||0).toFixed(2)}</span></div>`;
+        html += `</div>`;
+        if(Array.isArray(data.items) && data.items.length){
+          html += '<table style="width:100%;border-collapse:collapse;font-size:0.75rem;">';
+          html += '<thead><tr style="background:#f3f4f6"><th style="text-align:left;padding:4px;">Ad</th><th style="padding:4px;">Adet</th><th style="padding:4px;">Birim</th><th style="padding:4px;">Tutar</th></tr></thead><tbody>';
+          data.items.forEach(it=>{
+            const line = (it.price||0)*(it.qty||0);
+            html += `<tr style=\"border-top:1px solid #e5e7eb\"><td style=\"padding:4px;\">${escapeHtml(it.name||'')}</td><td style=\"padding:4px;text-align:center;\">${it.qty||0}</td><td style=\"padding:4px;text-align:right;\">₺${(it.price||0).toFixed(2)}</td><td style=\"padding:4px;text-align:right;font-weight:600;\">₺${line.toFixed(2)}</td></tr>`;
+          });
+          html += '</tbody></table>';
+        } else {
+          html += '<div style="padding:0.5rem;color:#6b7280">Sepet boş.</div>';
+        }
+        body.innerHTML = html;
+        document.getElementById('liveCartDetailModal').classList.add('active');
+        document.body.style.overflow='hidden';
+      }catch(e){ console.error('openLiveCartDetailModal hata', e); }
+    }
+    function closeLiveCartDetailModal(){
+      document.getElementById('liveCartDetailModal').classList.remove('active');
+      document.body.style.overflow='auto';
+    }
+
+    /* --- Canlı Sepet Takibi --- */
+    (function(){
+      const branch = 'site-release';
+      const owner = 'amtbrs-03';
+      const repo = 'AMTBRS';
+      const listEl = document.getElementById('liveCartsList');
+      const statusEl = document.getElementById('liveCartsStatus');
+      const btn = document.getElementById('liveCartsRefresh');
+      const autoChk = document.getElementById('liveCartsAuto');
+      let autoTimer = null;
+
+      function setStatus(msg, good){ if(statusEl){ statusEl.textContent = msg; statusEl.style.color = good ? '#065f46' : '#b45309'; } }
+      function fmtTL(v){ return '₺' + (v||0).toFixed(2); }
+      function humanAgo(ts){ if(!ts) return '-'; const d = Date.now()-ts; const s = Math.floor(d/1000); if(s<60) return s+'sn'; const m=Math.floor(s/60); if(m<60) return m+'dk'; const h=Math.floor(m/60); if(h<24) return h+'sa'; const g=Math.floor(h/24); return g+'g'; }
+
+      async function loadLiveCarts(){
+        try{
+          setStatus('Yükleniyor...', true);
+          if(listEl) listEl.innerHTML = '';
+          const url = `https://api.github.com/repos/${owner}/${repo}/contents/carts?ref=${encodeURIComponent(branch)}`;
+          const res = await fetch(url, { headers:{ 'Accept':'application/vnd.github.v3+json' }, cache:'no-store' });
+          if(res.status === 404){ if(listEl) listEl.innerHTML = '<div style="padding:0.5rem;color:#6b7280">Henüz sepet snapshotı yok.</div>'; setStatus('Boş', true); return; }
+          if(!res.ok){ throw new Error('Liste alınamadı: '+res.status); }
+          const files = await res.json();
+          const cartFiles = Array.isArray(files) ? files.filter(f=>/\.json$/i.test(f.name)) : [];
+          if(!cartFiles.length){ if(listEl) listEl.innerHTML = '<div style="padding:0.5rem;color:#6b7280">Sepet dosyası bulunamadı.</div>'; setStatus('Boş', true); return; }
+          window.__liveCartsCache = []; // reset cache
+          let rowsHtml = '<table style="width:100%;border-collapse:collapse;font-size:0.75rem;">';
+          rowsHtml += '<thead><tr style="background:#f3f4f6"><th style="text-align:left;padding:4px;">Email</th><th style="text-align:left;padding:4px;">Ad</th><th style="text-align:left;padding:4px;">Ürünler</th><th style="padding:4px;">Adet</th><th style="padding:4px;">Toplam</th><th style="padding:4px;">Güncellendi</th></tr></thead><tbody>';
+          for(const f of cartFiles){
+            try{
+              const dRes = await fetch(f.download_url, { cache:'no-store' });
+              if(!dRes.ok) continue;
+              const data = await dRes.json();
+              // cache full data for detail modal
+              window.__liveCartsCache.push(data);
+              const itemsTxt = (data.items||[]).slice(0,5).map(i=>`${i.name} x${i.qty}`).join(', ');
+              rowsHtml += `<tr onclick="openLiveCartDetailModal('${escapeHtml(data.email||'')}')" style="cursor:pointer;border-top:1px solid #e5e7eb;">`+
+                `<td style="padding:4px;font-weight:600;text-decoration:underline;color:#2563eb">${escapeHtml(data.email||'')}</td>`+
+                `<td style="padding:4px">${escapeHtml(data.name||'')}</td>`+
+                `<td style="padding:4px;white-space:nowrap;max-width:260px;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(itemsTxt||'')}</td>`+
+                `<td style="padding:4px;text-align:center;font-weight:600">${data.totalQty||0}</td>`+
+                `<td style="padding:4px;font-weight:700">${fmtTL(data.totalPrice||0)}</td>`+
+                `<td style="padding:4px;color:#64748b">${humanAgo(data.updatedAt)}</td>`+
+              `</tr>`;
+            }catch(e){ console.warn('Sepet dosyası okunamadı', f.name, e); }
+          }
+          rowsHtml += '</tbody></table>';
+          if(listEl) listEl.innerHTML = rowsHtml;
+          setStatus('Güncel', true);
+        }catch(e){
+          console.error('loadLiveCarts hata', e); setStatus('Hata', false);
+          if(listEl) listEl.innerHTML = '<div style="padding:0.5rem;color:#b91c1c">Yükleme hatası: '+escapeHtml(e.message||String(e))+'</div>';
+        }
+      }
+
+      async function cleanupOldCarts(){
+        try{
+          const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
+          if(!token){ return alert('GitHub token gerekli (Ayarlardan girin).'); }
+          setStatus('Temizleniyor...', true);
+          const dirUrl = `https://api.github.com/repos/${owner}/${repo}/contents/carts?ref=${encodeURIComponent(branch)}`;
+          const listRes = await fetch(dirUrl, { headers:{ 'Accept':'application/vnd.github.v3+json', 'Authorization': `token ${token}` }, cache:'no-store' });
+          if(listRes.status === 404){ return alert('carts klasörü yok.'); }
+          if(!listRes.ok){ throw new Error('Liste alınamadı: '+listRes.status); }
+          const files = await listRes.json();
+          const jsonFiles = Array.isArray(files) ? files.filter(f=>/\.json$/i.test(f.name)) : [];
+          if(!jsonFiles.length){ return alert('Silinecek sepet yok.'); }
+          const now = Date.now();
+          const OLD_MS = 24*60*60*1000;
+          const toDelete = [];
+          for(const f of jsonFiles){
+            try{
+              const dRes = await fetch(f.download_url, { cache:'no-store' });
+              if(!dRes.ok) continue;
+              const data = await dRes.json();
+              const age = now - (data.updatedAt || 0);
+              if(!data.updatedAt || age > OLD_MS){
+                toDelete.push({ path: f.path, sha: f.sha, email: data.email||f.name });
+              }
+            }catch(e){ console.warn('Dosya okunamadı temizleme sırasında', f.name, e); }
+          }
+          if(!toDelete.length){ setStatus('Eski yok', true); return alert('24 saatten eski sepet yok.'); }
+          if(!confirm(`${toDelete.length} adet eski sepet silinsin mi?`)) { setStatus('İptal', true); return; }
+          let success = 0;
+          for(const item of toDelete){
+            try{
+              const delUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(item.path)}`;
+              const payload = { message: `chore: eski sepet silindi (${item.email})`, sha: item.sha, branch };
+              const delRes = await fetch(delUrl, { method:'DELETE', headers:{ 'Accept':'application/vnd.github.v3+json','Authorization': `token ${token}`, 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+              if(delRes.ok) success++; else console.warn('Silinemedi', item.path, delRes.status);
+            }catch(e){ console.warn('Silme hatası', item.path, e); }
+          }
+          setStatus(`Temizlendi (${success})`, true);
+          alert(`${success} eski sepet silindi.`);
+          loadLiveCarts();
+        }catch(e){
+          console.error('cleanupOldCarts hata', e);
+          setStatus('Temizleme hatası', false);
+          alert('Temizleme hatası: ' + (e.message||e));
+        }
+      }
+
+      function startAuto(){ if(autoTimer) clearInterval(autoTimer); autoTimer = setInterval(loadLiveCarts, 30000); }
+      function stopAuto(){ if(autoTimer) { clearInterval(autoTimer); autoTimer = null; } }
+
+      if(btn) btn.addEventListener('click', loadLiveCarts);
+      const cleanupBtn = document.getElementById('liveCartsCleanup'); if(cleanupBtn) cleanupBtn.addEventListener('click', cleanupOldCarts);
+      if(autoChk) autoChk.addEventListener('change', ()=>{ if(autoChk.checked){ startAuto(); loadLiveCarts(); } else { stopAuto(); } });
+      // İlk yükleme (auth sonrası görülebilir)
+      setTimeout(()=>{ loadLiveCarts(); }, 1500);
+    })();
   </script>
 </body>
 </html>
