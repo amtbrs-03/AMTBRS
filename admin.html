@@ -396,11 +396,14 @@
 
       <div class="card">
         <div class="section-header">🖼️ GitHub Web Üzerinden Resim Yükleme</div>
-        <div class="small" style="color:#64748b;margin-bottom:0.75rem">GitHub’ın web yükleme arayüzünü açar. Yüklediğiniz dosyayı <code>images/products/&lt;id&gt;.jpg</code> yoluna koyun, ardından aşağıdan ürünle eşleştirin.</div>
+        <div class="small" style="color:#64748b;margin-bottom:0.75rem">GitHub’ın web yükleme arayüzünü açar. Yüklediğiniz dosyayı <code>images/products/&lt;id&gt;.jpg</code> yoluna koyun, ardından aşağıdan ürünle eşleştirin. İsterseniz <strong>otomatik bağlama</strong> ile yükleme tamamlandığında ürünle kendiliğinden eşleştirebilirsiniz.</div>
         <div class="controls-row">
           <input id="ghUploadProductId" type="text" placeholder="Ürün ID (ör. p_abc123)" style="flex:1;min-width:220px" />
           <button id="openGhUpload" class="btn">GitHub Yüklemeyi Aç</button>
         </div>
+        <label style="display:flex;align-items:center;gap:6px;margin-top:0.5rem;font-size:0.92rem;color:#334155">
+          <input id="ghAutoBind" type="checkbox" /> Yükleme sonrası otomatik bağla (2 dakikaya kadar bekler)
+        </label>
         <div class="controls-row" style="margin-top:0.75rem">
           <input id="ghUploadedPath" type="text" placeholder="images/products/&lt;id&gt;.jpg" style="flex:1;min-width:280px" />
           <button id="applyGhImagePath" class="btn">products.json’a Kaydet</button>
@@ -543,6 +546,7 @@
         console.log('[admin] GH upload init');
         const openBtn = document.getElementById('openGhUpload');
         const applyBtn = document.getElementById('applyGhImagePath');
+        const autoBindEl = document.getElementById('ghAutoBind');
         async function verifyGitHubPathExists(path){
           try{
             const owner = 'amtbrs-03';
@@ -566,10 +570,39 @@
         const msgEl = document.getElementById('ghUploadMsg');
         function setMsg(m, ok){ if (msgEl){ msgEl.textContent = m; msgEl.style.color = ok ? '#065f46' : '#b91c1c'; } }
 
+        async function autoBindAfterUpload(pid){
+          if (!pid) { setMsg('Ürün ID gerekli.', false); return false; }
+          setMsg('⌛ Yükleme bekleniyor... (otomatik bağlama etkin)', true);
+          const exts = ['jpg','jpeg','png','webp'];
+          const start = Date.now();
+          const timeout = 120000; // 2 dk
+          while (Date.now() - start < timeout){
+            // iptal kontrolü
+            if (!(autoBindEl && autoBindEl.checked)) { setMsg('Otomatik bağlama iptal edildi.', false); return false; }
+            for (const ext of exts){
+              const pth = `images/products/${pid}.${ext}`;
+              const ok = await verifyGitHubPathExists(pth);
+              if (ok){
+                try{
+                  if (pathEl) pathEl.value = pth;
+                  setMsg('Kaydediliyor...', true);
+                  await updateProductsJsonImage(pid, pth);
+                  setMsg(`✓ products.json güncellendi: ${pth}`, true);
+                  return true;
+                }catch(e){ setMsg('Hata: ' + (e.message||e), false); return false; }
+              }
+            }
+            // 3 sn bekle
+            await new Promise(r=>setTimeout(r, 3000));
+          }
+          setMsg('Dosya bulunamadı. Lütfen yolu elle girip kaydedin.', false);
+          return false;
+        }
+
         // Açma butonu
         if (openBtn){
           console.log('[admin] Binding openGhUpload');
-          openBtn.addEventListener('click', ()=>{
+          openBtn.addEventListener('click', async ()=>{
             const origText = openBtn.innerHTML;
             openBtn.innerHTML = '⏳ Açılıyor...';
             openBtn.disabled = true;
@@ -577,7 +610,13 @@
             const base = 'https://github.com/amtbrs-03/AMTBRS/upload/site-release';
             const url = base + (pid ? `?suggested_path=images/products/${encodeURIComponent(pid)}.jpg` : '');
             window.open(url, '_blank', 'noopener');
-            setMsg('GitHub yükleme sayfası açıldı. Dosyayı yükledikten sonra dosya yolunu aşağıya girin.', true);
+            if (pathEl && pid) pathEl.value = `images/products/${pid}.jpg`;
+            if (autoBindEl && autoBindEl.checked && pid){
+              // otomatik bağlamayı başlat
+              await autoBindAfterUpload(pid);
+            } else {
+              setMsg('GitHub yükleme sayfası açıldı. Dosyayı yükledikten sonra dosya yolunu aşağıya girin.', true);
+            }
             setTimeout(() => { openBtn.innerHTML = origText; openBtn.disabled = false; }, 1000);
           });
         } else {
