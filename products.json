@@ -1,1 +1,30 @@
-[{"id":"1","name":"Ürün 1","price":99.99,"image":"🛍️"},{"id":"2","name":"Ürün 2","price":199.99,"image":"📱"},{"id":"3","name":"Ürün 3","price":149.99,"image":"⌚"}]
+{
+  "updatedAt": 1764364849052,
+  "items": [
+    {
+      "id": "1",
+      "name": "ÃrÃ¼n 1",
+      "price": 99.99,
+      "image": "ðï¸"
+    },
+    {
+      "id": "2",
+      "name": "ÃrÃ¼n 2",
+      "price": 199.99,
+      "image": "ð±"
+    },
+    {
+      "id": "3",
+      "name": "ÃrÃ¼n 3",
+      "price": 149.99,
+      "image": "â"
+    },
+    {
+      "id": "img_1974.jpg",
+      "name": "Ürün img_1974.jpg",
+      "price": 0,
+      "badge": "",
+      "image": "images/products/IMG_1974.JPG"
+    }
+  ]
+}
