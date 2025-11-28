@@ -817,6 +817,19 @@
                             <div class="form-group">
                                 <label>Şifre</label>
                                 <input type="password" id="loginPassword" placeholder="Şifreniz">
+                                    <script>
+                                        document.addEventListener('DOMContentLoaded', function() {
+                                            var pwInput = document.getElementById('loginPassword');
+                                            var loginBtn = document.querySelector('[data-action="login"]');
+                                            if (pwInput && loginBtn) {
+                                                pwInput.addEventListener('keydown', function(e) {
+                                                    if (e.key === 'Enter') {
+                                                        loginBtn.click();
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    </script>
                             </div>
                             <button data-action="login" style="width: 100%; margin-top: 1rem;">Giriş Yap</button>
                         </div>
