@@ -5,14 +5,20 @@ const OWNER = process.env.GITHUB_OWNER || 'amtbrs-03';
 const REPO = process.env.GITHUB_REPO || 'AMTBRS';
 const BRANCH = process.env.GITHUB_BRANCH || 'site-release';
 
+function encodePathSegments(path){
+  return path.split('/').map(seg => encodeURIComponent(seg)).join('/');
+}
+
 async function ghGet(path){
-  const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodeURIComponent(path)}?ref=${BRANCH}`;
+  const encodedPath = encodePathSegments(path);
+  const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodedPath}?ref=${BRANCH}`;
   const res = await fetch(url, { headers: { 'Authorization': `token ${process.env.GITHUB_TOKEN}`, 'User-Agent': 'netlify-function' } });
   return res;
 }
 
 async function ghPut(path, contentBase64, message, sha){
-  const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodeURIComponent(path)}`;
+  const encodedPath = encodePathSegments(path);
+  const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodedPath}`;
   const body = { message: message || `Update ${path}`, content: contentBase64, branch: BRANCH };
   if (sha) body.sha = sha;
   const res = await fetch(url, { method: 'PUT', headers: { 'Authorization': `token ${process.env.GITHUB_TOKEN}`, 'User-Agent': 'netlify-function', 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
