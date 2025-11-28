@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Ürünler</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body { font-family: 'Inter', Arial, sans-serif; background: #f7fafc; margin:0; }
+    .container { max-width: 1100px; margin: 2.5rem auto; padding: 0 1.5rem; }
+    h1 { font-size:2.1rem; font-weight:800; color:#0b1220; margin-bottom:2rem; }
+    .products-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1.5rem; }
+    .product-card { background:#fff; border-radius:12px; box-shadow:0 2px 16px #0001; padding:1.2rem; display:flex; flex-direction:column; align-items:center; }
+    .product-image { width:100%; max-width:180px; aspect-ratio:1/1; border-radius:8px; background:#e0e7ef; margin-bottom:1rem; background-size:cover; background-position:center 70%; display:flex; align-items:center; justify-content:center; font-size:2.5rem; }
+    .product-name { font-weight:700; font-size:1.15rem; margin-bottom:0.5rem; text-align:center; }
+    .product-price { font-weight:800; color:#059669; font-size:1.08rem; margin-bottom:0.5rem; }
+    .product-badge { background:#10b981; color:#fff; font-size:0.92rem; font-weight:600; border-radius:6px; padding:2px 10px; margin-bottom:0.5rem; }
+    @media (max-width:600px) { .container{padding:0 0.5rem;} .products-grid{gap:0.7rem;} }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Ürünler</h1>
+    <div id="productsGrid" class="products-grid"></div>
+    <div id="errorMsg" style="color:#c00;margin-top:2rem;font-weight:600"></div>
+    <!-- Ürün detay modalı -->
+    <div id="productModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.18);z-index:99;align-items:center;justify-content:center;">
+      <div id="productModalContent" style="background:#fff;border-radius:10px;box-shadow:0 2px 16px #0002;padding:24px 20px;max-width:340px;width:96vw;position:relative;">
+        <button id="closeProductModal" style="position:absolute;top:8px;right:8px;background:#eee;border:none;border-radius:6px;padding:4px 10px;font-size:1.1rem;cursor:pointer;">✕</button>
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:1rem;">
+          <button id="imgPrevBtn" style="background:#eee;border:none;border-radius:6px;padding:4px 10px;font-size:1.1rem;cursor:pointer;">◀</button>
+          <div id="modalImage" style="width:160px;height:160px;border-radius:8px;background:#e0e7ef;background-size:cover;background-position:center 70%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;overflow:hidden;"></div>
+          <button id="imgNextBtn" style="background:#eee;border:none;border-radius:6px;padding:4px 10px;font-size:1.1rem;cursor:pointer;">▶</button>
+        </div>
+        <div id="modalThumbs" style="display:flex;gap:6px;justify-content:center;margin-bottom:0.7rem;"></div>
+        <div id="modalBadge" style="margin-bottom:0.5rem;"></div>
+        <div id="modalName" style="font-weight:700;font-size:1.15rem;margin-bottom:0.5rem;text-align:center;"></div>
+        <div id="modalPrice" style="font-weight:800;color:#059669;font-size:1.08rem;margin-bottom:0.5rem;text-align:center;"></div>
+        <div id="modalDesc" style="color:#334155;font-size:0.98rem;margin-top:0.7rem;text-align:center;"></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    let modalImgIdx = 0, modalImgs = [];
+    function showProductModal(p) {
+      const modal = document.getElementById('productModal');
+      const modalImage = document.getElementById('modalImage');
+      const modalThumbs = document.getElementById('modalThumbs');
+      modalImgs = Array.isArray(p.images) ? p.images : (p.image ? [p.image] : []);
+      modalImgIdx = 0;
+      function renderModalImage(idx) {
+        if (!modalImgs.length) {
+          modalImage.style.backgroundImage = '';
+          modalImage.textContent = '🌺';
+        } else {
+          const img = modalImgs[idx];
+          if (/\.(jpg|jpeg|png|webp)$/i.test(img)) {
+            modalImage.style.backgroundImage = `url(https://raw.githubusercontent.com/amtbrs-03/AMTBRS/site-release/${img})`;
+            modalImage.textContent = '';
+          } else {
+            modalImage.style.backgroundImage = '';
+            modalImage.textContent = img;
+          }
+        }
+        // thumbs
+        modalThumbs.innerHTML = '';
+        modalImgs.forEach((img, i) => {
+          const thumb = document.createElement('div');
+          thumb.style = `width:38px;height:38px;border-radius:6px;background:#e0e7ef;background-size:cover;background-position:center 70%;display:inline-flex;align-items:center;justify-content:center;font-size:1.3rem;cursor:pointer;border:${i===idx?'2px solid #059669':'1px solid #ccc'};box-shadow:0 2px 8px #0001;overflow:hidden;`;
+          if (/\.(jpg|jpeg|png|webp)$/i.test(img)) {
+            thumb.style.backgroundImage = `url(https://raw.githubusercontent.com/amtbrs-03/AMTBRS/site-release/${img})`;
+          } else {
+            thumb.textContent = img;
+          }
+          thumb.onclick = () => { modalImgIdx = i; renderModalImage(modalImgIdx); };
+          modalThumbs.appendChild(thumb);
+        });
+      }
+      renderModalImage(modalImgIdx);
+      document.getElementById('imgPrevBtn').onclick = () => {
+        if (modalImgs.length) { modalImgIdx = (modalImgIdx-1+modalImgs.length)%modalImgs.length; renderModalImage(modalImgIdx); }
+      };
+      document.getElementById('imgNextBtn').onclick = () => {
+        if (modalImgs.length) { modalImgIdx = (modalImgIdx+1)%modalImgs.length; renderModalImage(modalImgIdx); }
+      };
+      document.getElementById('modalBadge').innerHTML = p.badge ? `<div class='product-badge'>${p.badge}</div>` : '';
+      document.getElementById('modalName').textContent = p.name || '';
+      document.getElementById('modalPrice').textContent = p.price ? `₺${(p.price||0).toFixed(2)}` : '';
+      document.getElementById('modalDesc').textContent = p.desc || '';
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+    function closeProductModal() {
+      document.getElementById('productModal').style.display = 'none';
+      document.body.style.overflow = '';
+    }
+    document.getElementById('closeProductModal').onclick = closeProductModal;
+    async function loadProducts() {
+      const grid = document.getElementById('productsGrid');
+      const errorMsg = document.getElementById('errorMsg');
+      grid.innerHTML = '';
+      errorMsg.textContent = '';
+      try {
+        const res = await fetch('https://raw.githubusercontent.com/amtbrs-03/AMTBRS/site-release/products.json');
+        if (!res.ok) throw new Error('products.json alınamadı!');
+        const data = await res.json();
+        const products = (data.items || []);
+        if (!products.length) { errorMsg.textContent = 'Hiç ürün bulunamadı.'; return; }
+        products.forEach(p => {
+          const card = document.createElement('div');
+          card.className = 'product-card';
+          let imageHTML = '';
+          const isImagePath = p.image && /\.(jpg|jpeg|png|webp)$/i.test(p.image);
+          if (isImagePath) {
+            imageHTML = `<div class='product-image' style='background-image:url(https://raw.githubusercontent.com/amtbrs-03/AMTBRS/site-release/${p.image});'></div>`;
+          } else if (p.image) {
+            imageHTML = `<div class='product-image'>${p.image}</div>`;
+          } else {
+            imageHTML = `<div class='product-image'>🌺</div>`;
+          }
+          card.innerHTML = `
+            ${imageHTML}
+            ${p.badge ? `<div class='product-badge'>${p.badge}</div>` : ''}
+            <div class='product-name'>${p.name}</div>
+            <div class='product-price'>₺${(p.price||0).toFixed(2)}</div>
+          `;
+          card.style.cursor = 'pointer';
+          card.onclick = () => showProductModal(p);
+          grid.appendChild(card);
+        });
+      } catch (err) {
+        errorMsg.textContent = 'Hata: ' + err.message;
+      }
+    }
+    loadProducts();
+  </script>
+</body>
+</html>
