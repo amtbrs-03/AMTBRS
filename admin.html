@@ -42,6 +42,49 @@
     .edit-btn { background:#ffd; border:1px solid #ccc; border-radius:4px; padding:2px 8px; cursor:pointer; }
   </style>
   <script defer>
+  // Sayfa yüklendiğinde ve her işlemde oturum kontrolü
+  function isAdminLoggedIn() {
+    return !!(sessionStorage.getItem('admin_logged_in'));
+  }
+  window.addEventListener('DOMContentLoaded', function(){
+    var adminUI = document.getElementById('adminUI');
+    if (!isAdminLoggedIn() && adminUI) adminUI.style.display = 'none';
+  });
+
+  // Tüm kritik işlemlerde oturum ve token kontrolü
+  function requireAdminAuth() {
+    if (!isAdminLoggedIn()) {
+      alert('Oturum açılmadan işlem yapılamaz!');
+      throw new Error('Oturum yok');
+    }
+    const token = getGitHubToken();
+    if (!token) {
+      alert('GitHub token gerekli!');
+      throw new Error('Token yok');
+    }
+    return token;
+  }
+
+  // XSS ve input doğrulama
+  function safeInput(str) {
+    return String(str).replace(/[<>&"']/g, function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;','\'':'&#39;'}[c]; });
+  }
+
+  // Public sayfalarda admin fonksiyonları ve hassas veri gösterimi engellenir
+  // Ürün ID ile düzenleme paneli açma
+  async function openProductEditPanelById(id) {
+    try {
+      const res = await fetch('products.json?' + Date.now());
+      if (!res.ok) throw new Error('products.json alınamadı!');
+      const data = await res.json();
+      const products = Array.isArray(data.items) ? data.items : (Array.isArray(data) ? data : []);
+      const p = products.find(x => String(x.id) === String(id));
+      if (p) openProductEditPanel(p);
+      else alert('Ürün bulunamadı!');
+    } catch (err) {
+      alert('Hata: ' + err.message);
+    }
+  }
   function openProductEditPanel(product) {
     document.getElementById('editProductId').value = product.id || '';
     document.getElementById('editProductName').value = product.name || '';
@@ -551,20 +594,6 @@
                 </div>
                 <div class='actions'>
                   <button class='btn' onclick='openProductEditPanelById("${p.id}")'>Düzenle</button>
-                          // ID ile ürün düzenleme paneli aç
-                          async function openProductEditPanelById(id) {
-                            try {
-                              const res = await fetch('products.json?' + Date.now());
-                              if (!res.ok) throw new Error('products.json alınamadı!');
-                              const data = await res.json();
-                              const products = Array.isArray(data.items) ? data.items : (Array.isArray(data) ? data : []);
-                              const p = products.find(x => String(x.id) === String(id));
-                              if (p) openProductEditPanel(p);
-                              else alert('Ürün bulunamadı!');
-                            } catch (err) {
-                              alert('Hata: ' + err.message);
-                            }
-                          }
                   <button class='btn btn-danger' onclick='deleteAdminProduct("${p.id}")'>Sil</button>
                 </div>
               `;
