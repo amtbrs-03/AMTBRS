@@ -524,56 +524,73 @@
     })();
 
     (function(){
-      const openBtn = document.getElementById('openGhUpload');
-      const applyBtn = document.getElementById('applyGhImagePath');
-      async function verifyGitHubPathExists(path){
-        try{
-          const owner = 'amtbrs-03';
-          const repo = 'AMTBRS';
-          const branch = 'site-release';
-          // Path'te tüm slash'ları encode etmek 404'a yol açar; ham path kullanılmalı
-          const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`;
-          let res = await fetch(url, { headers: { 'Accept':'application/vnd.github.v3+json' }, cache: 'no-store' });
-          if (res.status === 403 || res.status === 404){
-            const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
-            if (token){
-              res = await fetch(url, { headers: { 'Accept':'application/vnd.github.v3+json', 'Authorization': `token ${token}` }, cache: 'no-store' });
+      try {
+        console.log('[admin] GH upload init');
+        const openBtn = document.getElementById('openGhUpload');
+        const applyBtn = document.getElementById('applyGhImagePath');
+        async function verifyGitHubPathExists(path){
+          try{
+            const owner = 'amtbrs-03';
+            const repo = 'AMTBRS';
+            const branch = 'site-release';
+            const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`;
+            let res = await fetch(url, { headers: { 'Accept':'application/vnd.github.v3+json' }, cache: 'no-store' });
+            if (res.status === 403 || res.status === 404){
+              const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
+              if (token){
+                res = await fetch(url, { headers: { 'Accept':'application/vnd.github.v3+json', 'Authorization': `token ${token}` }, cache: 'no-store' });
+              }
             }
-          }
-          if (!res.ok) return false;
-          const j = await res.json();
-          return !!(j && j.type === 'file');
-        }catch(_){ return false; }
+            if (!res.ok) return false;
+            const j = await res.json();
+            return !!(j && j.type === 'file');
+          }catch(_){ return false; }
+        }
+        const pidEl = document.getElementById('ghUploadProductId');
+        const pathEl = document.getElementById('ghUploadedPath');
+        const msgEl = document.getElementById('ghUploadMsg');
+        function setMsg(m, ok){ if (msgEl){ msgEl.textContent = m; msgEl.style.color = ok ? '#065f46' : '#b91c1c'; } }
+
+        // Açma butonu
+        if (openBtn){
+          console.log('[admin] Binding openGhUpload');
+          openBtn.addEventListener('click', ()=>{
+            const pid = (pidEl && pidEl.value || '').trim();
+            const base = 'https://github.com/amtbrs-03/AMTBRS/upload/site-release';
+            const url = base + (pid ? `?suggested_path=images/products/${encodeURIComponent(pid)}.jpg` : '');
+            window.open(url, '_blank', 'noopener');
+            setMsg('GitHub yükleme sayfası açıldı. Dosyayı yükledikten sonra dosya yolunu aşağıya girin.', true);
+          });
+        } else {
+          console.warn('[admin] openGhUpload butonu bulunamadı');
+        }
+
+        // Kaydet butonu
+        if (applyBtn){
+          console.log('[admin] Binding applyGhImagePath');
+          applyBtn.addEventListener('click', async ()=>{
+            const pid = (pidEl && pidEl.value || '').trim();
+            const pth = (pathEl && pathEl.value || '').trim();
+            if (!pid){ setMsg('Ürün ID gerekli.', false); return; }
+            if (!pth || !/^images\/products\/[A-Za-z0-9._-]+\.(jpg|jpeg|png|webp)$/i.test(pth)){
+              setMsg('Geçerli dosya yolu girin: images/products/<id>.jpg', false); return;
+            }
+            try{
+              setMsg('Doğrulanıyor...', true);
+              const exists = await verifyGitHubPathExists(pth);
+              if (!exists){ setMsg('Dosya depo içinde bulunamadı. Lütfen yükleme yolunu kontrol edin.', false); return; }
+              setMsg('Kaydediliyor...', true);
+              await updateProductsJsonImage(pid, pth);
+              setMsg('✓ products.json güncellendi: ' + pth, true);
+            }
+            catch(e){ setMsg('Hata: ' + (e.message||e), false); }
+          });
+        } else {
+          console.warn('[admin] applyGhImagePath butonu bulunamadı');
+        }
+      } catch(err){
+        console.error('[admin] GH upload bölümünde kritik hata', err);
       }
-      const pidEl = document.getElementById('ghUploadProductId');
-      const pathEl = document.getElementById('ghUploadedPath');
-      const msgEl = document.getElementById('ghUploadMsg');
-      function setMsg(m, ok){ if (msgEl){ msgEl.textContent = m; msgEl.style.color = ok ? '#065f46' : '#b91c1c'; } }
-      if (openBtn) openBtn.addEventListener('click', ()=>{
-        const pid = (pidEl && pidEl.value || '').trim();
-        const base = 'https://github.com/amtbrs-03/AMTBRS/upload/site-release';
-        const url = base + (pid ? `?suggested_path=images/products/${encodeURIComponent(pid)}.jpg` : '');
-        window.open(url, '_blank', 'noopener');
-        setMsg('GitHub yükleme sayfası açıldı. Dosyayı yükledikten sonra dosya yolunu aşağıya girin.', true);
-      });
-      if (applyBtn) applyBtn.addEventListener('click', async ()=>{
-        const pid = (pidEl && pidEl.value || '').trim();
-        const pth = (pathEl && pathEl.value || '').trim();
-        if (!pid){ setMsg('Ürün ID gerekli.', false); return; }
-        // Yalnız "images/products/<id>.ext" kabul edilsin; çift slash veya eksik klasör reddedilsin
-        if (!pth || !/^images\/products\/[A-Za-z0-9._-]+\.(jpg|jpeg|png|webp)$/i.test(pth)){
-          setMsg('Geçerli dosya yolu girin: images/products/<id>.jpg', false); return;
-        }
-        try{
-          setMsg('Doğrulanıyor...', true);
-          const exists = await verifyGitHubPathExists(pth);
-          if (!exists){ setMsg('Dosya depo içinde bulunamadı. Lütfen yükleme yolunu kontrol edin.', false); return; }
-          setMsg('Kaydediliyor...', true);
-          await updateProductsJsonImage(pid, pth);
-          setMsg('✓ products.json güncellendi: ' + pth, true);
-        }
-        catch(e){ setMsg('Hata: ' + (e.message||e), false); }
-      });
     })();
       let decoded = '';
       for (let i = 0; i < encoded.length; i++) {
