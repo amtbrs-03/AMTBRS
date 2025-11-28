@@ -491,15 +491,33 @@
       if (!putRes.ok){ const t = await putRes.text().catch(()=> ''); throw new Error(`Kaydetme başarısız: ${putRes.status} ${t}`); }
       return true;
     }
-    // Header refresh button wiring
+    // Header refresh button wiring (geliştirilmiş)
     (function(){
       try{
         const rBtn = document.getElementById('pageRefreshBtn');
         if (rBtn){
-          rBtn.addEventListener('click', ()=>{
-            // Cache-bypass param ekleyerek sert yenileme (isteğe bağlı)
-            try{ location.reload(); }catch(_){ location.href = location.href.split('#')[0]; }
+          rBtn.addEventListener('click', (ev)=>{
+            ev.preventDefault();
+            // İlk deneme: normal reload
+            try {
+              console.log('[admin] Page refresh: normal reload');
+              location.reload();
+              return;
+            } catch(_){ /* devam */ }
+            // Fallback: cache busting param ekle
+            try {
+              const base = location.href.split('#')[0].split('?')[0];
+              const bust = 'ts=' + Date.now();
+              const next = base + '?' + bust;
+              console.log('[admin] Page refresh: cache-bust to', next);
+              window.location.replace(next);
+              return;
+            }catch(_){ /* devam */ }
+            // Son çare: aynı URL
+            window.location.href = window.location.href;
           });
+        } else {
+          console.warn('pageRefreshBtn bulunamadı');
         }
       }catch(e){ console.warn('Yenile butonu bağlanamadı:', e); }
     })();
