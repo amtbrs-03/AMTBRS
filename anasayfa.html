@@ -27,7 +27,7 @@
     
     <link rel="icon" href="/favicon.ico" />
 
-    <script>
+    <script defer>
       // Eğer kullanıcı www ile geldiyse, kök domaine (non-www) yönlendir
       (function(){
         try{
@@ -39,7 +39,7 @@
       })();
     </script>
 
-    <script type="application/ld+json">
+    <script type="application/ld+json" defer>
     {
       "@context": "https://schema.org",
       "@type": "Florist",
@@ -1286,7 +1286,7 @@
 
                 <!-- Contact info has been moved into the header contact panel -->
 
-                <script>
+                <script defer>
                     /* --- Auth modal and tabs --- */
                     function openAuthModal() {
                         document.getElementById('authModal').style.display = 'block';
@@ -3500,7 +3500,7 @@
                         window.addEventListener('beforeprint', normalizeAll);
                     })();
                 </script>
-<script>
+<script defer>
 // --- Order status: set to 'hazır' when invoice is generated ---
 async function updateOrderStatus(orderId, newStatus){
     try{
@@ -3550,7 +3550,7 @@ document.addEventListener('click', function(ev){
     }
 });
 </script>
-<script>
+<script defer>
 // --- Registration notifications: show single success, suppress duplicates ---
 (function(){
     const originalAlert = window.alert.bind(window);

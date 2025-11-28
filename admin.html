@@ -41,7 +41,7 @@
     #editProductMsg { min-height:22px; }
     .edit-btn { background:#ffd; border:1px solid #ccc; border-radius:4px; padding:2px 8px; cursor:pointer; }
   </style>
-  <script>
+  <script defer>
   function openProductEditPanel(product) {
     document.getElementById('editProductId').value = product.id || '';
     document.getElementById('editProductName').value = product.name || '';
@@ -524,7 +524,7 @@
           <button id="refreshProductsBtn" class="btn btn-ghost" type="button" style="font-size:0.95rem;">🔄 Yenile</button>
         </div>
         <div id="products" class="products-list"></div>
-        <script>
+        <script defer>
         // Kayıtlı ürünleri dinamik ve ayarlanabilir şekilde göster
         async function renderAdminProducts() {
           const container = document.getElementById('products');
@@ -700,7 +700,7 @@
 
   </div>
 
-  <script>
+  <script defer>
     // XOR decode for GitHub token
     function decodeToken(encoded, key) {
       let decoded = '';
@@ -719,39 +719,53 @@
       const branch = 'site-release';
       const url = `https://api.github.com/repos/${owner}/${repo}/contents/products.json`;
       const getRes = await fetch(url + `?ref=${branch}`, { headers: { 'Accept':'application/vnd.github.v3+json', 'Authorization': `token ${token}` }, cache: 'no-store' });
-      let items = [], sha = undefined;
-      if (getRes.status === 200){
-        const j = await getRes.json(); sha = j.sha; const decoded = atob((j.content||'').replace(/\n/g,''));
-        try{ const parsed = JSON.parse(decoded); items = Array.isArray(parsed.items) ? parsed.items : (Array.isArray(parsed) ? parsed : []); }catch(_){ items = []; }
-      }
-      let found = false;
-      items = items.map(it => { if (String(it.id) === String(productId)) { found = true; return { ...it, image: imagePath }; } return it; });
-      if (!found) items.push({ id: String(productId), name: `Ürün ${productId}`, price: 0, badge: '', image: imagePath });
-      const nextJson = (items[0] && items[0].name !== undefined) ? { updatedAt: Date.now(), items } : items;
-      const contentBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(nextJson, null, 2))));
-      const body = { message: `chore: ${productId} için resim yolu eklendi (${imagePath})`, content: contentBase64, branch };
-      if (sha) body.sha = sha;
-      const putRes = await fetch(url, { method:'PUT', headers:{ 'Accept':'application/vnd.github.v3+json', 'Authorization': `token ${token}`, 'Content-Type':'application/json' }, body: JSON.stringify(body) });
-      if (!putRes.ok){ const t = await putRes.text().catch(()=> ''); throw new Error(`Kaydetme başarısız: ${putRes.status} ${t}`); }
-      return true;
-    }
-    // Header refresh button wiring (geliştirilmiş + feedback)
-    (function(){
-      try{
-        const rBtn = document.getElementById('pageRefreshBtn');
-        if (rBtn){
-          rBtn.addEventListener('click', (ev)=>{
-            ev.preventDefault();
-            // UI feedback: buton durumunu değiştir
-            const origText = rBtn.innerHTML;
-            rBtn.innerHTML = '⏳ Yenileniyor...';
-            rBtn.disabled = true;
-            rBtn.style.opacity = '0.6';
-            
-            // Kısa gecikme (kullanıcı mesajı görsün)
-            setTimeout(() => {
-              try {
-                console.log('[admin] Page refresh: normal reload');
+        async function renderAdminProducts() {
+          const container = document.getElementById('products');
+          // Kilit ekranı ekle
+          let lock = document.getElementById('productsLock');
+          if (!lock) {
+            lock = document.createElement('div');
+            lock.id = 'productsLock';
+            lock.style = 'position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.7);z-index:10;display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:#059669;font-weight:700;transition:opacity 0.2s;';
+            lock.innerHTML = '<span>⏳ Ürünler güncelleniyor...</span>';
+            container.parentElement.style.position = 'relative';
+            container.parentElement.appendChild(lock);
+          }
+          lock.style.display = 'flex';
+          container.innerHTML = '<div style="color:#64748b">⏳ Ürünler yükleniyor...</div>';
+          try {
+            const res = await fetch('products.json?' + Date.now());
+            if (!res.ok) throw new Error('products.json alınamadı!');
+            const data = await res.json();
+            const products = Array.isArray(data.items) ? data.items : (Array.isArray(data) ? data : []);
+            if (!products.length) { container.innerHTML = '<div style="color:#b91c1c">Hiç ürün bulunamadı.</div>'; lock.style.display = 'none'; return; }
+            container.innerHTML = '';
+            products.forEach(p => {
+              const card = document.createElement('div');
+              card.className = 'prod-item';
+              card.setAttribute('data-id', p.id);
+              card.innerHTML = `
+                <div class='prod-row'>
+                  <div class='thumb' style='background:#e0e7ef;display:flex;align-items:center;justify-content:center;'>${p.image ? (/(jpg|jpeg|png|webp)$/i.test(p.image) ? `<img src='${p.image}' style='width:100%;height:100%;object-fit:cover;border-radius:10px;'/>` : p.image) : '🌺'}</div>
+                  <div>
+                    <div style='font-weight:700;font-size:1.08rem;'>${p.name || ''}</div>
+                    <div class='meta'>Fiyat: ₺${(p.price||0).toFixed(2)}</div>
+                    <div class='meta'>ID: ${p.id}</div>
+                  </div>
+                </div>
+                <div class='actions'>
+                  <button class='btn' onclick='openProductEditPanelById("${p.id}")'>Düzenle</button>
+                  <button class='btn btn-danger' onclick='deleteAdminProduct("${p.id}")'>Sil</button>
+                </div>
+              `;
+              container.appendChild(card);
+            });
+          } catch (err) {
+            container.innerHTML = '<div style="color:#b91c1c">Hata: ' + err.message + '</div>';
+          } finally {
+            // Kilidi kaldır
+            setTimeout(function(){ lock.style.display = 'none'; }, 600);
+          }
                 location.reload(true); // Hard reload
               } catch(_) {
                 // Fallback: cache busting
@@ -1359,7 +1373,7 @@
     })();
   </script>
 
-  <script>
+  <script defer>
     // Modal helpers
     function openAdminManageModal(){
       const m = document.getElementById('adminManageModal'); if (!m) return; m.classList.add('active'); m.setAttribute('aria-hidden','false');
@@ -1414,7 +1428,7 @@
   </div>
 
 
-    <script>
+    <script defer>
       // Wire modal controls (run after modal markup exists)
       (function(){
         // change password
@@ -1470,7 +1484,7 @@
       })();
     </script>
 
-  <script>
+  <script defer>
     // Utility function for HTML escaping
     function escapeHtml(s){ 
       return (s||'').replace(/[&<>\"']/g, function(m){
@@ -1748,7 +1762,7 @@
     });
   </script>
 
-  <script>
+  <script defer>
     // simple lightweight admin - client-side only
     (function(){
       const PRODUCTS_KEY = 'products_v1';
@@ -1839,10 +1853,13 @@
           const file = document.getElementById('newImage').files[0];
           let img = emoji || '';
           if (file){ img = await toDataURL(file); }
+          if (!name || isNaN(price)) { alert('Ürün adı ve fiyatı zorunlu!'); return; }
           const products = getProducts();
           products.push({ id: uid(), name, price, image: img });
           setProducts(products); render();
           document.getElementById('newName').value=''; document.getElementById('newPrice').value=''; document.getElementById('newEmoji').value=''; document.getElementById('newImage').value='';
+        } catch (err) {
+          alert('Hata: ' + err.message);
         } finally {
           btn.innerHTML = origText;
           btn.disabled = false;
@@ -1867,52 +1884,61 @@
             if (file){ img = await toDataURL(file); }
             products[idx].name = name; products[idx].price = price; products[idx].image = img;
           }
-          setProducts(products);
-          
-          // Push to GitHub
-          console.log('Pushing products to GitHub...');
-          const result = await pushToGitHub(products, 'Admin: update products');
-          
-          if (result.ok) {
-            alert('Ürünler kaydedildi ve GitHub\'a gönderildi! ✓');
-          } else {
-            alert('Ürünler kaydedildi (localStorage). GitHub güncellemesi başarısız: ' + (result.error || 'bilinmiyor'));
+          e.preventDefault();
+          const msgEl = document.getElementById('editProductMsg');
+          const btn = document.getElementById('saveProductBtn');
+          msgEl.textContent = '⏳ Kaydediliyor...';
+          btn.disabled = true;
+          btn.innerHTML = '⏳ Kaydediliyor...';
+          const id = document.getElementById('editProductId').value.trim();
+          const name = document.getElementById('editProductName').value.trim();
+          const price = parseFloat(document.getElementById('editProductPrice').value);
+          const badge = document.getElementById('editProductBadge').value;
+          const image = document.getElementById('editProductImage').value.trim();
+          if (!/^images\/products\/[A-Za-z0-9._-]+\.(jpg|jpeg|png|webp)$/.test(image)) {
+            msgEl.textContent = 'Geçerli görsel yolu girin!';
+            btn.disabled = false;
+            btn.innerHTML = 'Kaydet';
+            return;
           }
-          
-          render();
-
-          // If enabled, push the products and images to GitHub via serverless function
-          try{
-            const push = !!document.getElementById('pushToGithub') && document.getElementById('pushToGithub').checked;
-            if (!push) return;
-            // Build files: products.json (root) and any images (data URLs) as separate files in repo root
-            const prods = getProducts();
-            const files = [];
-            // products.json
-            const productsJson = JSON.stringify(prods, null, 2);
-            files.push({ path: 'products.json', contentBase64: btoa(unescape(encodeURIComponent(productsJson))) });
-            // images embedded as data URLs: convert to base64 content and add as files
-            for (const p of prods){
-              if (p.image && typeof p.image === 'string' && p.image.indexOf('data:') === 0){
-                const match = p.image.match(/^data:(image\/(png|jpeg|jpg|webp));base64,(.*)$/i);
-                if (match){
-                  const mime = match[1];
-                  const ext = (match[2] && match[2].toLowerCase() === 'jpeg') ? 'jpg' : (match[2] || 'png');
-                  const content = match[3];
-                  const filename = `product-${p.id}.${ext}`;
-                  files.push({ path: filename, contentBase64: content });
-                  // update product image reference to filename so site can load it
-                  p.image = filename;
-                }
-              }
-            }
-            // If we updated product image references, update products.json again
-            const updatedProductsJson = JSON.stringify(prods, null, 2);
-            files[0].contentBase64 = btoa(unescape(encodeURIComponent(updatedProductsJson)));
-
-            const payload = { files, message: 'admin: update products and images via admin panel' };
-            const endpoints = ['/.netlify/functions/commit-file', '/api/commit-file', '/functions/commit-file'];
-            let ok = false; let lastRes = null;
+          try {
+            const token = localStorage.github_token || localStorage.gh_token;
+            if (!token) throw new Error('GitHub token gerekli!');
+            const repo = 'amtbrs-03/AMTBRS';
+            const branch = 'site-release';
+            const url = `https://api.github.com/repos/${repo}/contents/products.json?ref=${branch}`;
+            const res = await fetch(url);
+            if (!res.ok) throw new Error('products.json alınamadı!');
+            const data = await res.json();
+            let products = JSON.parse(atob(data.content));
+            let idx = products.items.findIndex(p => p.id === id);
+            if (idx === -1) throw new Error('Ürün bulunamadı!');
+            products.items[idx] = { id, name, price, badge, image };
+            products.updatedAt = Date.now();
+            const putRes = await fetch(url, {
+              method: 'PUT',
+              headers: {
+                'Authorization': 'token ' + token,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                message: `Ürün güncellendi: ${id}`,
+                content: btoa(JSON.stringify(products, null, 2)),
+                sha: data.sha,
+                branch
+              })
+            });
+            if (!putRes.ok) throw new Error('GitHub\'a kaydedilemedi!');
+            msgEl.textContent = '✅ Kaydedildi!';
+            setTimeout(closeProductEditPanel, 1200);
+            await renderAdminProducts();
+          } catch (err) {
+            msgEl.textContent = 'Hata: ' + err.message;
+          } finally {
+            btn.disabled = false;
+            btn.innerHTML = 'Kaydet';
+          }
+        };
             for (const ep of endpoints){
               try{
                 const res = await fetch(ep, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
