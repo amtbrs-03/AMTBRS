@@ -570,11 +570,15 @@
         if (openBtn){
           console.log('[admin] Binding openGhUpload');
           openBtn.addEventListener('click', ()=>{
+            const origText = openBtn.innerHTML;
+            openBtn.innerHTML = '⏳ Açılıyor...';
+            openBtn.disabled = true;
             const pid = (pidEl && pidEl.value || '').trim();
             const base = 'https://github.com/amtbrs-03/AMTBRS/upload/site-release';
             const url = base + (pid ? `?suggested_path=images/products/${encodeURIComponent(pid)}.jpg` : '');
             window.open(url, '_blank', 'noopener');
             setMsg('GitHub yükleme sayfası açıldı. Dosyayı yükledikten sonra dosya yolunu aşağıya girin.', true);
+            setTimeout(() => { openBtn.innerHTML = origText; openBtn.disabled = false; }, 1000);
           });
         } else {
           console.warn('[admin] openGhUpload butonu bulunamadı');
@@ -584,11 +588,14 @@
         if (applyBtn){
           console.log('[admin] Binding applyGhImagePath');
           applyBtn.addEventListener('click', async ()=>{
+            const origText = applyBtn.innerHTML;
+            applyBtn.innerHTML = '⏳ İşleniyor...';
+            applyBtn.disabled = true;
             const pid = (pidEl && pidEl.value || '').trim();
             const pth = (pathEl && pathEl.value || '').trim();
-            if (!pid){ setMsg('Ürün ID gerekli.', false); return; }
+            if (!pid){ setMsg('Ürün ID gerekli.', false); applyBtn.innerHTML = origText; applyBtn.disabled = false; return; }
             if (!pth || !/^images\/products\/[A-Za-z0-9._-]+\.(jpg|jpeg|png|webp)$/i.test(pth)){
-              setMsg('Geçerli dosya yolu girin: images/products/<id>.jpg', false); return;
+              setMsg('Geçerli dosya yolu girin: images/products/<id>.jpg', false); applyBtn.innerHTML = origText; applyBtn.disabled = false; return;
             }
             try{
               setMsg('Doğrulanıyor...', true);
@@ -599,6 +606,7 @@
               setMsg('✓ products.json güncellendi: ' + pth, true);
             }
             catch(e){ setMsg('Hata: ' + (e.message||e), false); }
+            finally{ applyBtn.innerHTML = origText; applyBtn.disabled = false; }
           });
         } else {
           console.warn('[admin] applyGhImagePath butonu bulunamadı');
@@ -823,13 +831,18 @@
           <input id="pw2" type="password" placeholder="Parolayı tekrar girin" style="width:60%; padding:0.5rem; margin-top:0.5rem;" />
           <div style="margin-top:0.5rem;"><label style=\"display:block;margin-bottom:0.35rem;\"><input id=\"rememberOnSet\" type=\"checkbox\" /> Beni hatırla (otomatik giriş)</label><button id="setPwBtn">Parolayı Kaydet</button></div>`;
         document.getElementById('setPwBtn').onclick = async ()=>{
-          const a = document.getElementById('pw1').value;
-          const b = document.getElementById('pw2').value;
-          const user = (document.getElementById('adminUser').value || '').trim();
-          const remember = !!document.getElementById('rememberOnSet').checked;
-          if (!a || a.length < 4) return alert('Parola en az 4 karakter olmalı');
-          if (a !== b) return alert('Parolalar eşleşmiyor');
-          const h = await hashPassword(a);
+          const btn = document.getElementById('setPwBtn');
+          const origText = btn.innerHTML;
+          btn.innerHTML = '⏳ Kaydediliyor...';
+          btn.disabled = true;
+          try {
+            const a = document.getElementById('pw1').value;
+            const b = document.getElementById('pw2').value;
+            const user = (document.getElementById('adminUser').value || '').trim();
+            const remember = !!document.getElementById('rememberOnSet').checked;
+            if (!a || a.length < 4) { alert('Parola en az 4 karakter olmalı'); return; }
+            if (a !== b) { alert('Parolalar eşleşmiyor'); return; }
+            const h = await hashPassword(a);
           localStorage.setItem(AUTH_KEY, h);
           if (user) localStorage.setItem(ADMIN_USER_KEY, user);
           if (remember) {
@@ -855,6 +868,10 @@
           
           renderAuth();
           renderAdmin();
+          } finally {
+            btn.innerHTML = origText;
+            btn.disabled = false;
+          }
         };
       }
 
@@ -864,13 +881,18 @@
           <label style="display:block;margin-top:0.5rem;"><input id="rememberMe" type="checkbox" /> Beni hatırla</label>
           <div style="margin-top:1rem;"><button id="loginBtn" style="padding:1rem 2.5rem;font-size:1.1rem;font-weight:700;border-radius:12px;border:none;background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:white;cursor:pointer;box-shadow:0 4px 15px rgba(16,185,129,0.4),0 8px 25px rgba(16,185,129,0.2),inset 0 -2px 5px rgba(0,0,0,0.1);transition:all 0.2s ease;">Giriş Yap</button></div>`;
         document.getElementById('loginBtn').onclick = async ()=>{
-          const pw = document.getElementById('loginPw').value;
-          const remember = !!document.getElementById('rememberMe').checked;
-          
-          if (!pw) {
-            alert('Lütfen şifre girin');
-            return;
-          }
+          const btn = document.getElementById('loginBtn');
+          const origText = btn.innerHTML;
+          btn.innerHTML = '⏳ Doğrulanıyor...';
+          btn.disabled = true;
+          try {
+            const pw = document.getElementById('loginPw').value;
+            const remember = !!document.getElementById('rememberMe').checked;
+            
+            if (!pw) {
+              alert('Lütfen şifre girin');
+              return;
+            }
           
           const h = await hashPassword(pw);
           
@@ -933,6 +955,10 @@
               alert('Email veya şifre yanlış (' + attempts + '/3)');
             }
           }
+          } finally {
+            btn.innerHTML = origText;
+            btn.disabled = false;
+          }
         };
       }
 
@@ -949,13 +975,16 @@
               <button id=\"logoutBtn\" style=\"padding:0.75rem 1.5rem;font-size:1rem;font-weight:700;border-radius:12px;border:none;background:linear-gradient(135deg,#ef4444 0%,#dc2626 100%);color:white;cursor:pointer;box-shadow:0 4px 15px rgba(239,68,68,0.4),0 8px 25px rgba(239,68,68,0.2),inset 0 -2px 5px rgba(0,0,0,0.1);transition:all 0.2s ease;margin-left:0.25rem;\">Çıkış Yap</button>
             </div></div>`;
           document.getElementById('logoutBtn').onclick = ()=>{ 
+            const btn = document.getElementById('logoutBtn');
+            const origText = btn.innerHTML;
+            btn.innerHTML = '⏳ Çıkış...';
+            btn.disabled = true;
             localStorage.removeItem('admin_logged_in'); 
             localStorage.removeItem(AUTH_KEY);
             localStorage.removeItem(ADMIN_USER_KEY);
             localStorage.removeItem('admin_email');
             sessionStorage.removeItem('admin_logged_in'); 
-            renderAuth(); 
-            adminUI.style.display='none'; 
+            setTimeout(() => { renderAuth(); adminUI.style.display='none'; btn.innerHTML = origText; btn.disabled = false; }, 300);
           };
           document.getElementById('adminSettingsBtn').onclick = ()=>{ openAdminManageModal(); };
           // Kilit özelliği kaldırıldı
@@ -1288,6 +1317,9 @@
     // Load users from GitHub - now opens modal
     document.getElementById('loadUsersBtn').addEventListener('click', async ()=>{
       const btn = document.getElementById('loadUsersBtn');
+      const origText = btn.innerHTML;
+      btn.innerHTML = '⏳ Yükleniyor...';
+      btn.disabled = true;
       // Modalı güvenli şekilde aç (fonksiyon henüz tanımlı değilse inline aç)
       try{
         if (typeof openUsersModal === 'function') {
@@ -1522,16 +1554,25 @@
       }
 
       document.getElementById('addBtn').addEventListener('click', async ()=>{
-        const name = document.getElementById('newName').value.trim();
-        const price = parseFloat(document.getElementById('newPrice').value) || 0;
-        const emoji = document.getElementById('newEmoji').value.trim();
-        const file = document.getElementById('newImage').files[0];
-        let img = emoji || '';
-        if (file){ img = await toDataURL(file); }
-        const products = getProducts();
-        products.push({ id: uid(), name, price, image: img });
-        setProducts(products); render();
-        document.getElementById('newName').value=''; document.getElementById('newPrice').value=''; document.getElementById('newEmoji').value=''; document.getElementById('newImage').value='';
+        const btn = document.getElementById('addBtn');
+        const origText = btn.innerHTML;
+        btn.innerHTML = '⏳ Ekleniyor...';
+        btn.disabled = true;
+        try {
+          const name = document.getElementById('newName').value.trim();
+          const price = parseFloat(document.getElementById('newPrice').value) || 0;
+          const emoji = document.getElementById('newEmoji').value.trim();
+          const file = document.getElementById('newImage').files[0];
+          let img = emoji || '';
+          if (file){ img = await toDataURL(file); }
+          const products = getProducts();
+          products.push({ id: uid(), name, price, image: img });
+          setProducts(products); render();
+          document.getElementById('newName').value=''; document.getElementById('newPrice').value=''; document.getElementById('newEmoji').value=''; document.getElementById('newImage').value='';
+        } finally {
+          btn.innerHTML = origText;
+          btn.disabled = false;
+        }
       });
 
       const saveAllBtn = document.getElementById('saveAll');
@@ -1643,7 +1684,7 @@
               const m = p.image.match(/^data:(image\/(png|jpeg|jpg|webp));base64,(.*)$/i);
               if (m){
                 const ext = (m[2] && m[2].toLowerCase() === 'jpeg') ? 'jpg' : (m[2] || 'png');
-                const filename = `product-${p.id}.${ext}`;
+                const filename = `images/products/product-${p.id}.${ext}`;
                 files.push({ path: filename, contentBase64: m[3] });
                 p.image = filename;
               }
@@ -1661,10 +1702,17 @@
       // Download products JSON locally (guard if button not present)
       const downloadBtn = document.getElementById('downloadProducts');
       if (downloadBtn) downloadBtn.addEventListener('click', ()=>{
-        const data = JSON.stringify(getProducts(), null, 2);
-        const blob = new Blob([data], {type:'application/json'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = 'products.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+        const origText = downloadBtn.innerHTML;
+        downloadBtn.innerHTML = '⏳ Hazırlanıyor...';
+        downloadBtn.disabled = true;
+        try {
+          const data = JSON.stringify(getProducts(), null, 2);
+          const blob = new Blob([data], {type:'application/json'});
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a'); a.href = url; a.download = 'products.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+        } finally {
+          setTimeout(() => { downloadBtn.innerHTML = origText; downloadBtn.disabled = false; }, 800);
+        }
       });
 
       // Site settings save/load (contact / IBAN / hours)
@@ -2542,9 +2590,9 @@
       function startAuto(){ if(autoTimer) clearInterval(autoTimer); autoTimer = setInterval(loadLiveCarts, 30000); }
       function stopAuto(){ if(autoTimer) { clearInterval(autoTimer); autoTimer = null; } }
 
-      if(btn) btn.addEventListener('click', ()=>{ loadLiveCarts(); renderSnapshotDiag(); });
-      const cleanupBtn = document.getElementById('liveCartsCleanup'); if(cleanupBtn) cleanupBtn.addEventListener('click', cleanupOldCarts);
-      const dummyBtn = document.getElementById('liveCartsCreateDummy'); if(dummyBtn) dummyBtn.addEventListener('click', createDummyCartSnapshot);
+      if(btn) btn.addEventListener('click', async ()=>{ const origText = btn.innerHTML; btn.innerHTML = '⏳ Yükleniyor...'; btn.disabled = true; try { await loadLiveCarts(); renderSnapshotDiag(); } finally { btn.innerHTML = origText; btn.disabled = false; } });
+      const cleanupBtn = document.getElementById('liveCartsCleanup'); if(cleanupBtn) cleanupBtn.addEventListener('click', async ()=>{ const origText = cleanupBtn.innerHTML; cleanupBtn.innerHTML = '⏳ Temizleniyor...'; cleanupBtn.disabled = true; try { await cleanupOldCarts(); } finally { cleanupBtn.innerHTML = origText; cleanupBtn.disabled = false; } });
+      const dummyBtn = document.getElementById('liveCartsCreateDummy'); if(dummyBtn) dummyBtn.addEventListener('click', async ()=>{ const origText = dummyBtn.innerHTML; dummyBtn.innerHTML = '⏳ Oluşturuluyor...'; dummyBtn.disabled = true; try { await createDummyCartSnapshot(); } finally { dummyBtn.innerHTML = origText; dummyBtn.disabled = false; } });
       if(autoChk) autoChk.addEventListener('change', ()=>{ if(autoChk.checked){ startAuto(); loadLiveCarts(); } else { stopAuto(); } });
       // İlk yükleme (auth sonrası görülebilir)
       setTimeout(()=>{ loadLiveCarts(); renderSnapshotDiag(); }, 1500);

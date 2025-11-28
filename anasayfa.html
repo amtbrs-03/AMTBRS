@@ -2992,12 +2992,21 @@
                             card.setAttribute('data-name', p.name);
                             card.setAttribute('data-price', (p.price||0).toString());
 
-                            // Image handling: if image starts with data: treat as background image, else show text (emoji)
+                            // Image handling:
+                            // - data: URLs → render as background
+                            // - file/URL paths (e.g., images/products/..., .jpg/.png, http...) → render as background
+                            // - otherwise treat as emoji/text
                             let imageHTML = '';
-                            if (p.image && p.image.startsWith && p.image.startsWith('data:')) {
-                                imageHTML = `<div class="product-image" style="background-image:url('${p.image}'); background-size:cover; background-position:center; background-repeat:no-repeat;"></div>`;
+                            const isDataUrl = !!(p.image && p.image.startsWith && p.image.startsWith('data:'));
+                            const isImagePath = !!(p.image && typeof p.image === 'string' && (
+                                /\.(png|jpe?g|webp|gif|svg)$/i.test(p.image) ||
+                                p.image.startsWith('http://') || p.image.startsWith('https://') ||
+                                p.image.startsWith('images/')
+                            ));
+                            if (isDataUrl || isImagePath) {
+                                const url = p.image;
+                                imageHTML = `<div class="product-image" style="background-image:url('${url}'); background-size:cover; background-position:center; background-repeat:no-repeat;"></div>`;
                             } else if (p.image) {
-                                // show emoji or text
                                 imageHTML = `<div class="product-image">${escapeHtml(p.image)}</div>`;
                             } else {
                                 imageHTML = `<div class="product-image">🌺</div>`;
