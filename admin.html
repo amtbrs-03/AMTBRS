@@ -1282,7 +1282,14 @@
       function renderAuth(){
         const logged = !!(localStorage.getItem('admin_logged_in') || sessionStorage.getItem('admin_logged_in'));
         const user = localStorage.getItem(ADMIN_USER_KEY) || 'admin';
-        if (typeof authContent === 'undefined' || typeof adminUI === 'undefined' || !authContent || !adminUI) return;
+        if (typeof authContent === 'undefined' || typeof adminUI === 'undefined' || !authContent || !adminUI) {
+          document.body.innerHTML += '<div style="color:red;font-weight:bold;padding:2rem;">HATA: Giriş ekranı yüklenemedi. Lütfen sayfayı yeniden yükleyin veya tarayıcı önbelleğini temizleyin.</div>';
+          return;
+        }
+        // Sayfa yüklendikten sonra admin giriş ekranını kesin olarak aç
+        window.addEventListener('DOMContentLoaded', function(){
+          renderAuth();
+        });
         if (!logged) {
           showLogin();
           adminUI.style.display = 'none';
