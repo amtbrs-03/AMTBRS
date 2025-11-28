@@ -539,7 +539,6 @@
       <div id="authContent">
         <div style="margin-bottom:1.5rem;text-align:center;font-size:1.75rem;font-weight:800;padding:1rem 2rem;background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:white;border-radius:12px;box-shadow:0 4px 15px rgba(16,185,129,0.4),0 8px 25px rgba(16,185,129,0.2),inset 0 -2px 5px rgba(0,0,0,0.1);text-shadow:0 2px 4px rgba(0,0,0,0.2);">🔐 Yönetici Girişi</div>
         <input id="loginPw" type="password" placeholder="Şifre" style="width:60%; padding:0.5rem; margin-top:0.5rem;" />
-        <label style="display:block;margin-top:0.5rem;"><input id="rememberMe" type="checkbox" /> Beni hatırla</label>
         <div style="margin-top:1rem;"><button id="loginBtn" style="padding:1rem 2.5rem;font-size:1.1rem;font-weight:700;border-radius:12px;border:none;background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:white;cursor:pointer;box-shadow:0 4px 15px rgba(16,185,129,0.4),0 8px 25px rgba(16,185,129,0.2),inset 0 -2px 5px rgba(0,0,0,0.1);transition:all 0.2s ease;">Giriş Yap</button></div>
         <div id="jsErrorMsg" style="color:red;font-weight:bold;margin-top:1rem;"></div>
       </div>
@@ -2360,6 +2359,27 @@
   </div>
 
   <script>
+    // Basit giriş kontrolü: admin şifresi "cicek2025" ise giriş başarılı
+    document.addEventListener('DOMContentLoaded', function(){
+      var btn = document.getElementById('loginBtn');
+      if(btn){
+        btn.onclick = function(){
+          var pw = document.getElementById('loginPw').value;
+          var msg = document.getElementById('jsErrorMsg');
+          var adminUI = document.getElementById('adminUI');
+          var authContent = document.getElementById('authCard');
+          if(pw === 'cicek2025'){
+            msg.style.color = 'green';
+            msg.textContent = 'Giriş başarılı!';
+            if(adminUI) adminUI.style.display = 'block';
+            if(authContent) authContent.style.display = 'none';
+          }else{
+            msg.style.color = 'red';
+            msg.textContent = 'Şifre yanlış!';
+          }
+        };
+      }
+    });
     // JS hatası olursa ekrana yaz
     window.onerror = function(msg, url, line, col, error) {
       var el = document.getElementById('jsErrorMsg');
