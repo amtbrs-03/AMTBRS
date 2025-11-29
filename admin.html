@@ -2219,9 +2219,7 @@ async function verifyGitHubPathExists(path){
 
         // Build editable form
         let html = '<div style="display:flex; flex-direction:column; gap:1rem;">';
-        // Token status badge
-        const rawToken = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
-        html += `<div id="tokenStatusBadge" style="padding:0.5rem 0.75rem; border:2px solid ${rawToken? '#059669':'#dc2626'}; background:${rawToken? '#ecfdf5':'#fef2f2'}; color:${rawToken? '#065f46':'#991b1b'}; border-radius:8px; font-weight:600;">${rawToken? '🔒 GitHub token algılandı':'🔓 GitHub token bulunamadı – Kaydet sırasında hata alırsanız Ayarlar bölümünden ekleyin.'}</div>`;
+        // (Token rozeti kaldırıldı - istenmeyen uyarı metni silindi)
         html += '<div><label style="font-weight:600; display:block; margin-bottom:0.25rem;">👤 Ad:</label>';
         html += `<input id="editName" type="text" value="${escapeHtml(u.name||'')}" style="width:100%; padding:0.5rem; border:2px solid #e5e7eb; border-radius:8px;" /></div>`;
         
@@ -2242,7 +2240,10 @@ async function verifyGitHubPathExists(path){
         html += '</div>';
 
         html += '<div id="editMsg" style="color:var(--green-dark); font-weight:600; text-align:center; min-height:1.5rem;"></div>';
-        
+           // Flush button (pending edits)
+           html += '<div style="display:flex; gap:0.5rem; flex-wrap:wrap; justify-content:center;">'
+             + '<button id="flushPendingBtn" class="btn btn-ghost" type="button" style="font-size:0.8rem;">🔁 Bekleyen Güncellemeleri Gönder</button>'
+             + '</div>';
         html += '<div style="display:flex; gap:0.75rem;">';
         html += `<button onclick="saveUserEdit(${idx})" class="btn" style="flex:1;">💾 Kaydet</button>`;
         html += `<button onclick="openUserDetail(${idx})" class="btn btn-ghost" style="flex:1;">✕ İptal</button>`;
@@ -2250,6 +2251,13 @@ async function verifyGitHubPathExists(path){
         html += '</div>';
 
         body.innerHTML = html;
+        // Bind flush button visibility / action
+        const flushBtn = document.getElementById('flushPendingBtn');
+        if(flushBtn){
+          const pending = JSON.parse(localStorage.getItem('pending_user_edits')||'[]');
+          if(!pending.length) flushBtn.style.display='none';
+          flushBtn.addEventListener('click', ()=>{ flushPendingUserEdits(); setTimeout(()=>{ editUserInModal(idx); }, 800); });
+        }
       }catch(e){ console.error('editUserInModal error', e); }
     }
 
@@ -2294,7 +2302,10 @@ async function verifyGitHubPathExists(path){
         // Preflight token validation (abort early if invalid)
         const tokenInfo = await validateGitHubToken(token);
         if(!tokenInfo.valid){
-          if (msg) msg.textContent = '❌ GitHub token eksik/geçersiz: ' + tokenInfo.reason + '. Ayarlar bölümünden kişisel erişim anahtarını (repo içeriği yazma yetkili) girin.';
+          // Token yoksa veya geçersizse değişikliği kuyruğa al
+          queuePendingUserEdit(u);
+          if (msg) msg.textContent = '✅ Değişiklik kaydedildi (yerel kuyruk). Token eklenince GitHub\'a gönderilecek.';
+          // Modalı kapatmadan kullanıcıya bilgi göster
           return;
         }
 
@@ -2351,6 +2362,55 @@ async function verifyGitHubPathExists(path){
         }
       }
     }
+
+    // Kullanıcı düzenleme kuyruğu (token yoksa geçici depolama)
+    function queuePendingUserEdit(userObj){
+      try {
+        const key='pending_user_edits';
+        const arr = JSON.parse(localStorage.getItem(key)||'[]');
+        const entry = { email: userObj.email, name: userObj.name, address: userObj.address||{}, queuedAt: Date.now() };
+        // Replace any existing entry for same email (son hali tut)
+        const idx = arr.findIndex(e=> e.email===entry.email);
+        if(idx!==-1) arr[idx]=entry; else arr.push(entry);
+        localStorage.setItem(key, JSON.stringify(arr));
+      } catch(e){ console.warn('[admin] queuePendingUserEdit hata', e); }
+    }
+
+    async function flushPendingUserEdits(){
+      const key='pending_user_edits';
+      const arr = JSON.parse(localStorage.getItem(key)||'[]');
+      if(!arr.length){ alert('Bekleyen kullanıcı güncellemesi yok'); return; }
+      const token = (typeof getGitHubToken==='function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
+      const tokenInfo = await validateGitHubToken(token);
+      if(!tokenInfo.valid){ alert('Token geçersiz veya yok. Önce geçerli token ekleyin.'); return; }
+      const owner='amtbrs-03'; const repo='AMTBRS'; const branch='site-release';
+      let success=0, fail=0; const failures=[];
+      for(const u of arr){
+        try {
+          const fileName = `user_${u.email}_full.json`;
+          const filePath = `users/${fileName}`;
+          const getUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}?ref=${branch}`;
+          const headers = { 'Accept':'application/vnd.github.v3+json','Authorization':'token '+token };
+          let sha=null;
+          const getRes = await fetch(getUrl,{headers});
+          if(getRes.ok){ const jd = await getRes.json(); sha=jd.sha; }
+          const putUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`;
+          const content = toBase64(JSON.stringify({ name:u.name, email:u.email, address:u.address }, null, 2));
+          const payload = { message:`chore(admin): kuyruktan kullanıcı güncelle (${u.email})`, content, branch, ...(sha?{sha}:{}) };
+          const putRes = await fetch(putUrl,{ method:'PUT', headers:{ 'Content-Type':'application/json','Authorization':'token '+token }, body: JSON.stringify(payload) });
+          if(!putRes.ok){ throw new Error('PUT '+putRes.status); }
+          success++;
+        } catch(e){ fail++; failures.push(u.email+': '+(e.message||e)); }
+      }
+      if(failures.length){ console.warn('[admin] flush failures', failures); }
+      if(success){
+        // Temizle sadece başarılı olanları: başarısızlar kalsın
+        const remaining = arr.filter(u=> failures.some(f=> f.startsWith(u.email+':')));
+        localStorage.setItem(key, JSON.stringify(remaining));
+      }
+      alert(`Kuyruk gönderildi. Başarılı: ${success}, Hatalı: ${fail}` + (fail? '\n' + failures.join('\n') : ''));
+    }
+    window.flushPendingUserEdits = flushPendingUserEdits;
     
     // Close modal when clicking outside (only users modal now)
     document.getElementById('usersModal').addEventListener('click', function(e) {
