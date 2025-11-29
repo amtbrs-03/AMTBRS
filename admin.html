@@ -2062,27 +2062,7 @@ async function verifyGitHubPathExists(path){
   </div>
 
   <script>
-    // Basit giriş kontrolü: admin şifresi "cicek2025" ise giriş başarılı
-    document.addEventListener('DOMContentLoaded', function(){
-      var btn = document.getElementById('loginBtn');
-      if(btn){
-        btn.onclick = function(){
-          var pw = document.getElementById('loginPw').value;
-          var msg = document.getElementById('jsErrorMsg');
-          var adminUI = document.getElementById('adminUI');
-          var authContent = document.getElementById('authCard');
-          if(pw === 'cicek2025'){
-            msg.style.color = 'green';
-            msg.textContent = 'Giriş başarılı!';
-            if(adminUI) adminUI.style.display = 'block';
-            if(authContent) authContent.style.display = 'none';
-          }else{
-            msg.style.color = 'red';
-            msg.textContent = 'Şifre yanlış!';
-          }
-        };
-      }
-    });
+    // Yönetici paneli doğrudan erişim: şifre/giriş alanı ve kontrolü tamamen kaldırıldı
     // JS hatası olursa ekrana yaz
     window.onerror = function(msg, url, line, col, error) {
       var el = document.getElementById('jsErrorMsg');
