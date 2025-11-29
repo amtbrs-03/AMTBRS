@@ -2,10 +2,10 @@
   "id": "ORD-1732577001234",
   "date": 1732577001234,
   "customerEmail": "test@example.com",
-  "customerName": "Test MÃÂÃÂ¼ÃÂÃÂteri",
+  "customerName": "Test Müşteri",
   "items": [
     {
-      "name": "KÃÂÃÂ±rmÃÂÃÂ±zÃÂÃÂ± GÃÂÃÂ¼l Buketi",
+      "name": "Kırmızı Gül Buketi",
       "price": 149,
       "qty": 2
     },
