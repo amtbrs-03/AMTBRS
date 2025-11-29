@@ -800,15 +800,8 @@
             // Kilidi kaldır
             setTimeout(function(){ lock.style.display = 'none'; }, 600);
           }
-                // Page reload logic removed to prevent accidental navigation during admin operations
-              }
-            }, 300);
-          });
-        } else {
-          console.warn('pageRefreshBtn bulunamadı');
         }
-      }catch(e){ console.warn('Yenile butonu bağlanamadı:', e); }
-    })();
+      } catch(e){ console.warn('Yenile butonu bağlanamadı:', e); }
 
     (function(){
       try {
@@ -1982,18 +1975,17 @@
             btn.innerHTML = 'Kaydet';
           }
         };
-            for (const ep of endpoints){
-              try{
-                const res = await fetch(ep, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
-                lastRes = res;
-                if (res.ok){ ok = true; break; }
-              }catch(e){ lastRes = e; }
-            }
-            if (ok) alert('Değişiklikler GitHub deposuna işlendi.');
-            else alert('GitHub kaydı başarısız: ' + (lastRes && lastRes.statusText ? lastRes.statusText : (lastRes && lastRes.message) || 'bilinmiyor'));
-          }catch(err){ console.error('push to github failed', err); alert('GitHub kaydı sırasında hata: ' + err.message); }
-        });
-      });
+        for (const ep of endpoints){
+          try{
+            const res = await fetch(ep, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+            lastRes = res;
+            if (res.ok){ ok = true; break; }
+          }catch(e){ lastRes = e; }
+        }
+        if (ok) alert('Değişiklikler GitHub deposuna işlendi.');
+        else alert('GitHub kaydı başarısız: ' + (lastRes && lastRes.statusText ? lastRes.statusText : (lastRes && lastRes.message) || 'bilinmiyor'));
+      }catch(err){ console.error('push to github failed', err); alert('GitHub kaydı sırasında hata: ' + err.message); }
+    });
 
       // helper: commit files to repo via serverless endpoints
       async function commitFilesToRepo(files, message){
