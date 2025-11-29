@@ -230,6 +230,40 @@
   <title>Admin - ERN-ÇİÇEK</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg" />
   <link rel="shortcut icon" href="logo.svg" />
+  <!-- Ön yüklemede bozuk karakter (mojibake) görünmesini tamamen engelle -->
+  <style>html.__fixing{visibility:hidden !important}</style>
+  <script>
+  (function earlyNormalize(){
+    // Sayfa ilk boyanmadan önce gizle ve metin düzelince göster
+    var root = document.documentElement;
+    if (!root.classList.contains('__fixing')) root.classList.add('__fixing');
+    const mapSeq = [
+      [/Ãœ/g,'Ü'],[/Ã¼/g,'ü'],[/Ã‡/g,'Ç'],[/Ã§/g,'ç'],[/Ã–/g,'Ö'],[/Ã¶/g,'ö'],[/ÄŸ/g,'ğ'],[/ÅŸ/g,'ş'],[/Ä±/g,'ı'],[/Ä°/g,'İ'],[/â‚º/g,'₺'],
+      [/â€™/g,"'"],[/â€œ/g,'"'],[/â€�/g,'"'],[/â€“/g,'–'],[/â€”/g,'—'],
+      [/ğŸ’¾/g,'💾'],[/ğŸ”„/g,'🔄'],[/ğŸ‘¥/g,'👥'],[/ğŸ“¦/g,'📦'],[/ğŸ§¾/g,'🧾'],[/â•/g,'➕'],[/ğŸŒ¹/g,'🌹'],[/ğŸ“Œ/g,'🖼️'],[/ğŸ›ï¸/g,'🛠️']
+    ];
+    function needsFix(str){ return /Ã|Ä|Å|â‚º|ğŸ|â•/.test(str); }
+    function byteReDecode(str){
+      try { const bytes = new Uint8Array(str.length); for (let i=0;i<str.length;i++) bytes[i]=str.charCodeAt(i)&0xFF; return new TextDecoder().decode(bytes);}catch(e){return str;}
+    }
+    function fix(str){
+      let out=str; mapSeq.forEach(([re,rep])=>{ out=out.replace(re,rep); });
+      if (needsFix(out)){ const rede=byteReDecode(out); if (!needsFix(rede)) out=rede; }
+      return out;
+    }
+    function sweep(){
+      if (!(document && document.body)) return;
+      const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,null);
+      while(walker.nextNode()){
+        const n=walker.currentNode; const t=n.nodeValue; if(t && needsFix(t)){ const f=fix(t); if(f!==t) n.nodeValue=f; }
+      }
+    }
+    function reveal(){ root.classList.remove('__fixing'); }
+    function runAll(){ sweep(); // birkaç tekrar ile geç yüklenenleri de yakala
+      let c=0; const timer=setInterval(()=>{ sweep(); if(++c>2){ clearInterval(timer); reveal(); } },150); }
+    if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', runAll); else runAll();
+  })();
+  </script>
   <style>
     :root{
       --green-primary: #10b981;
