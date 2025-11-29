@@ -1011,6 +1011,22 @@ async function verifyGitHubPathExists(path){
       return token;
     }
 
+    // Validate GitHub token with a lightweight authenticated request
+    async function validateGitHubToken(token){
+      if(!token) return { valid:false, status:0, reason:'Token bulunamadı' };
+      try {
+        const res = await fetch('https://api.github.com/rate_limit', {
+          headers: { 'Accept':'application/vnd.github.v3+json', 'Authorization': 'token ' + token }
+        });
+        if(res.status === 401) return { valid:false, status:401, reason:'Geçersiz veya süresi dolmuş token (401)' };
+        if(res.status === 403) return { valid:false, status:403, reason:'Yetki reddedildi (403) – kapsamları kontrol edin' };
+        if(!res.ok) return { valid:false, status:res.status, reason:'Doğrulama başarısız (' + res.status + ')' };
+        return { valid:true, status:res.status };
+      } catch(e){
+        return { valid:false, status:0, reason:'Ağ hatası: ' + (e.message||e) };
+      }
+    }
+
     // Push data to GitHub via Actions workflow
     async function pushToGitHub(data, message) {
       const token = getGitHubToken();
@@ -2194,6 +2210,9 @@ async function verifyGitHubPathExists(path){
 
         // Build editable form
         let html = '<div style="display:flex; flex-direction:column; gap:1rem;">';
+        // Token status badge
+        const rawToken = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
+        html += `<div id="tokenStatusBadge" style="padding:0.5rem 0.75rem; border:2px solid ${rawToken? '#059669':'#dc2626'}; background:${rawToken? '#ecfdf5':'#fef2f2'}; color:${rawToken? '#065f46':'#991b1b'}; border-radius:8px; font-weight:600;">${rawToken? '🔒 GitHub token algılandı':'🔓 GitHub token bulunamadı – Kaydet sırasında hata alırsanız Ayarlar bölümünden ekleyin.'}</div>`;
         html += '<div><label style="font-weight:600; display:block; margin-bottom:0.25rem;">👤 Ad:</label>';
         html += `<input id="editName" type="text" value="${escapeHtml(u.name||'')}" style="width:100%; padding:0.5rem; border:2px solid #e5e7eb; border-radius:8px;" /></div>`;
         
@@ -2263,6 +2282,13 @@ async function verifyGitHubPathExists(path){
         const headers = { 'Accept': 'application/vnd.github.v3+json' };
         if (token) headers['Authorization'] = `token ${token}`;
 
+        // Preflight token validation (abort early if invalid)
+        const tokenInfo = await validateGitHubToken(token);
+        if(!tokenInfo.valid){
+          if (msg) msg.textContent = '❌ GitHub token eksik/geçersiz: ' + tokenInfo.reason + '. Ayarlar bölümünden kişisel erişim anahtarını (repo içeriği yazma yetkili) girin.';
+          return;
+        }
+
         const getRes = await fetch(getUrl, { headers });
         let sha = null;
         if (getRes.ok) {
@@ -2303,7 +2329,17 @@ async function verifyGitHubPathExists(path){
       }catch(e){
         console.error('saveUserEdit error', e);
         const msg = document.getElementById('editMsg');
-        if (msg) msg.textContent = '❌ Hata: ' + (e.message||e);
+        if (msg) {
+          const em = (e && e.message) ? e.message : e;
+          // Friendlier messages for common GitHub auth errors
+          if (/401/.test(em)) {
+            msg.textContent = '❌ Yetkisiz (401): Token geçersiz veya eksik. Ayarlar > GitHub Token bölümünden güncelleyin.';
+          } else if (/403/.test(em)) {
+            msg.textContent = '❌ Yetki reddedildi (403): Token kapsamlarını kontrol edin (repo içeriği yazma izni).';
+          } else {
+            msg.textContent = '❌ Hata: ' + em;
+          }
+        }
       }
     }
     
