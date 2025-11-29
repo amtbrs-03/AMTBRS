@@ -1516,7 +1516,39 @@ async function verifyGitHubPathExists(path){
             products[idx].name = name; products[idx].price = price; products[idx].image = img;
           }
           setProducts(products);
-          alert('Tüm değişiklikler tarayıcıda kaydedildi.');
+          // Attempt GitHub commit (products.json) if token available
+          let committedRemote = false;
+          try {
+            const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
+            if (token) {
+              const owner = 'amtbrs-03';
+              const repo = 'AMTBRS';
+              const branch = 'site-release';
+              const path = 'products.json';
+              const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+              // Get current SHA
+              let sha = null;
+              try {
+                const getRes = await fetch(apiUrl + `?ref=${branch}&t=${Date.now()}`, { headers: { 'Accept':'application/vnd.github.v3+json', 'Authorization': `token ${token}` }, cache:'no-store' });
+                if (getRes.ok) { const j = await getRes.json(); sha = j.sha; }
+              } catch(e){ /* ignore */ }
+              const remoteObj = { updatedAt: Date.now(), items: products };
+              const contentB64 = toBase64(JSON.stringify(remoteObj, null, 2));
+              const body = { message: 'chore(admin): toplu ürün kaydet', content: contentB64, branch }; if (sha) body.sha = sha;
+              const putRes = await fetch(apiUrl, { method:'PUT', headers:{ 'Content-Type':'application/json', 'Authorization': `token ${token}` }, body: JSON.stringify(body) });
+              if (putRes.ok) {
+                committedRemote = true;
+              } else {
+                const errTxt = await putRes.text().catch(()=> '');
+                console.warn('[admin] GitHub commit başarısız:', putRes.status, errTxt);
+              }
+            }
+          } catch(e){ console.warn('[admin] remote commit hata', e); }
+          if (committedRemote) {
+            alert('✅ Tüm değişiklikler kaydedildi (tarayıcı + GitHub).');
+          } else {
+            alert('Tüm değişiklikler tarayıcıda kaydedildi.' + ( (typeof getGitHubToken === 'function' && getGitHubToken()) ? '\n⚠️ GitHub kaydı başarısız veya token yetersiz.' : '\nℹ️ GitHub token yok, sadece lokal kaydedildi.' ));
+          }
           render();
         }); // end withProgress
       }); // end saveAllBtn click
@@ -1541,30 +1573,25 @@ async function verifyGitHubPathExists(path){
       if (pushProductsBtn) pushProductsBtn.addEventListener('click', async (ev)=>{
         const btn = ev.currentTarget;
         await withProgress(btn, '⏳ GitHub\'a kaydediliyor...', async ()=>{
-          try{
-          const prods = getProducts();
-          if (!prods || !prods.length) return alert('Kayıtlı ürün yok');
-          const files = [];
-          // products.json
-          files.push({ path: 'products.json', contentBase64: toBase64(JSON.stringify(prods, null, 2)) });
-          // include embedded images
-          for (const p of prods){
-            if (p.image && typeof p.image === 'string' && p.image.indexOf('data:') === 0){
-              const m = p.image.match(/^data:(image\/(png|jpeg|jpg|webp));base64,(.*)$/i);
-              if (m){
-                const ext = (m[2] && m[2].toLowerCase() === 'jpeg') ? 'jpg' : (m[2] || 'png');
-                const filename = `images/products/product-${p.id}.${ext}`;
-                files.push({ path: filename, contentBase64: m[3] });
-                p.image = filename;
-              }
-            }
-          }
-          // update products.json with filenames
-          files[0].contentBase64 = toBase64(JSON.stringify(prods, null, 2));
-          const r = await commitFilesToRepo(files, 'admin: push products via admin panel');
-          if (r.ok) alert('Ürünler GitHub deposuna kaydedildi');
-          else alert('Ürün push başarısız: ' + (r.err && r.err.statusText ? r.err.statusText : (r.err && r.err.message) || 'bilinmiyor'));
-          }catch(err){ console.error(err); alert('Ürün push sırasında hata: ' + err.message); }
+          try {
+            const prods = getProducts();
+            if (!prods || !prods.length) return alert('Kayıtlı ürün yok');
+            const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
+            if (!token) return alert('GitHub token yok (Ayarlar bölümünden ekleyin).');
+            const owner = 'amtbrs-03'; const repo = 'AMTBRS'; const branch = 'site-release'; const path = 'products.json';
+            const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+            let sha = null;
+            try {
+              const getRes = await fetch(apiUrl + `?ref=${branch}&t=${Date.now()}`, { headers:{ 'Accept':'application/vnd.github.v3+json', 'Authorization': `token ${token}` }, cache:'no-store' });
+              if (getRes.ok) { const j = await getRes.json(); sha = j.sha; }
+            } catch(e){ /* ignore */ }
+            // Optionally externalize embedded data URLs to separate image files later; for now keep inline or path.
+            const remoteObj = { updatedAt: Date.now(), items: prods };
+            const contentB64 = toBase64(JSON.stringify(remoteObj, null, 2));
+            const body = { message: 'chore(admin): ürün push', content: contentB64, branch }; if (sha) body.sha = sha;
+            const putRes = await fetch(apiUrl, { method:'PUT', headers:{ 'Content-Type':'application/json', 'Authorization': `token ${token}` }, body: JSON.stringify(body) });
+            if (putRes.ok) alert('✅ Ürünler GitHub\'a kaydedildi'); else { const t = await putRes.text().catch(()=> ''); alert('Push başarısız: ' + putRes.status + ' ' + t); }
+          } catch(err){ console.error(err); alert('Ürün push sırasında hata: ' + err.message); }
         });
       });
 
