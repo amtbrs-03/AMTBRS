@@ -601,18 +601,45 @@
               const card = document.createElement('div');
               card.className = 'prod-item';
               card.setAttribute('data-id', p.id);
+              const badgeHtml = p.badge ? `<span style='background:#f59e0b;color:#fff;padding:2px 6px;border-radius:6px;font-size:11px;margin-left:4px;'>${p.badge}</span>` : '';
               card.innerHTML = `
                 <div class='prod-row'>
                   <div class='thumb' style='background:#e0e7ef;display:flex;align-items:center;justify-content:center;'>${p.image ? (/(jpg|jpeg|png|webp)$/i.test(p.image) ? `<img src='${p.image}' style='width:100%;height:100%;object-fit:cover;border-radius:10px;'/>` : p.image) : '🌺'}</div>
                   <div>
-                    <div style='font-weight:700;font-size:1.08rem;'>${p.name || ''}</div>
+                    <div style='font-weight:700;font-size:1.08rem;'>${p.name || ''} ${badgeHtml}</div>
                     <div class='meta'>Fiyat: ₺${(p.price||0).toFixed(2)}</div>
                     <div class='meta'>ID: ${p.id}</div>
                   </div>
                 </div>
                 <div class='actions'>
-                  <button class='btn' onclick='openProductEditPanelById("${p.id}")'>Düzenle</button>
+                  <button class='btn edit-toggle' aria-expanded='false' data-id='${p.id}' onclick='toggleInlineEdit("${p.id}", this)'>Düzenle</button>
                   <button class='btn btn-danger' onclick='deleteAdminProduct("${p.id}")'>Sil</button>
+                </div>
+                <div class='prod-edit-panel' id='edit-panel-${p.id}' style='display:none;margin-top:8px;padding:10px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;'>
+                  <div style='display:grid;gap:6px;'>
+                    <label style='font-size:12px;'>Ad
+                      <input type='text' id='ep-name-${p.id}' value='${p.name || ''}' style='width:100%;padding:6px;font-size:13px;'>
+                    </label>
+                    <label style='font-size:12px;'>Fiyat (₺)
+                      <input type='number' id='ep-price-${p.id}' value='${(p.price||0)}' step='0.01' min='0' style='width:100%;padding:6px;font-size:13px;'>
+                    </label>
+                    <label style='font-size:12px;'>Rozet
+                      <select id='ep-badge-${p.id}' style='width:100%;padding:6px;font-size:13px;'>
+                        <option value='' ${!p.badge?'selected':''}>Yok</option>
+                        <option value='Yeni' ${p.badge==='Yeni'?'selected':''}>Yeni</option>
+                        <option value='İndirim' ${p.badge==='İndirim'?'selected':''}>İndirim</option>
+                        <option value='Popüler' ${p.badge==='Popüler'?'selected':''}>Popüler</option>
+                      </select>
+                    </label>
+                    <label style='font-size:12px;'>Görsel / Emoji
+                      <input type='text' id='ep-image-${p.id}' value='${p.image || ''}' placeholder='images/products/<id>.jpg veya emoji' style='width:100%;padding:6px;font-size:13px;'>
+                    </label>
+                  </div>
+                  <div id='ep-msg-${p.id}' style='margin-top:6px;font-size:12px;color:#0f766e;min-height:18px;'></div>
+                  <div style='display:flex;gap:6px;margin-top:8px;'>
+                    <button class='btn' onclick='saveInlineEdit("${p.id}")'>Kaydet</button>
+                    <button class='btn btn-ghost' onclick='cancelInlineEdit("${p.id}")'>İptal</button>
+                  </div>
                 </div>`;
               container.appendChild(card);
             });
@@ -875,7 +902,19 @@ async function verifyGitHubPathExists(path){
 
         // Inline edit helpers
         function openInlineEdit(id){
-          const panel = document.getElementById('edit-panel-'+id); if(panel){ panel.style.display = panel.style.display==='none' ? 'block':'none'; }
+          const panel = document.getElementById('edit-panel-'+id);
+          if(panel){ panel.style.display='block'; }
+        }
+        function toggleInlineEdit(id, btn){
+          document.querySelectorAll('.prod-edit-panel').forEach(p=>{ if(p.id!== 'edit-panel-'+id) p.style.display='none'; });
+          const panel = document.getElementById('edit-panel-'+id);
+          if(!panel) return;
+          const isOpen = panel.style.display !== 'none';
+          if(isOpen){ panel.style.display='none'; if(btn){ btn.textContent='Düzenle'; btn.setAttribute('aria-expanded','false'); } }
+          else {
+            panel.style.display='block'; if(btn){ btn.textContent='Kapat'; btn.setAttribute('aria-expanded','true'); }
+            const first = panel.querySelector('input,select,textarea'); if(first) setTimeout(()=>first.focus(), 50);
+          }
         }
         function cancelInlineEdit(id){
           const panel = document.getElementById('edit-panel-'+id); if(panel){ panel.style.display='none'; }
@@ -924,8 +963,15 @@ async function verifyGitHubPathExists(path){
           } catch(e){ if(msg) msg.textContent='Hata: '+(e.message||e); }
         }
         window.openInlineEdit = openInlineEdit;
+        window.toggleInlineEdit = toggleInlineEdit;
         window.cancelInlineEdit = cancelInlineEdit;
         window.saveInlineEdit = saveInlineEdit;
+        document.addEventListener('keydown', e=>{
+          if(e.key==='Escape'){
+            const open = Array.from(document.querySelectorAll('.prod-edit-panel')).find(p=>p.style.display!=='none');
+            if(open){ open.style.display='none'; const id=open.id.replace('edit-panel-',''); const btn=document.querySelector('.edit-toggle[data-id="'+id+'"]'); if(btn){ btn.textContent='Düzenle'; btn.setAttribute('aria-expanded','false'); } }
+          }
+        });
             const pth = (pathEl && pathEl.value || '').trim();
             if (!pid){ setMsg('Ürün ID gerekli.', false); applyBtn.innerHTML = origText; applyBtn.disabled = false; return; }
             if (!pth || !/^images\/products\/[A-Za-z0-9._-]+\.(jpg|jpeg|png|webp)$/i.test(pth)){
