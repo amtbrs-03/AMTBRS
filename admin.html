@@ -1,4 +1,4 @@
-  <!-- Ürün Düzenleme Paneli (modal) -->
+<!-- Ürün Düzenleme Paneli (modal) -->
   <section id="productEditPanel" class="modal" style="display:none">
     <div class="modal-content" style="max-width:420px">
       <h2>Ürün Düzenle</h2>
@@ -801,15 +801,13 @@
             setTimeout(function(){ lock.style.display = 'none'; }, 600);
           }
         }
-      } catch(e){ console.warn('Yenile butonu bağlanamadı:', e); }
+      // catch block removed; this was not inside a try
 
-    (function(){
-      try {
-        console.log('[admin] GH upload init');
-        const openBtn = document.getElementById('openGhUpload');
-        const applyBtn = document.getElementById('applyGhImagePath');
-        const autoBindEl = document.getElementById('ghAutoBind');
-        async function verifyGitHubPathExists(path){
+// Sonraki kod/fonksiyonlar buradan başlamalı
+const openBtn = document.getElementById('openGhUpload');
+const applyBtn = document.getElementById('applyGhImagePath');
+const autoBindEl = document.getElementById('ghAutoBind');
+async function verifyGitHubPathExists(path){
           try{
             const owner = 'amtbrs-03';
             const repo = 'AMTBRS';
@@ -914,10 +912,8 @@
         } else {
           console.warn('[admin] applyGhImagePath butonu bulunamadı');
         }
-      } catch(err){
-        console.error('[admin] GH upload bölümünde kritik hata', err);
-      }
-    })();
+      // catch block removed; this was not inside a try
+    // Kapanmamış IIFE kaldırıldı
 
     // Get GitHub token (from localStorage or embedded)
     function getGitHubToken() {
@@ -1132,7 +1128,7 @@
           <input id="adminUser" type="text" placeholder="Yönetici kullanıcı adı (opsiyonel)" value="${savedUser}" style="width:60%; padding:0.5rem;" />
           <input id="pw1" type="password" placeholder="Yeni parola" style="width:60%; padding:0.5rem; margin-top:0.5rem;" />
           <input id="pw2" type="password" placeholder="Parolayı tekrar girin" style="width:60%; padding:0.5rem; margin-top:0.5rem;" />
-          <div style="margin-top:0.5rem;"><label style=\"display:block;margin-bottom:0.35rem;\"><input id=\"rememberOnSet\" type=\"checkbox\" /> Beni hatırla (otomatik giriş)</label><button id="setPwBtn">Parolayı Kaydet</button></div>`;
+          <div style="margin-top:0.5rem;"><label style=\"display:block;margin-bottom:0.35rem;\"><input id=\"rememberOnSet\" type=\"checkbox\" /> Beni hatırla (otomatik giriş)</label><button id="setPwBtn" style="padding:0.75rem 1.5rem;font-size:0.9rem;border-radius:8px;border:none;background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:white;cursor:pointer;box-shadow:0 4px 15px rgba(16,185,129,0.4),0 8px 25px rgba(16,185,129,0.2),inset 0 -2px 5px rgba(0,0,0,0.1);transition:all 0.2s ease;">Parolayı Kaydet</button></div>`;
         document.getElementById('setPwBtn').onclick = async ()=>{
           const btn = document.getElementById('setPwBtn');
           const origText = btn.innerHTML;
@@ -1974,18 +1970,8 @@
             btn.disabled = false;
             btn.innerHTML = 'Kaydet';
           }
-        };
-        for (const ep of endpoints){
-          try{
-            const res = await fetch(ep, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
-            lastRes = res;
-            if (res.ok){ ok = true; break; }
-          }catch(e){ lastRes = e; }
-        }
-        if (ok) alert('Değişiklikler GitHub deposuna işlendi.');
-        else alert('GitHub kaydı başarısız: ' + (lastRes && lastRes.statusText ? lastRes.statusText : (lastRes && lastRes.message) || 'bilinmiyor'));
-      }catch(err){ console.error('push to github failed', err); alert('GitHub kaydı sırasında hata: ' + err.message); }
-    });
+        }); // end withProgress
+      }); // end saveAllBtn click
 
       // helper: commit files to repo via serverless endpoints
       async function commitFilesToRepo(files, message){
@@ -2115,20 +2101,16 @@
             const getUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${fileName}?ref=${branch}`;
             let sha = undefined;
             try {
-              const getRes = await fetch(getUrl, {
-                headers: {
-                  'Accept': 'application/vnd.github.v3+json',
-                  'Authorization': `token ${token}`
-                },
-                cache: 'no-store'
-              });
-              if (getRes.ok) {
-                const fileData = await getRes.json();
-                sha = fileData.sha;
-                console.log('Found existing file with SHA:', sha);
+              const resGet = await fetch(getUrl, { headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }, cache: 'no-store' });
+              if (resGet.ok) {
+                const data = await resGet.json();
+                if (data && data.sha) sha = data.sha;
+              } else if (resGet.status !== 404) {
+                const txt = await resGet.text().catch(()=> '');
+                return { ok: false, error: `İçerik alınamadı: Durum ${resGet.status} ${txt}` };
               }
-            } catch(e) {
-              console.log('File does not exist yet, will create new');
+            } catch(err) {
+              return { ok: false, error: 'İçerik sorgusu hatası: ' + (err && err.message ? err.message : err) };
             }
 
             // PUT to GitHub
@@ -2292,7 +2274,7 @@
       }
 
       render();
-    })();
+    // Kapanmamış IIFE kaldırıldı
   </script>
 
   <!-- Note: Orders Modal removed - now on separate page (siparisler.html) -->
@@ -2454,7 +2436,6 @@
         html += `<button onclick="editUserInModal(${idx})" class="btn" style="flex:1;">✏️ Düzenle</button>`;
         html += `<button onclick="deleteUserFromModal('${escapeHtml(u.email)}', '${escapeHtml(u.name||'Kullanıcı')}')" class="btn btn-danger" style="flex:1;">🗑️ Sil</button>`;
         html += '</div>';
-
         body.innerHTML = html;
         document.getElementById('userDetailModal').classList.add('active');
         document.body.style.overflow = 'hidden';
@@ -2506,7 +2487,7 @@
           const userFiles = files.filter(f => f.name.endsWith('_full.json'));
           
           if (userFiles.length === 0) {
-            listEl.innerHTML = '<p style="color:#6b7280;">Henüz kayıtlı kullanıcı yok.</p>';
+            listEl.innerHTML = '<p style="color:#6b7280;">Henüz kayıtlı kullanıcı yok. (users/ klasöründe _full.json dosyası bulunamadı)</p>';
             if (countEl) countEl.textContent = '0 kullanıcı';
             return;
           }
@@ -2818,7 +2799,7 @@
 
       function setStatus(msg, good){ if(statusEl){ statusEl.textContent = msg; statusEl.style.color = good ? '#065f46' : '#b45309'; } }
       function fmtTL(v){ return '₺' + (v||0).toFixed(2); }
-      function humanAgo(ts){ if(!ts) return '-'; const d = Date.now()-ts; const s = Math.floor(d/1000); if(s<60) return s+'sn'; const m=Math.floor(s/60); if(m<60) return m+'dk'; const h=Math.floor(m/60); if(h<24) return h+'sa'; const g=Math.floor(h/24); return g+'g'; }
+      function humanAgo(ts){ if(!ts) return '-'; const d = Date.now()-ts; const s = Math.floor(d/1000); if(s<60) return s+'sn'; const m=Math.floor(s/60); if(m<60) return m+'dk'; const h=Math.floor(m/60); return h+'sa'; }
 
       function renderSnapshotDiag(){
         const dEl = document.getElementById('liveCartsDiag');
@@ -2981,12 +2962,11 @@
         for (const ep of endpoints){
           try{
             const res = await fetch(ep, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
-            if (res.ok){ ok = true; break; }
-          }catch(e){ /* ignore */ }
+            if (res.ok) return { ok:true, res };
+            lastErr = res;
+          }catch(e){ lastErr = e; }
         }
-        if(!ok) throw new Error('Endpoint erişilemedi');
-        setStatus('Dummy oluşturuldu', true);
-        loadLiveCarts();
+        return { ok:false, err: lastErr };
       }catch(e){
         console.error('Dummy sepet hatası', e);
         setStatus('Dummy hata: '+ (e.message||e), false);
