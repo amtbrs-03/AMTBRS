@@ -1,187 +1,11 @@
-<!-- Ürün Düzenleme Paneli (modal) -->
-  <section id="productEditPanel" class="modal" style="display:none">
-    <div class="modal-content" style="max-width:420px">
-      <h2>Ürün Düzenle</h2>
-      <form id="productEditForm" class="form-content">
-        <label>Ürün ID
-          <input id="editProductId" type="text" required readonly>
-        </label>
-        <label>Ürün Adı
-          <input id="editProductName" type="text" required>
-        </label>
-        <label>Fiyat (₺)
-          <input id="editProductPrice" type="number" min="0" step="0.01" required>
-        </label>
-        <label>Rozet
-          <select id="editProductBadge">
-            <option value="">Yok</option>
-            <option value="Yeni">Yeni</option>
-            <option value="İndirim">İndirim</option>
-            <option value="Popüler">Popüler</option>
-          </select>
-        </label>
-        <label>Görsel Yolu
-          <input id="editProductImage" type="text" placeholder="images/products/<id>.jpg" required>
-        </label>
-        <div id="editProductMsg" style="margin:8px 0;color:#c00"></div>
-        <button type="submit" id="saveProductBtn">Kaydet</button>
-        <button type="button" onclick="closeProductEditPanel()">Kapat</button>
-      </form>
-    </div>
-  </section>
-  <style>
-    #productEditPanel.modal { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.18); z-index:99; }
-    #productEditPanel.modal.active { display:flex; align-items:center; justify-content:center; }
-    #productEditPanel .modal-content { background:#fff; border-radius:8px; box-shadow:0 2px 16px #0002; padding:24px 20px; }
-    #productEditPanel label { display:block; margin:10px 0 4px; font-size:15px; }
-    #productEditPanel input, #productEditPanel select { width:100%; margin-top:2px; padding:7px; font-size:15px; border-radius:4px; border:1px solid #ccc; }
-    #productEditPanel button { margin:10px 6px 0 0; padding:7px 18px; font-size:15px; border-radius:4px; border:none; background:#eee; cursor:pointer; }
-    #productEditPanel button#saveProductBtn { background:#2b7cff; color:#fff; }
-    #productEditPanel button:disabled { opacity:0.6; cursor:not-allowed; }
-    #editProductMsg { min-height:22px; }
-    .edit-btn { background:#ffd; border:1px solid #ccc; border-radius:4px; padding:2px 8px; cursor:pointer; }
-  </style>
-  <script defer>
-  // Admin paneli her zaman görünür, oturum kontrolü kaldırıldı
-  window.addEventListener('DOMContentLoaded', function(){
-    var adminUI = document.getElementById('adminUI');
-    if (adminUI) adminUI.style.display = 'block';
-  });
-
-  // XSS ve input doğrulama
-  function safeInput(str) {
-    return String(str).replace(/[<>&"']/g, function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;','\'':'&#39;'}[c]; });
-  }
-
-  // UTF-8 güvenli Base64 kodlama (Unicode bozulmasını engeller)
-  function toBase64(str){
-    try {
-      const utf8 = new TextEncoder().encode(str);
-      let bin = '';
-      for (let i=0;i<utf8.length;i++) bin += String.fromCharCode(utf8[i]);
-      return btoa(bin);
-    } catch(e){
-      try { return btoa(unescape(encodeURIComponent(str))); } catch(_) { return ''; }
-    }
-  }
-  function fromBase64(b64){
-    try {
-      const bin = atob(b64);
-      const bytes = new Uint8Array(bin.length);
-      for (let i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
-      return new TextDecoder().decode(bytes);
-    } catch(e){
-      try { return decodeURIComponent(escape(atob(b64))); } catch(_) { return ''; }
-    }
-  }
-
-  // Public sayfalarda admin fonksiyonları ve hassas veri gösterimi engellenir
-  // Ürün ID ile düzenleme paneli açma
-  async function openProductEditPanelById(id) {
-    try {
-      const res = await fetch('products.json?' + Date.now());
-      if (!res.ok) throw new Error('products.json alınamadı!');
-      const data = await res.json();
-      const products = Array.isArray(data.items) ? data.items : (Array.isArray(data) ? data : []);
-      const p = products.find(x => String(x.id) === String(id));
-      if (p) openProductEditPanel(p);
-      else alert('Ürün bulunamadı!');
-    } catch (err) {
-      alert('Hata: ' + err.message);
-    }
-  }
-  function openProductEditPanel(product) {
-    document.getElementById('editProductId').value = product.id || '';
-    document.getElementById('editProductName').value = product.name || '';
-    document.getElementById('editProductPrice').value = product.price || '';
-    document.getElementById('editProductBadge').value = product.badge || '';
-    document.getElementById('editProductImage').value = product.image || '';
-    document.getElementById('editProductMsg').textContent = '';
-    document.getElementById('productEditPanel').classList.add('active');
-    document.body.style.overflow = 'hidden';
-  }
-  function closeProductEditPanel() {
-    document.getElementById('productEditPanel').classList.remove('active');
-    document.body.style.overflow = '';
-  }
-  document.getElementById('productEditForm').onsubmit = async function(e) {
-    e.preventDefault();
-    const msgEl = document.getElementById('editProductMsg');
-    msgEl.textContent = '⏳ Kaydediliyor...';
-    const id = document.getElementById('editProductId').value.trim();
-    const name = document.getElementById('editProductName').value.trim();
-    const price = parseFloat(document.getElementById('editProductPrice').value);
-    const badge = document.getElementById('editProductBadge').value;
-    const image = document.getElementById('editProductImage').value.trim();
-    if (!/^images\/products\/[A-Za-z0-9._-]+\.(jpg|jpeg|png|webp)$/.test(image)) {
-      msgEl.textContent = 'Geçerli görsel yolu girin!';
-      return;
-    }
-    try {
-      const token = localStorage.github_token || localStorage.gh_token;
-      if (!token) throw new Error('GitHub token gerekli!');
-      const repo = 'amtbrs-03/AMTBRS';
-      const branch = 'site-release';
-      const url = `https://api.github.com/repos/${repo}/contents/products.json?ref=${branch}`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('products.json alınamadı!');
-      const data = await res.json();
-      let products = JSON.parse(fromBase64(data.content));
-      let idx = products.items.findIndex(p => p.id === id);
-      if (idx === -1) throw new Error('Ürün bulunamadı!');
-      products.items[idx] = { id, name, price, badge, image };
-      products.updatedAt = Date.now();
-      const putRes = await fetch(url, {
-        method: 'PUT',
-        headers: {
-          'Authorization': 'token ' + token,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          message: `Ürün güncellendi: ${id}`,
-          content: toBase64(JSON.stringify(products, null, 2)),
-          sha: data.sha,
-          branch
-        })
-      });
-      if (!putRes.ok) throw new Error('GitHub\'a kaydedilemedi!');
-      msgEl.textContent = '✅ Kaydedildi!';
-      setTimeout(closeProductEditPanel, 1200);
-    } catch (err) {
-      msgEl.textContent = 'Hata: ' + err.message;
-    }
-  };
-  // Ürün kartına "Düzenle" butonu ekle
-  function addEditButtonsToProductCards(){
-    document.querySelectorAll('.product-card').forEach(card => {
-      if (!card.querySelector('.edit-btn')) {
-        const btn = document.createElement('button');
-        btn.textContent = 'Düzenle';
-        btn.className = 'edit-btn';
-        btn.style = 'position:absolute;top:8px;right:8px;z-index:2;font-size:13px;';
-        btn.onclick = function(e) {
-          e.stopPropagation();
-          const id = card.getAttribute('data-id');
-          fetch('products.json').then(r=>r.json()).then(products=>{
-            const p = products.items.find(x=>x.id===id);
-            if (p) openProductEditPanel(p);
-          });
-        };
-        card.appendChild(btn);
-      }
-    });
-  }
-  // Sayfa yüklendiğinde veya ürünler render edildiğinde çağır
-  window.addEventListener('DOMContentLoaded', addEditButtonsToProductCards);
-  window.addEditButtonsToProductCards = addEditButtonsToProductCards;
-  </script>
+<!-- Moved modal & scripts below DOCTYPE to keep charset meta within first 1024 bytes -->
   <!-- Runtime normalization for any existing double-encoded (mojibake) text -->
   <script>
   (function normalizeMojibake(){
     const mapSeq = [
       [/Ãœ/g,'Ü'],[/Ã¼/g,'ü'],[/Ã‡/g,'Ç'],[/Ã§/g,'ç'],[/Ã–/g,'Ö'],[/Ã¶/g,'ö'],[/ÄŸ/g,'ğ'],[/ÅŸ/g,'ş'],[/Ä±/g,'ı'],[/Ä°/g,'İ'],[/â‚º/g,'₺'],
       [/â€™/g,"'"],[/â€œ/g,'"'],[/â€�/g,'"'],[/â€“/g,'–'],[/â€”/g,'—'],
-      [/ğŸ’¾/g,'💾'],[/ğŸ”„/g,'🔄'],[/ğŸ‘¥/g,'👥'],[/ğŸ“¦/g,'📦'],[/ğŸ§¾/g,'🧾'],[/â•/g,'➕'],[/ğŸŒ¹/g,'🌹'],[/ğŸ“Œ/g,'🖼️'],[/ğŸ›ï¸/g,'🛠️']
+      [/ğŸ’¾/g,'💾'],[/ğŸ”„/g,'🔄'],[/ğŸ‘¥/g,'👥'],[/ğŸ“¦/g,'📦'],[/ğŸ§¾/g,'🧾'],[/â•/g,'➕'],[/ğŸŒ¹/g,'🌹'],[/ğŸŒ¸/g,'🌸'],[/ğŸ“Œ/g,'🖼️'],[/ğŸ›ï¸/g,'🛠️']
     ];
     function needsFix(str){ return /Ã|Ä|Å|â‚º|ğŸ|â•/.test(str); }
     function byteReDecode(str){
@@ -240,7 +64,7 @@
     const mapSeq = [
       [/Ãœ/g,'Ü'],[/Ã¼/g,'ü'],[/Ã‡/g,'Ç'],[/Ã§/g,'ç'],[/Ã–/g,'Ö'],[/Ã¶/g,'ö'],[/ÄŸ/g,'ğ'],[/ÅŸ/g,'ş'],[/Ä±/g,'ı'],[/Ä°/g,'İ'],[/â‚º/g,'₺'],
       [/â€™/g,"'"],[/â€œ/g,'"'],[/â€�/g,'"'],[/â€“/g,'–'],[/â€”/g,'—'],
-      [/ğŸ’¾/g,'💾'],[/ğŸ”„/g,'🔄'],[/ğŸ‘¥/g,'👥'],[/ğŸ“¦/g,'📦'],[/ğŸ§¾/g,'🧾'],[/â•/g,'➕'],[/ğŸŒ¹/g,'🌹'],[/ğŸ“Œ/g,'🖼️'],[/ğŸ›ï¸/g,'🛠️']
+      [/ğŸ’¾/g,'💾'],[/ğŸ”„/g,'🔄'],[/ğŸ‘¥/g,'👥'],[/ğŸ“¦/g,'📦'],[/ğŸ§¾/g,'🧾'],[/â•/g,'➕'],[/ğŸŒ¹/g,'🌹'],[/ğŸŒ¸/g,'🌸'],[/ğŸ“Œ/g,'🖼️'],[/ğŸ›ï¸/g,'🛠️']
     ];
     function needsFix(str){ return /Ã|Ä|Å|â‚º|ğŸ|â•/.test(str); }
     function byteReDecode(str){
@@ -606,6 +430,108 @@
 
 </head>
 <body>
+  <!-- Reinserted product edit modal moved from top for proper early charset detection -->
+  <section id="productEditPanel" class="modal" style="display:none">
+    <div class="modal-content" style="max-width:420px">
+      <h2>Ürün Düzenle</h2>
+      <form id="productEditForm" class="form-content">
+        <label>Ürün ID
+          <input id="editProductId" type="text" required readonly>
+        </label>
+        <label>Ürün Adı
+          <input id="editProductName" type="text" required>
+        </label>
+        <label>Fiyat (₺)
+          <input id="editProductPrice" type="number" min="0" step="0.01" required>
+        </label>
+        <label>Rozet
+          <select id="editProductBadge">
+            <option value="">Yok</option>
+            <option value="Yeni">Yeni</option>
+            <option value="İndirim">İndirim</option>
+            <option value="Popüler">Popüler</option>
+          </select>
+        </label>
+        <label>Görsel Yolu
+          <input id="editProductImage" type="text" placeholder="images/products/<id>.jpg" required>
+        </label>
+        <div id="editProductMsg" style="margin:8px 0;color:#c00"></div>
+        <button type="submit" id="saveProductBtn">Kaydet</button>
+        <button type="button" onclick="closeProductEditPanel()">Kapat</button>
+      </form>
+    </div>
+  </section>
+  <style>
+    #productEditPanel.modal { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.18); z-index:99; }
+    #productEditPanel.modal.active { display:flex; align-items:center; justify-content:center; }
+    #productEditPanel .modal-content { background:#fff; border-radius:8px; box-shadow:0 2px 16px #0002; padding:24px 20px; }
+    #productEditPanel label { display:block; margin:10px 0 4px; font-size:15px; }
+    #productEditPanel input, #productEditPanel select { width:100%; margin-top:2px; padding:7px; font-size:15px; border-radius:4px; border:1px solid #ccc; }
+    #productEditPanel button { margin:10px 6px 0 0; padding:7px 18px; font-size:15px; border-radius:4px; border:none; background:#eee; cursor:pointer; }
+    #productEditPanel button#saveProductBtn { background:#2b7cff; color:#fff; }
+    #productEditPanel button:disabled { opacity:0.6; cursor:not-allowed; }
+    #editProductMsg { min-height:22px; }
+    .edit-btn { background:#ffd; border:1px solid #ccc; border-radius:4px; padding:2px 8px; cursor:pointer; }
+  </style>
+  <script defer>
+  window.addEventListener('DOMContentLoaded', function(){
+    var adminUI = document.getElementById('adminUI');
+    if (adminUI) adminUI.style.display = 'block';
+  });
+  function safeInput(str) {
+    return String(str).replace(/[<>&"']/g, function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;','\'':'&#39;'}[c]; });
+  }
+  function toBase64(str){
+    try { const utf8 = new TextEncoder().encode(str); let bin=''; for(let i=0;i<utf8.length;i++) bin+=String.fromCharCode(utf8[i]); return btoa(bin);}catch(e){ try{return btoa(unescape(encodeURIComponent(str)));}catch(_){return '';} }
+  }
+  function fromBase64(b64){
+    try { const bin=atob(b64); const bytes=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i); return new TextDecoder().decode(bytes);}catch(e){ try{return decodeURIComponent(escape(atob(b64)));}catch(_){return '';} }
+  }
+  async function openProductEditPanelById(id) {
+    try { const res = await fetch('products.json?' + Date.now()); if(!res.ok) throw new Error('products.json alınamadı!'); const data=await res.json(); const products=Array.isArray(data.items)?data.items:(Array.isArray(data)?data:[]); const p=products.find(x=>String(x.id)===String(id)); if(p) openProductEditPanel(p); else alert('Ürün bulunamadı!'); } catch(err){ alert('Hata: '+err.message); }
+  }
+  function openProductEditPanel(product){
+    document.getElementById('editProductId').value=product.id||'';
+    document.getElementById('editProductName').value=product.name||'';
+    document.getElementById('editProductPrice').value=product.price||'';
+    document.getElementById('editProductBadge').value=product.badge||'';
+    document.getElementById('editProductImage').value=product.image||'';
+    document.getElementById('editProductMsg').textContent='';
+    document.getElementById('productEditPanel').classList.add('active');
+    document.body.style.overflow='hidden';
+  }
+  function closeProductEditPanel(){
+    document.getElementById('productEditPanel').classList.remove('active');
+    document.body.style.overflow='';
+  }
+  document.getElementById('productEditForm').onsubmit = async function(e){
+    e.preventDefault();
+    const msgEl=document.getElementById('editProductMsg');
+    msgEl.textContent='⏳ Kaydediliyor...';
+    const id=document.getElementById('editProductId').value.trim();
+    const name=document.getElementById('editProductName').value.trim();
+    const price=parseFloat(document.getElementById('editProductPrice').value);
+    const badge=document.getElementById('editProductBadge').value;
+    const image=document.getElementById('editProductImage').value.trim();
+    if(!/^images\/products\/[A-Za-z0-9._-]+\.(jpg|jpeg|png|webp)$/.test(image)){ msgEl.textContent='Geçerli görsel yolu girin!'; return; }
+    try {
+      const token=localStorage.github_token||localStorage.gh_token; if(!token) throw new Error('GitHub token gerekli!');
+      const repo='amtbrs-03/AMTBRS'; const branch='site-release'; const url=`https://api.github.com/repos/${repo}/contents/products.json?ref=${branch}`;
+      const res=await fetch(url); if(!res.ok) throw new Error('products.json alınamadı!');
+      const data=await res.json(); let products=JSON.parse(fromBase64(data.content));
+      let idx=products.items.findIndex(p=>p.id===id); if(idx===-1) throw new Error('Ürün bulunamadı!');
+      products.items[idx]={ id, name, price, badge, image }; products.updatedAt=Date.now();
+      const putRes=await fetch(url,{ method:'PUT', headers:{ 'Authorization':'token '+token,'Content-Type':'application/json' }, body:JSON.stringify({ message:`Ürün güncellendi: ${id}`, content:toBase64(JSON.stringify(products,null,2)), sha:data.sha, branch }) });
+      if(!putRes.ok) throw new Error('GitHub\'a kaydedilemedi!');
+      msgEl.textContent='✅ Kaydedildi!'; setTimeout(closeProductEditPanel,1200);
+    } catch(err){ msgEl.textContent='Hata: '+err.message; }
+  };
+  function addEditButtonsToProductCards(){
+    document.querySelectorAll('.product-card').forEach(card=>{ if(!card.querySelector('.edit-btn')){ const btn=document.createElement('button'); btn.textContent='Düzenle'; btn.className='edit-btn'; btn.style='position:absolute;top:8px;right:8px;z-index:2;font-size:13px;'; btn.onclick=function(e){ e.stopPropagation(); const id=card.getAttribute('data-id'); fetch('products.json').then(r=>r.json()).then(products=>{ const p=products.items.find(x=>x.id===id); if(p) openProductEditPanel(p); }); }; card.appendChild(btn); } });
+  }
+  window.addEventListener('DOMContentLoaded', addEditButtonsToProductCards);
+  window.addEditButtonsToProductCards = addEditButtonsToProductCards;
+  </script>
   <div class="admin-header">
     <div class="admin-header-content">
       <div>
