@@ -1478,60 +1478,9 @@ async function verifyGitHubPathExists(path){
             if (file){ img = await toDataURL(file); }
             products[idx].name = name; products[idx].price = price; products[idx].image = img;
           }
-          e.preventDefault();
-          const msgEl = document.getElementById('editProductMsg');
-          const btn = document.getElementById('saveProductBtn');
-          msgEl.textContent = '⏳ Kaydediliyor...';
-          btn.disabled = true;
-          btn.innerHTML = '⏳ Kaydediliyor...';
-          const id = document.getElementById('editProductId').value.trim();
-          const name = document.getElementById('editProductName').value.trim();
-          const price = parseFloat(document.getElementById('editProductPrice').value);
-          const badge = document.getElementById('editProductBadge').value;
-          const image = document.getElementById('editProductImage').value.trim();
-          if (!/^images\/products\/[A-Za-z0-9._-]+\.(jpg|jpeg|png|webp)$/.test(image)) {
-            msgEl.textContent = 'Geçerli görsel yolu girin!';
-            btn.disabled = false;
-            btn.innerHTML = 'Kaydet';
-            return;
-          }
-          try {
-            const token = localStorage.github_token || localStorage.gh_token;
-            if (!token) throw new Error('GitHub token gerekli!');
-            const repo = 'amtbrs-03/AMTBRS';
-            const branch = 'site-release';
-            const url = `https://api.github.com/repos/${repo}/contents/products.json?ref=${branch}`;
-            const res = await fetch(url);
-            if (!res.ok) throw new Error('products.json alınamadı!');
-            const data = await res.json();
-            let products = JSON.parse(atob(data.content));
-            let idx = products.items.findIndex(p => p.id === id);
-            if (idx === -1) throw new Error('Ürün bulunamadı!');
-            products.items[idx] = { id, name, price, badge, image };
-            products.updatedAt = Date.now();
-            const putRes = await fetch(url, {
-              method: 'PUT',
-              headers: {
-                'Authorization': 'token ' + token,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                message: `Ürün güncellendi: ${id}`,
-                content: btoa(JSON.stringify(products, null, 2)),
-                sha: data.sha,
-                branch
-              })
-            });
-            if (!putRes.ok) throw new Error('GitHub\'a kaydedilemedi!');
-            msgEl.textContent = '✅ Kaydedildi!';
-            setTimeout(closeProductEditPanel, 1200);
-            await renderAdminProducts();
-          } catch (err) {
-            msgEl.textContent = 'Hata: ' + err.message;
-          } finally {
-            btn.disabled = false;
-            btn.innerHTML = 'Kaydet';
-          }
+          setProducts(products);
+          alert('Tüm değişiklikler tarayıcıda kaydedildi.');
+          render();
         }); // end withProgress
       }); // end saveAllBtn click
 
@@ -1836,7 +1785,7 @@ async function verifyGitHubPathExists(path){
       }
 
       render();
-    // Kapanmamış IIFE kaldırıldı
+    })();
   </script>
 
   <!-- Note: Orders Modal removed - now on separate page (siparisler.html) -->
