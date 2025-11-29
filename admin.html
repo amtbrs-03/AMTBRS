@@ -872,6 +872,60 @@ async function verifyGitHubPathExists(path){
             applyBtn.innerHTML = '⏳ İşleniyor...';
             applyBtn.disabled = true;
             const pid = (pidEl && pidEl.value || '').trim();
+
+        // Inline edit helpers
+        function openInlineEdit(id){
+          const panel = document.getElementById('edit-panel-'+id); if(panel){ panel.style.display = panel.style.display==='none' ? 'block':'none'; }
+        }
+        function cancelInlineEdit(id){
+          const panel = document.getElementById('edit-panel-'+id); if(panel){ panel.style.display='none'; }
+        }
+        async function saveInlineEdit(id){
+          const msg = document.getElementById('ep-msg-'+id);
+          if(msg) msg.textContent='⏳ Kaydediliyor...';
+          try {
+            const nameEl=document.getElementById('ep-name-'+id);
+            const priceEl=document.getElementById('ep-price-'+id);
+            const badgeEl=document.getElementById('ep-badge-'+id);
+            const imageEl=document.getElementById('ep-image-'+id);
+            if(!nameEl||!priceEl||!badgeEl||!imageEl) throw new Error('Alanlar bulunamadı');
+            const name=nameEl.value.trim();
+            const price=parseFloat(priceEl.value)||0;
+            const badge=badgeEl.value.trim();
+            const image=imageEl.value.trim();
+            // Fetch current
+            const res = await fetch('products.json?' + Date.now()); if(!res.ok) throw new Error('products.json alınamadı');
+            const data = await res.json();
+            const products = Array.isArray(data.items) ? data.items : (Array.isArray(data)?data:[]);
+            const idx = products.findIndex(p=>String(p.id)===String(id)); if(idx===-1) throw new Error('Ürün bulunamadı');
+            products[idx].name=name; products[idx].price=price; products[idx].badge=badge; products[idx].image=image;
+            // Local feedback only; remote commit if token exists
+            const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
+            if(token){
+              try {
+                const apiUrl='https://api.github.com/repos/amtbrs-03/AMTBRS/contents/products.json';
+                // get sha
+                const getRes = await fetch(apiUrl+'?ref=site-release&t='+Date.now(), { headers:{ 'Accept':'application/vnd.github.v3+json','Authorization':'token '+token } });
+                let sha=null; let remoteObj={ updatedAt: Date.now(), items: [] };
+                if(getRes.ok){ const j=await getRes.json(); sha=j.sha; remoteObj=JSON.parse(fromBase64(j.content))||remoteObj; }
+                if(!Array.isArray(remoteObj.items)) remoteObj.items=[];
+                const ridx = remoteObj.items.findIndex(p=>String(p.id)===String(id));
+                if(ridx!==-1){ remoteObj.items[ridx]={ ...remoteObj.items[ridx], name, price, badge, image }; }
+                remoteObj.updatedAt=Date.now();
+                const putRes = await fetch(apiUrl, { method:'PUT', headers:{ 'Content-Type':'application/json','Authorization':'token '+token }, body: JSON.stringify({ message:`chore(admin): inline ürün güncelle (${id})`, content: toBase64(JSON.stringify(remoteObj,null,2)), branch:'site-release', ...(sha?{sha}:{}) }) });
+                if(!putRes.ok){ const t=await putRes.text().catch(()=> ''); throw new Error('GitHub güncelleme başarısız: '+putRes.status+' '+t); }
+                if(msg) msg.textContent='✅ Güncellendi (GitHub + lokal)';
+              } catch(e){ if(msg) msg.textContent='⚠️ Lokal güncellendi; GitHub hata: '+(e.message||e); }
+            } else {
+              if(msg) msg.textContent='✅ Lokal güncellendi (GitHub token yok)';
+            }
+            // Re-render list for fresh view
+            setTimeout(()=>{ renderAdminProducts(); }, 600);
+          } catch(e){ if(msg) msg.textContent='Hata: '+(e.message||e); }
+        }
+        window.openInlineEdit = openInlineEdit;
+        window.cancelInlineEdit = cancelInlineEdit;
+        window.saveInlineEdit = saveInlineEdit;
             const pth = (pathEl && pathEl.value || '').trim();
             if (!pid){ setMsg('Ürün ID gerekli.', false); applyBtn.innerHTML = origText; applyBtn.disabled = false; return; }
             if (!pth || !/^images\/products\/[A-Za-z0-9._-]+\.(jpg|jpeg|png|webp)$/i.test(pth)){
