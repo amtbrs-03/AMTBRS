@@ -577,18 +577,6 @@
         <a href="faturalar.html" class="btn" style="text-decoration:none;background:linear-gradient(135deg,#f59e0b 0%,#d97706 100%);box-shadow:0 4px 15px rgba(245,158,11,0.4);">🧾 Faturalar</a>
       </div>
 
-      <div class="card">
-        <div class="section-header">➕ Yeni Ürün Ekle</div>
-        <div class="controls-row">
-          <input id="newName" type="text" placeholder="Ürün adı" aria-label="Yeni ürün adı" style="flex:1;min-width:200px" />
-          <input id="newPrice" type="number" placeholder="Fiyat (TL)" step="0.01" aria-label="Fiyat (TL)" style="width:140px" />
-          <input id="newEmoji" type="text" placeholder="Emoji 🌹" style="width:100px" aria-label="Emoji" />
-          <input id="newImage" type="file" accept="image/*" style="width:200px" />
-          <button id="addBtn" class="btn">Ürün Ekle</button>
-        </div>
-        <div id="newPreview" class="file-preview small" style="margin-top:0.5rem" aria-hidden="true"></div>
-        <div class="small meta" style="margin-top:0.75rem">📌 Resim yüklenirse tarayıcıda saklanır. Optimal boyut: max 500KB</div>
-      </div>
 
       <div class="card">
         <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
@@ -1455,88 +1443,7 @@ async function verifyGitHubPathExists(path){
         });
       }
 
-      document.getElementById('addBtn').addEventListener('click', async ()=>{
-        const btn = document.getElementById('addBtn');
-        const origText = btn.innerHTML;
-        btn.innerHTML = '⏳ Ekleniyor...';
-        btn.disabled = true;
-        try {
-          const name = document.getElementById('newName').value.trim();
-          const price = parseFloat(document.getElementById('newPrice').value) || 0;
-          const emoji = document.getElementById('newEmoji').value.trim();
-          const file = document.getElementById('newImage').files[0];
-          let img = emoji || '';
-          let dataUrl = null;
-          if (file){ dataUrl = await toDataURL(file); img = dataUrl; }
-          if (!name || isNaN(price)) { alert('Ürün adı ve fiyatı zorunlu!'); return; }
-          const newId = uid();
-          let finalImage = img;
-          const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
-          if (token && dataUrl && /^data:image\//i.test(dataUrl)) {
-            try {
-              const m = dataUrl.match(/^data:(image\/(png|jpeg|jpg|webp));base64,(.*)$/i);
-              if (m) {
-                const ext = (m[2].toLowerCase() === 'jpeg') ? 'jpg' : (m[2].toLowerCase() === 'jpg' ? 'jpg' : m[2].toLowerCase());
-                const imageFilePath = `images/products/${newId}.${ext}`;
-                const putRes = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/${imageFilePath}`, {
-                  method:'PUT',
-                  headers:{ 'Content-Type':'application/json', 'Authorization': 'token ' + token },
-                  body: JSON.stringify({
-                    message: `chore(admin): ürün resmi ekle (${newId})`,
-                    content: m[3],
-                    branch: 'site-release'
-                  })
-                });
-                if (putRes.ok) {
-                  finalImage = imageFilePath; // use path reference instead of data URL
-                } else {
-                  console.warn('[admin] Resim upload başarısız, dataURL kullanılacak', putRes.status);
-                }
-              }
-            } catch(e){ console.warn('[admin] resim GitHub yükleme hatası', e); }
-          }
-
-          // Update local list
-          const productsLocal = getProducts();
-          productsLocal.push({ id: newId, name, price, image: finalImage });
-          setProducts(productsLocal); render();
-
-          // Remote products.json append if token mevcut
-          if (token) {
-            try {
-              const apiUrl = 'https://api.github.com/repos/amtbrs-03/AMTBRS/contents/products.json';
-              let sha = null; let remoteObj = { updatedAt: Date.now(), items: [] };
-              try {
-                const getRes = await fetch(apiUrl + '?ref=site-release&t=' + Date.now(), { headers:{ 'Accept':'application/vnd.github.v3+json', 'Authorization':'token '+token }, cache:'no-store' });
-                if (getRes.ok) { const j = await getRes.json(); sha = j.sha; remoteObj = JSON.parse(fromBase64(j.content)) || remoteObj; }
-              } catch(_){}
-              if (!Array.isArray(remoteObj.items)) remoteObj.items = [];
-              remoteObj.items.push({ id: newId, name, price, image: finalImage });
-              remoteObj.updatedAt = Date.now();
-              const putRes2 = await fetch(apiUrl, { method:'PUT', headers:{ 'Content-Type':'application/json','Authorization':'token '+token }, body: JSON.stringify({ message:`chore(admin): ürün eklendi (${newId})`, content: toBase64(JSON.stringify(remoteObj, null, 2)), branch:'site-release', ...(sha?{sha}:{}) }) });
-              if (putRes2.ok) {
-                alert('✅ Ürün eklendi (GitHub + lokal)\nResim yolu: ' + finalImage);
-              } else {
-                const t = await putRes2.text().catch(()=> '');
-                alert('⚠️ Ürün lokal eklendi fakat GitHub products.json güncellenemedi: '+putRes2.status+' '+t);
-              }
-            } catch(e){ console.warn('[admin] remote products append hata', e); }
-          } else {
-            alert('Ürün lokal olarak eklendi. GitHub senkron için token ekleyin. Resim yolu/data: saklandı.');
-          }
-          // Yol rehberi notu ekle
-          const newPreview = document.getElementById('newPreview');
-          if (newPreview) {
-            newPreview.innerHTML = `<div style="color:#065f46;font-weight:600">Resim yolu: <code>${escapeHtml(finalImage)}</code></div>`;
-          }
-          document.getElementById('newName').value=''; document.getElementById('newPrice').value=''; document.getElementById('newEmoji').value=''; document.getElementById('newImage').value='';
-        } catch (err) {
-          alert('Hata: ' + err.message);
-        } finally {
-          btn.innerHTML = origText;
-          btn.disabled = false;
-        }
-      });
+      // Ürün ekleme UI kaldırıldı ("Yeni Ürün Ekle" kartı). Mevcut ürünler sadece düzenlenebilir / silinebilir.
 
       const saveAllBtn = document.getElementById('saveAll');
       if (saveAllBtn) saveAllBtn.addEventListener('click', async (ev)=>{
@@ -1859,19 +1766,7 @@ async function verifyGitHubPathExists(path){
         render();
       });
 
-      // preview for new image
-      const newImageEl = document.getElementById('newImage');
-      if (newImageEl) newImageEl.addEventListener('change', async (e)=>{
-        const f = e.target.files && e.target.files[0];
-        const preview = document.getElementById('newPreview');
-        preview.innerHTML = '';
-        if (!f) return;
-        try{
-          const data = await toDataURL(f);
-          const img = document.createElement('img'); img.src = data; img.className='thumb'; img.style.width='72px'; img.style.height='72px'; img.style.objectFit='cover';
-          preview.appendChild(img);
-        }catch(err){ preview.textContent = 'Önizleme yüklenemedi'; }
-      });
+      // (Yeni ürün ekleme arayüzü kaldırıldı: önizleme dinleyicisi devre dışı)
 
       function toDataURL(file){
         return new Promise((res, rej)=>{
@@ -2687,26 +2582,92 @@ async function verifyGitHubPathExists(path){
     })();
     /* ================= END Passkey ================= */
   </script>
+  <!-- Özel sağ dikey kaydırma çubuğu -->
+  <div id="vScrollRail" aria-label="Sayfa kaydırma çubuğu" aria-hidden="false">
+    <div id="vScrollThumb"></div>
+  </div>
+  <style>
+    #vScrollRail{position:fixed;top:0;right:4px;width:10px;height:100vh;background:rgba(0,0,0,0.08);border-radius:5px;z-index:9998;backdrop-filter:blur(2px);display:block;}
+    #vScrollRail:hover{background:rgba(0,0,0,0.15);}    
+    #vScrollThumb{width:100%;background:linear-gradient(180deg,#6366f1,#3b82f6);border-radius:5px;cursor:grab;box-shadow:0 2px 6px rgba(0,0,0,.3);min-height:30px;}
+    #vScrollThumb:active{cursor:grabbing;background:linear-gradient(180deg,#4338ca,#2563eb);}    
+    body.noselect{user-select:none;}    
+    @media (max-width:900px){ #vScrollRail{display:none;} }
+  </style>
+  <script>
+  (function(){
+    const rail = document.getElementById('vScrollRail');
+    const thumb = document.getElementById('vScrollThumb');
+    if(!rail||!thumb) return;
+    function update(){
+      const docHeight = document.documentElement.scrollHeight;
+      const winHeight = window.innerHeight;
+      const scrollY = window.scrollY;
+      const ratio = winHeight / docHeight;
+      const railHeight = rail.offsetHeight;
+      const thumbHeight = Math.max(30, railHeight * ratio);
+      thumb.style.height = thumbHeight + 'px';
+      const maxTravel = railHeight - thumbHeight;
+      const y = (scrollY / (docHeight - winHeight)) * maxTravel;
+      thumb.style.transform = 'translateY('+ (isNaN(y)?0:y) +'px)';
+    }
+    let dragging=false, dragStartY=0, scrollStartY=0;
+    thumb.addEventListener('mousedown', e=>{
+      dragging=true; dragStartY=e.clientY; scrollStartY=window.scrollY;
+      document.body.classList.add('noselect');
+      e.preventDefault();
+    });
+    window.addEventListener('mousemove', e=>{
+      if(!dragging) return;
+      const delta = e.clientY - dragStartY;
+      const docHeight = document.documentElement.scrollHeight;
+      const winHeight = window.innerHeight;
+      const railHeight = rail.offsetHeight;
+      const thumbHeight = thumb.offsetHeight;
+      const maxTravel = railHeight - thumbHeight;
+      const scrollable = docHeight - winHeight;
+      if(maxTravel <= 0 || scrollable <= 0){ return; }
+      const scrollDelta = (delta / maxTravel) * scrollable;
+      window.scrollTo({ top: scrollStartY + scrollDelta, behavior:'auto' });
+    });
+    window.addEventListener('mouseup', ()=>{
+      if(dragging){ dragging=false; document.body.classList.remove('noselect'); }
+    });
+    rail.addEventListener('click', e=>{
+      if(e.target===thumb) return; // boş alana tıklandı
+      const rect = rail.getBoundingClientRect();
+      const clickY = e.clientY - rect.top;
+      const docHeight = document.documentElement.scrollHeight;
+      const winHeight = window.innerHeight;
+      const ratio = clickY / rail.offsetHeight;
+      const targetScroll = ratio * (docHeight - winHeight);
+      window.scrollTo({ top: targetScroll, behavior:'smooth' });
+    });
+    window.addEventListener('scroll', update);
+    window.addEventListener('resize', update);
+    document.addEventListener('DOMContentLoaded', update);
+    setTimeout(update, 1200);
+  })();
+  </script>
+  <!-- DIAGNOSTIC: runtime self-test (temporary) -->
+  <script>
+  (function(){
+    try {
+      const needed = ['renderAdminProducts','deleteAdminProduct','openProductEditPanelById','addEditButtonsToProductCards'];
+      const missing = needed.filter(n => typeof window[n] !== 'function');
+      console.log('[admin-diagnostic] Fonksiyon kontrolü:', { missing, present: needed.filter(n=>!missing.includes(n)) });
+      if (missing.length) {
+        const warn = document.createElement('div');
+        warn.style.cssText='position:fixed;bottom:10px;right:10px;background:#dc2626;color:#fff;padding:10px 14px;border-radius:8px;font-size:12px;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.25)';
+        warn.textContent='Admin JS eksik fonksiyonlar: '+ missing.join(', ');
+        document.body.appendChild(warn);
+        setTimeout(()=>warn.remove(), 8000);
+      }
+      const duplicates = [];
+      if (document.documentElement.innerHTML.indexOf('function toBase64(') !== document.documentElement.innerHTML.lastIndexOf('function toBase64(')) duplicates.push('toBase64');
+      if (duplicates.length) console.warn('[admin-diagnostic] Çift tanım uyarısı:', duplicates);
+    } catch(e){ console.error('[admin-diagnostic] Hata:', e); }
+  })();
+  </script>
 </body>
 </html>
-<!-- DIAGNOSTIC: runtime self-test (temporary) -->
-<script>
-(function(){
-  try {
-    const needed = ['renderAdminProducts','deleteAdminProduct','openProductEditPanelById','addEditButtonsToProductCards'];
-    const missing = needed.filter(n => typeof window[n] !== 'function');
-    console.log('[admin-diagnostic] Fonksiyon kontrolü:', { missing, present: needed.filter(n=>!missing.includes(n)) });
-    if (missing.length) {
-      const warn = document.createElement('div');
-      warn.style.cssText='position:fixed;bottom:10px;right:10px;background:#dc2626;color:#fff;padding:10px 14px;border-radius:8px;font-size:12px;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.25)';
-      warn.textContent='Admin JS eksik fonksiyonlar: '+ missing.join(', ');
-      document.body.appendChild(warn);
-      setTimeout(()=>warn.remove(), 8000);
-    }
-    // Double definition warning
-    const duplicates = [];
-    if (document.documentElement.innerHTML.indexOf('function toBase64(') !== document.documentElement.innerHTML.lastIndexOf('function toBase64(')) duplicates.push('toBase64');
-    if (duplicates.length) console.warn('[admin-diagnostic] Çift tanım uyarısı:', duplicates);
-  } catch(e){ console.error('[admin-diagnostic] Hata:', e); }
-})();
-</script>
