@@ -1,14 +1,29 @@
 #!/bin/zsh
+set -e
 
-# macOS Touch ID / Parola ile doğrulama (sudo -v pam_tid desteği)
-# pam_tid etkin ise kullanıcı parmak izi ile doğrulanabilir; değilse parola sorulur.
-AUTH_SCRIPT='do shell script "sudo -v" with administrator privileges'
-if ! osascript -e "$AUTH_SCRIPT" >/dev/null 2>&1; then
-  osascript -e 'display alert "Kimlik doğrulama iptal edildi veya başarısız oldu." as warning'
-  exit 1
-fi
+# Touch ID çalışmıyorsa muhtemel nedenler:
+# 1) /etc/pam.d/sudo içinde 'auth       sufficient     pam_tid.so' yok.
+# 2) Önceki sudo zaman damgası hala geçerli (yeniden doğrulama tetiklenmiyor).
+# 3) AppleScript ile parola diyaloğu kullanılıyordu (pam_tid devre dışı kalır) — terminal içi sudo'ya geçildi.
 
 cd "$(dirname "$0")" || exit 1
+
+# Sudo timestamp'ı sıfırla ki mutlaka yeniden doğrulama istensin
+sudo -k || true
+
+# pam_tid var mı kontrol et (bilgi amaçlı)
+if ! grep -q 'pam_tid.so' /etc/pam.d/sudo 2>/dev/null; then
+  echo "ℹ️  Uyarı: /etc/pam.d/sudo içinde pam_tid.so bulunamadı. Touch ID yerine parola istenebilir."
+else
+  echo "🔐 Touch ID destek satırı bulundu (pam_tid)."
+fi
+
+echo "🔒 Admin paneli açılıyor. Lütfen Touch ID veya parolanızla sudo doğrulayın..."
+if ! sudo -v; then
+  echo "❌ Kimlik doğrulama başarısız veya iptal edildi." >&2
+  exit 1
+fi
+echo "✅ Kimlik doğrulama başarılı."
 
 # Sunucu çalışıyor mu?
 if pgrep -f "http_utf8_server.py" >/dev/null 2>&1; then
@@ -39,7 +54,7 @@ if pgrep -f "http_utf8_server.py" >/dev/null 2>&1; then
 APPLES
 else
   # Çalışmıyorsa: sunucuyu başlat ve Chrome'da admini aç
-  python3 http_utf8_server.py &
+  python3 http_utf8_server.py & disown
   sleep 1
   if [[ -x "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" ]]; then
     open -a "Google Chrome" http://127.0.0.1:8000/admin.html

@@ -1,16 +1,23 @@
 #!/bin/zsh
+set -e
 
-# macOS Touch ID / Parola doğrulama (sudo -v pam_tid varsa parmak izi kabul eder)
-# Kullanıcı doğrulanmazsa işlem iptal edilir.
-AUTH_SCRIPT='do shell script "sudo -v" with administrator privileges'
-if ! osascript -e "$AUTH_SCRIPT" >/dev/null 2>&1; then
-  osascript -e 'display alert "Kimlik doğrulama iptal edildi veya başarısız oldu." as warning'
+# Terminal içi sudo ile Touch ID tetikle (AppleScript diyaloğu yerine)
+sudo -k || true
+if ! grep -q 'pam_tid.so' /etc/pam.d/sudo 2>/dev/null; then
+  echo "ℹ️  pam_tid bulunamadı (Touch ID devre dışı olabilir, parola sorulacak)."
+else
+  echo "🔐 pam_tid bulundu; Touch ID doğrulaması bekleniyor."
+fi
+echo "🔒 Doğrulama gerekiyor (Touch ID veya parola)..."
+if ! sudo -v; then
+  echo "❌ Kimlik doğrulama başarısız veya iptal edildi." >&2
   exit 1
 fi
+echo "✅ Kimlik doğrulama başarılı."
 
 # Sunucuyu başlat
 cd "$(dirname "$0")" || exit 1
-python3 http_utf8_server.py &
+python3 http_utf8_server.py & disown
 sleep 1
 
 # Chrome ile aç; yoksa bilgi ver ve varsayılan tarayıcıyı kullan
