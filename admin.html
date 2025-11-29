@@ -48,20 +48,6 @@
     if (adminUI) adminUI.style.display = 'block';
   });
 
-  // Tüm kritik işlemlerde oturum ve token kontrolü
-  function requireAdminAuth() {
-    if (!isAdminLoggedIn()) {
-      alert('Oturum açılmadan işlem yapılamaz!');
-      throw new Error('Oturum yok');
-    }
-    const token = getGitHubToken();
-    if (!token) {
-      alert('GitHub token gerekli!');
-      throw new Error('Token yok');
-    }
-    return token;
-  }
-
   // XSS ve input doğrulama
   function safeInput(str) {
     return String(str).replace(/[<>&"']/g, function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;','\'':'&#39;'}[c]; });
