@@ -42,13 +42,10 @@
     .edit-btn { background:#ffd; border:1px solid #ccc; border-radius:4px; padding:2px 8px; cursor:pointer; }
   </style>
   <script defer>
-  // Sayfa yüklendiğinde ve her işlemde oturum kontrolü
-  function isAdminLoggedIn() {
-    return !!(sessionStorage.getItem('admin_logged_in'));
-  }
+  // Admin paneli her zaman görünür, oturum kontrolü kaldırıldı
   window.addEventListener('DOMContentLoaded', function(){
     var adminUI = document.getElementById('adminUI');
-    if (!isAdminLoggedIn() && adminUI) adminUI.style.display = 'none';
+    if (adminUI) adminUI.style.display = 'block';
   });
 
   // Tüm kritik işlemlerde oturum ve token kontrolü
