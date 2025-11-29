@@ -596,42 +596,8 @@
           <button id="refreshProductsBtn" class="btn btn-ghost" type="button" style="font-size:0.95rem;">🔄 Yenile</button>
         </div>
         <div id="products" class="products-list"></div>
-        <script defer>
-        // Kayıtlı ürünleri dinamik ve ayarlanabilir şekilde göster
-        async function renderAdminProducts() {
-          const container = document.getElementById('products');
-          container.innerHTML = '<div style="color:#64748b">⏳ Ürünler yükleniyor...</div>';
-          try {
-            const res = await fetch('products.json?' + Date.now());
-            if (!res.ok) throw new Error('products.json alınamadı!');
-            const data = await res.json();
-            const products = Array.isArray(data.items) ? data.items : (Array.isArray(data) ? data : []);
-            if (!products.length) { container.innerHTML = '<div style="color:#b91c1c">Hiç ürün bulunamadı.</div>'; return; }
-            container.innerHTML = '';
-            products.forEach(p => {
-              const card = document.createElement('div');
-              card.className = 'prod-item';
-              card.setAttribute('data-id', p.id);
-              card.innerHTML = `
-                <div class='prod-row'>
-                  <div class='thumb' style='background:#e0e7ef;display:flex;align-items:center;justify-content:center;'>${p.image ? (/(jpg|jpeg|png|webp)$/i.test(p.image) ? `<img src='${p.image}' style='width:100%;height:100%;object-fit:cover;border-radius:10px;'/>` : p.image) : '🌺'}</div>
-                  <div>
-                    <div style='font-weight:700;font-size:1.08rem;'>${p.name || ''}</div>
-                    <div class='meta'>Fiyat: ₺${(p.price||0).toFixed(2)}</div>
-                    <div class='meta'>ID: ${p.id}</div>
-                  </div>
-                </div>
-                <div class='actions'>
-                  <button class='btn' onclick='openProductEditPanelById("${p.id}")'>Düzenle</button>
-                  <button class='btn btn-danger' onclick='deleteAdminProduct("${p.id}")'>Sil</button>
-                </div>
-              `;
-              container.appendChild(card);
-            });
-          } catch (err) {
-            container.innerHTML = '<div style="color:#b91c1c">Hata: ' + err.message + '</div>';
-          }
-        }
+        <!-- renderAdminProducts canonical implementation lives later; duplicate removed -->
+        <script defer></script>
         // Ürün silme fonksiyonu
         async function deleteAdminProduct(id) {
           if (!confirm('Bu ürünü silmek istediğinize emin misiniz?')) return;
@@ -1016,18 +982,7 @@ async function verifyGitHubPathExists(path){
       }
     }
 
-    // Safe UTF-8 -> Base64 encoding helper (avoids unescape/escape which can corrupt extended chars)
-    function toBase64(str){
-      try {
-        const utf8 = new TextEncoder().encode(str);
-        let bin = '';
-        for (let i=0;i<utf8.length;i++) bin += String.fromCharCode(utf8[i]);
-        return btoa(bin);
-      } catch(e){
-        // Fallback to legacy method if TextEncoder unsupported
-        try { return btoa(unescape(encodeURIComponent(str))); } catch(_) { return ''; }
-      }
-    }
+    // toBase64 duplicate removed; canonical version defined earlier near product edit panel.
 
     // Save admin credentials to GitHub (Contents API - real time)
     async function saveAdminToGitHub(adminData) {
