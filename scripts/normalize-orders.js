@@ -11,21 +11,39 @@ const fs = require('fs');
 const path = require('path');
 
 const ORDERS_DIR = path.resolve(__dirname, '..', 'orders');
+const INVOICES_DIR = path.resolve(__dirname, '..', 'invoices');
+
+// Regex to detect typical mojibake markers
+const MOJIBAKE_RE = /Ã|Ä|Å|â‚º|ğŸ|â•/;
+
+// Direct replacement mapping (single-pass artifacts)
+const DIRECT_MAP = [
+  [/Ãœ/g,'Ü'],[/Ã¼/g,'ü'],[/Ã‡/g,'Ç'],[/Ã§/g,'ç'],[/Ã–/g,'Ö'],[/Ã¶/g,'ö'],[/ÄŸ/g,'ğ'],[/ÅŸ/g,'ş'],[/Ä±/g,'ı'],[/Ä°/g,'İ'],[/â‚º/g,'₺'],
+  [/â€™/g,"'"],[/â€œ/g,'"'],[/â€�/g,'"'],[/â€“/g,'–'],[/â€”/g,'—'],
+];
+
+function iterativeDecode(str){
+  let cur = str;
+  for (let i=0;i<5;i++) { // up to 5 passes for deeply nested sequences
+    try {
+      const next = decodeURIComponent(escape(cur));
+      if (next === cur) break;
+      cur = next;
+    } catch { break; }
+  }
+  return cur;
+}
 
 function normalizeText(s) {
   if (typeof s !== 'string') return s;
-  try {
-    // Heuristic fix for common UTF-8 mojibake (Latin-1 misinterpretation)
-    const fixed = decodeURIComponent(escape(s));
-    // If it changed to a significantly different string, accept; otherwise keep original.
-    // Simple heuristic: if fixed has more non-ASCII letters typical in Turkish or differs.
-    if (fixed !== s) {
-      return fixed;
-    }
-    return s;
-  } catch (_) {
-    return s;
-  }
+  // Fast path: if no mojibake markers, return as-is
+  if (!MOJIBAKE_RE.test(s)) return s;
+  let out = iterativeDecode(s);
+  // Apply direct mapping replacements
+  DIRECT_MAP.forEach(([re, rep]) => { out = out.replace(re, rep); });
+  // Second decode pass if still markers
+  if (MOJIBAKE_RE.test(out)) out = iterativeDecode(out);
+  return out;
 }
 
 function normalizeValue(v) {
@@ -73,19 +91,26 @@ function normalizeFile(filePath) {
   return true;
 }
 
-function main() {
-  if (!fs.existsSync(ORDERS_DIR)) {
-    console.error('Orders directory not found:', ORDERS_DIR);
-    process.exit(1);
+function processDir(dirPath, label){
+  if (!fs.existsSync(dirPath)) {
+    console.warn(label + ' directory not found:', dirPath);
+    return {ok:0, fail:0};
   }
-  const entries = fs.readdirSync(ORDERS_DIR).filter(f => f.endsWith('.json'));
-  let ok = 0, fail = 0;
-  for (const f of entries) {
-    const filePath = path.join(ORDERS_DIR, f);
+  const entries = fs.readdirSync(dirPath).filter(f => f.endsWith('.json'));
+  let ok=0, fail=0;
+  for (const f of entries){
+    const filePath = path.join(dirPath, f);
     const res = normalizeFile(filePath);
     if (res) ok++; else fail++;
   }
-  console.log(`Normalized ${ok} files, ${fail} failed.`);
+  return {ok, fail};
+}
+
+function main() {
+  const ordersResult = processDir(ORDERS_DIR, 'Orders');
+  const invoicesResult = processDir(INVOICES_DIR, 'Invoices');
+  console.log(`Orders: ${ordersResult.ok} ok, ${ordersResult.fail} failed.`);
+  console.log(`Invoices: ${invoicesResult.ok} ok, ${invoicesResult.fail} failed.`);
 }
 
 if (require.main === module) {

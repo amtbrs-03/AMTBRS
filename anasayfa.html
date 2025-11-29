@@ -27,6 +27,26 @@
     
     <link rel="icon" href="/favicon.ico" />
 
+        <!-- Erken mojibake düzeltme: ilk boyama öncesi bozuk karakterleri gizle ve düzelt -->
+        <style>html.__fixing{visibility:hidden !important}</style>
+        <script>
+        (function earlyNormalize(){
+            var root=document.documentElement; if(!root.classList.contains('__fixing')) root.classList.add('__fixing');
+            const mapSeq=[
+                [/Ãœ/g,'Ü'],[/Ã¼/g,'ü'],[/Ã‡/g,'Ç'],[/Ã§/g,'ç'],[/Ã–/g,'Ö'],[/Ã¶/g,'ö'],[/ÄŸ/g,'ğ'],[/ÅŸ/g,'ş'],[/Ä±/g,'ı'],[/Ä°/g,'İ'],[/â‚º/g,'₺'],
+                [/â€™/g,"'"],[/â€œ/g,'"'],[/â€�/g,'"'],[/â€“/g,'–'],[/â€”/g,'—'],
+                [/ÃÂ¼/g,'ü'],[/ÃÂœ/g,'Ü'],[/ÃÂ§/g,'ç'],[/ÃÂ¶/g,'ö'],[/ÃÂ/g,'Ğ'],[/ÃÂ±/g,'ı'],[/ÃÂ°/g,'İ'],[/ÃÂ/g,'ğ'],[/ÃÂ/g,'ş']
+            ];
+            function needsFix(str){ return /Ã|Ä|Å|â‚º|ğŸ|â•/.test(str); }
+            function byteRede(str){ try{const bytes=new Uint8Array(str.length); for(let i=0;i<str.length;i++) bytes[i]=str.charCodeAt(i)&0xFF; return new TextDecoder().decode(bytes);}catch(e){return str;} }
+            function fix(str){ let out=str; mapSeq.forEach(([re,rep])=>{ out=out.replace(re,rep); }); if(needsFix(out)){ const r=byteRede(out); if(!needsFix(r)) out=r; } return out; }
+            function sweep(){ if(!(document&&document.body)) return; const w=document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT,null); while(w.nextNode()){ const n=w.currentNode; const t=n.nodeValue; if(t&&needsFix(t)){ const f=fix(t); if(f!==t) n.nodeValue=f; } } }
+            function reveal(){ root.classList.remove('__fixing'); }
+            function run(){ sweep(); let c=0; const timer=setInterval(()=>{ sweep(); if(++c>2){ clearInterval(timer); reveal(); } },150); }
+            if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', run); else run();
+        })();
+        </script>
+
     <script defer>
       // Eğer kullanıcı www ile geldiyse, kök domaine (non-www) yönlendir
       (function(){
@@ -740,7 +760,6 @@
                             </ul>
                         </div>
                         <div class="nav-bottom" style="display:flex;justify-content:flex-end;align-items:center;margin-top:0.4rem;">
-                            <div id="mainAdminLink" style="display:none; margin-right:0.6rem;"><a class="auth-btn" href="https://ern-cicek.com.tr/admin.html" target="_blank" rel="noopener" style="background:#3b7d3b;">Yönetici</a></div>
                             <div id="authContainer" style="margin-left:0.6rem;">
                                 <button id="authBtn" class="contact-btn" aria-controls="authModal" aria-expanded="false" data-action="open-auth">
                                     <span class="auth-icon" aria-hidden="true">👤</span>
@@ -803,9 +822,6 @@
                         <div class="form-tabs">
                             <button class="form-tab active" data-action="switch-tab" data-tab="login">Giriş</button>
                             <button class="form-tab" data-action="switch-tab" data-tab="register">Kayıt</button>
-                        </div>
-                        <div id="adminBtnRow" style="text-align:right; margin-bottom:1rem;">
-                            <button class="auth-btn" style="background:#2e7d32; margin-top:0.5rem;" data-action="open-admin">Admin Girişi</button>
                         </div>
 
                         <!-- Giriş Formu -->
@@ -1509,11 +1525,14 @@
                     }
 
                     function fromBase64(b64) {
-                        const binary = atob(b64);
-                        const len = binary.length;
-                        const bytes = new Uint8Array(len);
-                        for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
-                        return bytes.buffer;
+                        try {
+                            const bin = atob(b64);
+                            const bytes = new Uint8Array(bin.length);
+                            for (let i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
+                            return bytes.buffer;
+                        } catch(e){
+                            return new Uint8Array(0).buffer;
+                        }
                     }
 
                     async function deriveKey(password, saltBuffer, iterations = PW_ITERATIONS) {
@@ -2259,8 +2278,13 @@
                                 const meta = await res.json();
                                 if (meta && meta.content) {
                                     try {
-                                        const decoded = decodeURIComponent(escape(atob(meta.content)));
-                                        const userData = JSON.parse(decoded);
+                                                // Güvenli UTF-8 Base64 çözme (double encode bozulmalarını engelle)
+                                                const b64 = (meta.content||'').replace(/\n/g,'');
+                                                const bin = atob(b64);
+                                                const bytes = new Uint8Array(bin.length);
+                                                for (let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+                                                const text = new TextDecoder().decode(bytes);
+                                                const userData = JSON.parse(text);
                                         console.log('fetchUserFromRepo: ✓ kullanıcı Contents API ile alındı');
                                         localStorage.setItem('user_' + email, JSON.stringify(userData));
                                         return userData;
@@ -3278,8 +3302,18 @@
                         if (res.status === 404) return; // no remote products
                         if (!res.ok) throw new Error('GitHub yükleme hatası: ' + res.status);
                         const data = await res.json();
-                        const decoded = atob(data.content || '');
-                        const json = JSON.parse(decoded || '{}');
+                                                // UTF-8 güvenli Base64 çözme
+                                                let json = {};
+                                                try {
+                                                    const bin = atob((data.content||'').replace(/\n/g,''));
+                                                    const bytes = new Uint8Array(bin.length);
+                                                    for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+                                                    const text = new TextDecoder().decode(bytes);
+                                                    json = JSON.parse(text || '{}');
+                                                } catch(err){
+                                                    console.error('loadProductsFromGitHub: Base64 UTF-8 decode hata', err);
+                                                    try { json = JSON.parse(atob(data.content||'')||'{}'); } catch(_){ json={}; }
+                                                }
                         if (json && Array.isArray(json.items)) {
                             applyProducts(json.items);
                         }
@@ -3335,6 +3369,7 @@
                             }
                         }
                         const content = btoa(unescape(encodeURIComponent(JSON.stringify(products, null, 2))));
+                        // NOT: Daha sonra UTF-8 güvenli toBase64 ile değiştirmek mümkün
                         const body = { message: 'chore: products.json güncelleme', content, branch };
                         if (sha) body.sha = sha;
                         const put = await fetch(base, { method:'PUT', headers:{ 'Authorization':'Bearer '+token, 'Accept':'application/vnd.github+json', 'Content-Type':'application/json' }, body: JSON.stringify(body) });
@@ -3407,7 +3442,6 @@
                                     case 'close-about': { try{ closeAbout(); }catch(e){} break; }
                                     case 'close-auth': { try{ closeAuthModal(); }catch(e){} break; }
                                     case 'switch-tab': { try{ const tab = t.dataset.tab; if (tab) switchTab(tab); }catch(e){} break; }
-                                    case 'open-admin': { try{ window.open('admin.html','_blank'); }catch(e){} break; }
                                     case 'login': { try{ loginUser(); }catch(e){} break; }
                                     case 'register': { try{ registerUser(); }catch(e){} break; }
                                     case 'close-account': { try{ closeAccountModal(); }catch(e){} break; }
@@ -3453,35 +3487,7 @@
                         }
                     })();
 
-                    // Admin panel secret access: triple click on auth button
-                    (function() {
-                        let clickCount = 0;
-                        let clickTimer = null;
-                        
-                        const authBtn = document.getElementById('authBtn');
-                        if (authBtn) {
-                            authBtn.addEventListener('click', function(e) {
-                                clickCount++;
-                                
-                                if (clickCount === 3) {
-                                    // Triple click detected - open admin panel
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    console.log('🔐 Admin panel erişimi açılıyor...');
-                                    window.location.href = 'admin.html';
-                                    clickCount = 0;
-                                    if (clickTimer) clearTimeout(clickTimer);
-                                    return;
-                                }
-                                
-                                // Reset counter after 1 second
-                                if (clickTimer) clearTimeout(clickTimer);
-                                clickTimer = setTimeout(() => {
-                                    clickCount = 0;
-                                }, 1000);
-                            }, true); // Use capture phase to intercept before other handlers
-                        }
-                    })();
+
 
                     // --- Encoding normalization helpers (apply to invoice/detail before print) ---
                     function normalizeText(s){
