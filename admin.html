@@ -1116,223 +1116,28 @@ async function verifyGitHubPathExists(path){
         const hash = await crypto.subtle.digest('SHA-256', data);
         return toHex(hash);
       }
-      // Parola yönetimi modalındaki scriptler tarafından erişilmesi için globale aç
-      try{ window.hashPassword = hashPassword; }catch(_){}
-
-      function showSetPassword(){
-        const savedUser = localStorage.getItem(ADMIN_USER_KEY) || '';
-        authContent.innerHTML = `<div style="margin-bottom:.5rem">Henüz bir yönetici parolası ayarlanmadı. Güçlü bir parola belirleyin (yalnızca tarayıcıda).</div>
-          <input id="adminUser" type="text" placeholder="Yönetici kullanıcı adı (opsiyonel)" value="${savedUser}" style="width:60%; padding:0.5rem;" />
-          <input id="pw1" type="password" placeholder="Yeni parola" style="width:60%; padding:0.5rem; margin-top:0.5rem;" />
-          <input id="pw2" type="password" placeholder="Parolayı tekrar girin" style="width:60%; padding:0.5rem; margin-top:0.5rem;" />
-          <div style="margin-top:0.5rem;"><label style=\"display:block;margin-bottom:0.35rem;\"><input id=\"rememberOnSet\" type=\"checkbox\" /> Beni hatırla (otomatik giriş)</label><button id="setPwBtn" style="padding:0.75rem 1.5rem;font-size:0.9rem;border-radius:8px;border:none;background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:white;cursor:pointer;box-shadow:0 4px 15px rgba(16,185,129,0.4),0 8px 25px rgba(16,185,129,0.2),inset 0 -2px 5px rgba(0,0,0,0.1);transition:all 0.2s ease;">Parolayı Kaydet</button></div>`;
-        document.getElementById('setPwBtn').onclick = async ()=>{
-          const btn = document.getElementById('setPwBtn');
-          const origText = btn.innerHTML;
-          btn.innerHTML = '⏳ Kaydediliyor...';
-          btn.disabled = true;
-          try {
-            const a = document.getElementById('pw1').value;
-            const b = document.getElementById('pw2').value;
-            const user = (document.getElementById('adminUser').value || '').trim();
-            const remember = !!document.getElementById('rememberOnSet').checked;
-            if (!a || a.length < 4) { alert('Parola en az 4 karakter olmalı'); return; }
-            if (a !== b) { alert('Parolalar eşleşmiyor'); return; }
-            const h = await hashPassword(a);
-          localStorage.setItem(AUTH_KEY, h);
-          if (user) localStorage.setItem(ADMIN_USER_KEY, user);
-          if (remember) {
-            // persist logged-in state
-            localStorage.setItem('admin_logged_in', '1');
-          } else {
-            sessionStorage.setItem('admin_logged_in', '1');
-          }
-          
-          // Save to GitHub
-          const adminData = {
-            user: user || 'admin',
-            passwordHash: h,
-            createdAt: Date.now()
-          };
-          const result = await saveAdminToGitHub(adminData);
-          
-          if (result.ok) {
-            alert('Parola kaydedildi ve GitHub\'a gönderildi. Yönetici hesabı oluşturuldu.');
-          } else {
-            alert('Parola kaydedildi (yerel). GitHub senkronizasyonu başarısız: ' + (result.error || 'bilinmiyor'));
-          }
-          
-          renderAuth();
-          renderAdmin();
-          } finally {
-            btn.innerHTML = origText;
-            btn.disabled = false;
-          }
-        };
-      }
-
-      function showLogin(){
-        authContent.innerHTML = `<div style="margin-bottom:1.5rem;text-align:center;font-size:1.75rem;font-weight:800;padding:1rem 2rem;background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:white;border-radius:12px;box-shadow:0 4px 15px rgba(16,185,129,0.4),0 8px 25px rgba(16,185,129,0.2),inset 0 -2px 5px rgba(0,0,0,0.1);text-shadow:0 2px 4px rgba(0,0,0,0.2);">🔐 Yönetici Girişi</div>
-          <input id="loginPw" type="password" placeholder="Şifre" style="width:60%; padding:0.5rem; margin-top:0.5rem;" />
-          <label style="display:block;margin-top:0.5rem;"><input id="rememberMe" type="checkbox" /> Beni hatırla</label>
-          <div style="margin-top:1rem;"><button id="loginBtn" style="padding:1rem 2.5rem;font-size:1.1rem;font-weight:700;border-radius:12px;border:none;background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:white;cursor:pointer;box-shadow:0 4px 15px rgba(16,185,129,0.4),0 8px 25px rgba(16,185,129,0.2),inset 0 -2px 5px rgba(0,0,0,0.1);transition:all 0.2s ease;">Giriş Yap</button></div>`;
-        const LBTN = document.getElementById('loginBtn');
-        document.getElementById('loginBtn').onclick = async ()=>{
-          const btn = document.getElementById('loginBtn');
-          const origText = btn.innerHTML;
-          btn.innerHTML = '⏳ Doğrulanıyor...';
-          btn.disabled = true;
-          try {
-            const pw = document.getElementById('loginPw').value;
-            const remember = !!document.getElementById('rememberMe').checked;
-            
-            if (!pw) {
-              alert('Lütfen şifre girin');
-              return;
-            }
-          
-          const h = await hashPassword(pw);
-          
-          // Always fetch from GitHub first
-          console.log('🔑 Admin bilgileri GitHub’dan çekiliyor...');
-          const adminData = await fetchAdminFromGitHub();
-          
-          console.log('Admin verisi alındı:', adminData);
-          
-          if (!adminData) {
-            alert('❌ Admin bilgileri GitHub\'dan alınamadı.\n\nLütfen:\n1. İnternet bağlantınızı kontrol edin\n2. Console\'u açıp hata detaylarını inceleyin (F12)\n3. Tekrar deneyin');
-            return;
-          }
-        // Enter tuşu ile giriş yap
-        const loginPwInputEl = document.getElementById('loginPw');
-        if (loginPwInputEl) {
-          loginPwInputEl.addEventListener('keydown', function(e){
-            if (e.key === 'Enter') {
-              LBTN.click();
-            }
-          });
-        }
-          
-          if (!adminData.passwordHash) {
-            alert('❌ Admin config dosyası geçersiz (passwordHash eksik).\n\nConsole\'u kontrol edin.');
-            console.error('Geçersiz admin yapılandırması:', adminData);
-            return;
-          }
-          
-          console.log('Parola kontrol ediliyor...');
-          console.log('Girilen özet:', h);
-          console.log('Beklenen özet:', adminData.passwordHash);
-          
-          // Check credentials - only password check, no email required
-          const failKey = 'admin_failed_attempts';
-          async function incrementAdminFail(){
-            let a = parseInt(localStorage.getItem(failKey) || '0',10) || 0; a += 1; localStorage.setItem(failKey, String(a)); return a;
-          }
-
-          if (h === adminData.passwordHash) {
-            // clear failed attempts
-            localStorage.removeItem(failKey);
-            // Cache to localStorage
-            localStorage.setItem(AUTH_KEY, adminData.passwordHash);
-            localStorage.setItem(ADMIN_USER_KEY, adminData.user || 'admin');
-            
-            // Persist session until explicit logout
-            localStorage.setItem('admin_logged_in', '1');
-            authContent.innerHTML = '<div style="color:green">Giriş başarılı — yönetici arayüzü yükleniyor...</div>';
-            try {
-              if (typeof adminUI !== 'undefined' && adminUI) adminUI.style.display = 'block';
-              try { renderAuth(); } catch(err) { console.error('renderAuth error after login', err); }
-              try { renderAdmin(); } catch(err) { console.error('renderAdmin error after login', err); }
-            } catch(err) { console.error('post-login UI error', err); }
-          } else {
-            // increment failures and if >=3 offer reset
-            const attempts = await incrementAdminFail();
-            if (attempts >= 3) {
-              // clear counter and open the admin management modal so admin can reset securely
-              localStorage.removeItem(failKey);
-              openAdminManageModal();
-              // provide guidance in the modal token area
-              try{
-                const msgEl = document.getElementById('modal_tokenMsg');
-                if (msgEl) msgEl.textContent = 'Parola 3 kez yanlış girildi. Aşağıdaki bölümden GitHub token kullanarak parolayı sıfırlayın. (Güvenli ortamda token girin)';
-                const tokenInput = document.getElementById('modal_token'); if (tokenInput) tokenInput.focus();
-              }catch(e){ console.warn('Modal token alanına odaklanılamadı', e); }
-              return;
-            } else {
-              alert('Email veya şifre yanlış (' + attempts + '/3)');
-            }
-          }
-          } finally {
-            btn.innerHTML = origText;
-            btn.disabled = false;
-          }
-        };
-      }
+      // Tüm parola ve giriş fonksiyonları kaldırıldı. Artık doğrudan erişim var.
 
       function renderAuth(){
-        const logged = !!(localStorage.getItem('admin_logged_in') || sessionStorage.getItem('admin_logged_in'));
-        const user = localStorage.getItem(ADMIN_USER_KEY) || 'admin';
-        if (typeof authContent === 'undefined' || typeof adminUI === 'undefined' || !authContent || !adminUI) {
-          document.body.innerHTML += '<div style="color:red;font-weight:bold;padding:2rem;">HATA: Giriş ekranı yüklenemedi. Lütfen sayfayı yeniden yükleyin veya tarayıcı önbelleğini temizleyin.</div>';
-          return;
-        }
-        // Sayfa yüklendikten sonra admin giriş ekranını kesin olarak aç
-        window.addEventListener('DOMContentLoaded', function(){
-          renderAuth();
-        });
-        if (!logged) {
-          showLogin();
-          adminUI.style.display = 'none';
-        } else {
-          authContent.innerHTML = `<div style=\"color:green;font-size:1.1rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;\"><strong>HOŞ GELDİNİZ ADMİN</strong>
-            <div style=\"display:flex;gap:0.5rem;align-items:center;margin-left:0.5rem;\">
-              <button id=\"adminSettingsBtn\" title=\"Yönetici Ayarları\" style=\"padding:0.75rem 1.5rem;font-size:1rem;font-weight:700;border-radius:12px;border:none;background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:white;cursor:pointer;box-shadow:0 4px 15px rgba(16,185,129,0.4),0 8px 25px rgba(16,185,129,0.2),inset 0 -2px 5px rgba(0,0,0,0.1);transition:all 0.2s ease;\">PAROLA YÖNET</button>
-              <button id=\"logoutBtn\" style=\"padding:0.75rem 1.5rem;font-size:1rem;font-weight:700;border-radius:12px;border:none;background:linear-gradient(135deg,#ef4444 0%,#dc2626 100%);color:white;cursor:pointer;box-shadow:0 4px 15px rgba(239,68,68,0.4),0 8px 25px rgba(239,68,68,0.2),inset 0 -2px 5px rgba(0,0,0,0.1);transition:all 0.2s ease;margin-left:0.25rem;\">Çıkış Yap</button>
-            </div></div>`;
-          document.getElementById('logoutBtn').onclick = ()=>{ 
-            const btn = document.getElementById('logoutBtn');
-            const origText = btn.innerHTML;
-            btn.innerHTML = '⏳ Çıkış...';
-            btn.disabled = true;
-            localStorage.removeItem('admin_logged_in'); 
-            localStorage.removeItem(AUTH_KEY);
-            localStorage.removeItem(ADMIN_USER_KEY);
-            localStorage.removeItem('admin_email');
-            sessionStorage.removeItem('admin_logged_in'); 
-            setTimeout(() => { renderAuth(); adminUI.style.display='none'; btn.innerHTML = origText; btn.disabled = false; }, 300);
-          };
-          document.getElementById('adminSettingsBtn').onclick = ()=>{ openAdminManageModal(); };
-          // Admin arayüzü her zaman görünür olsun
-          adminUI.style.display='block';
-        }
+        // Tüm parola/giriş ve oturum kodları kaldırıldı. Admin arayüzü her zaman görünür.
+        if (typeof adminUI !== 'undefined' && adminUI) adminUI.style.display = 'block';
       }
 
       function renderAdmin(){
-        // show admin UI and build admin controls
-        adminUI.style.display = 'block';
-
-        // Şifre/parola yönetimi kaldırıldı. Artık doğrudan erişim var.
-              showMessage('Sıfırlama başarısız: ' + (res && res.error ? res.error : ''), true);
-            }
-          } catch(err) {
-            console.error('resetAdminPassword hatası', err);
-            showMessage('Hata: ' + (err.message || err), true);
-          }
-        }
-
-        // Parola yönetimi işlemleri modal içinde bağlanmaktadır
+        // Admin arayüzü her zaman görünür.
+        if (typeof adminUI !== 'undefined' && adminUI) adminUI.style.display = 'block';
       }
 
       // Ensure admin UI isn't casually discoverable: require an unlock step
       async function ensureUnlocked(){
-        // Kilit adımı kaldırıldı: doğrudan oturum arayüzünü göster
-        renderAuth();
+        // Kilit adımı kaldırıldı: admin arayüzü doğrudan gösteriliyor
+        if (typeof adminUI !== 'undefined' && adminUI) adminUI.style.display = 'block';
       }
-
-      window.addEventListener('DOMContentLoaded', function(){
-        renderAuth();
-      });
-    })();
+    // End admin logic block
+  // End of admin JS
+  window.addEventListener('DOMContentLoaded', function(){
+    renderAuth();
+  });
   </script>
 
   <script defer>
