@@ -947,6 +947,19 @@ async function verifyGitHubPathExists(path){
       }
     }
 
+    // Safe UTF-8 -> Base64 encoding helper (avoids unescape/escape which can corrupt extended chars)
+    function toBase64(str){
+      try {
+        const utf8 = new TextEncoder().encode(str);
+        let bin = '';
+        for (let i=0;i<utf8.length;i++) bin += String.fromCharCode(utf8[i]);
+        return btoa(bin);
+      } catch(e){
+        // Fallback to legacy method if TextEncoder unsupported
+        try { return btoa(unescape(encodeURIComponent(str))); } catch(_) { return ''; }
+      }
+    }
+
     // Save admin credentials to GitHub (Contents API - real time)
     async function saveAdminToGitHub(adminData) {
       const token = getGitHubToken();
@@ -965,7 +978,7 @@ async function verifyGitHubPathExists(path){
         try { delete cleanAdmin.unlockHash; } catch(_) {}
       }
       const json = JSON.stringify(cleanAdmin, null, 2);
-      const contentBase64 = btoa(unescape(encodeURIComponent(json)));
+      const contentBase64 = toBase64(json);
 
       let sha = undefined;
       try {
@@ -1305,8 +1318,8 @@ async function verifyGitHubPathExists(path){
               s = userObj.address;
             }
             s = String(s||'');
-            try{ if (/%[0-9A-Fa-f]{2}/.test(s) || s.includes('+')) s = decodeURIComponent(s.replace(/\+/g,' ')); }catch(_){}
-            try{ const ta = document.createElement('textarea'); ta.innerHTML = s; s = ta.value; }catch(_){}
+            // Adres metnini olduğu gibi bırak (çift decode sorunlarını engelle)
+            // Yalnızca gereksiz boşlukları sadeleştir
             return s.replace(/\s+/g,' ').trim();
           }catch(_){ return ''; }
         };
@@ -1509,7 +1522,7 @@ async function verifyGitHubPathExists(path){
           if (!prods || !prods.length) return alert('Kayıtlı ürün yok');
           const files = [];
           // products.json
-          files.push({ path: 'products.json', contentBase64: btoa(unescape(encodeURIComponent(JSON.stringify(prods, null, 2)))) });
+          files.push({ path: 'products.json', contentBase64: toBase64(JSON.stringify(prods, null, 2)) });
           // include embedded images
           for (const p of prods){
             if (p.image && typeof p.image === 'string' && p.image.indexOf('data:') === 0){
@@ -1523,7 +1536,7 @@ async function verifyGitHubPathExists(path){
             }
           }
           // update products.json with filenames
-          files[0].contentBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(prods, null, 2))));
+          files[0].contentBase64 = toBase64(JSON.stringify(prods, null, 2));
           const r = await commitFilesToRepo(files, 'admin: push products via admin panel');
           if (r.ok) alert('Ürünler GitHub deposuna kaydedildi');
           else alert('Ürün push başarısız: ' + (r.err && r.err.statusText ? r.err.statusText : (r.err && r.err.message) || 'bilinmiyor'));
@@ -1606,7 +1619,7 @@ async function verifyGitHubPathExists(path){
             const branch = 'site-release';
             const fileName = 'site-settings.json';
             const json = JSON.stringify(s, null, 2);
-            const contentBase64 = btoa(unescape(encodeURIComponent(json)));
+            const contentBase64 = toBase64(json);
 
             // Get current file SHA (if exists)
             const getUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${fileName}?ref=${branch}`;
@@ -1891,8 +1904,7 @@ async function verifyGitHubPathExists(path){
               s = userObj.address;
             }
             s = String(s||'');
-            try{ if (/%[0-9A-Fa-f]{2}/.test(s) || s.includes('+')) s = decodeURIComponent(s.replace(/\+/g,' ')); }catch(_){}
-            try{ const ta = document.createElement('textarea'); ta.innerHTML = s; s = ta.value; }catch(_){}
+            // Çift decode engelle — direkt normalize
             return s.replace(/\s+/g,' ').trim();
           }catch(_){ return ''; }
         };
@@ -2025,8 +2037,7 @@ async function verifyGitHubPathExists(path){
                 s = userObj.address;
               }
               s = String(s||'');
-              try{ if (/%[0-9A-Fa-f]{2}/.test(s) || s.includes('+')) s = decodeURIComponent(s.replace(/\+/g,' ')); }catch(_){}
-              try{ const ta = document.createElement('textarea'); ta.innerHTML = s; s = ta.value; }catch(_){}
+              // Çift decode veya + işaretlerinin boşluğa dönüşmesi engellendi
               return s.replace(/\s+/g,' ').trim();
             }catch(_){ return ''; }
           };
@@ -2178,7 +2189,7 @@ async function verifyGitHubPathExists(path){
 
         // PUT updated user
         const putUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`;
-        const content = btoa(unescape(encodeURIComponent(JSON.stringify(u, null, 2))));
+        const content = toBase64(JSON.stringify(u, null, 2));
         const payload = {
           message: `chore(admin): kullanıcı düzenle (${u.name} - ${u.email})`,
           content,
@@ -2446,7 +2457,7 @@ async function verifyGitHubPathExists(path){
           ]
         };
         const json = JSON.stringify(dummy);
-        const contentBase64 = btoa(unescape(encodeURIComponent(json)));
+        const contentBase64 = toBase64(json);
         const payload = { files: [{ path: 'carts/dummy@example.com.json', contentBase64 }], message: 'chore: dummy cart snapshot' };
         const endpoints = ['/.netlify/functions/commit-file','/api/commit-file','/functions/commit-file'];
         let ok = false;
