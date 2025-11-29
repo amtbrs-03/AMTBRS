@@ -828,6 +828,16 @@
                                                     }
                                                 });
                                             }
+                                            // Kayıt formunda da Enter ile kayıt olabilsin
+                                            var regPwInput = document.getElementById('registerPassword2');
+                                            var regBtn = document.querySelector('[data-action="register"]');
+                                            if (regPwInput && regBtn) {
+                                                regPwInput.addEventListener('keydown', function(e) {
+                                                    if (e.key === 'Enter') {
+                                                        regBtn.click();
+                                                    }
+                                                });
+                                            }
                                         });
                                     </script>
                             </div>

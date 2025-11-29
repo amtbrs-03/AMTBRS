@@ -537,10 +537,7 @@
     <!-- Simple admin auth (client-side) -->
     <div id="authCard" class="card">
       <div id="authContent">
-        <div style="margin-bottom:1.5rem;text-align:center;font-size:1.75rem;font-weight:800;padding:1rem 2rem;background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:white;border-radius:12px;box-shadow:0 4px 15px rgba(16,185,129,0.4),0 8px 25px rgba(16,185,129,0.2),inset 0 -2px 5px rgba(0,0,0,0.1);text-shadow:0 2px 4px rgba(0,0,0,0.2);">🔐 Yönetici Girişi</div>
-        <input id="loginPw" type="password" placeholder="Şifre" style="width:60%; padding:0.5rem; margin-top:0.5rem;" />
-        <div style="margin-top:1rem;"><button id="loginBtn" style="padding:1rem 2.5rem;font-size:1.1rem;font-weight:700;border-radius:12px;border:none;background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:white;cursor:pointer;box-shadow:0 4px 15px rgba(16,185,129,0.4),0 8px 25px rgba(16,185,129,0.2),inset 0 -2px 5px rgba(0,0,0,0.1);transition:all 0.2s ease;">Giriş Yap</button></div>
-        <div id="jsErrorMsg" style="color:red;font-weight:bold;margin-top:1rem;"></div>
+        <div style="margin-bottom:1.5rem;text-align:center;font-size:1.75rem;font-weight:800;padding:1rem 2rem;background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:white;border-radius:12px;box-shadow:0 4px 15px rgba(16,185,129,0.4),0 8px 25px rgba(16,185,129,0.2),inset 0 -2px 5px rgba(0,0,0,0.1);text-shadow:0 2px 4px rgba(0,0,0,0.2);">🔓 Yönetici paneline doğrudan erişim aktif.</div>
       </div>
     </div>
 
@@ -1314,74 +1311,7 @@ async function verifyGitHubPathExists(path){
         // show admin UI and build admin controls
         adminUI.style.display = 'block';
 
-        const owner = 'amtbrs-03';
-        const repo = 'AMTBRS';
-
-        // Parola yönetimi artık yalnız modal içinde gösterilmektedir.
-
-        async function changeAdminPassword() {
-          try {
-            const cur = document.getElementById('currentPw').value || '';
-            const np1 = document.getElementById('newPw1').value || '';
-            const np2 = document.getElementById('newPw2').value || '';
-            if (!cur || !np1 || !np2) return showMessage('Lütfen tüm alanları doldurun', true);
-            if (np1.length < 4) return showMessage('Yeni parola en az 4 karakter olmalı', true);
-            if (np1 !== np2) return showMessage('Yeni parolalar eşleşmiyor', true);
-
-            showMessage('Mevcut admin bilgileri doğrulanıyor...', false);
-            const adminData = await fetchAdminFromGitHub();
-            if (!adminData || !adminData.passwordHash) return showMessage('Admin bilgileri alınamadı (GitHub).', true);
-
-            const curHash = await hashPassword(cur);
-            if (curHash !== adminData.passwordHash) return showMessage('Mevcut parola yanlış.', true);
-
-            const newHash = await hashPassword(np1);
-            adminData.passwordHash = newHash;
-
-            showMessage('Yeni parola GitHub\'a kaydediliyor...', false);
-            const res = await saveAdminToGitHub(adminData);
-            if (res && res.ok) {
-              // update local session
-              localStorage.setItem(AUTH_KEY, newHash);
-              showMessage('✅ Parola başarıyla değiştirildi.', false);
-              // clear inputs
-              document.getElementById('currentPw').value = '';
-              document.getElementById('newPw1').value = '';
-              document.getElementById('newPw2').value = '';
-            } else {
-              showMessage('Parola GitHub\'a kaydedilemedi: ' + (res && res.error ? res.error : ''), true);
-            }
-          } catch(err) {
-            console.error('changeAdminPassword hatası', err);
-            showMessage('Hata: ' + (err.message || err), true);
-          }
-        }
-
-        async function resetAdminPassword() {
-          try {
-            // Only allow if admin session exists
-            const logged = !!(localStorage.getItem('admin_logged_in') || sessionStorage.getItem('admin_logged_in'));
-            if (!logged) return showMessage('Sıfırlama için yönetici olarak oturum açmanız gerekir.', true);
-            const np1 = document.getElementById('newPw1').value || '';
-            const np2 = document.getElementById('newPw2').value || '';
-            if (!np1 || !np2) return showMessage('Yeni parolayı girin ve tekrar edin.', true);
-            if (np1.length < 4) return showMessage('Yeni parola en az 4 karakter olmalı', true);
-            if (np1 !== np2) return showMessage('Yeni parolalar eşleşmiyor', true);
-
-            const adminData = await fetchAdminFromGitHub();
-            if (!adminData) return showMessage('Admin verisi alınamadı.', true);
-
-            const newHash = await hashPassword(np1);
-            adminData.passwordHash = newHash;
-
-            showMessage('Yeni parola GitHub\'a kaydediliyor (sıfırlama)...', false);
-            const res = await saveAdminToGitHub(adminData);
-            if (res && res.ok) {
-              localStorage.setItem(AUTH_KEY, newHash);
-              showMessage('✅ Parola sıfırlandı ve kaydedildi.', false);
-              document.getElementById('newPw1').value = '';
-              document.getElementById('newPw2').value = '';
-            } else {
+        // Şifre/parola yönetimi kaldırıldı. Artık doğrudan erişim var.
               showMessage('Sıfırlama başarısız: ' + (res && res.error ? res.error : ''), true);
             }
           } catch(err) {
