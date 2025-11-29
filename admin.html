@@ -1503,55 +1503,46 @@ async function verifyGitHubPathExists(path){
       if (saveAllBtn) saveAllBtn.addEventListener('click', async (ev)=>{
         const btn = ev.currentTarget;
         await withProgress(btn, '⏳ Kaydediliyor...', async ()=>{
-          // gather edited fields and file uploads
-          const products = getProducts();
-          const items = Array.from(document.querySelectorAll('.prod-item'));
-          for (let i=0;i<items.length;i++){
-            const el = items[i];
-            const idx = i;
-            const name = el.querySelector('.pname').value.trim();
-            const price = parseFloat(el.querySelector('.pprice').value) || 0;
-            const emoji = el.querySelector('.pemoji').value.trim();
-            const file = el.querySelector('.pimage').files[0];
-            let img = emoji || '';
-            if (file){ img = await toDataURL(file); }
-            products[idx].name = name; products[idx].price = price; products[idx].image = img;
-          }
-          setProducts(products);
-          // Attempt GitHub commit (products.json) if token available
-          let committedRemote = false;
+          // Inline panel-based batch save
+          const panels = Array.from(document.querySelectorAll('.prod-edit-panel')).filter(p=>p.style.display !== 'none');
+          if (!panels.length){ alert('Açık düzenleme paneli yok. Önce Düzenle ile bir ürün açın.'); return; }
+          const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
+          if (!token){ alert('GitHub token yok. Kaydetmek için önce token ekleyin.'); return; }
+          // Fetch remote products.json for freshest copy & SHA
+          const apiUrl = 'https://api.github.com/repos/amtbrs-03/AMTBRS/contents/products.json';
+          let sha=null; let remoteObj={ updatedAt: Date.now(), items: [] };
           try {
-            const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
-            if (token) {
-              const owner = 'amtbrs-03';
-              const repo = 'AMTBRS';
-              const branch = 'site-release';
-              const path = 'products.json';
-              const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
-              // Get current SHA
-              let sha = null;
-              try {
-                const getRes = await fetch(apiUrl + `?ref=${branch}&t=${Date.now()}`, { headers: { 'Accept':'application/vnd.github.v3+json', 'Authorization': `token ${token}` }, cache:'no-store' });
-                if (getRes.ok) { const j = await getRes.json(); sha = j.sha; }
-              } catch(e){ /* ignore */ }
-              const remoteObj = { updatedAt: Date.now(), items: products };
-              const contentB64 = toBase64(JSON.stringify(remoteObj, null, 2));
-              const body = { message: 'chore(admin): toplu ürün kaydet', content: contentB64, branch }; if (sha) body.sha = sha;
-              const putRes = await fetch(apiUrl, { method:'PUT', headers:{ 'Content-Type':'application/json', 'Authorization': `token ${token}` }, body: JSON.stringify(body) });
-              if (putRes.ok) {
-                committedRemote = true;
-              } else {
-                const errTxt = await putRes.text().catch(()=> '');
-                console.warn('[admin] GitHub commit başarısız:', putRes.status, errTxt);
-              }
-            }
-          } catch(e){ console.warn('[admin] remote commit hata', e); }
-          if (committedRemote) {
-            alert('✅ Tüm değişiklikler kaydedildi (tarayıcı + GitHub).');
-          } else {
-            alert('Tüm değişiklikler tarayıcıda kaydedildi.' + ( (typeof getGitHubToken === 'function' && getGitHubToken()) ? '\n⚠️ GitHub kaydı başarısız veya token yetersiz.' : '\nℹ️ GitHub token yok, sadece lokal kaydedildi.' ));
-          }
-          render();
+            const getRes = await fetch(apiUrl + '?ref=site-release&t=' + Date.now(), { headers:{ 'Accept':'application/vnd.github.v3+json','Authorization':'token '+token }, cache:'no-store' });
+            if (getRes.ok){ const j=await getRes.json(); sha=j.sha; remoteObj=JSON.parse(fromBase64(j.content))||remoteObj; }
+          } catch(e){ console.warn('[admin] remote fetch hata', e); }
+          if(!Array.isArray(remoteObj.items)) remoteObj.items=[];
+          // Apply inline edits
+            panels.forEach(panel=>{
+              const id = panel.id.replace('edit-panel-','');
+              const nameEl=document.getElementById('ep-name-'+id);
+              const priceEl=document.getElementById('ep-price-'+id);
+              const badgeEl=document.getElementById('ep-badge-'+id);
+              const imageEl=document.getElementById('ep-image-'+id);
+              if(!nameEl||!priceEl||!badgeEl||!imageEl) return;
+              const name=nameEl.value.trim();
+              const price=parseFloat(priceEl.value)||0;
+              const badge=badgeEl.value.trim();
+              const image=imageEl.value.trim();
+              const idx = remoteObj.items.findIndex(p=>String(p.id)===String(id));
+              if(idx!==-1){ remoteObj.items[idx] = { ...remoteObj.items[idx], name, price, badge, image }; }
+            });
+          remoteObj.updatedAt = Date.now();
+          // Commit
+          let committed=false;
+          try{
+            const putRes = await fetch(apiUrl, { method:'PUT', headers:{ 'Content-Type':'application/json','Authorization':'token '+token }, body: JSON.stringify({ message:'chore(admin): toplu inline ürün güncelle', content: toBase64(JSON.stringify(remoteObj,null,2)), branch:'site-release', ...(sha?{sha}:{}) }) });
+            if(putRes.ok){ committed=true; }
+            else { const t=await putRes.text().catch(()=> ''); console.warn('[admin] batch commit hata', putRes.status, t); }
+          }catch(e){ console.warn('[admin] batch commit exception', e); }
+          if(committed){ alert('✅ Değişiklikler GitHub’a gönderildi ve canlıya alındı.'); }
+          else { alert('⚠️ GitHub kaydı başarısız. Değişiklikler uygulanmadı.'); }
+          // Refresh list
+          if(committed) renderAdminProducts();
         }); // end withProgress
       }); // end saveAllBtn click
 
