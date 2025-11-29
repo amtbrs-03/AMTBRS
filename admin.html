@@ -2247,7 +2247,10 @@ async function verifyGitHubPathExists(path){
 
         // Get current SHA
         const getUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}?ref=${branch}`;
-        const token = getGitHubToken();
+        // Robust token acquisition (guards against missing global function)
+        const token = (typeof getGitHubToken === 'function')
+          ? getGitHubToken()
+          : (localStorage.getItem('github_token') || localStorage.github_token || localStorage.gh_token || '');
         const headers = { 'Accept': 'application/vnd.github.v3+json' };
         if (token) headers['Authorization'] = `token ${token}`;
 
@@ -2260,7 +2263,7 @@ async function verifyGitHubPathExists(path){
 
         // PUT updated user
         const putUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`;
-        const content = toBase64(JSON.stringify(u, null, 2));
+        const content = toBase64(JSON.stringify(u, null, 2)); // uses the canonical toBase64 (dup consolidation pending)
         const payload = {
           message: `chore(admin): kullanıcı düzenle (${u.name} - ${u.email})`,
           content,
