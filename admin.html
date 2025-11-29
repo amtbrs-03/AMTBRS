@@ -1466,11 +1466,69 @@ async function verifyGitHubPathExists(path){
           const emoji = document.getElementById('newEmoji').value.trim();
           const file = document.getElementById('newImage').files[0];
           let img = emoji || '';
-          if (file){ img = await toDataURL(file); }
+          let dataUrl = null;
+          if (file){ dataUrl = await toDataURL(file); img = dataUrl; }
           if (!name || isNaN(price)) { alert('Ürün adı ve fiyatı zorunlu!'); return; }
-          const products = getProducts();
-          products.push({ id: uid(), name, price, image: img });
-          setProducts(products); render();
+          const newId = uid();
+          let finalImage = img;
+          const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
+          if (token && dataUrl && /^data:image\//i.test(dataUrl)) {
+            try {
+              const m = dataUrl.match(/^data:(image\/(png|jpeg|jpg|webp));base64,(.*)$/i);
+              if (m) {
+                const ext = (m[2].toLowerCase() === 'jpeg') ? 'jpg' : (m[2].toLowerCase() === 'jpg' ? 'jpg' : m[2].toLowerCase());
+                const imageFilePath = `images/products/${newId}.${ext}`;
+                const putRes = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/${imageFilePath}`, {
+                  method:'PUT',
+                  headers:{ 'Content-Type':'application/json', 'Authorization': 'token ' + token },
+                  body: JSON.stringify({
+                    message: `chore(admin): ürün resmi ekle (${newId})`,
+                    content: m[3],
+                    branch: 'site-release'
+                  })
+                });
+                if (putRes.ok) {
+                  finalImage = imageFilePath; // use path reference instead of data URL
+                } else {
+                  console.warn('[admin] Resim upload başarısız, dataURL kullanılacak', putRes.status);
+                }
+              }
+            } catch(e){ console.warn('[admin] resim GitHub yükleme hatası', e); }
+          }
+
+          // Update local list
+          const productsLocal = getProducts();
+          productsLocal.push({ id: newId, name, price, image: finalImage });
+          setProducts(productsLocal); render();
+
+          // Remote products.json append if token mevcut
+          if (token) {
+            try {
+              const apiUrl = 'https://api.github.com/repos/amtbrs-03/AMTBRS/contents/products.json';
+              let sha = null; let remoteObj = { updatedAt: Date.now(), items: [] };
+              try {
+                const getRes = await fetch(apiUrl + '?ref=site-release&t=' + Date.now(), { headers:{ 'Accept':'application/vnd.github.v3+json', 'Authorization':'token '+token }, cache:'no-store' });
+                if (getRes.ok) { const j = await getRes.json(); sha = j.sha; remoteObj = JSON.parse(fromBase64(j.content)) || remoteObj; }
+              } catch(_){}
+              if (!Array.isArray(remoteObj.items)) remoteObj.items = [];
+              remoteObj.items.push({ id: newId, name, price, image: finalImage });
+              remoteObj.updatedAt = Date.now();
+              const putRes2 = await fetch(apiUrl, { method:'PUT', headers:{ 'Content-Type':'application/json','Authorization':'token '+token }, body: JSON.stringify({ message:`chore(admin): ürün eklendi (${newId})`, content: toBase64(JSON.stringify(remoteObj, null, 2)), branch:'site-release', ...(sha?{sha}:{}) }) });
+              if (putRes2.ok) {
+                alert('✅ Ürün eklendi (GitHub + lokal)\nResim yolu: ' + finalImage);
+              } else {
+                const t = await putRes2.text().catch(()=> '');
+                alert('⚠️ Ürün lokal eklendi fakat GitHub products.json güncellenemedi: '+putRes2.status+' '+t);
+              }
+            } catch(e){ console.warn('[admin] remote products append hata', e); }
+          } else {
+            alert('Ürün lokal olarak eklendi. GitHub senkron için token ekleyin. Resim yolu/data: saklandı.');
+          }
+          // Yol rehberi notu ekle
+          const newPreview = document.getElementById('newPreview');
+          if (newPreview) {
+            newPreview.innerHTML = `<div style="color:#065f46;font-weight:600">Resim yolu: <code>${escapeHtml(finalImage)}</code></div>`;
+          }
           document.getElementById('newName').value=''; document.getElementById('newPrice').value=''; document.getElementById('newEmoji').value=''; document.getElementById('newImage').value='';
         } catch (err) {
           alert('Hata: ' + err.message);
