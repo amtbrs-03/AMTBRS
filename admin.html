@@ -53,6 +53,28 @@
     return String(str).replace(/[<>&"']/g, function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;','\'':'&#39;'}[c]; });
   }
 
+  // UTF-8 güvenli Base64 kodlama (Unicode bozulmasını engeller)
+  function toBase64(str){
+    try {
+      const utf8 = new TextEncoder().encode(str);
+      let bin = '';
+      for (let i=0;i<utf8.length;i++) bin += String.fromCharCode(utf8[i]);
+      return btoa(bin);
+    } catch(e){
+      try { return btoa(unescape(encodeURIComponent(str))); } catch(_) { return ''; }
+    }
+  }
+  function fromBase64(b64){
+    try {
+      const bin = atob(b64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
+      return new TextDecoder().decode(bytes);
+    } catch(e){
+      try { return decodeURIComponent(escape(atob(b64))); } catch(_) { return ''; }
+    }
+  }
+
   // Public sayfalarda admin fonksiyonları ve hassas veri gösterimi engellenir
   // Ürün ID ile düzenleme paneli açma
   async function openProductEditPanelById(id) {
@@ -104,7 +126,7 @@
       const res = await fetch(url);
       if (!res.ok) throw new Error('products.json alınamadı!');
       const data = await res.json();
-      let products = JSON.parse(atob(data.content));
+      let products = JSON.parse(fromBase64(data.content));
       let idx = products.items.findIndex(p => p.id === id);
       if (idx === -1) throw new Error('Ürün bulunamadı!');
       products.items[idx] = { id, name, price, badge, image };
@@ -117,7 +139,7 @@
         },
         body: JSON.stringify({
           message: `Ürün güncellendi: ${id}`,
-          content: btoa(JSON.stringify(products, null, 2)),
+          content: toBase64(JSON.stringify(products, null, 2)),
           sha: data.sha,
           branch
         })
@@ -153,6 +175,51 @@
   window.addEventListener('DOMContentLoaded', addEditButtonsToProductCards);
   window.addEditButtonsToProductCards = addEditButtonsToProductCards;
   </script>
+  <!-- Runtime normalization for any existing double-encoded (mojibake) text -->
+  <script>
+  (function normalizeMojibake(){
+    const mapSeq = [
+      [/Ãœ/g,'Ü'],[/Ã¼/g,'ü'],[/Ã‡/g,'Ç'],[/Ã§/g,'ç'],[/Ã–/g,'Ö'],[/Ã¶/g,'ö'],[/ÄŸ/g,'ğ'],[/ÅŸ/g,'ş'],[/Ä±/g,'ı'],[/Ä°/g,'İ'],[/â‚º/g,'₺'],
+      [/â€™/g,"'"],[/â€œ/g,'"'],[/â€�/g,'"'],[/â€“/g,'–'],[/â€”/g,'—'],
+      [/ğŸ’¾/g,'💾'],[/ğŸ”„/g,'🔄'],[/ğŸ‘¥/g,'👥'],[/ğŸ“¦/g,'📦'],[/ğŸ§¾/g,'🧾'],[/â•/g,'➕'],[/ğŸŒ¹/g,'🌹'],[/ğŸ“Œ/g,'🖼️'],[/ğŸ›ï¸/g,'🛠️']
+    ];
+    function needsFix(str){ return /Ã|Ä|Å|â‚º|ğŸ|â•/.test(str); }
+    function byteReDecode(str){
+      try {
+        const bytes = new Uint8Array(str.length);
+        for (let i=0;i<str.length;i++) bytes[i] = str.charCodeAt(i) & 0xFF;
+        return new TextDecoder().decode(bytes);
+      }catch(e){ return str; }
+    }
+    function fix(str){
+      let out = str;
+      // Direct mapping replacements
+      mapSeq.forEach(([re, rep])=>{ out = out.replace(re, rep); });
+      // Attempt byte-level re-decode if still has markers
+      if (needsFix(out)){ const rede = byteReDecode(out); if (!needsFix(rede)) out = rede; }
+      return out;
+    }
+    function sweep(){
+      if (!(document && document.body)) return;
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+      while (walker.nextNode()){
+        const node = walker.currentNode;
+        const txt = node.nodeValue;
+        if (txt && needsFix(txt)){
+          const fixed = fix(txt);
+          if (fixed !== txt) node.nodeValue = fixed;
+        }
+      }
+    }
+    // Initial sweep
+    sweep();
+    // Re-run after DOMContentLoaded & a few intervals to catch late injected text
+    document.addEventListener('DOMContentLoaded', ()=>{
+      sweep();
+      let count = 0; const timer = setInterval(()=>{ sweep(); if (++count>5) clearInterval(timer); }, 1000);
+    });
+  })();
+  </script>
 <!doctype html>
 <html lang="tr">
 <head>
@@ -161,6 +228,8 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Admin - ERN-ÇİÇEK</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg" />
+  <link rel="shortcut icon" href="logo.svg" />
   <style>
     :root{
       --green-primary: #10b981;
@@ -595,7 +664,7 @@
             const res = await fetch(url);
             if (!res.ok) throw new Error('products.json alınamadı!');
             const data = await res.json();
-            let products = JSON.parse(atob(data.content));
+            let products = JSON.parse(fromBase64(data.content));
             products.items = products.items.filter(p => p.id !== id);
             products.updatedAt = Date.now();
             const putRes = await fetch(url, {
@@ -606,7 +675,7 @@
               },
               body: JSON.stringify({
                 message: `Ürün silindi: ${id}`,
-                content: btoa(JSON.stringify(products, null, 2)),
+                content: toBase64(JSON.stringify(products, null, 2)),
                 sha: data.sha,
                 branch
               })
@@ -1577,7 +1646,7 @@ async function verifyGitHubPathExists(path){
         document.getElementById('contactBtnText').value = s.contactBtnText || 'İletişim';
       }
 
-      // Backward compatibility: define global token accessor (Safari/old browsers block-scope fix)
+      // Backward compatibility: define global token accessor (eski tarayıcılar için block-scope düzeltmesi)
       if (!('getToken' in window)) {
         window.getToken = function(){
           return (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
@@ -1713,7 +1782,8 @@ async function verifyGitHubPathExists(path){
       });
 
       // Export CSV (simple))
-      document.getElementById('importFile').addEventListener('change', async (e)=>{
+      const importFileEl = document.getElementById('importFile');
+      if (importFileEl) importFileEl.addEventListener('change', async (e)=>{
         const f = e.target.files && e.target.files[0];
         if (!f) return;
         const txt = await f.text();
@@ -1767,7 +1837,8 @@ async function verifyGitHubPathExists(path){
       });
 
       // preview for new image
-      document.getElementById('newImage').addEventListener('change', async (e)=>{
+      const newImageEl = document.getElementById('newImage');
+      if (newImageEl) newImageEl.addEventListener('change', async (e)=>{
         const f = e.target.files && e.target.files[0];
         const preview = document.getElementById('newPreview');
         preview.innerHTML = '';
