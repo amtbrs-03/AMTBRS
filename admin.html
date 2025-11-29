@@ -810,6 +810,26 @@
     <div class="small meta" style="margin-top:0.75rem">💾 Ayarlar tarayıcıda saklanır. "GitHub'a da kaydet" seçili ise site-settings.json güncellenir.</div>
   </div>
 
+      <!-- Passkey / WebAuthn Yönetimi -->
+      <div class="card" id="passkeyCard">
+        <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+          <span>🔐 Passkey (WebAuthn) Yönetimi</span>
+          <button id="passkeyInfoBtn" class="btn btn-ghost" type="button" style="font-size:0.8rem;">ℹ️ Bilgi</button>
+        </div>
+        <div class="small" style="color:#64748b;margin-bottom:0.75rem;line-height:1.4;">
+          Touch ID / Face ID veya güvenli biyometrik yöntemleri <strong>tarayıcı içinde</strong> kullanmak için Passkey oluşturun. Bu statik ortamda <em>asgari doğrulama</em> yapılır: kimlik id eşleşmesi. İleri seviye imza doğrulaması (attestation / assertion parse) eklenebilir.
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;">
+          <button id="registerPasskeyBtn" class="btn" type="button">🆕 Passkey Kaydet</button>
+          <button id="loginPasskeyBtn" class="btn btn-ghost" type="button">🚪 Passkey ile Giriş</button>
+          <button id="clearPasskeyBtn" class="btn btn-danger" type="button">🗑️ Sil</button>
+          <span id="passkeyStatus" class="small" style="min-width:140px;color:#64748b;">Hazır</span>
+        </div>
+        <div id="passkeyInfoPanel" class="small" style="margin-top:0.75rem;display:none;background:#f1f5f9;padding:0.75rem;border-radius:10px;border:1px solid #e2e8f0;">
+          <b>Nasıl çalışır?</b><br/>1) "Passkey Kaydet" biyometrik ile yeni credential oluşturur.<br/>2) ID tarayıcıda ve geçici olarak GitHub'a değil <code>localStorage</code>'da saklanır.<br/>3) "Passkey ile Giriş" credential id ile doğrular.<br/>4) Bu minimal akış tam kriptografik imza doğrulaması yapmaz (statik site kısıtı).<br/>5) Güvenliği artırmak için ileride: <code>authenticatorData</code> + <code>clientDataJSON</code> + <code>signature</code> parse & verify.
+        </div>
+      </div>
+
   </div>
 
   <script defer>
@@ -2580,6 +2600,120 @@ async function verifyGitHubPathExists(path){
         alert('Dummy sepet oluşturulamadı: ' + (e.message||e));
       }
     }
+
+    /* ================= Passkey (WebAuthn) Minimal Entegrasyonu ================= */
+    (function passkeyInit(){
+      const regBtn = document.getElementById('registerPasskeyBtn');
+      const loginBtn = document.getElementById('loginPasskeyBtn');
+      const clearBtn = document.getElementById('clearPasskeyBtn');
+      const statusEl = document.getElementById('passkeyStatus');
+      const infoBtn = document.getElementById('passkeyInfoBtn');
+      const infoPanel = document.getElementById('passkeyInfoPanel');
+
+      function setStatus(msg, good){
+        if(!statusEl) return;
+        statusEl.textContent = msg;
+        statusEl.style.color = good ? '#065f46' : '#b91c1c';
+      }
+
+      function bufferToBase64URL(buf){
+        const bytes = new Uint8Array(buf);
+        let str = '';
+        for(let i=0;i<bytes.length;i++) str += String.fromCharCode(bytes[i]);
+        return btoa(str).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+      }
+      function base64URLToBuffer(b64url){
+        const pad = '='.repeat((4 - b64url.length % 4) % 4);
+        const b64 = b64url.replace(/-/g,'+').replace(/_/g,'/') + pad;
+        const bin = atob(b64);
+        const bytes = new Uint8Array(bin.length);
+        for(let i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
+        return bytes.buffer;
+      }
+
+      function randomChallenge(len){
+        const arr = new Uint8Array(len);
+        crypto.getRandomValues(arr);
+        return arr;
+      }
+
+      async function registerPasskey(){
+        if(!window.PublicKeyCredential){ setStatus('Desteklenmiyor', false); return; }
+        try{
+          setStatus('Kaydediliyor...', true);
+          const challenge = randomChallenge(32);
+          const userId = randomChallenge(16); // anonim tek admin
+          const pubKeyOptions = {
+            challenge,
+            rp: { name: 'ERN-CICEK Admin' },
+            user: { id: userId, name: 'admin', displayName: 'Admin Kullanıcı' },
+            pubKeyCredParams: [ { type:'public-key', alg:-7 }, { type:'public-key', alg:-257 } ],
+            timeout: 60000,
+            authenticatorSelection: { userVerification: 'preferred' },
+            attestation: 'none'
+          };
+          const cred = await navigator.credentials.create({ publicKey: pubKeyOptions });
+          if(!cred){ throw new Error('Credential oluşturulamadı'); }
+          const id = cred.id;
+            // rawId -> base64url sakla
+          const rawIdB64 = bufferToBase64URL(cred.rawId);
+          // Attestation response objelerini ileride gelişmiş doğrulama için sakla
+          const attResp = cred.response || {};
+          const clientDataJSON = attResp.clientDataJSON ? bufferToBase64URL(attResp.clientDataJSON) : '';
+          const attestationObject = attResp.attestationObject ? bufferToBase64URL(attResp.attestationObject) : '';
+          const store = { id, rawId: rawIdB64, clientDataJSON, attestationObject, createdAt: Date.now() };
+          localStorage.setItem('admin_passkey', JSON.stringify(store));
+          setStatus('✓ Passkey kaydedildi', true);
+        }catch(e){
+          console.error('registerPasskey hata', e);
+          setStatus('Hata: '+ (e.message||e), false);
+        }
+      }
+
+      async function loginWithPasskey(){
+        if(!window.PublicKeyCredential){ setStatus('Desteklenmiyor', false); return; }
+        const saved = localStorage.getItem('admin_passkey');
+        if(!saved){ setStatus('Önce kaydedin', false); return; }
+        try{
+          setStatus('Doğrulanıyor...', true);
+          const obj = JSON.parse(saved);
+          const challenge = randomChallenge(32);
+          const allow = [{ id: base64URLToBuffer(obj.rawId), type:'public-key' }];
+          const getOptions = { publicKey: { challenge, allowCredentials: allow, userVerification: 'preferred', timeout:60000 } };
+          const assertion = await navigator.credentials.get(getOptions);
+          if(!assertion || !assertion.id){ throw new Error('Assertion yok'); }
+          if(assertion.id !== obj.id){ throw new Error('ID eşleşmedi'); }
+          // Minimal kabul - ileri seviye: signature doğrulama
+          localStorage.setItem('admin_logged_in', '1');
+          setStatus('✓ Giriş onaylandı', true);
+        }catch(e){
+          console.error('loginWithPasskey hata', e);
+          setStatus('Hata: '+ (e.message||e), false);
+        }
+      }
+
+      function clearPasskey(){
+        localStorage.removeItem('admin_passkey');
+        localStorage.removeItem('admin_logged_in');
+        setStatus('Silindi', true);
+      }
+
+      if(infoBtn && infoPanel){
+        infoBtn.addEventListener('click', ()=>{
+          infoPanel.style.display = infoPanel.style.display === 'none' ? 'block' : 'none';
+        });
+      }
+      if(regBtn) regBtn.addEventListener('click', registerPasskey);
+      if(loginBtn) loginBtn.addEventListener('click', loginWithPasskey);
+      if(clearBtn) clearBtn.addEventListener('click', clearPasskey);
+
+      // Durum göstergesi başlangıç
+      try{
+        const saved = localStorage.getItem('admin_passkey');
+        if(saved){ setStatus('Kayıtlı', true); }
+      }catch(_){}
+    })();
+    /* ================= END Passkey ================= */
   </script>
 </body>
 </html>

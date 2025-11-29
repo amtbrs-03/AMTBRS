@@ -1,9 +1,8 @@
 #!/bin/zsh
 
-# macOS kullanıcı parolası ile doğrulama (Sistem girişine entegre)
-# Bu komut, yönetici yetkisi gerektiren zararsız bir komutu çalıştırır.
-# Kullanıcı doğru macOS parolasını girerse devam eder; iptal/yanlışsa çıkılır.
-AUTH_SCRIPT='do shell script "id -u" with administrator privileges'
+# macOS Touch ID / Parola doğrulama (sudo -v pam_tid varsa parmak izi kabul eder)
+# Kullanıcı doğrulanmazsa işlem iptal edilir.
+AUTH_SCRIPT='do shell script "sudo -v" with administrator privileges'
 if ! osascript -e "$AUTH_SCRIPT" >/dev/null 2>&1; then
   osascript -e 'display alert "Kimlik doğrulama iptal edildi veya başarısız oldu." as warning'
   exit 1
