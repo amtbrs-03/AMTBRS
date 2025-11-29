@@ -643,6 +643,15 @@
                 </div>`;
               container.appendChild(card);
             });
+            // Defensive: attach listeners in case inline onclick fails (ör. CSP veya future refactor)
+            setTimeout(()=>{
+              container.querySelectorAll('.edit-toggle').forEach(btn=>{
+                if(!btn.__bound){
+                  btn.addEventListener('click', function(e){ e.preventDefault(); const id=this.getAttribute('data-id'); if(typeof toggleInlineEdit==='function') toggleInlineEdit(id, this); });
+                  btn.__bound = true;
+                }
+              });
+            }, 0);
           } catch(err){
             container.innerHTML = '<div style="color:#b91c1c">Hata: ' + err.message + '</div>';
           }
