@@ -868,8 +868,6 @@
                 <div class='actions'>
                   <button type='button' class='btn' data-action='edit' aria-expanded='false' data-id='${p.id}'>Düzenle</button>
                   <button type='button' class='btn btn-danger' data-action='delete' data-id='${p.id}'>Sil</button>
-                  <button type='button' class='btn btn-ghost' data-action='move' data-dir='up' data-id='${p.id}' ${i===0?'disabled aria-disabled="true"':''}>⬆︎</button>
-                  <button type='button' class='btn btn-ghost' data-action='move' data-dir='down' data-id='${p.id}' ${i===(products.length-1)?'disabled aria-disabled="true"':''}>⬇︎</button>
                 </div>
                 <div class='prod-edit-panel' id='edit-panel-${p.id}' style='display:none;margin-top:8px;padding:10px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;'>
                   <div style='display:grid;gap:6px;'>
@@ -892,11 +890,7 @@
                     </label>
                   </div>
                   <div id='ep-msg-${p.id}' style='margin-top:6px;font-size:12px;color:#0f766e;min-height:18px;'></div>
-                  <div style='display:flex;gap:6px;margin-top:8px;'>
-                    <button type='button' class='btn' data-action='save-inline' data-id='${p.id}'>Kaydet</button>
-                    <button type='button' class='btn btn-ghost' data-action='cancel-inline' data-id='${p.id}'>İptal</button>
-                    <button type='button' class='btn btn-ghost' data-action='verify-img' data-id='${p.id}'>Görsel Doğrula</button>
-                  </div>
+                  <div style='display:none;'></div>
                 </div>`;
               container.appendChild(card);
             });
@@ -927,38 +921,17 @@
                 try {
                   switch(action){
                     case 'edit':
-                      if(typeof toggleInlineEdit==='function') toggleInlineEdit(id, btn);
+                      if(typeof openProductEditPanelById==='function') openProductEditPanelById(id);
                       break;
                     case 'delete':
                       if(typeof deleteAdminProduct==='function') deleteAdminProduct(id);
-                      break;
-                    case 'move':
-                      const dir = btn.getAttribute('data-dir');
-                      if(typeof moveProduct==='function') moveProduct(id, dir);
-                      break;
-                    case 'verify-img':
-                      if(typeof verifyInlineImagePath==='function') verifyInlineImagePath(id);
-                      break;
-                    case 'save-inline':
-                      if(typeof saveInlineEdit==='function') saveInlineEdit(id);
-                      break;
-                    case 'cancel-inline':
-                      if(typeof cancelInlineEdit==='function') cancelInlineEdit(id);
                       break;
                   }
                 } catch(err){ console.warn('[admin] button action error', action, err); }
               });
               container.__delegated = true;
             }
-            // Defensive: attach listeners in case inline onclick fails (ör. CSP veya future refactor)
-            setTimeout(()=>{
-              container.querySelectorAll('.edit-toggle').forEach(btn=>{
-                if(!btn.__bound){
-                  btn.addEventListener('click', function(e){ e.preventDefault(); const id=this.getAttribute('data-id'); if(typeof toggleInlineEdit==='function') toggleInlineEdit(id, this); });
-                  btn.__bound = true;
-                }
-              });
-            }, 0);
+            // Inline edit kaldırıldı; ek dinleyicilere gerek yok
           } catch(err){
             container.innerHTML = '<div style="color:#b91c1c">Hata: ' + err.message + '</div>';
           }
@@ -1249,70 +1222,7 @@ function normalizeProductId(raw){
   return { base: raw, ext: 'jpg', hasExt: false };
 }
 
-        // Ürün sıralama (yukarı/aşağı)
-        async function moveProduct(id, dir){
-          try {
-            const token = getGitHubToken();
-            // Lokal listeyi al
-            const res = await fetch('products.json?' + Date.now());
-            if(!res.ok) throw new Error('products.json alınamadı');
-            const data = await res.json();
-            let list = Array.isArray(data.items) ? data.items : (Array.isArray(data)?data:[]);
-            const idx = list.findIndex(p=>String(p.id)===String(id));
-            if(idx===-1) throw new Error('Ürün bulunamadı');
-            const newIdx = dir==='up'? idx-1 : idx+1;
-            if(newIdx < 0 || newIdx >= list.length) return; // sınır dışı – işlem yok
-            // Lokal swap
-            const tmp = list[newIdx]; list[newIdx] = list[idx]; list[idx] = tmp;
-
-            if(token){
-              // Remote güncelle
-              const owner='amtbrs-03'; const repo='AMTBRS';
-              const url = `https://api.github.com/repos/${owner}/${repo}/contents/products.json?ref=site-release`;
-              const getRes = await fetch(url, { headers:{ 'Accept':'application/vnd.github.v3+json','Authorization':'token '+token } });
-              if(!getRes.ok) throw new Error('Remote products.json alınamadı');
-              const meta = await getRes.json();
-              let robj; try{ robj = JSON.parse(fromBase64((meta.content||'').replace(/\n/g,'')))||{}; }catch{ robj={}; }
-              let rlist = Array.isArray(robj.items)?robj.items:(Array.isArray(robj)?robj:[]);
-              const ridx = rlist.findIndex(p=>String(p.id)===String(id));
-              if(ridx!==-1){
-                const rNewIdx = dir==='up'? ridx-1 : ridx+1;
-                if(rNewIdx>=0 && rNewIdx < rlist.length){ const t = rlist[rNewIdx]; rlist[rNewIdx]=rlist[ridx]; rlist[ridx]=t; }
-              }
-              const newObj = { updatedAt: Date.now(), items: rlist };
-              const putRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/products.json`, {
-                method:'PUT', headers:{ 'Content-Type':'application/json','Authorization':'token '+token },
-                body: JSON.stringify({ message:`chore(admin): ürün sırası değişti (${id} ${dir})`, content: toBase64(JSON.stringify(newObj,null,2)), branch:'site-release', sha: meta.sha })
-              });
-              if(!putRes.ok) throw new Error('Remote sıra güncellemesi başarısız');
-            }
-            renderAdminProducts();
-          } catch(e){ alert('Sıralama hatası: '+(e.message||e)); }
-        }
-
-        // Inline görsel doğrulama
-        function verifyInlineImagePath(id){
-          const msg = document.getElementById('ep-msg-'+id);
-          const imageEl = document.getElementById('ep-image-'+id);
-          if(!imageEl){ return; }
-          const val = imageEl.value.trim();
-          if(!val){ if(msg){ msg.style.color='#b91c1c'; msg.textContent='Görsel yolu boş'; } return; }
-          // Emoji veya harici URL ise doğrulama atlanır
-          if(!/^images\/products\//.test(val) || !/(jpg|jpeg|png|webp)$/i.test(val)){
-            if(msg){ msg.style.color='#0f766e'; msg.textContent='Doğrulama atlandı (emoji/özel yol)'; }
-            return;
-          }
-          if(msg){ msg.style.color='#0f766e'; msg.textContent='Doğrulanıyor...'; }
-          verifyGitHubPathExists(val).then(r=>{
-            if(msg){
-              if(r.exists){ msg.style.color='#065f46'; msg.textContent='✅ Bulundu: '+(r.actualPath||val); }
-              else { msg.style.color='#b91c1c'; msg.textContent='❌ Bulunamadı: '+val; }
-            }
-          }).catch(err=>{ if(msg){ msg.style.color='#b91c1c'; msg.textContent='Hata: '+(err.message||err); } });
-        }
-
-        window.moveProduct = moveProduct;
-        window.verifyInlineImagePath = verifyInlineImagePath;
+        // Ürün sıralama ve inline görsel doğrulama kaldırıldı
 async function verifyGitHubPathExists(path){
   // Geriye { exists:boolean, actualPath:string|null, sha:string|null } döner
   try{
@@ -1341,77 +1251,7 @@ async function verifyGitHubPathExists(path){
     const dirUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodedDir}?ref=${encodeURIComponent(branch)}`;
     res = await fetchWithAuth(dirUrl);
     if(!res.ok) return { exists:false, actualPath:null, sha:null };
-    const arr = await res.json();
-    if(Array.isArray(arr)){
-      const lowerTarget = fileName.toLowerCase();
-      const hit = arr.find(it => it && it.type==='file' && String(it.name).toLowerCase() === lowerTarget);
-      if(hit){ return { exists:true, actualPath: dir + '/' + hit.name, sha: hit.sha||null }; }
-    }
-    return { exists:false, actualPath:null, sha:null };
-  }catch(e){ return { exists:false, actualPath:null, sha:null }; }
-}
-        const pidEl = document.getElementById('ghUploadProductId');
-        const pathEl = document.getElementById('ghUploadedPath');
-        const msgEl = document.getElementById('ghUploadMsg');
-        function setMsg(m, ok){ if (msgEl){ msgEl.textContent = m; msgEl.style.color = ok ? '#065f46' : '#b91c1c'; } }
-
-        async function autoBindAfterUpload(pid){
-          if (!pid) { setMsg('Ürün ID gerekli.', false); return false; }
-          setMsg('⌛ Yükleme bekleniyor... (otomatik bağlama etkin)', true);
-          const norm = normalizeProductId(pid);
-          const exts = norm.hasExt ? [norm.ext, ...['jpg','jpeg','png','webp'].filter(e=>e!==norm.ext)] : ['jpg','jpeg','png','webp'];
-          const start = Date.now();
-          const timeout = 120000; // 2 dk
-          let attempt = 0; let delay = 2000; // adaptif backoff
-          while (Date.now() - start < timeout){
-            // iptal kontrolü
-            if (!(autoBindEl && autoBindEl.checked)) { setMsg('Otomatik bağlama iptal edildi.', false); return false; }
-            for (const ext of exts){
-              const pth = norm.hasExt ? `images/products/${norm.base}.${ext}` : `images/products/${norm.base}.${ext}`;
-              const ver = await verifyGitHubPathExists(pth);
-              if (ver.exists){
-                try{
-                  if (pathEl) pathEl.value = pth;
-                  setMsg('Kaydediliyor...', true);
-                  await updateProductsJsonImage(pid, pth);
-                  setMsg(`✓ products.json güncellendi: ${ver.actualPath} (sha:${(ver.sha||'...').slice(0,7)})`, true);
-                  return true;
-                }catch(e){ setMsg('Hata: ' + (e.message||e), false); return false; }
-              }
-            }
-            // adaptif bekleme: 2s -> 3s -> 5s
-            attempt++;
-            if(attempt === 1) delay = 3000; else delay = 5000; // hızlıca üst limite çıkar
-            const kalan = Math.max(0, timeout - (Date.now() - start));
-            setMsg(`⌛ Bekleniyor... (deneme ${attempt}, sonraki kontrol ${Math.round(delay/1000)}sn sonra, kalan ~${Math.round(kalan/1000)}sn)`, true);
-            await new Promise(r=>setTimeout(r, delay));
-          }
-          setMsg('Dosya bulunamadı. Lütfen yolu elle girip kaydedin.', false);
-          return false;
-        }
-
-        // Açma butonu
-        if (openBtn){
-          console.log('[admin] Binding openGhUpload');
-          openBtn.addEventListener('click', async ()=>{
-            const origText = openBtn.innerHTML;
-            openBtn.innerHTML = '⏳ Açılıyor...';
-            openBtn.disabled = true;
-            const pidRaw = (pidEl && pidEl.value || '').trim();
-            const norm = normalizeProductId(pidRaw);
-            const base = 'https://github.com/amtbrs-03/AMTBRS/upload/site-release';
-            const suggested = norm.hasExt ? `images/products/${norm.base}.${norm.ext}` : `images/products/${norm.base}.jpg`;
-            const urlSuggested = base + (pidRaw ? `?suggested_path=${encodeURIComponent(suggested)}` : '');
-            const urlAlt = base + (pidRaw ? `?path=${encodeURIComponent(suggested)}` : '');
-            let w = window.open(urlSuggested, '_blank', 'noopener');
-            if(!w){
-              // Popup engellendiyse aynı sekmede yönlendir
-              window.location.href = urlAlt || urlSuggested;
-            } else {
-              setMsg('GitHub yükleme sekmesi açıldı.', true);
-            }
-            if (pathEl && pidRaw) pathEl.value = suggested;
-            if (autoBindEl && autoBindEl.checked && pidRaw){
+        // Inline edit yardımcıları kaldırıldı (modal üzerinden düzenleme kullanılıyor)
               // otomatik bağlamayı başlat
               await autoBindAfterUpload(pidRaw);
             } else {
