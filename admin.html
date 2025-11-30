@@ -822,6 +822,10 @@
   function addEditButtonsToProductCards(){
     document.querySelectorAll('.product-card').forEach(card=>{ if(!card.querySelector('.edit-btn')){ const btn=document.createElement('button'); btn.textContent='Düzenle'; btn.className='edit-btn'; btn.style='position:absolute;top:8px;right:8px;z-index:2;font-size:13px;'; btn.onclick=function(e){ e.stopPropagation(); const id=card.getAttribute('data-id'); fetch('products.json').then(r=>r.json()).then(products=>{ const p=products.items.find(x=>x.id===id); if(p) openProductEditPanel(p); }); }; card.appendChild(btn); } });
   }
+  // Export to global scope for event delegation
+  window.openProductEditPanelById = openProductEditPanelById;
+  window.openProductEditPanel = openProductEditPanel;
+  window.closeProductEditPanel = closeProductEditPanel;
   window.addEventListener('DOMContentLoaded', addEditButtonsToProductCards);
   window.addEditButtonsToProductCards = addEditButtonsToProductCards;
   </script>
@@ -909,7 +913,7 @@
                   </div>
                 </div>
                 <div class='actions'>
-                  <button type='button' class='btn' data-action='edit' aria-expanded='false' data-id='${p.id}' onclick='if(window.openProductEditPanelById){ openProductEditPanelById("${p.id}"); } return false;'>Düzenle</button>
+                  <button type='button' class='btn' data-action='edit' aria-expanded='false' data-id='${p.id}'>Düzenle</button>
                   <button type='button' class='btn btn-danger' data-action='delete' data-id='${p.id}'>Sil</button>
                 </div>
                 <div class='prod-edit-panel' id='edit-panel-${p.id}' style='display:none;margin-top:8px;padding:10px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;'>
