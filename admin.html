@@ -904,6 +904,8 @@
                 </div>
                 <div class='actions'>
                   <button type='button' class='btn' data-action='edit' aria-expanded='false' data-id='${p.id}' onclick='if(window.openProductEditPanelById){ openProductEditPanelById("${p.id}"); } return false;'>Düzenle</button>
+                  <button type='button' class='btn btn-ghost' data-action='move-up' data-id='${p.id}'>⬆︎ Yukarı</button>
+                  <button type='button' class='btn btn-ghost' data-action='move-down' data-id='${p.id}'>⬇︎ Aşağı</button>
                   <button type='button' class='btn btn-danger' data-action='delete' data-id='${p.id}'>Sil</button>
                 </div>
                 <div class='prod-edit-panel' id='edit-panel-${p.id}' style='display:none;margin-top:8px;padding:10px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;'>
@@ -963,6 +965,12 @@
                   switch(action){
                     case 'edit':
                       if(typeof openProductEditPanelById==='function') openProductEditPanelById(id);
+                      break;
+                    case 'move-up':
+                      if(typeof moveProduct==='function') moveProduct(id, -1);
+                      break;
+                    case 'move-down':
+                      if(typeof moveProduct==='function') moveProduct(id, +1);
                       break;
                     case 'delete':
                       if(typeof deleteAdminProduct==='function') deleteAdminProduct(id);
@@ -1029,6 +1037,32 @@
 
         window.renderAdminProducts = renderAdminProducts;
         window.deleteAdminProduct = deleteAdminProduct;
+        // Ürün sıralama: id'li ürünü listedeki konumunda yukarı/aşağı taşır ve GitHub'a yazar
+        async function moveProduct(id, delta){
+          try{
+            const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
+            const owner='amtbrs-03'; const repo='AMTBRS'; const branch='site-release';
+            const url = `https://api.github.com/repos/${owner}/${repo}/contents/products.json?ref=${branch}`;
+            const res = await fetch(url, { headers:{ 'Accept':'application/vnd.github.v3+json', ...(token?{'Authorization':'token '+token}:{}) } });
+            if(!res.ok) throw new Error('products.json alınamadı');
+            const data = await res.json();
+            let obj = {}; try{ obj = JSON.parse(fromBase64((data.content||'').replace(/\n/g,'')))||{}; }catch(_){ obj={}; }
+            const list = Array.isArray(obj.items)?obj.items:(Array.isArray(obj)?obj:[]);
+            const idx = list.findIndex(p=> String(p.id)===String(id)); if(idx===-1) throw new Error('Ürün bulunamadı');
+            const newIdx = Math.max(0, Math.min(list.length-1, idx + (delta||0)));
+            if(newIdx === idx) return; // değişim yok
+            const [item] = list.splice(idx,1);
+            list.splice(newIdx,0,item);
+            const next = obj.items? { ...obj, items:list, updatedAt: Date.now() } : { items:list, updatedAt: Date.now() };
+            const putRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/products.json`, {
+              method:'PUT', headers:{ 'Content-Type':'application/json', ...(token?{'Authorization':'token '+token}:{}) },
+              body: JSON.stringify({ message:`chore(admin): ürün taşı (${id}) ${delta>0?'aşağı':'yukarı'}`, content: toBase64(JSON.stringify(next,null,2)), branch, sha: data.sha })
+            });
+            if(!putRes.ok){ const t=await putRes.text().catch(()=> ''); throw new Error('GitHub güncelleme başarısız: '+putRes.status+' '+t); }
+            renderAdminProducts();
+          }catch(e){ alert('Hata: '+(e.message||e)); }
+        }
+        window.moveProduct = moveProduct;
 
         // Global capture listener to ensure product action buttons always work,
         // even if other handlers stop propagation.
