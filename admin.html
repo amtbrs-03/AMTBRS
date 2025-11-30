@@ -600,6 +600,77 @@
     const { cfg, sha } = await fetchAdminConfig();
     const newHash = await sha256Hex(newPass);
     const nextCfg = { ...(cfg||{}), adminPasswordHash: newHash };
+
+        // Toplu eşleme işlevleri
+        const bulkIn = document.getElementById('bulkImageMapInput');
+        const bulkVerifyBtn = document.getElementById('bulkImageVerifyBtn');
+        const bulkApplyBtn = document.getElementById('bulkImageApplyBtn');
+        const bulkMsg = document.getElementById('bulkImageMapMsg');
+        function setBulkMsg(m, ok){ if(bulkMsg){ bulkMsg.textContent=m; bulkMsg.style.color = ok ? '#065f46' : '#b91c1c'; } }
+        function parseBulkLines(txt){
+          return txt.split(/\n+/).map(l=>l.trim()).filter(Boolean).map(l=>{
+            const parts = l.split(',').map(x=>x.trim()).filter(Boolean);
+            if(parts.length===1){ return { id: parts[0], path:null }; }
+            return { id: parts[0], path: parts[1] };
+          });
+        }
+        async function bulkVerify(lines){
+          const results=[];
+          for(const item of lines){
+            const norm = normalizeProductId(item.id);
+            const path = item.path || (norm.hasExt ? `images/products/${norm.base}.${norm.ext}` : `images/products/${norm.base}.jpg`);
+            const ver = await verifyGitHubPathExists(path);
+            results.push({ id:item.id, requested:path, exists:ver.exists, actual:ver.actualPath, sha:ver.sha });
+          }
+          return results;
+        }
+        if(bulkVerifyBtn){
+          bulkVerifyBtn.addEventListener('click', async ()=>{
+            if(!bulkIn){ return; }
+            const lines = parseBulkLines(bulkIn.value);
+            if(!lines.length){ setBulkMsg('Liste boş.', false); return; }
+            setBulkMsg('Ön kontrol yapılıyor...', true);
+            const res = await bulkVerify(lines);
+            const ok = res.filter(r=>r.exists).length;
+            const missing = res.filter(r=>!r.exists).map(r=>r.requested);
+            setBulkMsg(`✅ ${ok} bulundu, ❌ ${missing.length} eksik. Eksik: ${missing.slice(0,5).join(' | ')}${missing.length>5?' ...':''}`, missing.length===0);
+          });
+        }
+        if(bulkApplyBtn){
+          bulkApplyBtn.addEventListener('click', async ()=>{
+            if(!bulkIn){ return; }
+            const token = getGitHubToken(); if(!token){ setBulkMsg('Token yok, önce ayarlayın.', false); return; }
+            const lines = parseBulkLines(bulkIn.value);
+            if(!lines.length){ setBulkMsg('Liste boş.', false); return; }
+            setBulkMsg('Doğrulama + products.json çekiliyor...', true);
+            const verRes = await bulkVerify(lines);
+            const toApply = verRes.filter(r=>r.exists);
+            if(!toApply.length){ setBulkMsg('Hiç geçerli dosya yok, işlem iptal.', false); return; }
+            // Fetch products.json
+            const owner='amtbrs-03'; const repo='AMTBRS'; const branch='site-release';
+            const url = `https://api.github.com/repos/${owner}/${repo}/contents/products.json?ref=${branch}`;
+            const getRes = await fetch(url, { headers:{ 'Accept':'application/vnd.github.v3+json','Authorization':'token '+token } });
+            if(!getRes.ok){ setBulkMsg('products.json alınamadı: '+getRes.status, false); return; }
+            const meta = await getRes.json();
+            let obj; try{ obj = JSON.parse(fromBase64((meta.content||'').replace(/\n/g,''))) || {}; }catch(e){ setBulkMsg('Parse hatası: '+(e.message||e), false); return; }
+            let list = Array.isArray(obj.items) ? obj.items : (Array.isArray(obj)?obj: null);
+            if(!list){ setBulkMsg('Beklenen format yok (items dizisi).', false); return; }
+            const notFound = [];
+            for(const r of toApply){
+              const idx = list.findIndex(p=>String(p.id)===String(r.id) || String(p.id)===String(r.id+'.jpg'));
+              if(idx===-1){ notFound.push(r.id); continue; }
+              list[idx].image = r.actual || r.requested;
+            }
+            if(obj.items) obj.items = list; else obj = list;
+            if(typeof obj === 'object') obj.updatedAt = Date.now();
+            const newJson = JSON.stringify(obj, null, 2);
+            setBulkMsg('GitHub’a yazılıyor...', true);
+            const putRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/products.json`, { method:'PUT', headers:{ 'Accept':'application/vnd.github.v3+json','Content-Type':'application/json','Authorization':'token '+token }, body: JSON.stringify({ message:`chore(admin): toplu resim eşleme (${toApply.length} ürün)`, content: toBase64(newJson), branch, sha: meta.sha }) });
+            if(!putRes.ok){ const t=await putRes.text().catch(()=> ''); setBulkMsg('Yazma hatası: '+putRes.status+' '+t, false); return; }
+            setBulkMsg(`✓ Güncellendi. Başarılı: ${toApply.length}, Ürün bulunamadı: ${notFound.length}${notFound.length?(' -> '+notFound.slice(0,5).join(', ')+(notFound.length>5?' ...':'')):''}`, true);
+            if(typeof renderAdminProducts==='function'){ try{ renderAdminProducts(); }catch(_){ } }
+          });
+        }
     const putUrl = `https://api.github.com/repos/${owner}/${repo}/contents/admin-config.json`;
     const payload = { message: 'chore(admin): admin parolası güncellendi', content: toBase64(JSON.stringify(nextCfg, null, 2)), branch, sha };
     const res = await fetch(putUrl, { method:'PUT', headers:{ 'Content-Type':'application/json', 'Authorization':'token '+token }, body: JSON.stringify(payload) });
@@ -891,6 +962,15 @@
           <button id="applyGhImagePath" class="btn">products.json’a Kaydet</button>
         </div>
         <div id="ghUploadMsg" class="small" style="margin-top:0.5rem;color:#64748b"></div>
+        <hr style="margin:1rem 0;border:none;border-top:1px solid #e2e8f0" />
+        <div class="section-header" style="font-size:0.95rem">📦 Toplu Resim Eşleme (CSV)</div>
+        <div class="small" style="color:#64748b;margin:0.5rem 0">Her satır: <code>urunId,resimYolu</code> veya sadece <code>urunId</code> (otomatik varsayılan <code>images/products/&lt;urunId&gt;.jpg</code>). Örnek:<br/><code>p_123,images/products/p_123.png</code><br/><code>img_1974.jpg</code></div>
+        <textarea id="bulkImageMapInput" rows="4" placeholder="p_1,images/products/p_1.jpg\np_2,images/products/p_2.png" style="width:100%;padding:0.5rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.75rem"></textarea>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.5rem">
+          <button id="bulkImageVerifyBtn" class="btn btn-ghost" type="button" style="font-size:0.75rem">Ön Kontrol</button>
+          <button id="bulkImageApplyBtn" class="btn" type="button" style="font-size:0.75rem">Toplu Güncelle</button>
+        </div>
+        <div id="bulkImageMapMsg" class="small" style="margin-top:0.5rem;color:#64748b"></div>
       </div>
 
       <div class="card">
@@ -1018,23 +1098,39 @@ function normalizeProductId(raw){
   return { base: raw, ext: 'jpg', hasExt: false };
 }
 async function verifyGitHubPathExists(path){
-          try{
-            const owner = 'amtbrs-03';
-            const repo = 'AMTBRS';
-            const branch = 'site-release';
-            const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`;
-            let res = await fetch(url, { headers: { 'Accept':'application/vnd.github.v3+json' }, cache: 'no-store' });
-            if (res.status === 403 || res.status === 404){
-              const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
-              if (token){
-                res = await fetch(url, { headers: { 'Accept':'application/vnd.github.v3+json', 'Authorization': `token ${token}` }, cache: 'no-store' });
-              }
-            }
-            if (!res.ok) return false;
-            const j = await res.json();
-            return !!(j && j.type === 'file');
-          }catch(_){ return false; }
-        }
+  // Geriye { exists:boolean, actualPath:string|null, sha:string|null } döner
+  try{
+    const owner = 'amtbrs-03';
+    const repo = 'AMTBRS';
+    const branch = 'site-release';
+    const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
+    async function fetchWithAuth(u){
+      let res = await fetch(u, { headers: { 'Accept':'application/vnd.github.v3+json' }, cache: 'no-store' });
+      if(!res.ok && token){
+        res = await fetch(u, { headers: { 'Accept':'application/vnd.github.v3+json', 'Authorization': 'token '+token }, cache: 'no-store' });
+      }
+      return res;
+    }
+    const directUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`;
+    let res = await fetchWithAuth(directUrl);
+    if(res.ok){ const j = await res.json(); if(j && j.type==='file') return { exists:true, actualPath:path, sha:j.sha||null }; }
+    // Case varyant tarama: dizin ve dosya adı ayrıştır
+    const slashIdx = path.lastIndexOf('/');
+    if(slashIdx === -1) return { exists:false, actualPath:null, sha:null };
+    const dir = path.slice(0, slashIdx);
+    const fileName = path.slice(slashIdx+1);
+    const dirUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${dir}?ref=${branch}`;
+    res = await fetchWithAuth(dirUrl);
+    if(!res.ok) return { exists:false, actualPath:null, sha:null };
+    const arr = await res.json();
+    if(Array.isArray(arr)){
+      const lowerTarget = fileName.toLowerCase();
+      const hit = arr.find(it => it && it.type==='file' && String(it.name).toLowerCase() === lowerTarget);
+      if(hit){ return { exists:true, actualPath: dir + '/' + hit.name, sha: hit.sha||null }; }
+    }
+    return { exists:false, actualPath:null, sha:null };
+  }catch(e){ return { exists:false, actualPath:null, sha:null }; }
+}
         const pidEl = document.getElementById('ghUploadProductId');
         const pathEl = document.getElementById('ghUploadedPath');
         const msgEl = document.getElementById('ghUploadMsg');
@@ -1053,13 +1149,13 @@ async function verifyGitHubPathExists(path){
             if (!(autoBindEl && autoBindEl.checked)) { setMsg('Otomatik bağlama iptal edildi.', false); return false; }
             for (const ext of exts){
               const pth = norm.hasExt ? `images/products/${norm.base}.${ext}` : `images/products/${norm.base}.${ext}`;
-              const ok = await verifyGitHubPathExists(pth);
-              if (ok){
+              const ver = await verifyGitHubPathExists(pth);
+              if (ver.exists){
                 try{
                   if (pathEl) pathEl.value = pth;
                   setMsg('Kaydediliyor...', true);
                   await updateProductsJsonImage(pid, pth);
-                  setMsg(`✓ products.json güncellendi: ${pth}`, true);
+                  setMsg(`✓ products.json güncellendi: ${ver.actualPath} (sha:${(ver.sha||'...').slice(0,7)})`, true);
                   return true;
                 }catch(e){ setMsg('Hata: ' + (e.message||e), false); return false; }
               }
@@ -1112,12 +1208,12 @@ async function verifyGitHubPathExists(path){
             const pth = (pathEl && pathEl.value || '').trim();
             if(!pid || !pth){ setMsg('Ürün ID ve dosya yolu gerekli.', false); applyBtn.innerHTML=origText; applyBtn.disabled=false; return; }
             // Opsiyonel: dosya gerçekten var mı kontrol et
-            const exists = await verifyGitHubPathExists(pth);
-            if(!exists){ setMsg('Dosya GitHub’da bulunamadı: '+pth, false); applyBtn.innerHTML=origText; applyBtn.disabled=false; return; }
+            const ver = await verifyGitHubPathExists(pth);
+            if(!ver.exists){ setMsg('Dosya GitHub’da bulunamadı (case varyantları tarandı): '+pth, false); applyBtn.innerHTML=origText; applyBtn.disabled=false; return; }
             try {
               setMsg('products.json güncelleniyor...', true);
               await updateProductsJsonImage(pid, pth);
-              setMsg('✓ Güncellendi: '+pth, true);
+              setMsg('✓ Güncellendi: '+ (ver.actualPath||pth) + ' (sha:'+ (ver.sha||'...').slice(0,7)+')', true);
               if(typeof renderAdminProducts === 'function'){ try{ renderAdminProducts(); }catch(_){ /* ignore */ } }
             } catch(e){
               setMsg('Hata: '+(e.message||e), false);
@@ -1156,37 +1252,30 @@ async function verifyGitHubPathExists(path){
             const price=parseFloat(priceEl.value)||0;
             const badge=badgeEl.value.trim();
             const image=imageEl.value.trim();
-            // Fetch current
             const res = await fetch('products.json?' + Date.now()); if(!res.ok) throw new Error('products.json alınamadı');
             const data = await res.json();
             const products = Array.isArray(data.items) ? data.items : (Array.isArray(data)?data:[]);
             const idx = products.findIndex(p=>String(p.id)===String(id)); if(idx===-1) throw new Error('Ürün bulunamadı');
             products[idx].name=name; products[idx].price=price; products[idx].badge=badge; products[idx].image=image;
-            // Local feedback only; remote commit if token exists
-            const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
-            if (applyBtn){
-              try {
-                const apiUrl='https://api.github.com/repos/amtbrs-03/AMTBRS/contents/products.json';
-                // get sha
-                const getRes = await fetch(apiUrl+'?ref=site-release&t='+Date.now(), { headers:{ 'Accept':'application/vnd.github.v3+json','Authorization':'token '+token } });
-                let sha=null; let remoteObj={ updatedAt: Date.now(), items: [] };
-                const pidRaw = (pidEl && pidEl.value || '').trim();
-                const norm = normalizeProductId(pidRaw);
-                let pth = (pathEl && pathEl.value || '').trim();
-                if(!pth && pidRaw){ pth = norm.hasExt ? `images/products/${norm.base}.${norm.ext}` : `images/products/${norm.base}.jpg`; if(pathEl) pathEl.value = pth; }
-                const ridx = remoteObj.items.findIndex(p=>String(p.id)===String(id));
-                const tokenCheck = getGitHubToken();
-                if(!tokenCheck){ setMsg('GitHub token ayarlanmamış. Önce token girin.', false); applyBtn.innerHTML=origText; applyBtn.disabled=false; return; }
-                if(ridx!==-1){ remoteObj.items[ridx]={ ...remoteObj.items[ridx], name, price, badge, image }; }
-                remoteObj.updatedAt=Date.now();
-                const putRes = await fetch(apiUrl, { method:'PUT', headers:{ 'Content-Type':'application/json','Authorization':'token '+token }, body: JSON.stringify({ message:`chore(admin): inline ürün güncelle (${id})`, content: toBase64(JSON.stringify(remoteObj,null,2)), branch:'site-release', ...(sha?{sha}:{}) }) });
-                if(!putRes.ok){ const t=await putRes.text().catch(()=> ''); throw new Error('GitHub güncelleme başarısız: '+putRes.status+' '+t); }
-                if(msg) msg.textContent='✅ Güncellendi (GitHub + lokal)';
-                  await updateProductsJsonImage(pidRaw, pth);
+            const token = getGitHubToken();
+            if(token){
+              // Commit remote update
+              const owner='amtbrs-03'; const repo='AMTBRS';
+              const apiUrl=`https://api.github.com/repos/${owner}/${repo}/contents/products.json`;
+              const getRes = await fetch(apiUrl+'?ref=site-release&t='+Date.now(), { headers:{ 'Accept':'application/vnd.github.v3+json','Authorization':'token '+token } });
+              if(!getRes.ok) throw new Error('Remote products.json alınamadı');
+              const meta = await getRes.json();
+              let remoteObj; try{ remoteObj = JSON.parse(fromBase64((meta.content||'').replace(/\n/g,''))) || {}; }catch(_){ remoteObj={}; }
+              const list = Array.isArray(remoteObj.items)?remoteObj.items:(Array.isArray(remoteObj)?remoteObj:[]);
+              const ridx = list.findIndex(p=>String(p.id)===String(id)); if(ridx!==-1){ list[ridx]={ ...list[ridx], name, price, badge, image }; }
+              if(remoteObj.items) remoteObj.items=list; else remoteObj=list;
+              remoteObj.updatedAt=Date.now();
+              const putRes = await fetch(apiUrl, { method:'PUT', headers:{ 'Content-Type':'application/json','Authorization':'token '+token }, body: JSON.stringify({ message:`chore(admin): inline ürün güncelle (${id})`, content: toBase64(JSON.stringify(remoteObj,null,2)), branch:'site-release', sha: meta.sha }) });
+              if(!putRes.ok){ const t=await putRes.text().catch(()=> ''); throw new Error('GitHub güncelleme başarısız: '+putRes.status+' '+t); }
+              if(msg) msg.textContent='✅ Güncellendi (GitHub + lokal)';
             } else {
               if(msg) msg.textContent='✅ Lokal güncellendi (GitHub token yok)';
             }
-            // Re-render list for fresh view
             setTimeout(()=>{ renderAdminProducts(); }, 600);
           } catch(e){ if(msg) msg.textContent='Hata: '+(e.message||e); }
         }
@@ -1200,27 +1289,7 @@ async function verifyGitHubPathExists(path){
             if(open){ open.style.display='none'; const id=open.id.replace('edit-panel-',''); const btn=document.querySelector('.edit-toggle[data-id="'+id+'"]'); if(btn){ btn.textContent='Düzenle'; btn.setAttribute('aria-expanded','false'); } }
           }
         });
-            const pth = (pathEl && pathEl.value || '').trim();
-            if (!pid){ setMsg('Ürün ID gerekli.', false); applyBtn.innerHTML = origText; applyBtn.disabled = false; return; }
-            if (!pth || !/^images\/products\/[A-Za-z0-9._-]+\.(jpg|jpeg|png|webp)$/i.test(pth)){
-              setMsg('Geçerli dosya yolu girin: images/products/<id>.jpg', false); applyBtn.innerHTML = origText; applyBtn.disabled = false; return;
-            }
-            try{
-              setMsg('Doğrulanıyor...', true);
-              const exists = await verifyGitHubPathExists(pth);
-              if (!exists){ setMsg('Dosya depo içinde bulunamadı. Lütfen yükleme yolunu kontrol edin.', false); return; }
-              setMsg('Kaydediliyor...', true);
-              await updateProductsJsonImage(pid, pth);
-              setMsg('✓ products.json güncellendi: ' + pth, true);
-              if (window.addEditButtonsToProductCards) window.addEditButtonsToProductCards();
-              if (typeof render === 'function') render();
-            }
-            catch(e){ setMsg('Hata: ' + (e.message||e), false); }
-            finally{ applyBtn.innerHTML = origText; applyBtn.disabled = false; }
-          });
-        } else {
-          console.warn('[admin] applyGhImagePath butonu bulunamadı');
-        }
+        <!-- stray old handler removed -->
       // catch block removed; this was not inside a try
     // Kapanmamış IIFE kaldırıldı
 
