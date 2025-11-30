@@ -609,23 +609,6 @@
         <button type="button" onclick="closeProductEditPanel()" class="btn btn-ghost" title="Kapat">✖</button>
       </div>
       <form id="productEditForm" class="form-content">
-        <label>Ürün ID
-          <input id="editProductId" type="text" required readonly>
-        </label>
-        <label>Ürün Adı
-          <input id="editProductName" type="text" required>
-        </label>
-        <label>Fiyat (₺)
-          <input id="editProductPrice" type="number" min="0" step="0.01" required>
-        </label>
-        <label>Rozet
-          <select id="editProductBadge">
-            <option value="">Yok</option>
-            <option value="Yeni">Yeni</option>
-            <option value="İndirim">İndirim</option>
-            <option value="Popüler">Popüler</option>
-          </select>
-        </label>
         <div id="editImagesRow" style="display:flex;gap:12px;align-items:flex-start;margin-top:6px">
           <div class="mainImageCol" style="flex:1;min-width:220px">
             <label>Görsel Yolu
@@ -659,6 +642,25 @@
             </label>
             <div class="imgPrev" data-for="editProductImage4" style="width:88px;height:88px;border:1px solid #e5e7eb;border-radius:8px;display:flex;align-items:center;justify-content:center;background:#f3f4f6;overflow:hidden"></div>
           </div>
+        </div>
+        <div style="margin-top:12px;display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
+          <label>Ürün ID
+            <input id="editProductId" type="text" required readonly>
+          </label>
+          <label>Ürün Adı
+            <input id="editProductName" type="text" required>
+          </label>
+          <label>Fiyat (₺)
+            <input id="editProductPrice" type="number" min="0" step="0.01" required>
+          </label>
+          <label>Rozet
+            <select id="editProductBadge">
+              <option value="">Yok</option>
+              <option value="Yeni">Yeni</option>
+              <option value="İndirim">İndirim</option>
+              <option value="Popüler">Popüler</option>
+            </select>
+          </label>
         </div>
         <div id="editProductMsg" style="margin:8px 0;color:#c00"></div>
         <div class="form-actions" style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:12px">
