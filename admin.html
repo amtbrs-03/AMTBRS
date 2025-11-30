@@ -999,7 +999,12 @@
       let obj; try { obj = JSON.parse(fromBase64((meta.content||'').replace(/\n/g,''))) || {}; } catch(e){ throw new Error('products.json parse hatası: '+(e.message||e)); }
       let list = Array.isArray(obj.items) ? obj.items : (Array.isArray(obj) ? obj : null);
       if(!list) throw new Error('products.json formatı beklenen değil (items dizisi yok)');
-      const idx = list.findIndex(p => String(p.id) === String(productId) || String(p.id) === String(productId + '.jpg'));
+      // Case-insensitive ve uzantı-esnek ürün ID eşleşmesi
+      const pidLower = String(productId).toLowerCase().replace(/\.(jpg|jpeg|png|webp)$/i, '');
+      const idx = list.findIndex(p => {
+        const pIdLower = String(p.id).toLowerCase().replace(/\.(jpg|jpeg|png|webp)$/i, '');
+        return pIdLower === pidLower;
+      });
       if(idx === -1) throw new Error('Ürün bulunamadı: '+productId);
       list[idx].image = imagePath;
       if(obj.items) obj.items = list; else obj = list; // her iki formatı destekle
