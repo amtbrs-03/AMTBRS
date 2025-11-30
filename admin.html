@@ -3971,6 +3971,8 @@ try {
     const modal = document.createElement('div');
     modal.className = 'modal active';
     modal.style.display = 'flex';
+    // Üstte açılması için z-index'i ürün düzenleme modalından daha yüksek yap
+    modal.style.zIndex = '3000';
     modal.innerHTML = `
       <div class="modal-content" style="max-width:900px;max-height:90vh;overflow-y:auto;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
