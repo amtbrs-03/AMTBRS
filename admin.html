@@ -1394,17 +1394,14 @@ async function verifyGitHubPathExists(path){
     const dirUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodedDir}?ref=${encodeURIComponent(branch)}`;
     res = await fetchWithAuth(dirUrl);
     if(!res.ok) return { exists:false, actualPath:null, sha:null };
-        // Inline edit yardımcıları kaldırıldı (modal üzerinden düzenleme kullanılıyor)
-              // otomatik bağlamayı başlat
-              await autoBindAfterUpload(pidRaw);
-            } else {
-              setMsg('GitHub yükleme sayfası açıldı. Dosyayı yükledikten sonra dosya yolunu aşağıya girin.', true);
-            }
-            setTimeout(() => { openBtn.innerHTML = origText; openBtn.disabled = false; }, 1000);
-          });
-        } else {
-          console.warn('[admin] openGhUpload butonu bulunamadı');
-        }
+    const list = await res.json();
+    if(!Array.isArray(list)) return { exists:false, actualPath:null, sha:null };
+    const fileNameLower = fileName.toLowerCase();
+    const match = list.find(item => item.type==='file' && item.name.toLowerCase()===fileNameLower);
+    if(!match) return { exists:false, actualPath:null, sha:null };
+    return { exists:true, actualPath: dir+'/'+match.name, sha: match.sha||null };
+  } catch(e){ console.warn('[admin] verifyGitHubPathExists error', e); return { exists:false, actualPath:null, sha:null }; }
+}
 
         // Klasör açma butonu (ayrı talep)
         if (openFolderBtn){
