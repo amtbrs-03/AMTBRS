@@ -722,6 +722,26 @@
             const products = Array.isArray(data.items) ? data.items : (Array.isArray(data) ? data : []);
             if (!products.length){ container.innerHTML = '<div style="color:#b91c1c">Hiç ürün bulunamadı.</div>'; return; }
             container.innerHTML = '';
+            // TL yardımcıları
+            function formatTL(n){
+              const fixed = Number(n||0);
+              const parts = fixed.toFixed(2).split('.');
+              const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+              const decPart = parts[1];
+              return intPart + ',' + decPart + ' TL';
+            }
+            function formatTLDisplay(n){ return formatTL(n); }
+            function formatTLInput(n){ return formatTL(n).replace(/\s*TL$/,''); }
+            function parseTL(str){
+              if(typeof str !== 'string') return Number(str)||0;
+              let s = str.trim().toLowerCase();
+              s = s.replace(/\s*tl$/,''); // remove trailing tl
+              s = s.replace(/\s/g,''); // remove spaces
+              s = s.replace(/\./g,''); // remove thousand separators
+              s = s.replace(/,/g,'.'); // decimal comma to dot
+              const v = parseFloat(s);
+              return isNaN(v)?0:v;
+            }
             products.forEach((p,i)=>{
               const card = document.createElement('div');
               card.className = 'prod-item';
@@ -732,7 +752,7 @@
                   <div class='thumb' style='background:#e0e7ef;display:flex;align-items:center;justify-content:center;'>${p.image ? (/(jpg|jpeg|png|webp)$/i.test(p.image) ? `<img src='${p.image}' style='width:100%;height:100%;object-fit:cover;border-radius:10px;'/>` : p.image) : '🌺'}</div>
                   <div>
                     <div style='font-weight:700;font-size:1.08rem;'>${p.name || ''} ${badgeHtml}</div>
-                    <div class='meta'>Fiyat: ₺${(p.price||0).toFixed(2)}</div>
+                    <div class='meta'>Fiyat: ${formatTLDisplay(p.price||0)}</div>
                     <div class='meta'>ID: ${p.id}</div>
                   </div>
                 </div>
@@ -747,8 +767,8 @@
                     <label style='font-size:12px;'>Ad
                       <input type='text' id='ep-name-${p.id}' value='${p.name || ''}' style='width:100%;padding:6px;font-size:13px;'>
                     </label>
-                    <label style='font-size:12px;'>Fiyat (₺)
-                      <input type='number' id='ep-price-${p.id}' value='${(p.price||0)}' step='0.01' min='0' style='width:100%;padding:6px;font-size:13px;'>
+                    <label style='font-size:12px;'>Fiyat (TL biçimi desteklenir)
+                      <input type='text' class='ep-price' id='ep-price-${p.id}' value='${formatTLInput(p.price||0)}' inputmode='decimal' style='width:100%;padding:6px;font-size:13px;'>
                     </label>
                     <label style='font-size:12px;'>Rozet
                       <select id='ep-badge-${p.id}' style='width:100%;padding:6px;font-size:13px;'>
@@ -771,6 +791,22 @@
                 </div>`;
               container.appendChild(card);
             });
+                        // Bind TL formatting on price inputs
+                        setTimeout(()=>{
+                          container.querySelectorAll('input.ep-price').forEach(inp=>{
+                            if(inp.__tlBound) return;
+                            inp.__tlBound = true;
+                            inp.addEventListener('focus', ()=>{
+                              // strip formatting for easier editing
+                              const val = inp.value;
+                              inp.value = val.replace(/\s*TL$/,'').replace(/\./g,'').replace(/,/g,'.');
+                            });
+                            inp.addEventListener('blur', ()=>{
+                              const num = parseTL(inp.value);
+                              inp.value = formatTLInput(num);
+                            });
+                          });
+                        }, 0);
             // Event delegation for all product action buttons
             if(!container.__delegated){
               container.addEventListener('click', (e)=>{
@@ -1378,7 +1414,16 @@ try {
             if(!nameEl||!priceEl||!badgeEl||!imageEl) throw new Error('Alanlar bulunamadı');
             const name=nameEl.value.trim();
             const priceValue = priceEl.value.trim();
-            const price=parseFloat(priceValue);
+            const price = (function(v){
+              // TL formatını çöz
+              let s = String(v).trim().toLowerCase();
+              s = s.replace(/\s*tl$/,'');
+              s = s.replace(/\s/g,'');
+              s = s.replace(/\./g,'');
+              s = s.replace(/,/g,'.');
+              const num = parseFloat(s);
+              return isNaN(num)?NaN:num;
+            })(priceValue);
             if(isNaN(price) || price < 0) throw new Error('Geçersiz fiyat');
             const badge=badgeEl.value.trim();
             const image=imageEl.value.trim();
@@ -2027,7 +2072,15 @@ try {
             if(!nameEl||!priceEl||!badgeEl||!imageEl){ errors.push(id+': alanlar yok'); continue; }
             const name=nameEl.value.trim();
             const priceRaw=priceEl.value.trim();
-            const price=parseFloat(priceRaw);
+            const price = (function(v){
+              let s = String(v).trim().toLowerCase();
+              s = s.replace(/\s*tl$/,'');
+              s = s.replace(/\s/g,'');
+              s = s.replace(/\./g,'');
+              s = s.replace(/,/g,'.');
+              const num = parseFloat(s);
+              return isNaN(num)?NaN:num;
+            })(priceRaw);
             if(isNaN(price) || price < 0){ errors.push(id+': geçersiz fiyat'); continue; }
             const badge=badgeEl.value.trim();
             const image=imageEl.value.trim();
