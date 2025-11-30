@@ -612,14 +612,14 @@
     <div class="modal-content small-modal">
       <div class="modal-header">
         <h2>GitHub Token Girişi</h2>
-        <span class="close-modal" onclick="closeAuthModal()">&times;</span>
+        <button class="close-modal" onclick="closeAuthModal()" aria-label="Kapat">&times;</button>
       </div>
       <div class="modal-body form-content">
         <label for="loginToken">Kişisel erişim token'ınızı girin:</label>
         <input type="password" id="loginToken" placeholder="ghp_..." autocomplete="off" style="width:100%;margin-bottom:1rem" />
         <button class="btn" onclick="loginUser()">Kaydet</button>
         <button class="btn" id="clearTokenBtn" style="background:#ef4444;margin-left:8px">Token'ı Sil</button>
-        <div id="patNotice" style="margin-top:1rem;color:#ef4444;display:none">Token eksik veya hatalı!</div>
+        <div id="patNoticeInline" style="margin-top:1rem;color:#ef4444;display:none">Token eksik veya hatalı!</div>
         <div style="margin-top:1rem;font-size:0.95em;color:#444">
           <b>Bilgi:</b> Girdiğiniz token <b>tarayıcınızda</b> saklanır. Tarayıcıyı kapatsanız bile otomatik kullanılır. Token'ı silmek için <i>Token'ı Sil</i> butonunu kullanabilirsiniz.<br>
           <span style="color:#b91c1c">Güvenlik için token'ınızı kimseyle paylaşmayın ve sadece kendi cihazınızda kullanın.</span>
@@ -628,24 +628,49 @@
     </div>
   </div>
   <script>
-    // Token modal otomatik doldurma ve silme
-    document.addEventListener('DOMContentLoaded', function(){
-      var tokenInput = document.getElementById('loginToken');
-      var clearBtn = document.getElementById('clearTokenBtn');
-      if (tokenInput) {
-        var savedToken = localStorage.getItem('github_token') || '';
-        if (savedToken) tokenInput.value = savedToken;
+    // Token modal otomatik doldurma ve silme (Safari uyumlu)
+    function fillTokenInput(){
+      try {
+        var tokenInput = document.getElementById('loginToken');
+        if (tokenInput) {
+          var savedToken = localStorage.getItem('github_token') || localStorage.getItem('gh_token') || '';
+          if (savedToken) tokenInput.value = savedToken;
+        }
+      } catch(e) {
+        var notice = document.getElementById('patNoticeInline');
+        if (notice) {
+          notice.textContent = 'Safari veya gizli modda token otomatik okunamıyor. Tokeni elle girin.';
+          notice.style.display = 'block';
+        }
       }
-      if (clearBtn) {
-        clearBtn.onclick = function(){
-          localStorage.removeItem('github_token');
-          if (tokenInput) tokenInput.value = '';
-          var notice = document.getElementById('patNotice');
-          if (notice) notice.style.display = 'none';
-          alert('Token silindi. Yeniden girmek için sayfayı yenileyin veya yeni token girin.');
-        };
-      }
-    });
+    }
+    // Hem sayfa yüklenirken hem DOMContentLoaded'da tetikle
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', fillTokenInput);
+    } else {
+      fillTokenInput();
+    }
+    // Silme butonu
+    function bindClearTokenBtn(){
+      try {
+        var tokenInput = document.getElementById('loginToken');
+        var clearBtn = document.getElementById('clearTokenBtn');
+        if (clearBtn) {
+          clearBtn.onclick = function(){
+            try { localStorage.removeItem('github_token'); localStorage.removeItem('gh_token'); } catch(_){}
+            if (tokenInput) tokenInput.value = '';
+            var notice = document.getElementById('patNoticeInline');
+            if (notice) notice.style.display = 'none';
+            alert('Token silindi. Yeniden girmek için sayfayı yenileyin veya yeni token girin.');
+          };
+        }
+      } catch(e){}
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', bindClearTokenBtn);
+    } else {
+      bindClearTokenBtn();
+    }
   </script>
   <script>
     // Guard for mojibake normalizer: ensure `sweep` exists to avoid ReferenceError
@@ -2169,9 +2194,19 @@ async function verifyGitHubPathExists(path){
       // Eğer başarısız ve token varsa, yetkili dene
       if(!res.ok && token){
         res = await fetch(u, { headers: { 'Accept':'application/vnd.github.v3+json', 'Authorization': 'token '+token }, cache: 'no-store' });
-        // 401 ise token geçersiz; yetkisiz tekrar de
-        if(res.status===401){
-          res = await fetch(u, { headers: { 'Accept':'application/vnd.github.v3+json' }, cache: 'no-store' });
+        // 401/403 ise Türkçe hata mesajı göster
+        if(res.status===401 || res.status===403){
+          let msg = '❌ GitHub API hatası: ' + res.status + '. ';
+          if(res.status===401){
+            msg += 'Token geçersiz veya süresi dolmuş. Yeni bir token girin.';
+          } else {
+            msg += 'Token kapsamı veya izinler yetersiz. Aşağıdaki nedenlerden biri olabilir:';
+            msg += '\n• Token kapsamı yetersiz: repo (classic) veya fine-grained token için "Contents: Read & Write" izni verin.';
+            msg += '\n• Reponun yazma izni yok: Token sahibi hesabın amtbrs-03/AMTBRS reposunda yazma yetkisi olmalı.';
+            msg += '\n• Dal koruması: site-release dalı korumalıysa doğrudan yazmaya izin verilmeyebilir.';
+            msg += '\n• Kurumsal SSO: Organizasyon token’ı için SSO yetkilendirmesi gerekiyor.';
+          }
+          window.lastGalleryApiError = msg;
         }
       }
       return res;
