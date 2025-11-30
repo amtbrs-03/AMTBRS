@@ -1391,32 +1391,45 @@
               if(!host){ alert('Hata: ürün konteyneri bulunamadı'); return; }
               const card = document.createElement('div');
               card.className = 'prod-item editable-card';
+              // Kart görünümü: görsel kutu, başlık satırı (ad, fiyat, rozet, ID), büyük Düzenle/Sil butonları
               card.innerHTML = `
-                <div class='prod-row'>
-                  <div class='thumb' style='background:#e0e7ef;display:flex;align-items:center;justify-content:center;'>
+                <div class='prod-row' style='align-items:flex-start;'>
+                  <div class='thumb' style='background:#eef7f1;display:flex;align-items:center;justify-content:center;border-radius:12px;border:3px solid #ffffff;box-shadow:0 6px 18px rgba(16,185,129,0.15);'>
                     <img src='${IMG_PLACEHOLDER}' alt='Yeni Görsel' style='width:100%;height:100%;object-fit:cover;border-radius:10px;' />
                   </div>
-                  <div style='flex:1;'>
-                    <div style='font-weight:700;font-size:1.08rem;'>Yeni Ürün Kartı</div>
-                    <div class='meta small'>Bu geçici kart üzerinden görsel ve metin girip düzenleme penceresinde açabilirsiniz.</div>
+                  <div style='flex:1;min-width:240px'>
+                    <div style='display:flex;align-items:center;gap:8px;flex-wrap:wrap;'>
+                      <input id='tmp-name' type='text' placeholder='Ürün adı' style='font-weight:800;font-size:1.1rem;color:#0f172a;border:none;border-bottom:2px solid #e5e7eb;outline:none;padding:4px 0;flex:1;min-width:180px' />
+                      <span id='tmp-badge' class='small' style='background:#f59e0b;color:#fff;padding:4px 10px;border-radius:999px;font-weight:700;display:none'>Rozet</span>
+                    </div>
+                    <div class='meta' style='margin-top:6px;'>Fiyat: <span id='tmp-price-display' style='color:#0f172a;font-weight:600'>—</span></div>
+                    <div class='meta'>ID: <input id='tmp-id' type='text' placeholder='IMG_1966.JPG' style='border:none;border-bottom:2px solid #e5e7eb;outline:none;padding:2px 0;width:200px' /></div>
                   </div>
                 </div>
-                <div class='prod-edit-panel' style='margin-top:8px;padding:10px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;'>
-                  <div style='display:grid;gap:6px;'>
-                    <label style='font-size:12px;'>Ürün Adı
-                      <input type='text' id='tmp-name' placeholder='Ürün adı' style='width:100%;padding:6px;font-size:13px;'>
-                    </label>
+                <div style='display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;'>
+                  <button type='button' class='btn' data-action='open-edit' style='min-width:140px;'>Düzenle</button>
+                  <button type='button' class='btn btn-danger' data-action='remove-card' style='min-width:120px;'>Sil</button>
+                  <button type='button' class='btn btn-ghost' data-action='pick-img'>📸 Görsel Seç</button>
+                </div>
+                <div class='prod-edit-panel' style='margin-top:10px;padding:12px;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc;'>
+                  <div style='display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));'>
                     <label style='font-size:12px;'>Fiyat (TL)
-                      <input type='text' id='tmp-price' placeholder='0,00' inputmode='decimal' style='width:100%;padding:6px;font-size:13px;'>
+                      <input type='text' id='tmp-price' placeholder='1.200,00' inputmode='decimal' style='width:100%;padding:8px;font-size:13px;'>
+                    </label>
+                    <label style='font-size:12px;'>Rozet
+                      <select id='tmp-badge-select' style='width:100%;padding:8px;font-size:13px;'>
+                        <option value=''>Yok</option>
+                        <option value='Yeni'>Yeni</option>
+                        <option value='İndirim'>İndirim</option>
+                        <option value='Popüler'>Popüler</option>
+                      </select>
                     </label>
                     <label style='font-size:12px;'>Ana Görsel
-                      <input type='text' id='tmp-image' placeholder='images/products/<id>.jpg' style='width:100%;padding:6px;font-size:13px;'>
+                      <div style='display:flex;gap:8px;align-items:center;'>
+                        <input type='text' id='tmp-image' placeholder='images/products/<id>.jpg' style='flex:1;padding:8px;font-size:13px;'>
+                        <button type='button' class='btn btn-ghost' data-action='pick-img'>📸</button>
+                      </div>
                     </label>
-                  </div>
-                  <div style='display:flex;gap:6px;margin-top:8px;'>
-                    <button type='button' class='btn' data-action='pick-img'>Galeriden Seç</button>
-                    <button type='button' class='btn' data-action='open-edit'>Düzenleme Penceresinde Aç</button>
-                    <button type='button' class='btn btn-ghost' data-action='remove-card'>Kaldır</button>
                   </div>
                 </div>`;
 
@@ -1434,17 +1447,45 @@
                 const name = card.querySelector('#tmp-name')?.value.trim() || 'Yeni Ürün';
                 const priceStr = card.querySelector('#tmp-price')?.value.trim() || '0';
                 const img = card.querySelector('#tmp-image')?.value.trim() || '';
+                const idVal = card.querySelector('#tmp-id')?.value.trim() || ('TEMP-'+Date.now());
                 const priceNum = (function(s){
                   let v = String(s).trim().toLowerCase();
                   v = v.replace(/\s*tl$/,''); v = v.replace(/\s/g,''); v = v.replace(/\./g,''); v = v.replace(/,/g,'.');
                   const n = parseFloat(v); return isNaN(n)?0:n;
                 })(priceStr);
-                const tempProduct = { id: 'TEMP-'+Date.now(), name, price: priceNum, badge:'', image: img, images: img? [img]:[] };
+                const badgeSel = card.querySelector('#tmp-badge-select')?.value || '';
+                const tempProduct = { id: idVal, name, price: priceNum, badge: badgeSel, image: img, images: img? [img]:[] };
                 if(typeof openProductEditPanel==='function'){ openProductEditPanel(tempProduct); }
                 else { alert('Düzenleme modalı bulunamadı.'); }
               });
               const removeBtn = card.querySelector('[data-action="remove-card"]');
               removeBtn?.addEventListener('click', ()=>{ card.remove(); });
+
+              // Fiyat alanı değiştikçe üstteki görsel metni güncelle
+              const priceInp = card.querySelector('#tmp-price');
+              const priceDisplay = card.querySelector('#tmp-price-display');
+              function formatTL(n){
+                const fixed = Number(n||0);
+                const parts = fixed.toFixed(2).split('.');
+                const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                const decPart = parts[1];
+                return intPart + ',' + decPart + ' TL';
+              }
+              priceInp?.addEventListener('input', ()=>{
+                const s = priceInp.value||'0';
+                let v = s.trim().toLowerCase();
+                v = v.replace(/\s*tl$/,''); v = v.replace(/\s/g,''); v = v.replace(/\./g,''); v = v.replace(/,/g,'.');
+                const num = parseFloat(v); priceDisplay.textContent = isNaN(num)? '—' : formatTL(num);
+              });
+
+              // Rozet seçimi görünür etikete yansıt
+              const badgeSelect = card.querySelector('#tmp-badge-select');
+              const badgeChip = card.querySelector('#tmp-badge');
+              badgeSelect?.addEventListener('change', ()=>{
+                const val = badgeSelect.value;
+                if(val){ badgeChip.style.display='inline-block'; badgeChip.textContent = val; }
+                else { badgeChip.style.display='none'; }
+              });
 
               host.prepend(card);
             });
