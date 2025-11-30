@@ -2787,6 +2787,17 @@ try {
         const city = document.getElementById('editCity').value.trim();
         const district = document.getElementById('editDistrict').value.trim();
         const neighborhood = document.getElementById('editNeighborhood').value.trim();
+
+          // Ek güvenlik: .edit-btn (sonradan eklenen) için yakalayıcı
+          document.addEventListener('click', function(e){
+            const eb = e.target.closest('.edit-btn');
+            if(!eb) return;
+            const card = eb.closest('.product-card');
+            const id = card ? card.getAttribute('data-id') : (eb.getAttribute('data-id')||'');
+            if(!id) return;
+            e.preventDefault();
+            if(typeof openProductEditPanelById==='function') openProductEditPanelById(id);
+          }, { capture: true });
         const postalCode = document.getElementById('editPostalCode').value.trim();
         const addressDetail = document.getElementById('editAddressDetail').value.trim();
 
