@@ -1182,8 +1182,23 @@ async function verifyGitHubPathExists(path){
             const norm = normalizeProductId(pidRaw);
             const base = 'https://github.com/amtbrs-03/AMTBRS/upload/site-release';
             const suggested = norm.hasExt ? `images/products/${norm.base}.${norm.ext}` : `images/products/${norm.base}.jpg`;
-            const url = base + (pidRaw ? `?suggested_path=${encodeURIComponent(suggested)}` : '');
-            window.open(url, '_blank', 'noopener');
+            const urlSuggested = base + (pidRaw ? `?suggested_path=${encodeURIComponent(suggested)}` : '');
+            const urlAlt = base + (pidRaw ? `?path=${encodeURIComponent(suggested)}` : '');
+            let w = window.open(urlSuggested, '_blank', 'noopener');
+            if(!w){
+              // popup engellenmiş olabilir, alternatif parametreyi dene
+              w = window.open(urlAlt, '_blank', 'noopener');
+            }
+            if(!w){
+              // Hâlâ yoksa kullanıcıya fallback link göster
+              setMsg('Tarayıcı açılır pencereyi engelledi. Lütfen aşağıdaki bağlantıyı manuel açın:', false);
+              if(msgEl){
+                const a=document.createElement('a'); a.href=urlSuggested; a.textContent='Yükleme Sayfasını Aç'; a.target='_blank'; a.rel='noopener'; a.style.display='inline-block'; a.style.marginLeft='0.5rem'; a.style.color='#0369a1'; msgEl.appendChild(a);
+              }
+            }
+            else {
+              setMsg('GitHub yükleme sekmesi açıldı.', true);
+            }
             if (pathEl && pidRaw) pathEl.value = suggested;
             if (autoBindEl && autoBindEl.checked && pidRaw){
               // otomatik bağlamayı başlat
@@ -1204,15 +1219,17 @@ async function verifyGitHubPathExists(path){
             const origText = applyBtn.innerHTML;
             applyBtn.innerHTML = '⏳ İşleniyor...';
             applyBtn.disabled = true;
-            const pid = (pidEl && pidEl.value || '').trim();
-            const pth = (pathEl && pathEl.value || '').trim();
-            if(!pid || !pth){ setMsg('Ürün ID ve dosya yolu gerekli.', false); applyBtn.innerHTML=origText; applyBtn.disabled=false; return; }
+            const pidRaw = (pidEl && pidEl.value || '').trim();
+            const norm = normalizeProductId(pidRaw);
+            let pth = (pathEl && pathEl.value || '').trim();
+            if(!pth && pidRaw){ pth = norm.hasExt ? `images/products/${norm.base}.${norm.ext}` : `images/products/${norm.base}.jpg`; if(pathEl) pathEl.value = pth; }
+            if(!pidRaw || !pth){ setMsg('Ürün ID ve dosya yolu gerekli.', false); applyBtn.innerHTML=origText; applyBtn.disabled=false; return; }
             // Opsiyonel: dosya gerçekten var mı kontrol et
             const ver = await verifyGitHubPathExists(pth);
             if(!ver.exists){ setMsg('Dosya GitHub’da bulunamadı (case varyantları tarandı): '+pth, false); applyBtn.innerHTML=origText; applyBtn.disabled=false; return; }
             try {
               setMsg('products.json güncelleniyor...', true);
-              await updateProductsJsonImage(pid, pth);
+              await updateProductsJsonImage(pidRaw, pth);
               setMsg('✓ Güncellendi: '+ (ver.actualPath||pth) + ' (sha:'+ (ver.sha||'...').slice(0,7)+')', true);
               if(typeof renderAdminProducts === 'function'){ try{ renderAdminProducts(); }catch(_){ /* ignore */ } }
             } catch(e){
