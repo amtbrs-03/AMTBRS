@@ -894,11 +894,12 @@
     const image2=(document.getElementById('editProductImage2')?.value||'').trim();
     const image3=(document.getElementById('editProductImage3')?.value||'').trim();
     const image4=(document.getElementById('editProductImage4')?.value||'').trim();
-    const imgRe=/^images\/(products|gallery)\/[A-Za-z0-9._-]+\.(jpg|jpeg|png|webp)$/;
-    if(!imgRe.test(image)){ msgEl.textContent='Geçerli ana görsel yolu girin!'; return; }
-    if(image2 && !imgRe.test(image2)){ msgEl.textContent='Ek Görsel 2 için geçerli yol girin!'; return; }
-    if(image3 && !imgRe.test(image3)){ msgEl.textContent='Ek Görsel 3 için geçerli yol girin!'; return; }
-    if(image4 && !imgRe.test(image4)){ msgEl.textContent='Ek Görsel 4 için geçerli yol girin!'; return; }
+    // Görsel yolu doğrulama: optional baştaki '/', products|gallery, uzantı case-insensitive
+    const imgRe=/^\/?images\/(products|gallery)\/[A-Za-z0-9._-]+\.(jpg|jpeg|png|webp)$/i;
+    if(!imgRe.test(image)){ msgEl.textContent='Geçerli ana görsel yolu girin! (ör. images/products/IMG_1966.jpg)'; return; }
+    if(image2 && !imgRe.test(image2)){ msgEl.textContent='Ek Görsel 1 için geçerli yol girin!'; return; }
+    if(image3 && !imgRe.test(image3)){ msgEl.textContent='Ek Görsel 2 için geçerli yol girin!'; return; }
+    if(image4 && !imgRe.test(image4)){ msgEl.textContent='Ek Görsel 3 için geçerli yol girin!'; return; }
     // küçük önizlemeleri güncelle
     try {
       const ids=['editProductImage','editProductImage2','editProductImage3','editProductImage4'];
