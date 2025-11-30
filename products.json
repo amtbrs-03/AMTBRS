@@ -1,5 +1,5 @@
 {
-  "updatedAt": 1764534074647,
+  "updatedAt": 1764534601325,
   "items": [
     {
       "id": "IMG_1966.JPG",
@@ -11,18 +11,6 @@
         "images/products/IMG_1966.JPG",
         "images/gallery/IMG_1972.JPG",
         "images/gallery/IMG_1973.JPG"
-      ]
-    },
-    {
-      "id": "TEMP-1764528649169",
-      "name": "ssss",
-      "price": 3456,
-      "badge": "Popüler",
-      "image": "images/gallery/IMG_1966.JPG",
-      "images": [
-        "images/gallery/IMG_1966.JPG",
-        "images/gallery/IMG_1967.JPG",
-        "images/gallery/IMG_1974.JPG"
       ]
     }
   ]
