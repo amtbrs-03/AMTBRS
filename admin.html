@@ -9,11 +9,15 @@
     ];
     function needsFix(str){ return /Ã|Ä|Å|â‚º|ğŸ|â•/.test(str); }
     function byteReDecode(str){
-      try {
+          // Geçici: şifre ekranını kaldırma bayrağı
+          var bypass = localStorage.getItem('skip_admin_auth') === '1';
+          var ok = sessionStorage.getItem('admin_auth_ok') === '1';
         const bytes = new Uint8Array(str.length);
         for (let i=0;i<str.length;i++) bytes[i] = str.charCodeAt(i) & 0xFF;
         return new TextDecoder().decode(bytes);
-      }catch(e){ return str; }
+          if (bypass) {
+            valid = true;
+          } else if (ok && untilStr) {
     }
     function fix(str){
       let out = str;
@@ -23,10 +27,20 @@
       if (needsFix(out)){ const rede = byteReDecode(out); if (!needsFix(rede)) out = rede; }
       return out;
     }
-    function sweep(){
+            if (!bypass && gate) { gate.classList.add('active'); gate.style.display='flex'; }
       if (!(document && document.body)) return;
       const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
       while (walker.nextNode()){
+            // Bilgilendirme: auth bypass aktifse küçük bir uyarı göster
+            if (bypass) {
+              try {
+                var warn = document.createElement('div');
+                warn.style.cssText='background:#fff3cd;color:#664d03;border:1px solid #ffe69c;padding:8px 10px;margin:10px;border-radius:8px;font-size:12px';
+                warn.innerHTML='Admin şifre ekranı <b>geçici olarak devre dışı</b>. Token girildikten sonra localStorage.removeItem("skip_admin_auth") ile kapatın.';
+                var header = document.querySelector('.admin-header');
+                (header?header:document.body).insertAdjacentElement('afterend', warn);
+              }catch(_){}
+            }
         const node = walker.currentNode;
         const txt = node.nodeValue;
         if (txt && needsFix(txt)){
