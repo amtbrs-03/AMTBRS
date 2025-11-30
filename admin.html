@@ -953,6 +953,7 @@
         <div class="controls-row">
           <input id="ghUploadProductId" type="text" placeholder="Ürün ID (ör. p_abc123)" style="flex:1;min-width:220px" />
           <button id="openGhUpload" class="btn">GitHub Yüklemeyi Aç</button>
+          <button id="openGhFolderBtn" class="btn" style="margin-left:0.5rem;">GitHub Klasörü Aç</button>
         </div>
         <label style="display:flex;align-items:center;gap:6px;margin-top:0.5rem;font-size:0.92rem;color:#334155">
           <input id="ghAutoBind" type="checkbox" /> Yükleme sonrası otomatik bağla (2 dakikaya kadar bekler)
@@ -1092,6 +1093,7 @@
 const openBtn = document.getElementById('openGhUpload');
 const applyBtn = document.getElementById('applyGhImagePath');
 const autoBindEl = document.getElementById('ghAutoBind');
+const openFolderBtn = document.getElementById('openGhFolderBtn');
 // Ürün ID normalize: uzantı varsa ayırır, yoksa varsayılan .jpg kullanır
 function normalizeProductId(raw){
   raw = (raw||'').trim();
@@ -1182,13 +1184,45 @@ async function verifyGitHubPathExists(path){
             openBtn.disabled = true;
             const pidRaw = (pidEl && pidEl.value || '').trim();
             const norm = normalizeProductId(pidRaw);
-            // İstenen hedef: GitHub dizin görünümü
-            const baseFolder = 'https://github.com/amtbrs-03/AMTBRS/blob/site-release/images/products/';
-            let targetUrl = baseFolder;
-            // Not: Kullanıcı sadece dizine yönlendirme istedi. Gerekirse dosya tahmini eklenebilir.
-            let w = window.open(targetUrl, '_blank', 'noopener');
+            const base = 'https://github.com/amtbrs-03/AMTBRS/upload/site-release';
+            const suggested = norm.hasExt ? `images/products/${norm.base}.${norm.ext}` : `images/products/${norm.base}.jpg`;
+            const urlSuggested = base + (pidRaw ? `?suggested_path=${encodeURIComponent(suggested)}` : '');
+            const urlAlt = base + (pidRaw ? `?path=${encodeURIComponent(suggested)}` : '');
+            let w = window.open(urlSuggested, '_blank', 'noopener');
+            if(!w){
+              // popup engellenmiş olabilir, alternatif parametreyi dene
+              w = window.open(urlAlt, '_blank', 'noopener');
+            }
             if(!w){
               // Hâlâ yoksa kullanıcıya fallback link göster
+              setMsg('Tarayıcı açılır pencereyi engelledi. Lütfen aşağıdaki bağlantıyı manuel açın:', false);
+              if(msgEl){
+                const a=document.createElement('a'); a.href=urlSuggested; a.textContent='Yükleme Sayfasını Aç'; a.target='_blank'; a.rel='noopener'; a.style.display='inline-block'; a.style.marginLeft='0.5rem'; a.style.color='#0369a1'; msgEl.appendChild(a);
+              }
+            }
+            else {
+              setMsg('GitHub yükleme sekmesi açıldı.', true);
+            }
+            if (pathEl && pidRaw) pathEl.value = suggested;
+            if (autoBindEl && autoBindEl.checked && pidRaw){
+              // otomatik bağlamayı başlat
+              await autoBindAfterUpload(pidRaw);
+            } else {
+              setMsg('GitHub yükleme sayfası açıldı. Dosyayı yükledikten sonra dosya yolunu aşağıya girin.', true);
+            }
+            setTimeout(() => { openBtn.innerHTML = origText; openBtn.disabled = false; }, 1000);
+          });
+        } else {
+          console.warn('[admin] openGhUpload butonu bulunamadı');
+        }
+
+        // Klasör açma butonu (ayrı talep)
+        if (openFolderBtn){
+          console.log('[admin] Binding openGhFolderBtn');
+          openFolderBtn.addEventListener('click', ()=>{
+            const targetUrl = 'https://github.com/amtbrs-03/AMTBRS/blob/site-release/images/products/';
+            const w = window.open(targetUrl, '_blank', 'noopener');
+            if(!w){
               setMsg('Tarayıcı açılır pencereyi engelledi. Lütfen aşağıdaki bağlantıyı manuel açın:', false);
               if(msgEl){
                 const a=document.createElement('a'); a.href=targetUrl; a.textContent='GitHub ürün görselleri klasörünü aç'; a.target='_blank'; a.rel='noopener'; a.style.display='inline-block'; a.style.marginLeft='0.5rem'; a.style.color='#0369a1'; msgEl.appendChild(a);
@@ -1196,19 +1230,9 @@ async function verifyGitHubPathExists(path){
             } else {
               setMsg('GitHub klasör sekmesi açıldı.', true);
             }
-            // Kullanışlı: ürün ID girilmişse tahmini yol alanını doldur
-            const suggested = norm.hasExt ? `images/products/${norm.base}.${norm.ext}` : `images/products/${norm.base}.jpg`;
-            if (pathEl && pidRaw) pathEl.value = suggested;
-            if (autoBindEl && autoBindEl.checked && pidRaw){
-              // otomatik bağlamayı başlat (dosya yüklendiğinde varlık kontrolü yapılır)
-              await autoBindAfterUpload(pidRaw);
-            } else {
-              setMsg('GitHub klasörü açıldı. Dosyayı ekledikten sonra dosya yolunu aşağıya girin.', true);
-            }
-            setTimeout(() => { openBtn.innerHTML = origText; openBtn.disabled = false; }, 1000);
           });
         } else {
-          console.warn('[admin] openGhUpload butonu bulunamadı');
+          console.warn('[admin] openGhFolderBtn butonu bulunamadı');
         }
 
         // Kaydet butonu
