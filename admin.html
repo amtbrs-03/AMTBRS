@@ -964,7 +964,17 @@
                 try {
                   switch(action){
                     case 'edit':
-                      if(typeof openProductEditPanelById==='function') openProductEditPanelById(id);
+                      try{
+                        if(typeof openProductEditPanelById==='function'){
+                          openProductEditPanelById(id);
+                          break;
+                        }
+                      }catch(err){ console.warn('[admin] edit modal open failed, falling back to inline', err); }
+                      // Fallback: inline paneli aç
+                      try{
+                        const btnEl = btn;
+                        if(typeof toggleInlineEdit==='function') toggleInlineEdit(id, btnEl);
+                      }catch(err){ console.warn('[admin] inline fallback failed', err); }
                       break;
                     case 'move-up':
                       if(typeof moveProduct==='function') moveProduct(id, -1);
