@@ -1270,6 +1270,10 @@ async function verifyGitHubPathExists(path){
         });
         if (!resPut.ok) {
           const txt = await resPut.text().catch(()=> '');
+      // Ensure global availability for inline handlers and other scripts
+      // Some browsers/scripting contexts may not hoist function declarations to window when using certain script types.
+      // Attach explicitly to prevent "Can't find variable: validateGitHubToken" errors.
+      window.validateGitHubToken = window.validateGitHubToken || validateGitHubToken;
           return { ok: false, error: `Kaydetme hatası: Durum ${resPut.status} ${txt}` };
         }
         return { ok: true };
@@ -2423,7 +2427,8 @@ async function verifyGitHubPathExists(path){
         const owner = 'amtbrs-03';
         const repo = 'AMTBRS';
         const branch = 'site-release';
-        const fileName = `user_${u.email}_full.json`;
+        // Dosya adını repo yapısına uygun kullan (ör: amtbrs@icloud.com_full.json)
+        const fileName = `${u.email}_full.json`;
         const filePath = `users/${fileName}`;
 
         // Get current SHA
