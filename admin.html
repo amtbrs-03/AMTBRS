@@ -598,6 +598,20 @@
     <strong>GitHub Token eksik:</strong> Değişiklikler şu an <em>yerel olarak</em> kaydediliyor ve canlı siteye aktarılmıyor.
     <a href="GITHUB_AUTH_SETUP.md" target="_blank" style="color:#2b6cb0; text-decoration:underline;">Token kurulumu</a> belgesini açın ve ayarlayın.
   </div>
+  <!-- Güvenlik: DOMContentLoaded tetiklenmezse bile parola kapısını açmayı garanti eden erken kontrol -->
+  <script>
+    (function(){
+      try {
+        if (sessionStorage.getItem('admin_auth_ok') !== '1') {
+          var gate = document.getElementById('adminAuthGate');
+          if (gate) { gate.classList.add('active'); gate.style.display='flex'; }
+        } else {
+          var adminUI = document.getElementById('adminUI');
+          if (adminUI) adminUI.style.display = 'block';
+        }
+      } catch(_){}
+    })();
+  </script>
   <!-- Çoklu Ürün Düzenle butonu kaldırıldı -->
   <!-- Admin erişim için parola kapısı -->
   <div id="adminAuthGate" class="modal" style="display:none;">
