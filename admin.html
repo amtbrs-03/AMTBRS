@@ -894,6 +894,9 @@
       location.reload();
     } catch(e){ alert('Çıkış sırasında hata: ' + (e.message||e)); }
   }
+  // Inline onclick ile çağrı için global bağlama
+  window.logoutAdminSession = logoutAdminSession;
+  window.performLogoutNow = performLogoutNow;
   function safeInput(str) {
     return String(str).replace(/[<>&"']/g, function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;','\'':'&#39;'}[c]; });
   }
