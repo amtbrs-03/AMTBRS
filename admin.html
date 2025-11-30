@@ -774,23 +774,10 @@
   }
   // Yukarıdaki toBase64/fromBase64 bu dosyada KANONİK sürümdür. Yeni kopyalar eklemeyin;
   // tekrar tanımlama tespiti yapan self-test bloğu alt kısımda mevcuttur.
-  async function openProductEditPanelById(id) {
-    try { const res = await fetch('products.json?' + Date.now()); if(!res.ok) throw new Error('products.json alınamadı!'); const data=await res.json(); const products=Array.isArray(data.items)?data.items:(Array.isArray(data)?data:[]); const p=products.find(x=>String(x.id)===String(id)); if(p) openProductEditPanel(p); else alert('Ürün bulunamadı!'); } catch(err){ alert('Hata: '+err.message); }
-  }
-  function openProductEditPanel(product){
-    document.getElementById('editProductId').value=product.id||'';
-    document.getElementById('editProductName').value=product.name||'';
-    document.getElementById('editProductPrice').value=product.price||'';
-    document.getElementById('editProductBadge').value=product.badge||'';
-    document.getElementById('editProductImage').value=product.image||'';
-    document.getElementById('editProductMsg').textContent='';
-    document.getElementById('productEditPanel').classList.add('active');
-    document.body.style.overflow='hidden';
-  }
-  function closeProductEditPanel(){
-    document.getElementById('productEditPanel').classList.remove('active');
-    document.body.style.overflow='';
-  }
+  
+  // Note: openProductEditPanelById, openProductEditPanel, closeProductEditPanel are now defined
+  // in the inline script block with renderAdminProducts to ensure they're available when needed.
+  
   document.getElementById('productEditForm').onsubmit = async function(e){
     e.preventDefault();
     const msgEl=document.getElementById('editProductMsg');
@@ -848,10 +835,6 @@
   function addEditButtonsToProductCards(){
     document.querySelectorAll('.product-card').forEach(card=>{ if(!card.querySelector('.edit-btn')){ const btn=document.createElement('button'); btn.textContent='Düzenle'; btn.className='edit-btn'; btn.style='position:absolute;top:8px;right:8px;z-index:2;font-size:13px;'; btn.onclick=function(e){ e.stopPropagation(); const id=card.getAttribute('data-id'); fetch('products.json').then(r=>r.json()).then(products=>{ const p=products.items.find(x=>x.id===id); if(p) openProductEditPanel(p); }); }; card.appendChild(btn); } });
   }
-  // Export to global scope for event delegation
-  window.openProductEditPanelById = openProductEditPanelById;
-  window.openProductEditPanel = openProductEditPanel;
-  window.closeProductEditPanel = closeProductEditPanel;
   window.addEventListener('DOMContentLoaded', addEditButtonsToProductCards);
   window.addEditButtonsToProductCards = addEditButtonsToProductCards;
   </script>
@@ -892,6 +875,37 @@
         </div>
         <div id="products" class="products-list"></div>
         <script>
+        // Product edit panel functions (must be defined before renderAdminProducts for event delegation)
+        async function openProductEditPanelById(id) {
+          try { 
+            const res = await fetch('products.json?' + Date.now()); 
+            if(!res.ok) throw new Error('products.json alınamadı!'); 
+            const data=await res.json(); 
+            const products=Array.isArray(data.items)?data.items:(Array.isArray(data)?data:[]); 
+            const p=products.find(x=>String(x.id)===String(id)); 
+            if(p) openProductEditPanel(p); 
+            else alert('Ürün bulunamadı!'); 
+          } catch(err){ alert('Hata: '+err.message); }
+        }
+        function openProductEditPanel(product){
+          document.getElementById('editProductId').value=product.id||'';
+          document.getElementById('editProductName').value=product.name||'';
+          document.getElementById('editProductPrice').value=product.price||'';
+          document.getElementById('editProductBadge').value=product.badge||'';
+          document.getElementById('editProductImage').value=product.image||'';
+          document.getElementById('editProductMsg').textContent='';
+          document.getElementById('productEditPanel').classList.add('active');
+          document.body.style.overflow='hidden';
+        }
+        function closeProductEditPanel(){
+          document.getElementById('productEditPanel').classList.remove('active');
+          document.body.style.overflow='';
+        }
+        // Export to global scope immediately
+        window.openProductEditPanelById = openProductEditPanelById;
+        window.openProductEditPanel = openProductEditPanel;
+        window.closeProductEditPanel = closeProductEditPanel;
+        
         // Global ürün listeleme (canonical)
         async function renderAdminProducts(){
           const container = document.getElementById('products');
