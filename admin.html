@@ -1086,6 +1086,8 @@
       if(!putRes.ok){ const t = await putRes.text().catch(()=> ''); throw new Error('Güncelleme başarısız: '+putRes.status+' '+t); }
       return true;
 
+    } // <-- Kapanış: updateProductsJsonImage (ilk tanım)
+
 // Sonraki kod/fonksiyonlar buradan başlamalı
 const openBtn = document.getElementById('openGhUpload');
 const applyBtn = document.getElementById('applyGhImagePath');
@@ -1448,42 +1450,6 @@ async function verifyGitHubPathExists(path){
         });
         if (!resPut.ok) {
           const txt = await resPut.text().catch(()=> '');
-      // Ensure global availability for inline handlers and other scripts
-      // Some browsers/scripting contexts may not hoist function declarations to window when using certain script types.
-      // Attach explicitly to prevent "Can't find variable: validateGitHubToken" errors.
-      window.validateGitHubToken = window.validateGitHubToken || validateGitHubToken;
-    // Eksik kalan updateProductsJsonImage fonksiyonu yeniden tanımlandı (önceki kısımda yarım kalmıştı)
-    async function updateProductsJsonImage(productId, imagePath){
-      if(!productId) throw new Error('productId gerekli');
-      if(!imagePath) throw new Error('imagePath gerekli');
-      const token = (typeof getGitHubToken==='function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
-      if(!token) throw new Error('GitHub token yok. Ayarlardan yapılandırın.');
-      const owner='amtbrs-03'; const repo='AMTBRS'; const branch='site-release';
-      const url = `https://api.github.com/repos/${owner}/${repo}/contents/products.json`;
-      const getRes = await fetch(url + `?ref=${branch}&t=${Date.now()}`, { headers:{ 'Accept':'application/vnd.github.v3+json','Authorization':'token '+token }, cache:'no-store' });
-      if(!getRes.ok){ const t=await getRes.text().catch(()=> ''); throw new Error('products.json alınamadı: '+getRes.status+' '+t); }
-      const meta = await getRes.json();
-      let obj={};
-      try { obj = JSON.parse(fromBase64((meta.content||'').replace(/\n/g,''))) || {}; } catch(e){ console.warn('[admin] products parse hata', e); obj={}; }
-      const list = Array.isArray(obj.items) ? obj.items : (Array.isArray(obj)?obj:[]);
-      const idx = list.findIndex(p=> String(p.id)===String(productId));
-      if(idx===-1) throw new Error('Ürün bulunamadı: '+productId);
-      list[idx] = { ...list[idx], image: imagePath };
-      const newObj = { updatedAt: Date.now(), items: list };
-      const putRes = await fetch(url, {
-        method:'PUT',
-        headers:{ 'Content-Type':'application/json','Authorization':'token '+token },
-        body: JSON.stringify({
-          message:`chore(admin): ürün görsel güncelle (${productId})`,
-          content: toBase64(JSON.stringify(newObj,null,2)),
-          branch,
-          sha: meta.sha
-        })
-      });
-      if(!putRes.ok){ const t=await putRes.text().catch(()=> ''); throw new Error('GitHub kaydı başarısız: '+putRes.status+' '+t); }
-      return true;
-    }
-    window.updateProductsJsonImage = window.updateProductsJsonImage || updateProductsJsonImage;
           return { ok: false, error: `Kaydetme hatası: Durum ${resPut.status} ${txt}` };
         }
         return { ok: true };
