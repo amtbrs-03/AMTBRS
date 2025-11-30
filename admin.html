@@ -593,6 +593,11 @@
 
 </head>
 <body>
+  <!-- PAT Missing Notice -->
+  <div id="patNotice" style="display:none; background:#fff3cd; color:#664d03; border:1px solid #ffe69c; padding:10px 12px; margin:10px; border-radius:8px;">
+    <strong>GitHub Token eksik:</strong> Değişiklikler şu an <em>yerel olarak</em> kaydediliyor ve canlı siteye aktarılmıyor.
+    <a href="GITHUB_AUTH_SETUP.md" target="_blank" style="color:#2b6cb0; text-decoration:underline;">Token kurulumu</a> belgesini açın ve ayarlayın.
+  </div>
   <div style="padding:8px 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:#f1f5f9;border-bottom:1px solid #e2e8f0">
     <button id="openMultiEditorBtn" type="button" class="btn" title="3 ürün kartını yatay düzenle">Çoklu Ürün Düzenle</button>
   </div>
@@ -698,6 +703,12 @@
               <button type="button" onclick="openGalleryPickerForProductFor('editProductImage3')" class="btn btn-ghost" title="Galeriden seç">📸</button>
             </div>
           </div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:10px">
+          <label style="display:flex;align-items:center;gap:6px;font-weight:600;color:#0f172a">
+            <input id="editAutoBind" type="checkbox" /> Yükleme sonrası otomatik bağla (2 dakikaya kadar bekler)
+          </label>
+          <span id="editAutoBindStatus" class="small" style="color:#64748b"></span>
         </div>
         <div id="editProductMsg" style="margin:10px 0;color:#c00"></div>
         <div class="form-actions" style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:12px">
@@ -935,6 +946,36 @@
     const image2=(document.getElementById('editProductImage2')?.value||'').trim();
     const image3=(document.getElementById('editProductImage3')?.value||'').trim();
     const image4=(document.getElementById('editProductImage4')?.value||'').trim();
+    const autoBind = !!document.getElementById('editAutoBind')?.checked;
+    const autoBindStatus = document.getElementById('editAutoBindStatus');
+    // GitHub Web Yükleme mantığına uy: görsel yolunu doğrula ve ID eşleşmesini case-insensitive yap
+    try {
+      // Helper: verify with optional auto-bind polling
+      async function ensurePathExists(pth){
+        if(!/^images\/(products|gallery)\/.+\.(jpg|jpeg|png|webp)$/i.test(pth)) return true; // skip non-standard paths
+        let ver = await verifyGitHubPathExists(pth);
+        if(ver.exists) return true;
+        if(!autoBind) return false;
+        let attempts = 0; const maxAttempts = 10; let delay = 1000;
+        if(autoBindStatus) autoBindStatus.textContent = '🕒 Yükleme bekleniyor...';
+        while(attempts < maxAttempts){
+          attempts++;
+          await new Promise(r=>setTimeout(r, delay));
+          ver = await verifyGitHubPathExists(pth);
+          if(ver.exists) break;
+          delay = Math.min(delay * 1.7, 15000);
+          if(autoBindStatus) autoBindStatus.textContent = `🕒 Yükleme bekleniyor (${attempts}/${maxAttempts})...`;
+        }
+        if(!ver.exists) return false;
+        if(autoBindStatus) autoBindStatus.textContent = '✅ Dosya bulundu';
+        return true;
+      }
+      // Check main + extra images if provided
+      if(!(await ensurePathExists(image))){ msgEl.textContent = 'Dosya GitHub’da bulunamadı: '+image; return; }
+      if(image2 && !(await ensurePathExists(image2))){ msgEl.textContent = 'Dosya GitHub’da bulunamadı: '+image2; return; }
+      if(image3 && !(await ensurePathExists(image3))){ msgEl.textContent = 'Dosya GitHub’da bulunamadı: '+image3; return; }
+      if(image4 && !(await ensurePathExists(image4))){ msgEl.textContent = 'Dosya GitHub’da bulunamadı: '+image4; return; }
+    } catch(_){ /* path check errors ignored */ }
     // Görsel yolu doğrulama: optional baştaki '/', products|gallery, uzantı case-insensitive
     const imgRe=/^\/?images\/(products|gallery)\/[A-Za-z0-9._-]+\.(jpg|jpeg|png|webp)$/i;
     if(!imgRe.test(image)){ msgEl.textContent='Geçerli ana görsel yolu girin! (ör. images/products/IMG_1966.jpg)'; return; }
@@ -960,12 +1001,57 @@
         if(attempt>1) msgEl.textContent=`⏳ Yeniden deneniyor (${attempt}/${maxAttempts})...`;
         try{
           const url=`https://api.github.com/repos/${repo}/contents/products.json?ref=${branch}&_=${Date.now()}`;
-          const res=await fetch(url,{cache:'no-store'}); 
-          if(!res.ok) throw new Error('products.json alınamadı!');
+          let res=await fetch(url,{cache:'no-store'});
+          if(!res.ok){
+            // Fallback: raw file
+            const rawUrl = 'https://raw.githubusercontent.com/amtbrs-03/AMTBRS/site-release/products.json?_=' + Date.now();
+            res = await fetch(rawUrl, { cache:'no-store' });
+            if(!res.ok) throw new Error('products.json alınamadı! ('+res.status+')');
+            const txt = await res.text();
+            let products = {};
+            try { products = JSON.parse(txt); } catch(e){ throw new Error('products.json parse hatası'); }
+            // Normalize structure
+            if(!Array.isArray(products.items)) products.items = Array.isArray(products) ? products : [];
+            // Continue with products object
+            // imagesArr and next defined below
+            const imagesArr=[image].concat([image2,image3,image4].filter(Boolean));
+            const next = { id, name, price, badge, image: imagesArr[0], images: imagesArr };
+            const idNorm = String(id).toLowerCase().replace(/\.(jpg|jpeg|png|webp)$/i,'');
+            let idx = -1;
+            if(Array.isArray(products.items)){
+              idx = products.items.findIndex(p=> String(p.id).toLowerCase().replace(/\.(jpg|jpeg|png|webp)$/i,'') === idNorm);
+            }
+            if(idx===-1){ products.items.push(next); } else { products.items[idx]=next; }
+            products.updatedAt=Date.now();
+            const token=localStorage.github_token||localStorage.gh_token;
+            if(token){
+              // Write back via GitHub API: we need latest sha
+              const metaRes = await fetch(url, { cache:'no-store' });
+              if(!metaRes.ok) throw new Error('products.json meta alınamadı: '+metaRes.status);
+              const dataMeta = await metaRes.json();
+              const putUrl=`https://api.github.com/repos/${repo}/contents/products.json`;
+              const actionMsg = (idx===-1) ? 'yeni ürün eklendi' : 'ürün güncellendi';
+              const putRes=await fetch(putUrl,{ method:'PUT', headers:{ 'Authorization':'token '+token,'Content-Type':'application/json' }, body:JSON.stringify({ message:`admin: ${actionMsg}: ${id}`, content:toBase64(JSON.stringify(products,null,2)), sha:dataMeta.sha, branch }) });
+              if(!putRes.ok){ const t=await putRes.text().catch(()=> ''); throw new Error('GitHub kaydı başarısız: '+putRes.status+' '+t); }
+              msgEl.textContent='✅ Kaydedildi!';
+            } else {
+              try { localStorage.setItem('products_override', JSON.stringify(products)); } catch(_){}
+              msgEl.textContent='✅ Yerel olarak kaydedildi (GitHub token yok)';
+              try { const el = document.getElementById('patNotice'); if(el) el.style.display='block'; } catch(_){}
+            }
+            // Refresh and close
+            setTimeout(()=>{ try{ renderAdminProducts(); }catch(_){} closeProductEditPanel(); }, 800);
+            return; // Done via raw fallback path
+          }
           const data=await res.json(); let products=JSON.parse(fromBase64(data.content));
           const imagesArr=[image].concat([image2,image3,image4].filter(Boolean));
           const next = { id, name, price, badge, image: imagesArr[0], images: imagesArr };
-          let idx=Array.isArray(products.items) ? products.items.findIndex(p=>String(p.id)===String(id)) : -1;
+          // Case-insensitive ID karşılaştırması (uzantıyı temizle)
+          const idNorm = String(id).toLowerCase().replace(/\.(jpg|jpeg|png|webp)$/i,'');
+          let idx = -1;
+          if(Array.isArray(products.items)){
+            idx = products.items.findIndex(p=> String(p.id).toLowerCase().replace(/\.(jpg|jpeg|png|webp)$/i,'') === idNorm);
+          }
           if(!Array.isArray(products.items)) products.items = Array.isArray(products) ? products : [];
           if(idx===-1){
             // Ürün yoksa ekle (upsert)
@@ -987,7 +1073,11 @@
             if(!putRes.ok){ const t=await putRes.text().catch(()=>''); throw new Error('GitHub kaydı başarısız: '+putRes.status+' '+t); }
             msgEl.textContent='✅ Kaydedildi!';
           } else {
-            msgEl.textContent='✅ Lokal güncellendi (GitHub token yok)';
+            // Token yoksa lokal override'a yaz ve UI'yi güncelle
+            try { localStorage.setItem('products_override', JSON.stringify(products)); } catch(_){}
+            msgEl.textContent='✅ Yerel olarak kaydedildi (GitHub token yok)';
+            // Show PAT banner so user knows remote commit is disabled
+            try { const el = document.getElementById('patNotice'); if(el) el.style.display='block'; } catch(_){}
           }
           break;
         }catch(err){ 
@@ -1002,7 +1092,17 @@
       }
       if(attempt>=maxAttempts && lastError) throw lastError;
       // UI yenile ve paneli kapat
-      setTimeout(()=>{ try{ renderAdminProducts(); }catch(_){/* ignore */} closeProductEditPanel(); }, 1000);
+      setTimeout(()=>{
+        try{ renderAdminProducts(); }catch(_){/* ignore */}
+        // Düzenleme sonrası seçili görselleri hero ve kutulara yansıt
+        try {
+          const main = document.getElementById('editProductImage')?.value.trim();
+          if(main) updateEditImagePreview('editProductImage', main);
+          const im2 = document.getElementById('editProductImage2')?.value.trim(); if(im2) updateEditImagePreview('editProductImage2', im2);
+          const im3 = document.getElementById('editProductImage3')?.value.trim(); if(im3) updateEditImagePreview('editProductImage3', im3);
+        } catch(_){ }
+        closeProductEditPanel();
+      }, 800);
     } catch(err){ msgEl.textContent='Hata: '+err.message; }
   };
   function addEditButtonsToProductCards(){
@@ -1184,10 +1284,33 @@
           if (!container) return;
           container.innerHTML = '<div style="color:#64748b">⏳ Ürünler yükleniyor...</div>';
           try {
-            const res = await fetch('products.json?' + Date.now());
-            if (!res.ok) throw new Error('products.json alınamadı!');
-            const data = await res.json();
-            const products = Array.isArray(data.items) ? data.items : (Array.isArray(data) ? data : []);
+            // Lokal override varsa önce onu kullan
+            let override = null;
+            try { const raw = localStorage.getItem('products_override'); if(raw) override = JSON.parse(raw); } catch(_){ override = null; }
+            let productsData;
+            if(override && (Array.isArray(override.items) || Array.isArray(override))){
+              productsData = override;
+            } else {
+              // Primary: same-origin products.json
+              let res = await fetch('products.json?' + Date.now(), { cache:'no-store' });
+              if (!res.ok){
+                // Fallback 1: without cache-busting
+                try { res = await fetch('products.json', { cache:'no-store' }); } catch(_){}
+              }
+              if(!res.ok){
+                // Fallback 2: raw.githubusercontent.com
+                const rawUrl = 'https://raw.githubusercontent.com/amtbrs-03/AMTBRS/site-release/products.json?_=' + Date.now();
+                try { res = await fetch(rawUrl, { cache:'no-store' }); } catch(_){}
+              }
+              if (!res.ok) throw new Error('products.json alınamadı! ('+res.status+')');
+              try { productsData = await res.json(); }
+              catch(_){
+                // If raw returns text, parse it
+                const txt = await res.text();
+                try { productsData = JSON.parse(txt); } catch(e){ throw new Error('products.json parse hatası'); }
+              }
+            }
+            const products = Array.isArray(productsData.items) ? productsData.items : (Array.isArray(productsData) ? productsData : []);
             if (!products.length){ container.innerHTML = '<div style="color:#b91c1c">Hiç ürün bulunamadı.</div>'; return; }
             container.innerHTML = '';
             // TL yardımcıları
@@ -4195,10 +4318,30 @@ try {
     if(msg) msg.textContent='✅ Yüklendi';
   }
   async function fetchProductsData(){
-    const res=await fetch('products.json?'+Date.now());
-    if(!res.ok) throw new Error('products.json alınamadı');
-    const data=await res.json();
-    return Array.isArray(data.items)?data.items:(Array.isArray(data)?data:[]);
+    // Robust fetch with fallbacks to avoid 403 on GitHub Pages
+    const primaryUrl = 'products.json?'+Date.now();
+    try{
+      const res = await fetch(primaryUrl, { cache:'no-store' });
+      if(res.ok){
+        const data = await res.json();
+        return Array.isArray(data.items)?data.items:(Array.isArray(data)?data:[]);
+      }
+    }catch(_){ /* ignore and try fallbacks */ }
+    // Fallbacks: raw.githubusercontent and jsDelivr
+    const fallbacks = [
+      `https://raw.githubusercontent.com/amtbrs-03/AMTBRS/site-release/products.json?t=${Date.now()}`,
+      `https://cdn.jsdelivr.net/gh/amtbrs-03/AMTBRS@site-release/products.json`
+    ];
+    for(const url of fallbacks){
+      try{
+        const r = await fetch(url, { cache:'no-store' });
+        if(r.ok){
+          const data = await r.json();
+          return Array.isArray(data.items)?data.items:(Array.isArray(data)?data:[]);
+        }
+      }catch(_){ /* continue */ }
+    }
+    throw new Error('products.json alınamadı (tüm yedekler başarısız)');
   }
   function buildEmptyProductCard(index){
     return { id:'', name:'', price:0, badge:'', image:'', images:[], __empty:true, __slot:index };
