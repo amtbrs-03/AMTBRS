@@ -1306,6 +1306,10 @@ async function verifyGitHubPathExists(path){
         } catch(e) {
           console.error('GitHub token çözümlenemedi');
         }
+
+        // Build commit marker (otomatik güncelleme tanımlayıcı) – son commit hash'i burada sabitlenir.
+        // Kullanıcı tarayıcı konsolunda window.__adminBuildCommit yazarak güncel sürümü görebilir.
+        window.__adminBuildCommit = '08a7809';
       }
       return token;
     }
