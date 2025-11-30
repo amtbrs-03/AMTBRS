@@ -804,7 +804,6 @@
       <div class="action-bar">
         <button id="saveAll" class="btn">💾 Tüm Değişiklikleri Kaydet</button>
         <button id="loadUsersBtn" class="btn">👥 Kullanıcıları Yükle</button>
-        <button id="openGalleryBtn" class="btn">📸 Galeri</button>
         <a href="siparisler.html" class="btn" style="text-decoration:none;">📦 Müşteri Siparişleri</a>
         <a href="faturalar.html" class="btn" style="text-decoration:none;background:linear-gradient(135deg,#f59e0b 0%,#d97706 100%);box-shadow:0 4px 15px rgba(245,158,11,0.4);">🧾 Faturalar</a>
       </div>
@@ -813,7 +812,10 @@
       <div class="card">
         <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
           <span>🛍️ Kayıtlı Ürünler</span>
-          <button id="refreshProductsBtn" class="btn btn-ghost" type="button" style="font-size:0.95rem;">🔄 Yenile</button>
+          <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+            <button id="refreshProductsBtn" class="btn btn-ghost" type="button" style="font-size:0.95rem;">🔄 Yenile</button>
+            <button id="openGalleryBtn" class="btn btn-ghost" type="button" style="font-size:0.95rem;">📸 Galeri</button>
+          </div>
         </div>
         <div id="products" class="products-list"></div>
         <script>
