@@ -626,36 +626,38 @@
             <option value="Popüler">Popüler</option>
           </select>
         </label>
-        <label>Görsel Yolu
-          <div style="display:flex;gap:0.5rem;align-items:center;">
-            <input id="editProductImage" type="text" placeholder="images/products/<id>.jpg" required style="flex:1;">
-            <button type="button" onclick="openGalleryPickerForProductFor('editProductImage')" class="btn btn-ghost" style="padding:0.5rem 0.75rem;font-size:0.85rem;" title="Galeriden seç">📸</button>
+        <div id="editImagesRow" style="display:flex;gap:12px;align-items:flex-start;margin-top:6px">
+          <div class="mainImageCol" style="flex:1;min-width:220px">
+            <label>Görsel Yolu
+              <div style="display:flex;gap:0.5rem;align-items:center;">
+                <input id="editProductImage" type="text" placeholder="images/products/<id>.jpg" required style="flex:1;">
+                <button type="button" onclick="openGalleryPickerForProductFor('editProductImage')" class="btn btn-ghost" style="padding:0.5rem 0.75rem;font-size:0.85rem;" title="Galeriden seç">📸</button>
+              </div>
+            </label>
+            <div class="imgPrev" data-for="editProductImage" style="width:120px;height:120px;border:1px solid #e5e7eb;border-radius:8px;display:flex;align-items:center;justify-content:center;background:#f3f4f6;overflow:hidden;margin-top:6px"></div>
           </div>
-        </label>
-        <label>Ek Görsel 2 (opsiyonel)
-          <div style="display:flex;gap:0.5rem;align-items:center;">
-            <input id="editProductImage2" type="text" placeholder="images/products/<id>-2.jpg" style="flex:1;">
-            <button type="button" onclick="openGalleryPickerForProductFor('editProductImage2')" class="btn btn-ghost" style="padding:0.5rem 0.75rem;font-size:0.85rem;" title="Galeriden seç">📸</button>
-          </div>
-        </label>
-        <label>Ek Görsel 3 (opsiyonel)
-          <div style="display:flex;gap:0.5rem;align-items:center;">
-            <input id="editProductImage3" type="text" placeholder="images/products/<id>-3.jpg" style="flex:1;">
-            <button type="button" onclick="openGalleryPickerForProductFor('editProductImage3')" class="btn btn-ghost" style="padding:0.5rem 0.75rem;font-size:0.85rem;" title="Galeriden seç">📸</button>
-          </div>
-        </label>
-        <label>Ek Görsel 4 (opsiyonel)
-          <div style="display:flex;gap:0.5rem;align-items:center;">
-            <input id="editProductImage4" type="text" placeholder="images/products/<id>-4.jpg" style="flex:1;">
-            <button type="button" onclick="openGalleryPickerForProductFor('editProductImage4')" class="btn btn-ghost" style="padding:0.5rem 0.75rem;font-size:0.85rem;" title="Galeriden seç">📸</button>
-          </div>
-        </label>
-        <div id="editImagesPreview" class="small" style="margin-top:8px;color:#64748b">
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <div class="imgPrev" data-for="editProductImage" style="width:72px;height:72px;border:1px solid #e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;background:#f3f4f6;overflow:hidden"></div>
-            <div class="imgPrev" data-for="editProductImage2" style="width:72px;height:72px;border:1px solid #e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;background:#f3f4f6;overflow:hidden"></div>
-            <div class="imgPrev" data-for="editProductImage3" style="width:72px;height:72px;border:1px solid #e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;background:#f3f4f6;overflow:hidden"></div>
-            <div class="imgPrev" data-for="editProductImage4" style="width:72px;height:72px;border:1px solid #e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;background:#f3f4f6;overflow:hidden"></div>
+          <div class="extraImagesCol" style="flex:1;display:grid;grid-template-columns:1fr;gap:8px;min-width:220px">
+            <label>Ek Görsel 2 (opsiyonel)
+              <div style="display:flex;gap:0.5rem;align-items:center;">
+                <input id="editProductImage2" type="text" placeholder="images/products/<id>-2.jpg" style="flex:1;">
+                <button type="button" onclick="openGalleryPickerForProductFor('editProductImage2')" class="btn btn-ghost" style="padding:0.5rem 0.75rem;font-size:0.85rem;" title="Galeriden seç">📸</button>
+              </div>
+            </label>
+            <div class="imgPrev" data-for="editProductImage2" style="width:88px;height:88px;border:1px solid #e5e7eb;border-radius:8px;display:flex;align-items:center;justify-content:center;background:#f3f4f6;overflow:hidden"></div>
+            <label>Ek Görsel 3 (opsiyonel)
+              <div style="display:flex;gap:0.5rem;align-items:center;">
+                <input id="editProductImage3" type="text" placeholder="images/products/<id>-3.jpg" style="flex:1;">
+                <button type="button" onclick="openGalleryPickerForProductFor('editProductImage3')" class="btn btn-ghost" style="padding:0.5rem 0.75rem;font-size:0.85rem;" title="Galeriden seç">📸</button>
+              </div>
+            </label>
+            <div class="imgPrev" data-for="editProductImage3" style="width:88px;height:88px;border:1px solid #e5e7eb;border-radius:8px;display:flex;align-items:center;justify-content:center;background:#f3f4f6;overflow:hidden"></div>
+            <label>Ek Görsel 4 (opsiyonel)
+              <div style="display:flex;gap:0.5rem;align-items:center;">
+                <input id="editProductImage4" type="text" placeholder="images/products/<id>-4.jpg" style="flex:1;">
+                <button type="button" onclick="openGalleryPickerForProductFor('editProductImage4')" class="btn btn-ghost" style="padding:0.5rem 0.75rem;font-size:0.85rem;" title="Galeriden seç">📸</button>
+              </div>
+            </label>
+            <div class="imgPrev" data-for="editProductImage4" style="width:88px;height:88px;border:1px solid #e5e7eb;border-radius:8px;display:flex;align-items:center;justify-content:center;background:#f3f4f6;overflow:hidden"></div>
           </div>
         </div>
         <div id="editProductMsg" style="margin:8px 0;color:#c00"></div>
