@@ -1229,9 +1229,9 @@ try {
               
               if(exists){
                 // Var olan ürünü güncelle
-                setMsg('Ürün güncelleniyor...', true);
+                setMsg('Var olan ürün bulundu, güncelleniyor...', true);
                 await updateProductsJsonImage(pidRaw, pth);
-                setMsg('✓ Güncellendi: '+ (ver.actualPath||pth) + ' (sha:'+ (ver.sha||'...').slice(0,7)+')', true);
+                setMsg('✓ Bu ürün zaten vardı, sadece güncellendi: '+ (ver.actualPath||pth) + ' (sha:'+ (ver.sha||'...').slice(0,7)+')', true);
               } else {
                 // Yeni ürün ekle
                 setMsg('Yeni ürün ekleniyor...', true);
