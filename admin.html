@@ -960,7 +960,7 @@
         if(attempt>1) msgEl.textContent=`⏳ Yeniden deneniyor (${attempt}/${maxAttempts})...`;
         try{
           const url=`https://api.github.com/repos/${repo}/contents/products.json?ref=${branch}&_=${Date.now()}`;
-          const res=await fetch(url,{cache:'no-store',headers:{'Cache-Control':'no-cache'}}); 
+          const res=await fetch(url,{cache:'no-store'}); 
           if(!res.ok) throw new Error('products.json alınamadı!');
           const data=await res.json(); let products=JSON.parse(fromBase64(data.content));
           const imagesArr=[image].concat([image2,image3,image4].filter(Boolean));
@@ -1924,7 +1924,7 @@ try {
                 attempt++;
                 if(attempt>1 && msg) msg.textContent=`⏳ Yeniden deneniyor (${attempt}/${maxAttempts})...`;
                 try{
-                  const getRes = await fetch(apiUrl+`?ref=site-release&_=${Date.now()}`, { headers:{ 'Accept':'application/vnd.github.v3+json','Authorization':'token '+token,'Cache-Control':'no-cache' }, cache:'no-store' });
+                  const getRes = await fetch(apiUrl+`?ref=site-release&_=${Date.now()}`, { headers:{ 'Accept':'application/vnd.github.v3+json','Authorization':'token '+token }, cache:'no-store' });
                   if(!getRes.ok) throw new Error('Remote products.json alınamadı');
                   const meta = await getRes.json();
                   let remoteObj; try{ remoteObj = JSON.parse(fromBase64((meta.content||'').replace(/\n/g,''))) || {}; }catch(_){ remoteObj={}; }
