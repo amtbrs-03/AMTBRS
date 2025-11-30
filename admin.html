@@ -2024,24 +2024,6 @@
   </div>
 
       <!-- Passkey / WebAuthn Yönetimi -->
-      <div class="card" id="passkeyCard">
-        <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
-          <span>🔐 Passkey (WebAuthn) Yönetimi</span>
-          <button id="passkeyInfoBtn" class="btn btn-ghost" type="button" style="font-size:0.8rem;">ℹ️ Bilgi</button>
-        </div>
-        <div class="small" style="color:#64748b;margin-bottom:0.75rem;line-height:1.4;">
-          Touch ID / Face ID veya güvenli biyometrik yöntemleri <strong>tarayıcı içinde</strong> kullanmak için Passkey oluşturun. Bu statik ortamda <em>asgari doğrulama</em> yapılır: kimlik id eşleşmesi. İleri seviye imza doğrulaması (attestation / assertion parse) eklenebilir.
-        </div>
-        <div style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;">
-          <button id="registerPasskeyBtn" class="btn" type="button">🆕 Passkey Kaydet</button>
-          <button id="loginPasskeyBtn" class="btn btn-ghost" type="button">🚪 Passkey ile Giriş</button>
-          <button id="clearPasskeyBtn" class="btn btn-danger" type="button">🗑️ Sil</button>
-          <span id="passkeyStatus" class="small" style="min-width:140px;color:#64748b;">Hazır</span>
-        </div>
-        <div id="passkeyInfoPanel" class="small" style="margin-top:0.75rem;display:none;background:#f1f5f9;padding:0.75rem;border-radius:10px;border:1px solid #e2e8f0;">
-          <b>Nasıl çalışır?</b><br/>1) "Passkey Kaydet" biyometrik ile yeni credential oluşturur.<br/>2) ID tarayıcıda ve geçici olarak GitHub'a değil <code>localStorage</code>'da saklanır.<br/>3) "Passkey ile Giriş" credential id ile doğrular.<br/>4) Bu minimal akış tam kriptografik imza doğrulaması yapmaz (statik site kısıtı).<br/>5) Güvenliği artırmak için ileride: <code>authenticatorData</code> + <code>clientDataJSON</code> + <code>signature</code> parse & verify.
-        </div>
-      </div>
 
   </div>
 
