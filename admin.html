@@ -604,7 +604,10 @@
   <!-- Reinserted product edit modal moved from top for proper early charset detection -->
   <section id="productEditPanel" class="modal" style="display:none">
     <div class="modal-content" style="max-width:420px">
-      <h2>Ürün Düzenle</h2>
+      <div class="modal-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <h2 style="margin:0;font-size:1.25rem;color:#111827">Ürün Düzenle</h2>
+        <button type="button" onclick="closeProductEditPanel()" class="btn btn-ghost" title="Kapat">✖</button>
+      </div>
       <form id="productEditForm" class="form-content">
         <label>Ürün ID
           <input id="editProductId" type="text" required readonly>
@@ -630,20 +633,23 @@
           </div>
         </label>
         <div id="editProductMsg" style="margin:8px 0;color:#c00"></div>
-        <button type="submit" id="saveProductBtn">Kaydet</button>
-        <button type="button" onclick="closeProductEditPanel()">Kapat</button>
+        <div class="form-actions" style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:12px">
+          <button type="submit" id="saveProductBtn" class="btn btn-primary">Kaydet</button>
+          <button type="button" onclick="closeProductEditPanel()" class="btn">Kapat</button>
+        </div>
       </form>
     </div>
   </section>
   <style>
     #productEditPanel.modal { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.18); z-index:99; }
     #productEditPanel.modal.active { display:flex; align-items:center; justify-content:center; }
-    #productEditPanel .modal-content { background:#fff; border-radius:8px; box-shadow:0 2px 16px #0002; padding:24px 20px; }
+    #productEditPanel .modal-content { background:#fff; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.15); padding:20px 20px; border:1px solid #e5e7eb; }
     #productEditPanel label { display:block; margin:10px 0 4px; font-size:15px; }
-    #productEditPanel input, #productEditPanel select { width:100%; margin-top:2px; padding:7px; font-size:15px; border-radius:4px; border:1px solid #ccc; }
-    #productEditPanel button { margin:10px 6px 0 0; padding:7px 18px; font-size:15px; border-radius:4px; border:none; background:#eee; cursor:pointer; }
-    #productEditPanel button#saveProductBtn { background:#2b7cff; color:#fff; }
-    #productEditPanel button:disabled { opacity:0.6; cursor:not-allowed; }
+    #productEditPanel input, #productEditPanel select { width:100%; margin-top:2px; padding:8px 10px; font-size:15px; border-radius:8px; border:1px solid #d1d5db; background:#ffffff; }
+    #productEditPanel .btn { padding:8px 14px; font-size:14px; border-radius:8px; border:1px solid #d1d5db; background:#f9fafb; color:#111827; cursor:pointer; }
+    #productEditPanel .btn-ghost { background:transparent; border-color:transparent; color:#6b7280; }
+    #productEditPanel .btn-primary { background:#2563eb; border-color:#2563eb; color:#fff; }
+    #productEditPanel .btn:disabled { opacity:0.6; cursor:not-allowed; }
     #editProductMsg { min-height:22px; }
     .edit-btn { background:#ffd; border:1px solid #ccc; border-radius:4px; padding:2px 8px; cursor:pointer; }
   </style>
