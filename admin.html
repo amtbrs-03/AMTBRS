@@ -598,9 +598,7 @@
     <strong>GitHub Token eksik:</strong> Değişiklikler şu an <em>yerel olarak</em> kaydediliyor ve canlı siteye aktarılmıyor.
     <a href="GITHUB_AUTH_SETUP.md" target="_blank" style="color:#2b6cb0; text-decoration:underline;">Token kurulumu</a> belgesini açın ve ayarlayın.
   </div>
-  <div style="padding:8px 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:#f1f5f9;border-bottom:1px solid #e2e8f0">
-    <button id="openMultiEditorBtn" type="button" class="btn" title="3 ürün kartını yatay düzenle">Çoklu Ürün Düzenle</button>
-  </div>
+  <!-- Çoklu Ürün Düzenle butonu kaldırıldı -->
   <!-- Admin erişim için parola kapısı -->
   <div id="adminAuthGate" class="modal" style="display:none;">
     <div class="modal-content" style="max-width:420px;">
@@ -714,34 +712,8 @@
       </form>
     </div>
   </section>
-  <!-- Çoklu Ürün Düzenleyici -->
-  <section id="multiProductEditor" class="modal" style="display:none">
-    <div class="modal-content" style="width:95vw;max-width:1200px;max-height:92vh;overflow-y:auto">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <h2 style="margin:0;font-size:1.25rem;color:#111827">Çoklu Ürün Düzenle (3 Kart)</h2>
-        <div style="display:flex;gap:8px">
-          <button type="button" class="btn" onclick="refreshMultiProductEditor()" title="Yeniden Yükle">Yenile</button>
-          <button type="button" class="btn btn-ghost" onclick="closeMultiProductEditor()" title="Kapat">✖</button>
-        </div>
-      </div>
-      <div id="multiProdMsg" class="small" style="margin-bottom:10px;color:#64748b"></div>
-      <div id="multiProductCards" style="display:flex;gap:16px;flex-wrap:wrap"></div>
-    </div>
-  </section>
-  <style>
-    #multiProductEditor.modal { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.35); z-index:2000; }
-    #multiProductEditor.modal.active { display:flex; align-items:center; justify-content:center; }
-    #multiProductEditor .product-card-block { flex:1 1 360px; background:#ffffff; border:1px solid #e5e7eb; border-radius:12px; padding:14px 14px 16px; box-shadow:0 4px 14px rgba(0,0,0,0.08); display:flex; flex-direction:column; gap:10px; position:relative; }
-    #multiProductEditor .product-card-block h3 { margin:0; font-size:1rem; font-weight:600; color:#111827; }
-    #multiProductEditor .img-holder { width:100%; height:180px; border:1px solid #d1d5db; background:#f3f4f6; border-radius:10px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
-    #multiProductEditor .img-holder img { width:100%; height:100%; object-fit:cover; }
-    #multiProductEditor .field-group label { display:block; font-size:12px; margin:4px 0 2px; font-weight:500; color:#374151; }
-    #multiProductEditor .field-group input, #multiProductEditor .field-group select { width:100%; padding:7px 9px; font-size:14px; border:1px solid #d1d5db; border-radius:8px; background:#fff; }
-    #multiProductEditor .actions-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
-    #multiProductEditor .badge-pill { background:#fde68a; color:#92400e; border:1px solid #f59e0b; padding:2px 7px; border-radius:999px; font-size:11px; }
-    #multiProductEditor .img-picker-btn { position:absolute; top:10px; right:10px; background:#ffffff; border:1px solid #d1d5db; padding:6px 10px; font-size:12px; border-radius:8px; cursor:pointer; }
-    @media (max-width:900px){ #multiProductEditor .product-card-block { flex:1 1 100%; } }
-  </style>
+  <!-- Çoklu Ürün Düzenleyici kaldırıldı -->
+  <!-- Çoklu Ürün Düzenleyici stilleri kaldırıldı -->
   <style>
     #productEditPanel.modal { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.35); z-index:2000; }
     #productEditPanel.modal.active { display:flex; align-items:center; justify-content:center; }
@@ -4398,192 +4370,7 @@ try {
   window.openGalleryPickerForProductFor = openGalleryPickerForProductFor;
   window.selectGalleryImageForProduct = selectGalleryImageForProduct;
   window.updateEditImagePreview = updateEditImagePreview;
-  // Çoklu ürün açma butonunu bağla
-  document.addEventListener('DOMContentLoaded',()=>{
-    const btn=document.getElementById('openMultiEditorBtn');
-    if(btn){ btn.addEventListener('click', openMultiProductEditor); }
-  });
-  // Çoklu Ürün Düzenleyici Fonksiyonları
-  async function openMultiProductEditor(){
-    const panel=document.getElementById('multiProductEditor');
-    if(!panel) return;
-    panel.classList.add('active');
-    panel.style.display='flex';
-    document.body.style.overflow='hidden';
-    await populateMultiProductEditor();
-  }
-  function closeMultiProductEditor(){
-    const panel=document.getElementById('multiProductEditor');
-    if(panel){ panel.classList.remove('active'); panel.style.display='none'; }
-    document.body.style.overflow='';
-  }
-  async function refreshMultiProductEditor(){
-    const msg=document.getElementById('multiProdMsg'); if(msg) msg.textContent='⏳ Yenileniyor...';
-    await populateMultiProductEditor();
-    if(msg) msg.textContent='✅ Yüklendi';
-  }
-  async function fetchProductsData(){
-    // Robust fetch with fallbacks to avoid 403 on GitHub Pages
-    const primaryUrl = 'products.json?'+Date.now();
-    try{
-      const res = await fetch(primaryUrl, { cache:'no-store' });
-      if(res.ok){
-        const data = await res.json();
-        return Array.isArray(data.items)?data.items:(Array.isArray(data)?data:[]);
-      }
-    }catch(_){ /* ignore and try fallbacks */ }
-    // Fallbacks: raw.githubusercontent and jsDelivr
-    const fallbacks = [
-      `https://raw.githubusercontent.com/amtbrs-03/AMTBRS/site-release/products.json?t=${Date.now()}`,
-      `https://cdn.jsdelivr.net/gh/amtbrs-03/AMTBRS@site-release/products.json`
-    ];
-    for(const url of fallbacks){
-      try{
-        const r = await fetch(url, { cache:'no-store' });
-        if(r.ok){
-          const data = await r.json();
-          return Array.isArray(data.items)?data.items:(Array.isArray(data)?data:[]);
-        }
-      }catch(_){ /* continue */ }
-    }
-    throw new Error('products.json alınamadı (tüm yedekler başarısız)');
-  }
-  function buildEmptyProductCard(index){
-    return { id:'', name:'', price:0, badge:'', image:'', images:[], __empty:true, __slot:index };
-  }
-  async function populateMultiProductEditor(){
-    const holder=document.getElementById('multiProductCards');
-    if(!holder) return;
-    holder.innerHTML='<div style="color:#64748b;padding:2rem;">Yükleniyor...</div>';
-    try {
-      let products=await fetchProductsData();
-      // ilk 3 ürünü al, eksikse boş kart ekle
-      const cards=[];
-      for(let i=0;i<3;i++){
-        cards.push(products[i]||buildEmptyProductCard(i+1));
-      }
-      holder.innerHTML='';
-      cards.forEach((p,idx)=>{
-        const div=document.createElement('div');
-        div.className='product-card-block';
-        const primaryImg=p.image || (Array.isArray(p.images)?p.images[0]:'');
-        div.innerHTML=`
-          <h3>Kart ${idx+1} ${p.__empty?'<span style="font-size:11px;color:#6b7280;font-weight:400">(Yeni)</span>':''}</h3>
-          <div class='img-holder' data-preview-for='mp-image-${idx}'>${primaryImg?`<img src='${primaryImg}' alt='${p.name||''}'/>`:'<span style="color:#9ca3af;font-size:12px">Görsel yok</span>'}</div>
-          <button type='button' class='img-picker-btn' onclick="openGalleryPickerForMulti('mp-image-${idx}')">Galeriden Seç</button>
-          <div class='field-group'>
-            <label>ID</label>
-            <input type='text' id='mp-id-${idx}' value='${p.id}' placeholder='Boş ise otomatik' ${p.__empty?'':'readonly'}>
-          </div>
-          <div class='field-group'>
-            <label>Ad</label>
-            <input type='text' id='mp-name-${idx}' value='${p.name||''}'>
-          </div>
-          <div class='field-group'>
-            <label>Fiyat (₺)</label>
-            <input type='number' min='0' step='0.01' id='mp-price-${idx}' value='${p.price||0}'>
-          </div>
-          <div class='field-group'>
-            <label>Rozet</label>
-            <select id='mp-badge-${idx}'>
-              <option value='' ${(p.badge?'':'selected')}>Yok</option>
-              <option value='Yeni' ${p.badge==='Yeni'?'selected':''}>Yeni</option>
-              <option value='İndirim' ${p.badge==='İndirim'?'selected':''}>İndirim</option>
-              <option value='Popüler' ${p.badge==='Popüler'?'selected':''}>Popüler</option>
-            </select>
-          </div>
-          <div class='field-group'>
-            <label>Görsel Yolu</label>
-            <input type='text' id='mp-image-${idx}' value='${primaryImg}' placeholder='images/products/<id>.jpg'>
-          </div>
-          <div id='mp-msg-${idx}' style='font-size:12px;min-height:18px;color:#0f766e'></div>
-          <div class='actions-row'>
-            <button type='button' class='btn btn-primary' onclick='saveMultiProductCard(${idx})'>Kaydet</button>
-            <button type='button' class='btn btn-danger' onclick='deleteMultiProductCard(${idx})'>Sil</button>
-            <button type='button' class='btn btn-ghost' onclick='previewMultiImage(${idx})'>Önizleme</button>
-          </div>
-        `;
-        holder.appendChild(div);
-      });
-    } catch(err){ holder.innerHTML='<div style="color:#dc2626;padding:1rem;">Hata: '+err.message+'</div>'; }
-  }
-  function previewMultiImage(idx){
-    const input=document.getElementById('mp-image-'+idx); const prev=document.querySelector(`.img-holder[data-preview-for='mp-image-${idx}']`);
-    if(!input||!prev) return; const val=input.value.trim();
-    if(val){ prev.innerHTML=`<img src='${val}' alt='preview'/>`; } else { prev.innerHTML='<span style="color:#9ca3af;font-size:12px">Görsel yok</span>'; }
-  }
-  function openGalleryPickerForMulti(targetId){ __galleryTargetInputId = targetId; openGalleryPickerForProduct(); }
-  async function saveMultiProductCard(idx){
-    const msg=document.getElementById('mp-msg-'+idx); if(msg) msg.textContent='⏳ Kaydediliyor...';
-    try {
-      const idEl=document.getElementById('mp-id-'+idx);
-      const nameEl=document.getElementById('mp-name-'+idx);
-      const priceEl=document.getElementById('mp-price-'+idx);
-      const badgeEl=document.getElementById('mp-badge-'+idx);
-      const imgEl=document.getElementById('mp-image-'+idx);
-      let id=idEl.value.trim();
-      if(!id){ id='P'+Date.now()+idx; idEl.value=id; }
-      const name=nameEl.value.trim();
-      const price=parseFloat(priceEl.value)||0;
-      const badge=badgeEl.value.trim();
-      const image=imgEl.value.trim();
-      const imgRe=/^images\/(products|gallery)\/[A-Za-z0-9._-]+\.(jpg|jpeg|png|webp)$/;
-      if(!imgRe.test(image)){ msg.textContent='Geçerli görsel yolu girin!'; return; }
-      // Fetch existing
-      const res=await fetch('products.json?'+Date.now());
-      if(!res.ok) throw new Error('products.json okunamadı');
-      const data=await res.json(); let products=Array.isArray(data.items)?data.items:(Array.isArray(data)?data:[]);
-      const existingIdx=products.findIndex(p=>p.id===id);
-      const nextObj={ id, name, price, badge, image, images:[image] };
-      if(existingIdx>=0) products[existingIdx]=nextObj; else products.push(nextObj);
-      // Prepare write
-      const token=localStorage.github_token||localStorage.gh_token;
-      if(!token){ msg.textContent='✅ Lokal güncellendi (GitHub token yok)'; return; }
-      // Need current sha
-      const apiUrl=`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/products.json`;
-      // get current content for sha
-      const headRes=await fetch(apiUrl+`?ref=site-release&_=${Date.now()}`, { headers:{'Authorization':'token '+token,'Accept':'application/vnd.github.v3+json'} });
-      if(!headRes.ok) throw new Error('SHA alınamadı '+headRes.status);
-      const headData=await headRes.json();
-      let attempt=0; const maxAttempts=3; let lastErr=null;
-      while(attempt<maxAttempts){
-        attempt++;
-        try {
-          const putRes=await fetch(apiUrl,{ method:'PUT', headers:{'Authorization':'token '+token,'Content-Type':'application/json'}, body:JSON.stringify({ message:`Çoklu düzenleme: ${id}`, content:toBase64(JSON.stringify({items:products,updatedAt:Date.now()},null,2)), sha:headData.sha, branch:'site-release'})});
-          if(putRes.status===409 && attempt<maxAttempts){ msg.textContent=`⚠️ Çakışma, yeniden deneniyor (${attempt})`; await new Promise(r=>setTimeout(r,500*attempt)); continue; }
-          if(!putRes.ok){ const t=await putRes.text(); throw new Error('Kaydetme hatası '+putRes.status+' '+t); }
-          msg.textContent='✅ Kaydedildi'; break;
-        } catch(e){ lastErr=e; if(attempt>=maxAttempts) throw e; }
-      }
-      previewMultiImage(idx);
-    } catch(err){ const msg=document.getElementById('mp-msg-'+idx); if(msg) msg.textContent='Hata: '+err.message; }
-  }
-  async function deleteMultiProductCard(idx){
-    const msg=document.getElementById('mp-msg-'+idx); if(msg) msg.textContent='⏳ Siliniyor...';
-    try {
-      const id=document.getElementById('mp-id-'+idx).value.trim();
-      if(!id){ msg.textContent='⚠️ Bu kart yeni, silinecek ürün yok'; return; }
-      const res=await fetch('products.json?'+Date.now()); if(!res.ok) throw new Error('products.json alınamadı');
-      const data=await res.json(); let products=Array.isArray(data.items)?data.items:(Array.isArray(data)?data:[]);
-      const newList=products.filter(p=>p.id!==id);
-      const token=localStorage.github_token||localStorage.gh_token;
-      if(!token){ msg.textContent='✅ Lokal silindi (GitHub token yok)'; return; }
-      const apiUrl=`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/products.json`;
-      const headRes=await fetch(apiUrl+`?ref=site-release&_=${Date.now()}`, { headers:{'Authorization':'token '+token,'Accept':'application/vnd.github.v3+json'} });
-      if(!headRes.ok) throw new Error('SHA alınamadı '+headRes.status);
-      const headData=await headRes.json();
-      const putRes=await fetch(apiUrl,{ method:'PUT', headers:{'Authorization':'token '+token,'Content-Type':'application/json'}, body:JSON.stringify({ message:`Ürün silindi: ${id}`, content:toBase64(JSON.stringify({items:newList,updatedAt:Date.now()},null,2)), sha:headData.sha, branch:'site-release'})});
-      if(!putRes.ok){ const t=await putRes.text(); throw new Error('Silme hatası '+putRes.status+' '+t); }
-      msg.textContent='✅ Silindi';
-      setTimeout(()=>{ populateMultiProductEditor(); }, 800);
-    } catch(err){ const msg=document.getElementById('mp-msg-'+idx); if(msg) msg.textContent='Hata: '+err.message; }
-  }
-  window.openMultiProductEditor=openMultiProductEditor;
-  window.closeMultiProductEditor=closeMultiProductEditor;
-  window.refreshMultiProductEditor=refreshMultiProductEditor;
-  window.saveMultiProductCard=saveMultiProductCard;
-  window.deleteMultiProductCard=deleteMultiProductCard;
-  window.openGalleryPickerForMulti=openGalleryPickerForMulti;
+  // Çoklu Ürün Düzenleyici tamamen kaldırıldı
   </script>
   
   <style>
