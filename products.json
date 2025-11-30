@@ -14,6 +14,13 @@
       "price": 0,
       "badge": "",
       "image": "images/products/IMG_1972.JPG"
+    },
+    {
+      "id": "IMG_1966.JPG",
+      "name": "Ürün IMG_1966",
+      "price": 0,
+      "badge": "",
+      "image": "images/products/IMG_1966.JPG"
     }
   ]
 }
