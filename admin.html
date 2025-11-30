@@ -1033,13 +1033,13 @@
                 const t=await putRes.text().catch(()=> '');
                 // Özel 403 mesajı: PAT kapsam/izin hatası, korunmuş dal, SSO veya repo erişimi
                 if(putRes.status===403){
-                  msgEl.innerHTML = '❌ GitHub kaydı başarısız (403).<br>'+ 
-                    '<div class="small" style="color:#64748b;margin-top:6px">Olası nedenler:<ul style="margin:6px 0;">
+                  msgEl.innerHTML = `❌ GitHub kaydı başarısız (403).<br>
+                    <div class="small" style="color:#64748b;margin-top:6px">Olası nedenler:<ul style="margin:6px 0;">
                     <li>Token kapsamı yetersiz: <b>repo</b> (classic) veya <b>fine-grained</b> token için bu repoya "Contents: Read & Write" izni verin.</li>
                     <li>Reponun yazma izni yok: Token sahibi hesabın <b>amtbrs-03/AMTBRS</b> reposunda yazma yetkisi olmalı.</li>
                     <li>Dal koruması: <b>site-release</b> dalı korumalıysa doğrudan yazmaya izin verilmeyebilir.</li>
                     <li>Kurumsal SSO: Organizasyon token’ı için SSO yetkilendirmesi gerekiyor.</li>
-                    </ul></div>';
+                    </ul></div>`;
                 }
                 throw new Error('GitHub kaydı başarısız: '+putRes.status+' '+t);
               }
@@ -1083,13 +1083,13 @@
             if(!putRes.ok){ 
               const t=await putRes.text().catch(()=> '');
               if(putRes.status===403){
-                msgEl.innerHTML = '❌ GitHub kaydı başarısız (403).<br>'+ 
-                  '<div class="small" style="color:#64748b;margin-top:6px">Olası nedenler:<ul style="margin:6px 0;">
+                msgEl.innerHTML = `❌ GitHub kaydı başarısız (403).<br>
+                  <div class="small" style="color:#64748b;margin-top:6px">Olası nedenler:<ul style="margin:6px 0;">
                   <li>Token kapsamı yetersiz: <b>repo</b> (classic) veya <b>fine-grained</b> token için bu repoya "Contents: Read & Write" izni verin.</li>
                   <li>Reponun yazma izni yok: Token sahibi hesabın <b>amtbrs-03/AMTBRS</b> reposunda yazma yetkisi olmalı.</li>
                   <li>Dal koruması: <b>site-release</b> dalı korumalıysa doğrudan yazmaya izin verilmeyebilir.</li>
                   <li>Kurumsal SSO: Organizasyon token’ı için SSO yetkilendirmesi gerekiyor.</li>
-                  </ul></div>';
+                  </ul></div>`;
               }
               throw new Error('GitHub kaydı başarısız: '+putRes.status+' '+t);
             }
