@@ -601,76 +601,7 @@
     const newHash = await sha256Hex(newPass);
     const nextCfg = { ...(cfg||{}), adminPasswordHash: newHash };
 
-        // Toplu eşleme işlevleri
-        const bulkIn = document.getElementById('bulkImageMapInput');
-        const bulkVerifyBtn = document.getElementById('bulkImageVerifyBtn');
-        const bulkApplyBtn = document.getElementById('bulkImageApplyBtn');
-        const bulkMsg = document.getElementById('bulkImageMapMsg');
-        function setBulkMsg(m, ok){ if(bulkMsg){ bulkMsg.textContent=m; bulkMsg.style.color = ok ? '#065f46' : '#b91c1c'; } }
-        function parseBulkLines(txt){
-          return txt.split(/\n+/).map(l=>l.trim()).filter(Boolean).map(l=>{
-            const parts = l.split(',').map(x=>x.trim()).filter(Boolean);
-            if(parts.length===1){ return { id: parts[0], path:null }; }
-            return { id: parts[0], path: parts[1] };
-          });
-        }
-        async function bulkVerify(lines){
-          const results=[];
-          for(const item of lines){
-            const norm = normalizeProductId(item.id);
-            const path = item.path || (norm.hasExt ? `images/products/${norm.base}.${norm.ext}` : `images/products/${norm.base}.jpg`);
-            const ver = await verifyGitHubPathExists(path);
-            results.push({ id:item.id, requested:path, exists:ver.exists, actual:ver.actualPath, sha:ver.sha });
-          }
-          return results;
-        }
-        if(bulkVerifyBtn){
-          bulkVerifyBtn.addEventListener('click', async ()=>{
-            if(!bulkIn){ return; }
-            const lines = parseBulkLines(bulkIn.value);
-            if(!lines.length){ setBulkMsg('Liste boş.', false); return; }
-            setBulkMsg('Ön kontrol yapılıyor...', true);
-            const res = await bulkVerify(lines);
-            const ok = res.filter(r=>r.exists).length;
-            const missing = res.filter(r=>!r.exists).map(r=>r.requested);
-            setBulkMsg(`✅ ${ok} bulundu, ❌ ${missing.length} eksik. Eksik: ${missing.slice(0,5).join(' | ')}${missing.length>5?' ...':''}`, missing.length===0);
-          });
-        }
-        if(bulkApplyBtn){
-          bulkApplyBtn.addEventListener('click', async ()=>{
-            if(!bulkIn){ return; }
-            const token = getGitHubToken(); if(!token){ setBulkMsg('Token yok, önce ayarlayın.', false); return; }
-            const lines = parseBulkLines(bulkIn.value);
-            if(!lines.length){ setBulkMsg('Liste boş.', false); return; }
-            setBulkMsg('Doğrulama + products.json çekiliyor...', true);
-            const verRes = await bulkVerify(lines);
-            const toApply = verRes.filter(r=>r.exists);
-            if(!toApply.length){ setBulkMsg('Hiç geçerli dosya yok, işlem iptal.', false); return; }
-            // Fetch products.json
-            const owner='amtbrs-03'; const repo='AMTBRS'; const branch='site-release';
-            const url = `https://api.github.com/repos/${owner}/${repo}/contents/products.json?ref=${branch}`;
-            const getRes = await fetch(url, { headers:{ 'Accept':'application/vnd.github.v3+json','Authorization':'token '+token } });
-            if(!getRes.ok){ setBulkMsg('products.json alınamadı: '+getRes.status, false); return; }
-            const meta = await getRes.json();
-            let obj; try{ obj = JSON.parse(fromBase64((meta.content||'').replace(/\n/g,''))) || {}; }catch(e){ setBulkMsg('Parse hatası: '+(e.message||e), false); return; }
-            let list = Array.isArray(obj.items) ? obj.items : (Array.isArray(obj)?obj: null);
-            if(!list){ setBulkMsg('Beklenen format yok (items dizisi).', false); return; }
-            const notFound = [];
-            for(const r of toApply){
-              const idx = list.findIndex(p=>String(p.id)===String(r.id) || String(p.id)===String(r.id+'.jpg'));
-              if(idx===-1){ notFound.push(r.id); continue; }
-              list[idx].image = r.actual || r.requested;
-            }
-            if(obj.items) obj.items = list; else obj = list;
-            if(typeof obj === 'object') obj.updatedAt = Date.now();
-            const newJson = JSON.stringify(obj, null, 2);
-            setBulkMsg('GitHub’a yazılıyor...', true);
-            const putRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/products.json`, { method:'PUT', headers:{ 'Accept':'application/vnd.github.v3+json','Content-Type':'application/json','Authorization':'token '+token }, body: JSON.stringify({ message:`chore(admin): toplu resim eşleme (${toApply.length} ürün)`, content: toBase64(newJson), branch, sha: meta.sha }) });
-            if(!putRes.ok){ const t=await putRes.text().catch(()=> ''); setBulkMsg('Yazma hatası: '+putRes.status+' '+t, false); return; }
-            setBulkMsg(`✓ Güncellendi. Başarılı: ${toApply.length}, Ürün bulunamadı: ${notFound.length}${notFound.length?(' -> '+notFound.slice(0,5).join(', ')+(notFound.length>5?' ...':'')):''}`, true);
-            if(typeof renderAdminProducts==='function'){ try{ renderAdminProducts(); }catch(_){ } }
-          });
-        }
+
     const putUrl = `https://api.github.com/repos/${owner}/${repo}/contents/admin-config.json`;
     const payload = { message: 'chore(admin): admin parolası güncellendi', content: toBase64(JSON.stringify(nextCfg, null, 2)), branch, sha };
     const res = await fetch(putUrl, { method:'PUT', headers:{ 'Content-Type':'application/json', 'Authorization':'token '+token }, body: JSON.stringify(payload) });
@@ -963,15 +894,7 @@
           <button id="applyGhImagePath" class="btn">products.json’a Kaydet</button>
         </div>
         <div id="ghUploadMsg" class="small" style="margin-top:0.5rem;color:#64748b"></div>
-        <hr style="margin:1rem 0;border:none;border-top:1px solid #e2e8f0" />
-        <div class="section-header" style="font-size:0.95rem">📦 Toplu Resim Eşleme (CSV)</div>
-        <div class="small" style="color:#64748b;margin:0.5rem 0">Her satır: <code>urunId,resimYolu</code> veya sadece <code>urunId</code> (otomatik varsayılan <code>images/products/&lt;urunId&gt;.jpg</code>). Örnek:<br/><code>p_123,images/products/p_123.png</code><br/><code>img_1974.jpg</code></div>
-        <textarea id="bulkImageMapInput" rows="4" placeholder="p_1,images/products/p_1.jpg\np_2,images/products/p_2.png" style="width:100%;padding:0.5rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.75rem"></textarea>
-        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.5rem">
-          <button id="bulkImageVerifyBtn" class="btn btn-ghost" type="button" style="font-size:0.75rem">Ön Kontrol</button>
-          <button id="bulkImageApplyBtn" class="btn" type="button" style="font-size:0.75rem">Toplu Güncelle</button>
-        </div>
-        <div id="bulkImageMapMsg" class="small" style="margin-top:0.5rem;color:#64748b"></div>
+
       </div>
 
       <div class="card">
