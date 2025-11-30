@@ -458,8 +458,8 @@
 
       try {
         // Fetch orders from GitHub with cache busting
-        const owner = 'amtbrs';
-        const repo = 'ern-cicek';
+        const owner = 'amtbrs-03';
+        const repo = 'AMTBRS';
         const branch = 'site-release';
         const cacheBuster = Date.now();
         const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/orders?ref=${branch}&_cb=${cacheBuster}`;
@@ -731,8 +731,8 @@
     // Periyodik sipariş kontrolü (30 saniyede bir)
     setInterval(async () => {
       try {
-        const owner = 'amtbrs';
-        const repo = 'ern-cicek';
+        const owner = 'amtbrs-03';
+        const repo = 'AMTBRS';
         const branch = 'site-release';
         const cacheBuster = Date.now();
         const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/orders?ref=${branch}&_cb=${cacheBuster}`;
