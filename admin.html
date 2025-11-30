@@ -1236,6 +1236,9 @@ async function verifyGitHubPathExists(path){
               setMsg('Hata: '+(e.message||e), false);
             }
             applyBtn.innerHTML = origText; applyBtn.disabled=false;
+            // === applyGhImagePath click handler sonu ===
+          }); // end applyGhImagePath click handler
+        } // end if(applyBtn)
 
         // Inline edit helpers
         function openInlineEdit(id){
@@ -1306,7 +1309,7 @@ async function verifyGitHubPathExists(path){
             if(open){ open.style.display='none'; const id=open.id.replace('edit-panel-',''); const btn=document.querySelector('.edit-toggle[data-id="'+id+'"]'); if(btn){ btn.textContent='Düzenle'; btn.setAttribute('aria-expanded','false'); } }
           }
         });
-        <!-- stray old handler removed -->
+        // stray old handler removed (HTML comment converted to JS comment)
       // catch block removed; this was not inside a try
     // Kapanmamış IIFE kaldırıldı
 
