@@ -900,11 +900,16 @@
           document.getElementById('editProductImage').value=product.image||'';
           document.getElementById('editProductMsg').textContent='';
           panel.classList.add('active');
+          panel.style.display=''; // Remove inline display:none to let CSS class take over
           console.log('[admin] Added active class. Classes:', panel.className);
           document.body.style.overflow='hidden';
         }
         function closeProductEditPanel(){
-          document.getElementById('productEditPanel').classList.remove('active');
+          const panel = document.getElementById('productEditPanel');
+          if(panel) {
+            panel.classList.remove('active');
+            panel.style.display='none'; // Restore inline display:none
+          }
           document.body.style.overflow='';
         }
         // Export to global scope immediately
