@@ -7,6 +7,13 @@
       "price": 0,
       "badge": "",
       "image": "images/products/IMG_1974.JPG"
+    },
+    {
+      "id": "IMG_1972.JPG",
+      "name": "Ürün IMG_1972",
+      "price": 0,
+      "badge": "",
+      "image": "images/products/IMG_1972.JPG"
     }
   ]
 }
