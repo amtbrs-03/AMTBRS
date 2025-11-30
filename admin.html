@@ -286,10 +286,7 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.04);
       transition: transform 0.2s, box-shadow 0.2s;
     }
-    .prod-item:hover{
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(16,185,129,0.15);
-    }
+    /* önceki hatalı eklenmiş satırlar kaldırıldı */
 
     .actions{display:flex;gap:0.5rem;margin-top:0.75rem;flex-wrap:wrap}
     .meta{font-size:0.875rem;color:#64748b;line-height:1.5}
@@ -329,6 +326,7 @@
       h1{font-size:1.5rem}
       .action-bar{padding:1rem}
       .btn{padding:0.6rem 1.2rem;font-size:0.875rem}
+                    <button class='btn btn-ghost' onclick='verifyInlineImagePath("${p.id}")'>Görsel Doğrula</button>
     }
 
     /* Modal Styles */
@@ -724,7 +722,7 @@
             const products = Array.isArray(data.items) ? data.items : (Array.isArray(data) ? data : []);
             if (!products.length){ container.innerHTML = '<div style="color:#b91c1c">Hiç ürün bulunamadı.</div>'; return; }
             container.innerHTML = '';
-            products.forEach(p=>{
+            products.forEach((p,i)=>{
               const card = document.createElement('div');
               card.className = 'prod-item';
               card.setAttribute('data-id', p.id);
@@ -741,6 +739,8 @@
                 <div class='actions'>
                   <button class='btn edit-toggle' aria-expanded='false' data-id='${p.id}' onclick='toggleInlineEdit("${p.id}", this)'>Düzenle</button>
                   <button class='btn btn-danger' onclick='deleteAdminProduct("${p.id}")'>Sil</button>
+                  <button class='btn btn-ghost' onclick='moveProduct("${p.id}","up")' ${i===0?'disabled aria-disabled="true"':''}>⬆︎</button>
+                  <button class='btn btn-ghost' onclick='moveProduct("${p.id}","down")' ${i===(products.length-1)?'disabled aria-disabled="true"':''}>⬇︎</button>
                 </div>
                 <div class='prod-edit-panel' id='edit-panel-${p.id}' style='display:none;margin-top:8px;padding:10px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;'>
                   <div style='display:grid;gap:6px;'>
@@ -766,6 +766,7 @@
                   <div style='display:flex;gap:6px;margin-top:8px;'>
                     <button class='btn' onclick='saveInlineEdit("${p.id}")'>Kaydet</button>
                     <button class='btn btn-ghost' onclick='cancelInlineEdit("${p.id}")'>İptal</button>
+                    <button class='btn btn-ghost' onclick='verifyInlineImagePath("${p.id}")'>Görsel Doğrula</button>
                   </div>
                 </div>`;
               container.appendChild(card);
@@ -1068,6 +1069,71 @@ function normalizeProductId(raw){
   if(m){ return { base: m[1], ext: m[2].toLowerCase(), hasExt: true }; }
   return { base: raw, ext: 'jpg', hasExt: false };
 }
+
+        // Ürün sıralama (yukarı/aşağı)
+        async function moveProduct(id, dir){
+          try {
+            const token = getGitHubToken();
+            // Lokal listeyi al
+            const res = await fetch('products.json?' + Date.now());
+            if(!res.ok) throw new Error('products.json alınamadı');
+            const data = await res.json();
+            let list = Array.isArray(data.items) ? data.items : (Array.isArray(data)?data:[]);
+            const idx = list.findIndex(p=>String(p.id)===String(id));
+            if(idx===-1) throw new Error('Ürün bulunamadı');
+            const newIdx = dir==='up'? idx-1 : idx+1;
+            if(newIdx < 0 || newIdx >= list.length) return; // sınır dışı – işlem yok
+            // Lokal swap
+            const tmp = list[newIdx]; list[newIdx] = list[idx]; list[idx] = tmp;
+
+            if(token){
+              // Remote güncelle
+              const owner='amtbrs-03'; const repo='AMTBRS';
+              const url = `https://api.github.com/repos/${owner}/${repo}/contents/products.json?ref=site-release`;
+              const getRes = await fetch(url, { headers:{ 'Accept':'application/vnd.github.v3+json','Authorization':'token '+token } });
+              if(!getRes.ok) throw new Error('Remote products.json alınamadı');
+              const meta = await getRes.json();
+              let robj; try{ robj = JSON.parse(fromBase64((meta.content||'').replace(/\n/g,'')))||{}; }catch{ robj={}; }
+              let rlist = Array.isArray(robj.items)?robj.items:(Array.isArray(robj)?robj:[]);
+              const ridx = rlist.findIndex(p=>String(p.id)===String(id));
+              if(ridx!==-1){
+                const rNewIdx = dir==='up'? ridx-1 : ridx+1;
+                if(rNewIdx>=0 && rNewIdx < rlist.length){ const t = rlist[rNewIdx]; rlist[rNewIdx]=rlist[ridx]; rlist[ridx]=t; }
+              }
+              const newObj = { updatedAt: Date.now(), items: rlist };
+              const putRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/products.json`, {
+                method:'PUT', headers:{ 'Content-Type':'application/json','Authorization':'token '+token },
+                body: JSON.stringify({ message:`chore(admin): ürün sırası değişti (${id} ${dir})`, content: toBase64(JSON.stringify(newObj,null,2)), branch:'site-release', sha: meta.sha })
+              });
+              if(!putRes.ok) throw new Error('Remote sıra güncellemesi başarısız');
+            }
+            renderAdminProducts();
+          } catch(e){ alert('Sıralama hatası: '+(e.message||e)); }
+        }
+
+        // Inline görsel doğrulama
+        function verifyInlineImagePath(id){
+          const msg = document.getElementById('ep-msg-'+id);
+          const imageEl = document.getElementById('ep-image-'+id);
+          if(!imageEl){ return; }
+          const val = imageEl.value.trim();
+          if(!val){ if(msg){ msg.style.color='#b91c1c'; msg.textContent='Görsel yolu boş'; } return; }
+          // Emoji veya harici URL ise doğrulama atlanır
+          if(!/^images\/products\//.test(val) || !/(jpg|jpeg|png|webp)$/i.test(val)){
+            if(msg){ msg.style.color='#0f766e'; msg.textContent='Doğrulama atlandı (emoji/özel yol)'; }
+            return;
+          }
+          if(msg){ msg.style.color='#0f766e'; msg.textContent='Doğrulanıyor...'; }
+          verifyGitHubPathExists(val).then(r=>{
+            if(msg){
+              if(r.exists){ msg.style.color='#065f46'; msg.textContent='✅ Bulundu: '+(r.actualPath||val); }
+              else { msg.style.color='#b91c1c'; msg.textContent='❌ Bulunamadı: '+val; }
+            }
+          }).catch(err=>{ if(msg){ msg.style.color='#b91c1c'; msg.textContent='Hata: '+(err.message||err); } });
+        }
+
+        window.moveProduct = moveProduct;
+        window.verifyInlineImagePath = verifyInlineImagePath;
 async function verifyGitHubPathExists(path){
   // Geriye { exists:boolean, actualPath:string|null, sha:string|null } döner
   try{
@@ -1277,9 +1343,16 @@ try {
             const imageEl=document.getElementById('ep-image-'+id);
             if(!nameEl||!priceEl||!badgeEl||!imageEl) throw new Error('Alanlar bulunamadı');
             const name=nameEl.value.trim();
-            const price=parseFloat(priceEl.value)||0;
+            const priceValue = priceEl.value.trim();
+            const price=parseFloat(priceValue);
+            if(isNaN(price) || price < 0) throw new Error('Geçersiz fiyat');
             const badge=badgeEl.value.trim();
             const image=imageEl.value.trim();
+            // Görsel doğrulama (sadece repo içi standart yol ise)
+            if(/^images\/products\/.+\.(jpg|jpeg|png|webp)$/i.test(image)){
+              const chk = await verifyGitHubPathExists(image);
+              if(!chk.exists) throw new Error('Görsel bulunamadı: '+image);
+            }
             const res = await fetch('products.json?' + Date.now()); if(!res.ok) throw new Error('products.json alınamadı');
             const data = await res.json();
             const products = Array.isArray(data.items) ? data.items : (Array.isArray(data)?data:[]);
