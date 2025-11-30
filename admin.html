@@ -412,6 +412,109 @@
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.9rem; }
     .wrap { word-break: break-word; overflow-wrap: anywhere; }
     
+    /* Gallery Styles */
+    .gallery-item {
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    .gallery-item:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+    .gallery-img-wrapper {
+      width: 100%;
+      height: 200px;
+      overflow: hidden;
+      background: #f3f4f6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .gallery-img-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+    .gallery-item:hover .gallery-img-wrapper img {
+      transform: scale(1.05);
+    }
+    .gallery-item-info {
+      padding: 0.75rem;
+      flex: 1;
+    }
+    .gallery-item-name {
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: #0f172a;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 0.25rem;
+    }
+    .gallery-item-size {
+      font-size: 0.75rem;
+      color: #64748b;
+    }
+    .gallery-item-actions {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      background: #f9fafb;
+      border-top: 1px solid #e5e7eb;
+    }
+    .btn-icon {
+      flex: 1;
+      padding: 0.5rem;
+      border: none;
+      background: white;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1.1rem;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .btn-icon:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    .btn-icon.btn-danger {
+      background: #fee;
+      color: #dc2626;
+    }
+    .btn-icon.btn-danger:hover {
+      background: #fcc;
+    }
+    
+    /* Gallery Picker Styles */
+    .gallery-picker-item {
+      transition: all 0.2s ease;
+    }
+    .gallery-picker-item:hover {
+      transform: scale(1.05);
+    }
+    .gallery-picker-item:hover img {
+      transform: scale(1.1);
+    }
+    .gallery-picker-item:active {
+      transform: scale(0.95);
+    }
+    
+    /* Toast animations */
+    @keyframes slideIn {
+      from { transform: translateX(400px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOut {
+      from { transform: translateX(0); opacity: 1; }
+      to { transform: translateX(400px); opacity: 0; }
+    }
+    
     /* Responsive */
     @media(max-width:768px){
       .admin-header{ padding:1.5rem; }
@@ -484,7 +587,10 @@
           </select>
         </label>
         <label>Görsel Yolu
-          <input id="editProductImage" type="text" placeholder="images/products/<id>.jpg" required>
+          <div style="display:flex;gap:0.5rem;align-items:center;">
+            <input id="editProductImage" type="text" placeholder="images/products/<id>.jpg" required style="flex:1;">
+            <button type="button" onclick="openGalleryPickerForProduct()" class="btn btn-ghost" style="padding:0.5rem 0.75rem;font-size:0.85rem;" title="Galeriden seç">📸</button>
+          </div>
         </label>
         <div id="editProductMsg" style="margin:8px 0;color:#c00"></div>
         <button type="submit" id="saveProductBtn">Kaydet</button>
@@ -698,6 +804,7 @@
       <div class="action-bar">
         <button id="saveAll" class="btn">💾 Tüm Değişiklikleri Kaydet</button>
         <button id="loadUsersBtn" class="btn">👥 Kullanıcıları Yükle</button>
+        <button id="openGalleryBtn" class="btn">📸 Galeri</button>
         <a href="siparisler.html" class="btn" style="text-decoration:none;">📦 Müşteri Siparişleri</a>
         <a href="faturalar.html" class="btn" style="text-decoration:none;background:linear-gradient(135deg,#f59e0b 0%,#d97706 100%);box-shadow:0 4px 15px rgba(245,158,11,0.4);">🧾 Faturalar</a>
       </div>
@@ -3307,6 +3414,310 @@ try {
   <div id="vScrollRail" aria-label="Sayfa kaydırma çubuğu" aria-hidden="false">
     <div id="vScrollThumb"></div>
   </div>
+  
+  <!-- Gallery Functions -->
+  <script>
+  // Gallery Modal Functions
+  let galleryViewMode = 'grid'; // 'grid' or 'list'
+  
+  function openGalleryModal() {
+    const modal = document.getElementById('galleryModal');
+    if (modal) {
+      modal.style.display = 'flex';
+      modal.classList.add('active');
+      loadGalleryImages();
+    }
+  }
+  
+  function closeGalleryModal() {
+    const modal = document.getElementById('galleryModal');
+    if (modal) {
+      modal.style.display = 'none';
+      modal.classList.remove('active');
+    }
+  }
+  
+  async function loadGalleryImages() {
+    const grid = document.getElementById('galleryGrid');
+    const status = document.getElementById('galleryStatus');
+    if (!grid || !status) return;
+    
+    status.textContent = '⏳ Resimler yükleniyor...';
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#64748b;padding:2rem;">Yükleniyor...</div>';
+    
+    try {
+      const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token') || '');
+      const owner = 'amtbrs-03';
+      const repo = 'AMTBRS';
+      const branch = 'site-release';
+      const path = 'images/gallery';
+      
+      const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`;
+      const headers = { 'Accept': 'application/vnd.github.v3+json' };
+      if (token) headers['Authorization'] = 'token ' + token;
+      
+      const res = await fetch(url, { headers });
+      if (!res.ok) {
+        if (res.status === 404) {
+          grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#64748b;padding:2rem;">📂 Galeri klasörü boş veya henüz oluşturulmamış.</div>';
+          status.textContent = 'Galeri boş.';
+          return;
+        }
+        throw new Error('GitHub API hatası: ' + res.status);
+      }
+      
+      const files = await res.json();
+      const images = files.filter(f => f.type === 'file' && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(f.name));
+      
+      if (images.length === 0) {
+        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#64748b;padding:2rem;">📂 Galeri klasöründe resim bulunamadı.</div>';
+        status.textContent = 'Galeri boş.';
+        return;
+      }
+      
+      status.textContent = `✅ ${images.length} resim bulundu.`;
+      
+      grid.innerHTML = images.map(img => {
+        const imgUrl = img.download_url || `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}/${img.name}`;
+        const relativePath = `images/gallery/${img.name}`;
+        
+        return `
+          <div class="gallery-item" data-path="${relativePath}" data-sha="${img.sha}">
+            <div class="gallery-img-wrapper">
+              <img src="${imgUrl}" alt="${img.name}" loading="lazy" />
+            </div>
+            <div class="gallery-item-info">
+              <div class="gallery-item-name" title="${img.name}">${img.name}</div>
+              <div class="gallery-item-size">${formatBytes(img.size)}</div>
+            </div>
+            <div class="gallery-item-actions">
+              <button class="btn-icon" onclick="copyGalleryPath('${relativePath}')" title="Yolu kopyala">📋</button>
+              <button class="btn-icon" onclick="previewGalleryImage('${imgUrl}', '${img.name}')" title="Önizle">👁️</button>
+              <button class="btn-icon btn-danger" onclick="deleteGalleryImage('${img.name}', '${img.sha}')" title="Sil">🗑️</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+    } catch (e) {
+      status.textContent = '❌ Hata: ' + (e.message || e);
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#dc2626;padding:2rem;">❌ Yükleme hatası: ' + (e.message || e) + '</div>';
+    }
+  }
+  
+  function formatBytes(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  }
+  
+  function copyGalleryPath(path) {
+    navigator.clipboard.writeText(path).then(() => {
+      showToast('✅ Yol kopyalandı: ' + path);
+    }).catch(e => {
+      showToast('❌ Kopyalama hatası');
+    });
+  }
+  
+  function previewGalleryImage(url, name) {
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
+    modal.style.display = 'flex';
+    modal.innerHTML = `
+      <div class="modal-content" style="max-width:90vw;max-height:90vh;padding:1rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+          <h3 style="margin:0;">${name}</h3>
+          <button class="close-modal" onclick="this.closest('.modal').remove()">×</button>
+        </div>
+        <div style="text-align:center;overflow:auto;max-height:75vh;">
+          <img src="${url}" alt="${name}" style="max-width:100%;height:auto;border-radius:8px;" />
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  }
+  
+  async function deleteGalleryImage(filename, sha) {
+    if (!confirm(`"${filename}" resmini silmek istediğinize emin misiniz?`)) return;
+    
+    try {
+      const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token') || '');
+      if (!token) throw new Error('GitHub token gerekli!');
+      
+      const owner = 'amtbrs-03';
+      const repo = 'AMTBRS';
+      const branch = 'site-release';
+      const path = `images/gallery/${filename}`;
+      
+      const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+      const res = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'token ' + token
+        },
+        body: JSON.stringify({
+          message: `chore(gallery): resim sil - ${filename}`,
+          sha: sha,
+          branch: branch
+        })
+      });
+      
+      if (!res.ok) throw new Error('Silme başarısız: ' + res.status);
+      
+      showToast('✅ Resim silindi: ' + filename);
+      loadGalleryImages();
+    } catch (e) {
+      showToast('❌ Hata: ' + (e.message || e));
+    }
+  }
+  
+  function openGitHubGalleryUpload() {
+    const owner = 'amtbrs-03';
+    const repo = 'AMTBRS';
+    const branch = 'site-release';
+    const path = 'images/gallery';
+    const url = `https://github.com/${owner}/${repo}/upload/${branch}/${path}`;
+    window.open(url, '_blank');
+    showToast('ℹ️ GitHub yükleme sayfası açıldı. Yükleme sonrası "🔄 Yenile" butonuna basın.');
+  }
+  
+  function toggleGalleryView() {
+    galleryViewMode = galleryViewMode === 'grid' ? 'list' : 'grid';
+    const grid = document.getElementById('galleryGrid');
+    if (grid) {
+      if (galleryViewMode === 'list') {
+        grid.style.gridTemplateColumns = '1fr';
+      } else {
+        grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(200px, 1fr))';
+      }
+    }
+    showToast(`Görünüm: ${galleryViewMode === 'grid' ? 'Izgara' : 'Liste'}`);
+  }
+  
+  function showToast(message) {
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#0f172a;color:#fff;padding:12px 18px;border-radius:8px;font-size:14px;z-index:10000;box-shadow:0 4px 12px rgba(0,0,0,0.3);animation:slideIn 0.3s ease;';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+      toast.style.animation = 'slideOut 0.3s ease';
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  }
+  
+  // Gallery picker for product image selection
+  async function openGalleryPickerForProduct() {
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
+    modal.style.display = 'flex';
+    modal.innerHTML = `
+      <div class="modal-content" style="max-width:900px;max-height:90vh;overflow-y:auto;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+          <h2 style="margin:0;">📸 Galeriden Resim Seç</h2>
+          <button class="close-modal" onclick="this.closest('.modal').remove()">×</button>
+        </div>
+        <div class="small" style="color:#64748b;margin-bottom:1rem;">
+          Ürün için kullanmak istediğiniz resmi seçin.
+        </div>
+        <div id="galleryPickerStatus" class="small" style="color:#64748b;margin-bottom:0.5rem;"></div>
+        <div id="galleryPickerGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:1rem;"></div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    
+    const grid = modal.querySelector('#galleryPickerGrid');
+    const status = modal.querySelector('#galleryPickerStatus');
+    
+    status.textContent = '⏳ Resimler yükleniyor...';
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#64748b;padding:2rem;">Yükleniyor...</div>';
+    
+    try {
+      const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token') || '');
+      const owner = 'amtbrs-03';
+      const repo = 'AMTBRS';
+      const branch = 'site-release';
+      const path = 'images/gallery';
+      
+      const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`;
+      const headers = { 'Accept': 'application/vnd.github.v3+json' };
+      if (token) headers['Authorization'] = 'token ' + token;
+      
+      const res = await fetch(url, { headers });
+      if (!res.ok) {
+        if (res.status === 404) {
+          grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#64748b;padding:2rem;">📂 Galeri boş.</div>';
+          status.textContent = 'Galeri boş.';
+          return;
+        }
+        throw new Error('GitHub API hatası: ' + res.status);
+      }
+      
+      const files = await res.json();
+      const images = files.filter(f => f.type === 'file' && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(f.name));
+      
+      if (images.length === 0) {
+        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#64748b;padding:2rem;">📂 Galeri boş.</div>';
+        status.textContent = 'Galeri boş.';
+        return;
+      }
+      
+      status.textContent = `✅ ${images.length} resim bulundu. Seçmek için tıklayın.`;
+      
+      grid.innerHTML = images.map(img => {
+        const imgUrl = img.download_url || `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}/${img.name}`;
+        const relativePath = `images/gallery/${img.name}`;
+        
+        return `
+          <div class="gallery-picker-item" onclick="selectGalleryImageForProduct('${relativePath}', this)" data-path="${relativePath}">
+            <div style="width:100%;height:150px;overflow:hidden;background:#f3f4f6;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+              <img src="${imgUrl}" alt="${img.name}" loading="lazy" style="width:100%;height:100%;object-fit:cover;transition:transform 0.2s;" />
+            </div>
+            <div style="font-size:0.75rem;color:#64748b;text-align:center;margin-top:0.25rem;word-break:break-word;">${img.name}</div>
+          </div>
+        `;
+      }).join('');
+      
+    } catch (e) {
+      status.textContent = '❌ Hata: ' + (e.message || e);
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#dc2626;padding:2rem;">❌ Yükleme hatası</div>';
+    }
+  }
+  
+  function selectGalleryImageForProduct(path, element) {
+    const input = document.getElementById('editProductImage');
+    if (input) {
+      input.value = path;
+      showToast('✅ Resim seçildi: ' + path);
+    }
+    // Close picker modal
+    const modal = element.closest('.modal');
+    if (modal) modal.remove();
+  }
+  
+  // Bind gallery button
+  document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('openGalleryBtn');
+    if (btn) {
+      btn.addEventListener('click', openGalleryModal);
+    }
+  });
+  
+  // Make functions global
+  window.openGalleryModal = openGalleryModal;
+  window.closeGalleryModal = closeGalleryModal;
+  window.loadGalleryImages = loadGalleryImages;
+  window.copyGalleryPath = copyGalleryPath;
+  window.previewGalleryImage = previewGalleryImage;
+  window.deleteGalleryImage = deleteGalleryImage;
+  window.openGitHubGalleryUpload = openGitHubGalleryUpload;
+  window.toggleGalleryView = toggleGalleryView;
+  window.openGalleryPickerForProduct = openGalleryPickerForProduct;
+  window.selectGalleryImageForProduct = selectGalleryImageForProduct;
+  </script>
+  
   <style>
     #vScrollRail{position:fixed;top:0;right:4px;width:10px;height:100vh;background:rgba(0,0,0,0.08);border-radius:5px;z-index:9998;backdrop-filter:blur(2px);display:block;}
     #vScrollRail:hover{background:rgba(0,0,0,0.15);}    
@@ -3370,6 +3781,29 @@ try {
     setTimeout(update, 1200);
   })();
   </script>
+  
+  <!-- Gallery Modal -->
+  <div id="galleryModal" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width:900px;max-height:90vh;overflow-y:auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+        <h2 style="margin:0;">📸 Resim Galerisi</h2>
+        <button class="close-modal" onclick="closeGalleryModal()">×</button>
+      </div>
+      <div class="small" style="color:#64748b;margin-bottom:1rem;">
+        GitHub'daki <code>images/gallery/</code> klasöründeki resimleri görüntüleyin, yükleyin ve yönetin.
+      </div>
+      
+      <div style="display:flex;gap:0.75rem;margin-bottom:1rem;flex-wrap:wrap;">
+        <button id="refreshGalleryBtn" class="btn" onclick="loadGalleryImages()">🔄 Yenile</button>
+        <button id="uploadToGalleryBtn" class="btn" onclick="openGitHubGalleryUpload()">⬆️ GitHub'da Yükle</button>
+        <button id="toggleGalleryGridBtn" class="btn btn-ghost" onclick="toggleGalleryView()">🔲 Görünüm</button>
+      </div>
+      
+      <div id="galleryStatus" class="small" style="color:#64748b;margin-bottom:0.5rem;min-height:1.2rem;"></div>
+      <div id="galleryGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;"></div>
+    </div>
+  </div>
+  
   <!-- DIAGNOSTIC: runtime self-test (temporary) -->
   <script>
   (function(){
