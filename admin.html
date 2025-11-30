@@ -993,6 +993,41 @@
         window.renderAdminProducts = renderAdminProducts;
         window.deleteAdminProduct = deleteAdminProduct;
 
+        // Global capture listener to ensure product action buttons always work,
+        // even if other handlers stop propagation.
+        if(!window.__adminGlobalActionBound){
+          document.addEventListener('click', function(e){
+            const btn = e.target.closest('button[data-action]');
+            if(!btn) return;
+            const action = btn.getAttribute('data-action');
+            const holder = btn.closest('[data-id]');
+            const id = (btn.getAttribute('data-id')) || (holder && holder.getAttribute('data-id')) || '';
+            if(!id) return;
+            try{
+              switch(action){
+                case 'edit':
+                  e.preventDefault();
+                  if(typeof openProductEditPanelById==='function') openProductEditPanelById(id);
+                  break;
+                case 'delete':
+                  e.preventDefault();
+                  if(typeof deleteAdminProduct==='function') deleteAdminProduct(id);
+                  break;
+                case 'verify-img':
+                  if(typeof verifyInlineImagePath==='function') verifyInlineImagePath(id);
+                  break;
+                case 'save-inline':
+                  if(typeof saveInlineEdit==='function') saveInlineEdit(id);
+                  break;
+                case 'cancel-inline':
+                  if(typeof cancelInlineEdit==='function') cancelInlineEdit(id);
+                  break;
+              }
+            }catch(err){ console.warn('[admin] global action error', action, err); }
+          }, { capture: true });
+          window.__adminGlobalActionBound = true;
+        }
+
         document.addEventListener('DOMContentLoaded', ()=>{
           renderAdminProducts();
           const btn = document.getElementById('refreshProductsBtn');
