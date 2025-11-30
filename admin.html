@@ -922,13 +922,22 @@
           const res=await fetch(url,{cache:'no-store',headers:{'Cache-Control':'no-cache'}}); 
           if(!res.ok) throw new Error('products.json alınamadı!');
           const data=await res.json(); let products=JSON.parse(fromBase64(data.content));
-          let idx=products.items.findIndex(p=>p.id===id); if(idx===-1) throw new Error('Ürün bulunamadı!');
           const imagesArr=[image].concat([image2,image3,image4].filter(Boolean));
           const next = { id, name, price, badge, image: imagesArr[0], images: imagesArr };
-          products.items[idx]=next; products.updatedAt=Date.now();
+          let idx=Array.isArray(products.items) ? products.items.findIndex(p=>String(p.id)===String(id)) : -1;
+          if(!Array.isArray(products.items)) products.items = Array.isArray(products) ? products : [];
+          if(idx===-1){
+            // Ürün yoksa ekle (upsert)
+            products.items.push(next);
+          } else {
+            // Ürün varsa güncelle
+            products.items[idx]=next;
+          }
+          products.updatedAt=Date.now();
           if(token){
             const putUrl=`https://api.github.com/repos/${repo}/contents/products.json`;
-            const putRes=await fetch(putUrl,{ method:'PUT', headers:{ 'Authorization':'token '+token,'Content-Type':'application/json' }, body:JSON.stringify({ message:`Ürün güncellendi: ${id}`, content:toBase64(JSON.stringify(products,null,2)), sha:data.sha, branch }) });
+            const actionMsg = (idx===-1) ? 'yeni ürün eklendi' : 'ürün güncellendi';
+            const putRes=await fetch(putUrl,{ method:'PUT', headers:{ 'Authorization':'token '+token,'Content-Type':'application/json' }, body:JSON.stringify({ message:`admin: ${actionMsg}: ${id}`, content:toBase64(JSON.stringify(products,null,2)), sha:data.sha, branch }) });
             if(putRes.status===409 && attempt<maxAttempts){ 
               msgEl.textContent=`⚠️ Çakışma algılandı, ${500*attempt}ms sonra tekrar...`;
               await new Promise(r=>setTimeout(r,500*attempt)); 
