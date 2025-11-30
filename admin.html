@@ -1011,15 +1011,19 @@
             if(!container.__delegated){
               container.addEventListener('click', (e)=>{
                 const btn = e.target.closest('button[data-action]');
-                if(!btn) return;
+                if(!btn) { console.log('[admin] Click not on action button'); return; }
                 const action = btn.getAttribute('data-action');
                 const id = btn.getAttribute('data-id');
-                if(!id) return;
+                console.log('[admin] Button clicked:', { action, id, btn });
+                if(!id) { console.warn('[admin] No ID found on button'); return; }
                 try {
                   switch(action){
                     case 'edit':
+                      console.log('[admin] Edit action triggered for ID:', id);
                       try{
+                        console.log('[admin] openProductEditPanelById type:', typeof openProductEditPanelById);
                         if(typeof openProductEditPanelById==='function'){
+                          console.log('[admin] Calling openProductEditPanelById');
                           openProductEditPanelById(id);
                           break;
                         }
