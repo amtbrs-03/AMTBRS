@@ -4475,6 +4475,14 @@ try {
   
   <!-- DIAGNOSTIC: runtime self-test (temporary) -->
   <script>
+  // Eksik fonksiyon koruması: gerektiğinde no-op tanımları
+  (function(){
+    try {
+      if (typeof window.addEditButtonsToProductCards !== 'function') {
+        window.addEditButtonsToProductCards = function(){};
+      }
+    } catch(_){}
+  })();
   (function(){
     try {
       const needed = ['renderAdminProducts','deleteAdminProduct','openProductEditPanelById','addEditButtonsToProductCards'];
