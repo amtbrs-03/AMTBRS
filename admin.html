@@ -914,6 +914,53 @@
     }
     window.toBase64 = toBase64;
   }
+  // GitHub Token yönetimi: tarayıcıda güvenli anahtar adıyla sakla ve her yüklemede çağır
+  (function(){
+    function setGitHubToken(tok){
+      try {
+        if(!tok){ localStorage.removeItem('github_token'); localStorage.removeItem('gh_token'); return; }
+        localStorage.setItem('github_token', tok);
+        localStorage.setItem('gh_token', tok);
+      } catch(_){}
+    }
+    function getGitHubToken(){
+      try {
+        return localStorage.getItem('github_token') || localStorage.getItem('gh_token') || '';
+      } catch(_){ return ''; }
+    }
+    async function validateGitHubToken(tok){
+      if(!tok) return false;
+      try {
+        const res = await fetch('https://api.github.com/user', { headers: { 'Authorization': 'token '+tok } });
+        return res.ok;
+      } catch(_){ return false; }
+    }
+    // Sayfa yüklendiğinde token'ı bellekten al, geçerliyse kullan; değilse uyarı ver.
+    (async function initToken(){
+      const tok = getGitHubToken();
+      if(tok){
+        const ok = await validateGitHubToken(tok);
+        if(!ok){
+          try { localStorage.removeItem('github_token'); localStorage.removeItem('gh_token'); } catch(_){}
+          const notice = document.getElementById('patNotice'); if(notice) notice.style.display='block';
+        }
+      } else {
+        const notice = document.getElementById('patNotice'); if(notice) notice.style.display='block';
+      }
+    })();
+    // Diğer scriptler erişebilsin diye global export
+    window.setGitHubToken = setGitHubToken;
+    window.getGitHubToken = getGitHubToken;
+    window.validateGitHubToken = validateGitHubToken;
+    // storage değişirse otomatik senkron
+    window.addEventListener('storage', function(e){
+      if(e.key==='github_token' || e.key==='gh_token'){
+        const notice = document.getElementById('patNotice');
+        const has = getGitHubToken();
+        if(notice) notice.style.display = has ? 'none' : 'block';
+      }
+    });
+  })();
   if (typeof window.fromBase64 !== 'function') {
     function fromBase64(b64){
       try {
