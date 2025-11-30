@@ -548,6 +548,40 @@
       .form-group label{ font-size:0.85rem; }
     }
   </style>
+  <script>
+  // Lightweight diagnostics: shows runtime JS errors and logs edit-button clicks
+  (function adminDiagnostics(){
+    try{
+      const enabled = localStorage.getItem('admin_diag') === 'true';
+      if(!enabled) return;
+      // Error banner
+      const banner = document.createElement('div');
+      banner.id = 'admin-error-banner';
+      banner.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:9999;background:#fee2e2;color:#7f1d1d;padding:8px 12px;font:13px/1.4 system-ui;box-shadow:0 2px 6px rgba(0,0,0,0.1)';
+      banner.textContent = 'Diagnostics aktif: hata yok';
+      document.addEventListener('DOMContentLoaded', ()=>{ document.body.appendChild(banner); });
+      window.addEventListener('error', function(ev){
+        try{
+          const msg = (ev && ev.message) ? ev.message : String(ev);
+          banner.textContent = 'JS Error: ' + msg + (ev && ev.filename ? (' @ ' + ev.filename + ':' + ev.lineno) : '');
+        }catch(_){ /* ignore */ }
+      });
+      window.addEventListener('unhandledrejection', function(ev){
+        try{ banner.textContent = 'Unhandled Rejection: ' + (ev && ev.reason ? (ev.reason.message||String(ev.reason)) : 'unknown'); }catch(_){}
+      });
+      // Edit button click logger
+      document.addEventListener('click', function(e){
+        const btn = e.target.closest('button[data-action="edit"], .edit-btn');
+        if(!btn) return;
+        const holder = btn.closest('[data-id]');
+        const id = (btn.getAttribute('data-id')) || (holder && holder.getAttribute('data-id')) || '';
+        const fnType = typeof window.openProductEditPanelById;
+        console.log('[diag] edit click', { id, fnType, btn });
+        if(banner){ banner.textContent = 'Edit click: id='+id+' fnType='+fnType; }
+      }, { capture:true });
+    }catch(e){ /* diagnostics should never break page */ }
+  })();
+  </script>
 
 </head>
 <body>
