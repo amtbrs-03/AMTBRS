@@ -1982,21 +1982,32 @@ try {
             if (getRes.ok){ const j=await getRes.json(); sha=j.sha; remoteObj=JSON.parse(fromBase64(j.content))||remoteObj; }
           } catch(e){ console.warn('[admin] remote fetch hata', e); }
           if(!Array.isArray(remoteObj.items)) remoteObj.items=[];
-          // Apply inline edits
-            panels.forEach(panel=>{
-              const id = panel.id.replace('edit-panel-','');
-              const nameEl=document.getElementById('ep-name-'+id);
-              const priceEl=document.getElementById('ep-price-'+id);
-              const badgeEl=document.getElementById('ep-badge-'+id);
-              const imageEl=document.getElementById('ep-image-'+id);
-              if(!nameEl||!priceEl||!badgeEl||!imageEl) return;
-              const name=nameEl.value.trim();
-              const price=parseFloat(priceEl.value)||0;
-              const badge=badgeEl.value.trim();
-              const image=imageEl.value.trim();
-              const idx = remoteObj.items.findIndex(p=>String(p.id)===String(id));
-              if(idx!==-1){ remoteObj.items[idx] = { ...remoteObj.items[idx], name, price, badge, image }; }
-            });
+          // Apply inline edits with validation
+          const errors = [];
+          for(const panel of panels){
+            const id = panel.id.replace('edit-panel-','');
+            const nameEl=document.getElementById('ep-name-'+id);
+            const priceEl=document.getElementById('ep-price-'+id);
+            const badgeEl=document.getElementById('ep-badge-'+id);
+            const imageEl=document.getElementById('ep-image-'+id);
+            if(!nameEl||!priceEl||!badgeEl||!imageEl){ errors.push(id+': alanlar yok'); continue; }
+            const name=nameEl.value.trim();
+            const priceRaw=priceEl.value.trim();
+            const price=parseFloat(priceRaw);
+            if(isNaN(price) || price < 0){ errors.push(id+': geçersiz fiyat'); continue; }
+            const badge=badgeEl.value.trim();
+            const image=imageEl.value.trim();
+            // Görsel path doğrulama: yalnızca repo içi standart pattern
+            if(/^images\/products\/.+\.(jpg|jpeg|png|webp)$/i.test(image)){
+              try {
+                const chk = await verifyGitHubPathExists(image);
+                if(!chk.exists) errors.push(id+': görsel bulunamadı');
+              } catch(e){ errors.push(id+': görsel doğrulama hata'); }
+            }
+            const idx = remoteObj.items.findIndex(p=>String(p.id)===String(id));
+            if(idx!==-1){ remoteObj.items[idx] = { ...remoteObj.items[idx], name, price, badge, image }; }
+          }
+          if(errors.length){ alert('Kaydetme iptal edildi:\n' + errors.join('\n')); return; }
           remoteObj.updatedAt = Date.now();
           // Commit
           let committed=false;
