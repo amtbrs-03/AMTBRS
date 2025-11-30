@@ -450,6 +450,19 @@
 
 </head>
 <body>
+  <!-- Admin erişim için parola kapısı -->
+  <div id="adminAuthGate" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width:420px;">
+      <div class="section-header">🔐 Yönetici Parolası</div>
+      <div class="small" style="color:#64748b;margin-bottom:0.75rem">Admin sayfasına erişmek için parolayı girin. Parola GitHub üzerindeki yapılandırmadan doğrulanır.</div>
+      <div class="controls-row" style="gap:0.5rem;">
+        <input id="adminPassInput" type="password" placeholder="Parola" style="flex:1;min-width:220px" />
+        <button id="adminPassSubmit" class="btn" type="button">Giriş</button>
+      </div>
+      <div id="adminPassMsg" class="small" style="margin-top:0.5rem;color:#64748b"></div>
+      <div class="small" style="margin-top:0.75rem;color:#6b7280">Not: Parola doğrulaması istemciden GitHub Contents API üzerinden yapılır. Başarılı giriş tarayıcı oturumu için geçerlidir.</div>
+    </div>
+  </div>
   <!-- Reinserted product edit modal moved from top for proper early charset detection -->
   <section id="productEditPanel" class="modal" style="display:none">
     <div class="modal-content" style="max-width:420px">
@@ -496,8 +509,106 @@
   <script defer>
   window.addEventListener('DOMContentLoaded', function(){
     var adminUI = document.getElementById('adminUI');
-    if (adminUI) adminUI.style.display = 'block';
+    if (sessionStorage.getItem('admin_auth_ok') === '1') {
+      if (adminUI) adminUI.style.display = 'block';
+    } else {
+      // Kilidi göster
+      const gate = document.getElementById('adminAuthGate');
+      if (gate) gate.classList.add('active'), gate.style.display='flex';
+    }
+    const logoutBtn = document.getElementById('adminLogoutBtn');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', logoutAdminSession);
+    }
+    const loginBtn = document.getElementById('adminLoginBtn');
+    if (loginBtn){
+      loginBtn.addEventListener('click', openAdminLogin);
+    }
   });
+  // Parola doğrulama ve GitHub'dan config çekme
+  async function sha256Hex(str){
+    const enc = new TextEncoder();
+    const buf = await crypto.subtle.digest('SHA-256', enc.encode(str));
+    const arr = Array.from(new Uint8Array(buf));
+    return arr.map(b=>b.toString(16).padStart(2,'0')).join('');
+  }
+  async function fetchAdminConfig(){
+    const owner='amtbrs-03'; const repo='AMTBRS'; const branch='site-release';
+    const url = `https://api.github.com/repos/${owner}/${repo}/contents/admin-config.json?ref=${branch}`;
+    const token = (typeof getGitHubToken==='function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
+    const headers = { 'Accept':'application/vnd.github.v3+json' };
+    if(token) headers['Authorization'] = 'token ' + token;
+    const res = await fetch(url, { headers });
+    if(!res.ok) throw new Error('admin-config.json alınamadı ('+res.status+')');
+    const j = await res.json();
+    const cfg = JSON.parse(atob((j.content||'').replace(/\n/g,'')));
+    return { cfg, sha: j.sha };
+  }
+  async function verifyAdminPassword(pass){
+    const { cfg } = await fetchAdminConfig();
+    const expected = (cfg && (cfg.adminPasswordHash||cfg.passwordHash||cfg.admin_password_hash)) || '';
+    if(!expected) throw new Error('Yapılandırmada parola hash bulunamadı');
+    const actual = await sha256Hex(pass);
+    return actual === expected;
+  }
+  function bindAdminGate(){
+    const gate = document.getElementById('adminAuthGate');
+    const btn = document.getElementById('adminPassSubmit');
+    const inp = document.getElementById('adminPassInput');
+    const msg = document.getElementById('adminPassMsg');
+    if(!gate||!btn||!inp) return;
+    btn.addEventListener('click', async ()=>{
+      msg.textContent='Doğrulanıyor...';
+      const v = (inp.value||'').trim();
+      try {
+        const ok = await verifyAdminPassword(v);
+        if(ok){
+          sessionStorage.setItem('admin_auth_ok','1');
+          gate.classList.remove('active'); gate.style.display='none';
+          var adminUI = document.getElementById('adminUI'); if (adminUI) adminUI.style.display = 'block';
+          msg.textContent='';
+        } else {
+          msg.textContent='❌ Parola yanlış';
+        }
+      } catch(e){ msg.textContent='❌ Hata: ' + (e.message||e); }
+    });
+  }
+  document.addEventListener('DOMContentLoaded', bindAdminGate);
+  // Admin giriş butonu: kilit modali aç
+  function openAdminLogin(){
+    const gate = document.getElementById('adminAuthGate');
+    const inp = document.getElementById('adminPassInput');
+    if(gate){ gate.classList.add('active'); gate.style.display='flex'; }
+    if(inp){ setTimeout(()=>inp.focus(), 50); }
+  }
+  // Parola güncelleme: GitHub’a yeni hash yaz (isteğe bağlı kullanım için global yap)
+  async function updateAdminPassword(newPass){
+    const owner='amtbrs-03'; const repo='AMTBRS'; const branch='site-release';
+    const token = (typeof getGitHubToken==='function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
+    if(!token) throw new Error('GitHub token gerekli');
+    const { cfg, sha } = await fetchAdminConfig();
+    const newHash = await sha256Hex(newPass);
+    const nextCfg = { ...(cfg||{}), adminPasswordHash: newHash };
+    const putUrl = `https://api.github.com/repos/${owner}/${repo}/contents/admin-config.json`;
+    const payload = { message: 'chore(admin): admin parolası güncellendi', content: toBase64(JSON.stringify(nextCfg, null, 2)), branch, sha };
+    const res = await fetch(putUrl, { method:'PUT', headers:{ 'Content-Type':'application/json', 'Authorization':'token '+token }, body: JSON.stringify(payload) });
+    if(!res.ok){ const t=await res.text().catch(()=> ''); throw new Error('GitHub güncelleme başarısız: '+res.status+' '+t); }
+    return true;
+  }
+  window.updateAdminPassword = updateAdminPassword;
+  window.openAdminLogin = openAdminLogin;
+  // Oturum kapatma ve tarayıcı verilerini temizleme
+  function logoutAdminSession(){
+    try {
+      if (!confirm('Oturum kapatılsın ve tarayıcı verileri temizlensin mi?')) return;
+      try { sessionStorage.removeItem('admin_auth_ok'); } catch(_){}
+      try { localStorage.removeItem('admin_logged_in'); } catch(_){}
+      try { localStorage.removeItem('admin_passkey'); } catch(_){}
+      try { localStorage.removeItem('github_token'); } catch(_){}
+      try { localStorage.removeItem('pending_user_edits'); } catch(_){}
+      location.reload();
+    } catch(e){ alert('Çıkış sırasında hata: ' + (e.message||e)); }
+  }
   function safeInput(str) {
     return String(str).replace(/[<>&"']/g, function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;','\'':'&#39;'}[c]; });
   }
@@ -559,8 +670,10 @@
         <div class="subtitle">Ürün, Kullanıcı ve Sipariş Yönetimi</div>
       </div>
       <div style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;">
+        <button id="adminLoginBtn" class="btn" type="button" title="Yönetici girişi">🔐 Giriş</button>
         <a href="anasayfa.html" class="btn btn-ghost" title="Siteyi yeni sekmede aç">🏠 Siteyi Görüntüle</a>
         <button id="pageRefreshBtn" class="btn btn-ghost" type="button" title="Admin sayfasını yenile" onclick="window.location.reload()">🔄 Yenile</button>
+        <button id="adminLogoutBtn" class="btn btn-danger" type="button" title="Oturumu kapat">🚪 Çıkış</button>
       </div>
     </div>
   </div>
