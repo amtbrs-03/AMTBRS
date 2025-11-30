@@ -1,5 +1,6 @@
 {
   "user": "AMTBRS",
-  "passwordHash": "bd21af757bde2085891b06a2fb1788ded233d798c723dc04efbe1626b74b3f63",
-  "createdAt": 1764122749404
+  "adminPasswordHash": "02c19d431aa9afc30e9b032d21347ffdb1c14da87561a64f830d2c487acfc124",
+  "createdAt": 1764122749404,
+  "updatedAt": 1732970000000
 }
