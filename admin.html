@@ -1038,7 +1038,9 @@ async function verifyGitHubPathExists(path){
       }
       return res;
     }
-    const directUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`;
+    // URL encode path to handle special chars and case differences
+    const encodedPath = path.split('/').map(seg => encodeURIComponent(seg)).join('/');
+    const directUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodedPath}?ref=${encodeURIComponent(branch)}`;
     let res = await fetchWithAuth(directUrl);
     if(res.ok){ const j = await res.json(); if(j && j.type==='file') return { exists:true, actualPath:path, sha:j.sha||null }; }
     // Case varyant tarama: dizin ve dosya adı ayrıştır
@@ -1046,7 +1048,8 @@ async function verifyGitHubPathExists(path){
     if(slashIdx === -1) return { exists:false, actualPath:null, sha:null };
     const dir = path.slice(0, slashIdx);
     const fileName = path.slice(slashIdx+1);
-    const dirUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${dir}?ref=${branch}`;
+    const encodedDir = dir.split('/').map(seg => encodeURIComponent(seg)).join('/');
+    const dirUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodedDir}?ref=${encodeURIComponent(branch)}`;
     res = await fetchWithAuth(dirUrl);
     if(!res.ok) return { exists:false, actualPath:null, sha:null };
     const arr = await res.json();
