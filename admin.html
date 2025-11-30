@@ -1026,7 +1026,20 @@
               const putUrl=`https://api.github.com/repos/${repo}/contents/products.json`;
               const actionMsg = (idx===-1) ? 'yeni ürün eklendi' : 'ürün güncellendi';
               const putRes=await fetch(putUrl,{ method:'PUT', headers:{ 'Authorization':'token '+token,'Content-Type':'application/json' }, body:JSON.stringify({ message:`admin: ${actionMsg}: ${id}`, content:toBase64(JSON.stringify(products,null,2)), sha:dataMeta.sha, branch }) });
-              if(!putRes.ok){ const t=await putRes.text().catch(()=> ''); throw new Error('GitHub kaydı başarısız: '+putRes.status+' '+t); }
+              if(!putRes.ok){ 
+                const t=await putRes.text().catch(()=> '');
+                // Özel 403 mesajı: PAT kapsam/izin hatası, korunmuş dal, SSO veya repo erişimi
+                if(putRes.status===403){
+                  msgEl.innerHTML = '❌ GitHub kaydı başarısız (403).<br>'+ 
+                    '<div class="small" style="color:#64748b;margin-top:6px">Olası nedenler:<ul style="margin:6px 0;">
+                    <li>Token kapsamı yetersiz: <b>repo</b> (classic) veya <b>fine-grained</b> token için bu repoya "Contents: Read & Write" izni verin.</li>
+                    <li>Reponun yazma izni yok: Token sahibi hesabın <b>amtbrs-03/AMTBRS</b> reposunda yazma yetkisi olmalı.</li>
+                    <li>Dal koruması: <b>site-release</b> dalı korumalıysa doğrudan yazmaya izin verilmeyebilir.</li>
+                    <li>Kurumsal SSO: Organizasyon token’ı için SSO yetkilendirmesi gerekiyor.</li>
+                    </ul></div>';
+                }
+                throw new Error('GitHub kaydı başarısız: '+putRes.status+' '+t);
+              }
               msgEl.textContent='✅ Kaydedildi!';
             } else {
               try { localStorage.setItem('products_override', JSON.stringify(products)); } catch(_){}
@@ -1064,7 +1077,19 @@
               await new Promise(r=>setTimeout(r,500*attempt)); 
               continue; 
             }
-            if(!putRes.ok){ const t=await putRes.text().catch(()=>''); throw new Error('GitHub kaydı başarısız: '+putRes.status+' '+t); }
+            if(!putRes.ok){ 
+              const t=await putRes.text().catch(()=> '');
+              if(putRes.status===403){
+                msgEl.innerHTML = '❌ GitHub kaydı başarısız (403).<br>'+ 
+                  '<div class="small" style="color:#64748b;margin-top:6px">Olası nedenler:<ul style="margin:6px 0;">
+                  <li>Token kapsamı yetersiz: <b>repo</b> (classic) veya <b>fine-grained</b> token için bu repoya "Contents: Read & Write" izni verin.</li>
+                  <li>Reponun yazma izni yok: Token sahibi hesabın <b>amtbrs-03/AMTBRS</b> reposunda yazma yetkisi olmalı.</li>
+                  <li>Dal koruması: <b>site-release</b> dalı korumalıysa doğrudan yazmaya izin verilmeyebilir.</li>
+                  <li>Kurumsal SSO: Organizasyon token’ı için SSO yetkilendirmesi gerekiyor.</li>
+                  </ul></div>';
+              }
+              throw new Error('GitHub kaydı başarısız: '+putRes.status+' '+t);
+            }
             msgEl.textContent='✅ Kaydedildi!';
           } else {
             // Token yoksa lokal override'a yaz ve UI'yi güncelle
@@ -1167,11 +1192,65 @@
       </div>
       <div style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;">
         <a href="anasayfa.html" class="btn btn-ghost" title="Siteyi yeni sekmede aç">🏠 Siteyi Görüntüle</a>
+        <!-- Küçük Token butonu: başlık ile aksiyon bar arasındaki bölgeye, sol tarafa yerleştirildi -->
+        <button id="openTokenModalBtn" class="btn btn-ghost" type="button" title="GitHub Token Ayarı">🔑 Token</button>
         <button id="pageRefreshBtn" class="btn btn-ghost" type="button" title="Admin sayfasını yenile" onclick="window.location.reload()">🔄 Yenile</button>
         <button id="adminLogoutBtn" class="btn btn-danger" type="button" title="Oturumu kapat">🚪 Çıkış</button>
       </div>
     </div>
   </div>
+
+  <!-- Küçük Token Modalı -->
+  <section id="tokenModal" class="modal" style="display:none">
+    <div class="modal-content small-modal" style="max-width:520px;">
+      <div class="modal-header" style="justify-content:center;">
+        <h2 style="margin:0;color:#064e3b;">🔑 GitHub Token Ayarı</h2>
+      </div>
+      <div class="modal-body">
+        <div class="small" style="color:#64748b;margin-bottom:0.75rem">
+          GitHub’a kayıt için kişisel erişim anahtarınızı (PAT) girin veya doğrulayın.
+          <a href="GITHUB_AUTH_SETUP.md" target="_blank" style="color:#2b6cb0;text-decoration:underline">Kılavuz</a>
+        </div>
+        <label>GitHub Token
+          <input id="tokenModalInput" type="password" placeholder="ghp_xxx..." />
+        </label>
+        <div style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:0.75rem">
+          <button id="tokenModalSave" class="btn" type="button">Kaydet</button>
+          <button id="tokenModalValidate" class="btn btn-ghost" type="button">Doğrula</button>
+          <button id="closeTokenModalBtn" class="btn btn-ghost" type="button">Kapat</button>
+        </div>
+        <div id="tokenModalStatus" class="small" style="margin-top:0.5rem;color:#64748b"></div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+  // Token Modal aç/kapat ve işlemler
+  (function bindTokenModal(){
+    function getToken(){ try { return localStorage.getItem('github_token') || localStorage.github_token || localStorage.gh_token || ''; } catch(_){ return ''; } }
+    function setToken(t){ try { localStorage.setItem('github_token', t); } catch(_){} }
+    async function validateToken(t){
+      if(!t) return { ok:false, msg:'Token yok' };
+      try{
+        const res = await fetch('https://api.github.com/user', { headers:{ 'Authorization': 'token '+t, 'Accept':'application/vnd.github.v3+json' } });
+        if(res.status===401) return { ok:false, msg:'Geçersiz token (401)' };
+        if(!res.ok) return { ok:false, msg:'Doğrulama başarısız: '+res.status };
+        const u = await res.json();
+        return { ok:true, msg:'Token OK • '+(u && (u.login||u.name||'kullanıcı')) };
+      }catch(e){ return { ok:false, msg:'Ağ hatası: '+(e.message||e) } }
+    }
+    function open(){ const m=document.getElementById('tokenModal'); if(!m) return; m.classList.add('active'); m.style.display='flex'; document.body.style.overflow='hidden'; const inp=document.getElementById('tokenModalInput'); if(inp) inp.value=getToken()||''; const st=document.getElementById('tokenModalStatus'); if(st){ st.textContent = getToken()? 'Kayıtlar GitHub’a yazılacak.' : 'Token eksik: kayıtlar yerelde kalır.'; } }
+    function close(){ const m=document.getElementById('tokenModal'); if(!m) return; m.classList.remove('active'); m.style.display='none'; document.body.style.overflow=''; }
+    document.addEventListener('DOMContentLoaded', function(){
+      const openBtn = document.getElementById('openTokenModalBtn'); if(openBtn) openBtn.addEventListener('click', open);
+      const closeBtn = document.getElementById('closeTokenModalBtn'); if(closeBtn) closeBtn.addEventListener('click', close);
+      const saveBtn = document.getElementById('tokenModalSave'); const valBtn = document.getElementById('tokenModalValidate'); const st = document.getElementById('tokenModalStatus'); const inp = document.getElementById('tokenModalInput');
+      if(saveBtn && inp){ saveBtn.addEventListener('click', async ()=>{ const t=(inp.value||'').trim(); if(!t){ st.textContent='Lütfen token girin'; return; } setToken(t); const r=await validateToken(t); st.textContent=r.msg; const pat=document.getElementById('patNotice'); if(pat) pat.style.display = r.ok ? 'none' : 'block'; }); }
+      if(valBtn){ valBtn.addEventListener('click', async ()=>{ const r=await validateToken(getToken()); st.textContent=r.msg; const pat=document.getElementById('patNotice'); if(pat) pat.style.display = r.ok ? 'none' : 'block'; }); }
+    });
+  })();
+  </script>
+
 
   <div class="page">
     <!-- Yönetici paneli doğrudan erişim: şifre/giriş alanı kaldırıldı -->
@@ -1687,68 +1766,7 @@
         </script>
       </div>
 
-      <div class="card">
-        <div class="section-header">🔑 GitHub Token Ayarları</div>
-        <div class="small" style="color:#64748b;margin-bottom:0.75rem">Admin işlemlerinin GitHub'a anında yazılabilmesi için kişisel erişim anahtarı (PAT) gereklidir.</div>
-        <div class="controls-row" style="gap:0.5rem; align-items:flex-start;">
-          <input id="ghTokenInput" type="password" placeholder="GitHub PAT" style="flex:1;min-width:280px" />
-          <button id="ghTokenSave" class="btn" type="button">Kaydet</button>
-          <button id="ghTokenValidate" class="btn btn-ghost" type="button">Doğrula</button>
-          <a href="GITHUB_AUTH_SETUP.md" target="_blank" class="btn btn-ghost" title="Token kurulumu belgesini aç">📄 Kılavuz</a>
-        </div>
-          <label style="display:flex;align-items:center;gap:6px;margin-top:0.5rem;font-size:0.78rem;color:#334155">
-            <input id="disableXorFallback" type="checkbox" /> XOR fallback'ı devre dışı bırak (gömülü token kullanma)
-          </label>
-        <div id="ghTokenMsg" class="small" style="margin-top:0.5rem;color:#64748b"></div>
-        <script>
-        (function(){
-          const inp=document.getElementById('ghTokenInput');
-          const save=document.getElementById('ghTokenSave');
-          const val=document.getElementById('ghTokenValidate');
-          const msg=document.getElementById('ghTokenMsg');
-            const disableCb=document.getElementById('disableXorFallback');
-          if(inp && save && val){
-            const existing = (typeof getGitHubToken==='function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
-            if(existing){ inp.value = existing.replace(/.(?=.{4})/g,'•'); msg.textContent='Mevcut token yüklü (maskelenmiş).'; }
-            save.addEventListener('click', ()=>{
-              const v = inp.value.trim();
-              if(!v){ msg.textContent='Token boş olamaz.'; return; }
-              localStorage.setItem('github_token', v);
-              msg.textContent='✓ Token kaydedildi.';
-              // Token kaydedildiğinde uyarı bandını gizle
-              try{ const el=document.getElementById('patNotice'); if(el) el.style.display='none'; }catch(_){ }
-            });
-            val.addEventListener('click', async ()=>{
-              msg.textContent='Doğrulanıyor...';
-              const t = (typeof getGitHubToken==='function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
-              const info = await validateGitHubToken(t);
-              msg.textContent = info.valid ? '✅ Geçerli token' : ('❌ Geçersiz: ' + (info.reason||''));
-              // Geçerli ise uyarı bandını gizle, geçersizse göster
-              try{
-                const el=document.getElementById('patNotice');
-                if(el){ el.style.display = info.valid ? 'none' : 'block'; }
-              }catch(_){ }
-            });
-              if(disableCb){
-                disableCb.checked = localStorage.getItem('disable_xor_token') === '1';
-                disableCb.addEventListener('change', ()=>{
-                  if(disableCb.checked){ localStorage.setItem('disable_xor_token','1'); msg.textContent='Gömülü XOR token fallback devre dışı bırakıldı.'; }
-                  else { localStorage.removeItem('disable_xor_token'); msg.textContent='Gömülü XOR token fallback tekrar etkin.'; }
-                });
-              }
-            // Sayfa yüklenince token geçerli ise uyarı bandını gizle
-            (async function(){
-              try{
-                const t = (typeof getGitHubToken==='function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
-                const info = await validateGitHubToken(t);
-                const el=document.getElementById('patNotice');
-                if(el){ el.style.display = info.valid ? 'none' : 'block'; }
-              }catch(_){ }
-            })();
-          }
-        })();
-        </script>
-      </div>
+      <!-- Token ayar kartları kaldırıldı; başlık altına yerleştirilen küçük modal üzerinden yönetiliyor -->
 
       <div class="card">
         <div class="section-header">🖼️ GitHub Web Üzerinden Resim Yükleme</div>
@@ -1877,12 +1895,14 @@
       });
       if(idx === -1) throw new Error('Ürün bulunamadı: '+productId);
       list[idx].image = imagePath;
-      if(obj.items) obj.items = list; else obj = list; // her iki formatı destekle
-      if(typeof obj === 'object') obj.updatedAt = Date.now();
-      const newJson = JSON.stringify(obj, null, 2);
+      // Yazım biçimini daima { items:[...], updatedAt } olarak normalize et
+      const normalized = { items: list, updatedAt: Date.now() };
+      const newJson = JSON.stringify(normalized, null, 2);
       const contentB64 = toBase64(newJson);
       const putRes = await fetch(url, { method:'PUT', headers:{ 'Accept':'application/vnd.github.v3+json', 'Content-Type':'application/json', 'Authorization': `token ${token}` }, body: JSON.stringify({ message:`chore(admin): ürün resmi güncellendi (${productId})`, content: contentB64, branch, sha: meta.sha }) });
       if(!putRes.ok){ const t = await putRes.text().catch(()=> ''); throw new Error('Güncelleme başarısız: '+putRes.status+' '+t); }
+      try{ localStorage.removeItem('products_override'); }catch(_){}
+      try{ if(typeof renderAdminProducts==='function') renderAdminProducts(); }catch(_){}
       return true;
 
     } // <-- Kapanış: updateProductsJsonImage (ilk tanım)
@@ -1917,12 +1937,14 @@
       
       list.push(newProduct);
       
-      if(obj.items) obj.items = list; else obj = list;
-      if(typeof obj === 'object') obj.updatedAt = Date.now();
-      const newJson = JSON.stringify(obj, null, 2);
+      // Daima { items:[...], updatedAt } biçiminde yaz
+      const normalized = { items: list, updatedAt: Date.now() };
+      const newJson = JSON.stringify(normalized, null, 2);
       const contentB64 = toBase64(newJson);
       const putRes = await fetch(url, { method:'PUT', headers:{ 'Accept':'application/vnd.github.v3+json', 'Content-Type':'application/json', 'Authorization': `token ${token}` }, body: JSON.stringify({ message:`feat(admin): yeni ürün eklendi (${productId})`, content: contentB64, branch, sha: meta.sha }) });
       if(!putRes.ok){ const t = await putRes.text().catch(()=> ''); throw new Error('Ürün ekleme başarısız: '+putRes.status+' '+t); }
+      try{ localStorage.removeItem('products_override'); }catch(_){}
+      try{ if(typeof renderAdminProducts==='function') renderAdminProducts(); }catch(_){}
       return true;
     }
 
@@ -1948,9 +1970,15 @@ async function verifyGitHubPathExists(path){
     const branch = 'site-release';
     const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
     async function fetchWithAuth(u){
+      // Önce herkese açık istek (public repo için yeterli olmalı)
       let res = await fetch(u, { headers: { 'Accept':'application/vnd.github.v3+json' }, cache: 'no-store' });
+      // Eğer başarısız ve token varsa, yetkili dene
       if(!res.ok && token){
         res = await fetch(u, { headers: { 'Accept':'application/vnd.github.v3+json', 'Authorization': 'token '+token }, cache: 'no-store' });
+        // 401 ise token geçersiz; yetkisiz tekrar de
+        if(res.status===401){
+          res = await fetch(u, { headers: { 'Accept':'application/vnd.github.v3+json' }, cache: 'no-store' });
+        }
       }
       return res;
     }
@@ -1959,6 +1987,14 @@ async function verifyGitHubPathExists(path){
     const directUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodedPath}?ref=${encodeURIComponent(branch)}`;
     let res = await fetchWithAuth(directUrl);
     if(res.ok){ const j = await res.json(); if(j && j.type==='file') return { exists:true, actualPath:path, sha:j.sha||null }; }
+    // Ek fallback: raw.githubusercontent.com üzerinde HEAD dene
+    {
+      try{
+        const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${encodedPath}`;
+        const head = await fetch(rawUrl, { method:'HEAD', cache:'no-store' });
+        if(head.ok){ return { exists:true, actualPath:path, sha:null }; }
+      }catch(_){ /* ignore */ }
+    }
     // Case varyant tarama: dizin ve dosya adı ayrıştır
     const slashIdx = path.lastIndexOf('/');
     if(slashIdx === -1) return { exists:false, actualPath:null, sha:null };
