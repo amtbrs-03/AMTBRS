@@ -888,13 +888,19 @@
           } catch(err){ alert('Hata: '+err.message); }
         }
         function openProductEditPanel(product){
+          console.log('[admin] openProductEditPanel called with:', product);
+          const panel = document.getElementById('productEditPanel');
+          console.log('[admin] productEditPanel element:', panel);
+          if(!panel) { alert('Hata: Modal panel bulunamadı!'); return; }
+          
           document.getElementById('editProductId').value=product.id||'';
           document.getElementById('editProductName').value=product.name||'';
           document.getElementById('editProductPrice').value=product.price||'';
           document.getElementById('editProductBadge').value=product.badge||'';
           document.getElementById('editProductImage').value=product.image||'';
           document.getElementById('editProductMsg').textContent='';
-          document.getElementById('productEditPanel').classList.add('active');
+          panel.classList.add('active');
+          console.log('[admin] Added active class. Classes:', panel.className);
           document.body.style.overflow='hidden';
         }
         function closeProductEditPanel(){
