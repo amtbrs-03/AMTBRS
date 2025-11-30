@@ -1038,7 +1038,7 @@
             } else {
               try { localStorage.setItem('products_override', JSON.stringify(products)); } catch(_){}
               msgEl.textContent='✅ Yerel olarak kaydedildi (GitHub token yok)';
-              try { const el = document.getElementById('patNotice'); if(el) el.style.display='block'; } catch(_){}
+              // Bilgi uyarısını otomatik gösterme — token ayarları kartından yönetilecek
             }
             // Refresh and close
             setTimeout(()=>{ try{ renderAdminProducts(); }catch(_){} closeProductEditPanel(); }, 800);
@@ -1077,8 +1077,7 @@
             // Token yoksa lokal override'a yaz ve UI'yi güncelle
             try { localStorage.setItem('products_override', JSON.stringify(products)); } catch(_){}
             msgEl.textContent='✅ Yerel olarak kaydedildi (GitHub token yok)';
-            // Show PAT banner so user knows remote commit is disabled
-            try { const el = document.getElementById('patNotice'); if(el) el.style.display='block'; } catch(_){}
+            // Uyarı otomatik açılmayacak; kullanıcı Ayarlar kartından token ekleyebilir
           }
           break;
         }catch(err){ 
@@ -1702,6 +1701,7 @@
           <input id="ghTokenInput" type="password" placeholder="GitHub PAT" style="flex:1;min-width:280px" />
           <button id="ghTokenSave" class="btn" type="button">Kaydet</button>
           <button id="ghTokenValidate" class="btn btn-ghost" type="button">Doğrula</button>
+          <a href="GITHUB_AUTH_SETUP.md" target="_blank" class="btn btn-ghost" title="Token kurulumu belgesini aç">📄 Kılavuz</a>
         </div>
           <label style="display:flex;align-items:center;gap:6px;margin-top:0.5rem;font-size:0.78rem;color:#334155">
             <input id="disableXorFallback" type="checkbox" /> XOR fallback'ı devre dışı bırak (gömülü token kullanma)
@@ -1722,12 +1722,19 @@
               if(!v){ msg.textContent='Token boş olamaz.'; return; }
               localStorage.setItem('github_token', v);
               msg.textContent='✓ Token kaydedildi.';
+              // Token kaydedildiğinde uyarı bandını gizle
+              try{ const el=document.getElementById('patNotice'); if(el) el.style.display='none'; }catch(_){ }
             });
             val.addEventListener('click', async ()=>{
               msg.textContent='Doğrulanıyor...';
               const t = (typeof getGitHubToken==='function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
               const info = await validateGitHubToken(t);
               msg.textContent = info.valid ? '✅ Geçerli token' : ('❌ Geçersiz: ' + (info.reason||''));
+              // Geçerli ise uyarı bandını gizle, geçersizse göster
+              try{
+                const el=document.getElementById('patNotice');
+                if(el){ el.style.display = info.valid ? 'none' : 'block'; }
+              }catch(_){ }
             });
               if(disableCb){
                 disableCb.checked = localStorage.getItem('disable_xor_token') === '1';
@@ -1736,6 +1743,15 @@
                   else { localStorage.removeItem('disable_xor_token'); msg.textContent='Gömülü XOR token fallback tekrar etkin.'; }
                 });
               }
+            // Sayfa yüklenince token geçerli ise uyarı bandını gizle
+            (async function(){
+              try{
+                const t = (typeof getGitHubToken==='function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
+                const info = await validateGitHubToken(t);
+                const el=document.getElementById('patNotice');
+                if(el){ el.style.display = info.valid ? 'none' : 'block'; }
+              }catch(_){ }
+            })();
           }
         })();
         </script>
