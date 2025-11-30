@@ -983,13 +983,28 @@
     async function updateProductsJsonImage(productId, imagePath){
       const token = getGitHubToken();
       if (!token) throw new Error('GitHub token yok. Ayarlardan yapılandırın.');
+      if (!productId) throw new Error('Ürün ID girilmemiş');
+      if (!imagePath) throw new Error('Resim yolu boş');
       const owner = 'amtbrs-03';
       const repo = 'AMTBRS';
       const branch = 'site-release';
       const url = `https://api.github.com/repos/${owner}/${repo}/contents/products.json`;
       const getRes = await fetch(url + `?ref=${branch}`, { headers: { 'Accept':'application/vnd.github.v3+json', 'Authorization': `token ${token}` }, cache: 'no-store' });
-      // (Kilit ekranlı geçici ürün listeleme kaldırıldı - global renderAdminProducts kullanılıyor)
-      // catch block removed; this was not inside a try
+      if(!getRes.ok){ throw new Error('products.json alınamadı ('+getRes.status+')'); }
+      const meta = await getRes.json();
+      let obj; try { obj = JSON.parse(fromBase64((meta.content||'').replace(/\n/g,''))) || {}; } catch(e){ throw new Error('products.json parse hatası: '+(e.message||e)); }
+      let list = Array.isArray(obj.items) ? obj.items : (Array.isArray(obj) ? obj : null);
+      if(!list) throw new Error('products.json formatı beklenen değil (items dizisi yok)');
+      const idx = list.findIndex(p => String(p.id) === String(productId) || String(p.id) === String(productId + '.jpg'));
+      if(idx === -1) throw new Error('Ürün bulunamadı: '+productId);
+      list[idx].image = imagePath;
+      if(obj.items) obj.items = list; else obj = list; // her iki formatı destekle
+      if(typeof obj === 'object') obj.updatedAt = Date.now();
+      const newJson = JSON.stringify(obj, null, 2);
+      const contentB64 = toBase64(newJson);
+      const putRes = await fetch(url, { method:'PUT', headers:{ 'Accept':'application/vnd.github.v3+json', 'Content-Type':'application/json', 'Authorization': `token ${token}` }, body: JSON.stringify({ message:`chore(admin): ürün resmi güncellendi (${productId})`, content: contentB64, branch, sha: meta.sha }) });
+      if(!putRes.ok){ const t = await putRes.text().catch(()=> ''); throw new Error('Güncelleme başarısız: '+putRes.status+' '+t); }
+      return true;
 
 // Sonraki kod/fonksiyonlar buradan başlamalı
 const openBtn = document.getElementById('openGhUpload');
@@ -1084,6 +1099,20 @@ async function verifyGitHubPathExists(path){
             applyBtn.innerHTML = '⏳ İşleniyor...';
             applyBtn.disabled = true;
             const pid = (pidEl && pidEl.value || '').trim();
+            const pth = (pathEl && pathEl.value || '').trim();
+            if(!pid || !pth){ setMsg('Ürün ID ve dosya yolu gerekli.', false); applyBtn.innerHTML=origText; applyBtn.disabled=false; return; }
+            // Opsiyonel: dosya gerçekten var mı kontrol et
+            const exists = await verifyGitHubPathExists(pth);
+            if(!exists){ setMsg('Dosya GitHub’da bulunamadı: '+pth, false); applyBtn.innerHTML=origText; applyBtn.disabled=false; return; }
+            try {
+              setMsg('products.json güncelleniyor...', true);
+              await updateProductsJsonImage(pid, pth);
+              setMsg('✓ Güncellendi: '+pth, true);
+              if(typeof renderAdminProducts === 'function'){ try{ renderAdminProducts(); }catch(_){ /* ignore */ } }
+            } catch(e){
+              setMsg('Hata: '+(e.message||e), false);
+            }
+            applyBtn.innerHTML = origText; applyBtn.disabled=false;
 
         // Inline edit helpers
         function openInlineEdit(id){
