@@ -704,12 +704,7 @@
             </div>
           </div>
         </div>
-        <div style="display:flex;gap:10px;align-items:center;margin-top:10px">
-          <label style="display:flex;align-items:center;gap:6px;font-weight:600;color:#0f172a">
-            <input id="editAutoBind" type="checkbox" /> Yükleme sonrası otomatik bağla (2 dakikaya kadar bekler)
-          </label>
-          <span id="editAutoBindStatus" class="small" style="color:#64748b"></span>
-        </div>
+        <!-- Otomatik bağlama artık daima arka planda yapılır; kullanıcıya checkbox gösterilmez -->
         <div id="editProductMsg" style="margin:10px 0;color:#c00"></div>
         <div class="form-actions" style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:12px">
           <button type="button" id="refreshEditBtn" class="btn btn-ghost" title="Güncel ürünü GitHub’dan çek">🔄 Yenile</button>
@@ -947,8 +942,7 @@
     const image2=(document.getElementById('editProductImage2')?.value||'').trim();
     const image3=(document.getElementById('editProductImage3')?.value||'').trim();
     const image4=(document.getElementById('editProductImage4')?.value||'').trim();
-    const autoBind = !!document.getElementById('editAutoBind')?.checked;
-    const autoBindStatus = document.getElementById('editAutoBindStatus');
+    const autoBind = true; // Her zaman arka planda otomatik bağla
     // GitHub Web Yükleme mantığına uy: görsel yolunu doğrula ve ID eşleşmesini case-insensitive yap
     try {
       // Helper: verify with optional auto-bind polling
@@ -958,17 +952,16 @@
         if(ver.exists) return true;
         if(!autoBind) return false;
         let attempts = 0; const maxAttempts = 10; let delay = 1000;
-        if(autoBindStatus) autoBindStatus.textContent = '🕒 Yükleme bekleniyor...';
+        // Arka planda sessiz bekleme
         while(attempts < maxAttempts){
           attempts++;
           await new Promise(r=>setTimeout(r, delay));
           ver = await verifyGitHubPathExists(pth);
           if(ver.exists) break;
           delay = Math.min(delay * 1.7, 15000);
-          if(autoBindStatus) autoBindStatus.textContent = `🕒 Yükleme bekleniyor (${attempts}/${maxAttempts})...`;
         }
         if(!ver.exists) return false;
-        if(autoBindStatus) autoBindStatus.textContent = '✅ Dosya bulundu';
+        // Sessiz başarı
         return true;
       }
       // Check main + extra images if provided
@@ -1765,9 +1758,7 @@
           <button id="openGhUpload" class="btn">GitHub Yüklemeyi Aç</button>
           <button id="openGhFolderBtn" class="btn" style="margin-left:0.5rem;">GitHub Klasörü Aç</button>
         </div>
-        <label style="display:flex;align-items:center;gap:6px;margin-top:0.5rem;font-size:0.92rem;color:#334155">
-          <input id="ghAutoBind" type="checkbox" /> Yükleme sonrası otomatik bağla (2 dakikaya kadar bekler)
-        </label>
+        <!-- Otomatik bağlama daima arka planda yapılır -->
         <div class="controls-row" style="margin-top:0.75rem">
           <input id="ghUploadedPath" type="text" placeholder="images/products/&lt;id&gt;.jpg" style="flex:1;min-width:280px" />
           <button id="applyGhImagePath" class="btn">products.json’a Kaydet</button>
