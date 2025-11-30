@@ -1391,57 +1391,45 @@
               if(!host){ alert('Hata: ürün konteyneri bulunamadı'); return; }
               const card = document.createElement('div');
               card.className = 'prod-item editable-card';
-              // Kart görünümü: görsel kutu, başlık satırı (ad, fiyat, rozet, ID), büyük Düzenle/Sil butonları
+              // Kayıtlı kartın aynısı, boş değerlerle
               card.innerHTML = `
-                <div class='prod-row' style='align-items:flex-start;'>
-                  <div class='thumb' style='background:#eef7f1;display:flex;align-items:center;justify-content:center;border-radius:12px;border:3px solid #ffffff;box-shadow:0 6px 18px rgba(16,185,129,0.15);'>
-                    <img src='${IMG_PLACEHOLDER}' alt='Yeni Görsel' style='width:100%;height:100%;object-fit:cover;border-radius:10px;' />
-                  </div>
-                  <div style='flex:1;min-width:240px'>
-                    <div style='display:flex;align-items:center;gap:8px;flex-wrap:wrap;'>
-                      <input id='tmp-name' type='text' placeholder='Ürün adı' style='font-weight:800;font-size:1.1rem;color:#0f172a;border:none;border-bottom:2px solid #e5e7eb;outline:none;padding:4px 0;flex:1;min-width:180px' />
-                      <span id='tmp-badge' class='small' style='background:#f59e0b;color:#fff;padding:4px 10px;border-radius:999px;font-weight:700;display:none'>Rozet</span>
+                <div class='prod-row'>
+                  <div class='thumb' style='background:#e0e7ef;display:flex;align-items:center;justify-content:center;'>${/(.)/.test('')?'':'🌺'}</div>
+                  <div>
+                    <div style='font-weight:700;font-size:1.08rem;'>
+                      <input id='tmp-name' type='text' placeholder='PHILODENDRON FELIX' style='font-weight:700;font-size:1.08rem;border:none;border-bottom:2px solid #e5e7eb;outline:none;width:240px' />
+                      <span id='tmp-badge' class='small' title='Rozet' style='background:#f59e0b;color:#fff;border:1px solid #d97706;padding:2px 6px;border-radius:999px;margin-left:4px;display:none'>Popüler</span>
                     </div>
-                    <div class='meta' style='margin-top:6px;'>Fiyat: <span id='tmp-price-display' style='color:#0f172a;font-weight:600'>—</span></div>
-                    <div class='meta'>ID: <input id='tmp-id' type='text' placeholder='IMG_1966.JPG' style='border:none;border-bottom:2px solid #e5e7eb;outline:none;padding:2px 0;width:200px' /></div>
+                    <div class='meta'>Fiyat: <span id='tmp-price-display'>—</span></div>
+                    <div class='meta'>ID: <input id='tmp-id' type='text' placeholder='IMG_1966.JPG' style='border:none;border-bottom:2px solid #e5e7eb;outline:none;width:180px' /></div>
                   </div>
                 </div>
-                <div style='display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;'>
-                  <button type='button' class='btn' data-action='open-edit' style='min-width:140px;'>Düzenle</button>
-                  <button type='button' class='btn btn-danger' data-action='remove-card' style='min-width:120px;'>Sil</button>
-                  <button type='button' class='btn btn-ghost' data-action='pick-img'>📸 Görsel Seç</button>
+                <div class='actions'>
+                  <button type='button' class='btn' data-action='open-edit'>Düzenle</button>
+                  <button type='button' class='btn btn-danger' data-action='remove-card'>Sil</button>
                 </div>
-                <div class='prod-edit-panel' style='margin-top:10px;padding:12px;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc;'>
-                  <div style='display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));'>
-                    <label style='font-size:12px;'>Fiyat (TL)
-                      <input type='text' id='tmp-price' placeholder='1.200,00' inputmode='decimal' style='width:100%;padding:8px;font-size:13px;'>
+                <div class='prod-edit-panel' style='margin-top:8px;padding:10px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;'>
+                  <div style='display:grid;gap:6px;'>
+                    <label style='font-size:12px;'>Fiyat (TL biçimi desteklenir)
+                      <input type='text' id='tmp-price' placeholder='1.200,00' inputmode='decimal' style='width:100%;padding:6px;font-size:13px;'>
                     </label>
                     <label style='font-size:12px;'>Rozet
-                      <select id='tmp-badge-select' style='width:100%;padding:8px;font-size:13px;'>
+                      <select id='tmp-badge-select' style='width:100%;padding:6px;font-size:13px;'>
                         <option value=''>Yok</option>
                         <option value='Yeni'>Yeni</option>
                         <option value='İndirim'>İndirim</option>
                         <option value='Popüler'>Popüler</option>
                       </select>
                     </label>
-                    <label style='font-size:12px;'>Ana Görsel
-                      <div style='display:flex;gap:8px;align-items:center;'>
-                        <input type='text' id='tmp-image' placeholder='images/products/<id>.jpg' style='flex:1;padding:8px;font-size:13px;'>
-                        <button type='button' class='btn btn-ghost' data-action='pick-img'>📸</button>
-                      </div>
+                    <label style='font-size:12px;'>Görsel / Emoji
+                      <input type='text' id='tmp-image' value='' placeholder='images/products/<id>.jpg veya emoji' style='width:100%;padding:6px;font-size:13px;'>
                     </label>
                   </div>
                 </div>`;
 
               // Bind actions
-              const pickBtn = card.querySelector('[data-action="pick-img"]');
-              pickBtn?.addEventListener('click', ()=>{
-                if(typeof openGalleryPickerForProductFor === 'function'){
-                  openGalleryPickerForProductFor('tmp-image');
-                } else {
-                  alert('Galeri seçici bulunamadı. Görsel yolunu manuel girin.');
-                }
-              });
+              // Görsel seç butonu (prod-edit-panel içinde değil; kart aynı şablonu kullanır)
+              // Kullanıcı görsel alanına yazdıktan sonra Düzenle ile devam edebilir.
               const openEditBtn = card.querySelector('[data-action="open-edit"]');
               openEditBtn?.addEventListener('click', ()=>{
                 const name = card.querySelector('#tmp-name')?.value.trim() || 'Yeni Ürün';
