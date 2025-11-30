@@ -650,6 +650,14 @@
             <button type="button" onclick="openGalleryPickerForProductFor('editProductImage4')" class="btn btn-ghost" style="padding:0.5rem 0.75rem;font-size:0.85rem;" title="Galeriden seç">📸</button>
           </div>
         </label>
+        <div id="editImagesPreview" class="small" style="margin-top:8px;color:#64748b">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <div class="imgPrev" data-for="editProductImage" style="width:72px;height:72px;border:1px solid #e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;background:#f3f4f6;overflow:hidden"></div>
+            <div class="imgPrev" data-for="editProductImage2" style="width:72px;height:72px;border:1px solid #e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;background:#f3f4f6;overflow:hidden"></div>
+            <div class="imgPrev" data-for="editProductImage3" style="width:72px;height:72px;border:1px solid #e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;background:#f3f4f6;overflow:hidden"></div>
+            <div class="imgPrev" data-for="editProductImage4" style="width:72px;height:72px;border:1px solid #e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;background:#f3f4f6;overflow:hidden"></div>
+          </div>
+        </div>
         <div id="editProductMsg" style="margin:8px 0;color:#c00"></div>
         <div class="form-actions" style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:12px">
           <button type="submit" id="saveProductBtn" class="btn btn-primary">Kaydet</button>
@@ -840,6 +848,15 @@
     if(image2 && !imgRe.test(image2)){ msgEl.textContent='Ek Görsel 2 için geçerli yol girin!'; return; }
     if(image3 && !imgRe.test(image3)){ msgEl.textContent='Ek Görsel 3 için geçerli yol girin!'; return; }
     if(image4 && !imgRe.test(image4)){ msgEl.textContent='Ek Görsel 4 için geçerli yol girin!'; return; }
+    // küçük önizlemeleri güncelle
+    try {
+      const ids=['editProductImage','editProductImage2','editProductImage3','editProductImage4'];
+      ids.forEach(id=>{
+        const holder=document.querySelector(`#editImagesPreview .imgPrev[data-for="${id}"]`);
+        const val=(document.getElementById(id)?.value||'').trim();
+        if(holder){ holder.innerHTML = val ? `<img src="${val.replace(/^images\//,'') ? val : val}" alt="${id}" style="width:100%;height:100%;object-fit:cover">` : '' }
+      });
+    } catch(_){/* ignore preview errors */}
     try {
       const token=localStorage.github_token||localStorage.gh_token;
       const repo='amtbrs-03/AMTBRS'; const branch='site-release';
@@ -1016,11 +1033,13 @@
               card.className = 'prod-item';
               card.setAttribute('data-id', p.id);
               const badgeHtml = p.badge ? `<span style='background:#f59e0b;color:#fff;padding:2px 6px;border-radius:6px;font-size:11px;margin-left:4px;'>${p.badge}</span>` : '';
+              const imgPrimary = p.image || (Array.isArray(p.images) ? p.images[0] : '');
+              const imgCount = Array.isArray(p.images) ? p.images.length : (imgPrimary ? 1 : 0);
               card.innerHTML = `
                 <div class='prod-row'>
-                  <div class='thumb' style='background:#e0e7ef;display:flex;align-items:center;justify-content:center;'>${p.image ? (/(jpg|jpeg|png|webp)$/i.test(p.image) ? `<img src='${p.image}' style='width:100%;height:100%;object-fit:cover;border-radius:10px;'/>` : p.image) : '🌺'}</div>
+                  <div class='thumb' style='background:#e0e7ef;display:flex;align-items:center;justify-content:center;'>${imgPrimary ? (/(jpg|jpeg|png|webp)$/i.test(imgPrimary) ? `<img src='${imgPrimary}' style='width:100%;height:100%;object-fit:cover;border-radius:10px;'/>` : imgPrimary) : '🌺'}</div>
                   <div>
-                    <div style='font-weight:700;font-size:1.08rem;'>${p.name || ''} ${badgeHtml}</div>
+                    <div style='font-weight:700;font-size:1.08rem;'>${p.name || ''} ${badgeHtml} ${imgCount>1?`<span class='small' title='Görsel sayısı' style='background:#e5e7eb;color:#374151;border:1px solid #d1d5db;padding:2px 6px;border-radius:999px;margin-left:4px;'>🖼️ ${imgCount}</span>`:''}</div>
                     <div class='meta'>Fiyat: ${formatTLDisplay(p.price||0)}</div>
                     <div class='meta'>ID: ${p.id}</div>
                   </div>
@@ -1046,7 +1065,7 @@
                       </select>
                     </label>
                     <label style='font-size:12px;'>Görsel / Emoji
-                      <input type='text' id='ep-image-${p.id}' value='${p.image || ''}' placeholder='images/products/<id>.jpg veya emoji' style='width:100%;padding:6px;font-size:13px;'>
+                      <input type='text' id='ep-image-${p.id}' value='${imgPrimary || ''}' placeholder='images/products/<id>.jpg veya emoji' style='width:100%;padding:6px;font-size:13px;'>
                     </label>
                   </div>
                   <div id='ep-msg-${p.id}' style='margin-top:6px;font-size:12px;color:#0f766e;min-height:18px;'></div>
