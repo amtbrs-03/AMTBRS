@@ -712,6 +712,7 @@
         </div>
         <div id="editProductMsg" style="margin:10px 0;color:#c00"></div>
         <div class="form-actions" style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:12px">
+          <button type="button" id="refreshEditBtn" class="btn btn-ghost" title="Güncel ürünü GitHub’dan çek">🔄 Yenile</button>
           <button type="submit" id="saveProductBtn" class="btn">Kaydet</button>
           <button type="button" onclick="closeProductEditPanel()" class="btn btn-ghost">Kapat</button>
         </div>
@@ -1105,6 +1106,61 @@
       }, 800);
     } catch(err){ msgEl.textContent='Hata: '+err.message; }
   };
+  // Edit panel: refresh current product from GitHub and update fields
+  async function refreshCurrentEditProduct(){
+    try{
+      const msgEl = document.getElementById('editProductMsg');
+      if(msgEl) msgEl.textContent = '⏳ Yükleniyor...';
+      const id = document.getElementById('editProductId')?.value.trim();
+      if(!id){ if(msgEl) msgEl.textContent='Ürün ID bulunamadı'; return; }
+      // Try same-origin first
+      let data = null;
+      try{
+        const res = await fetch('products.json?' + Date.now(), { cache:'no-store' });
+        if(res.ok){ data = await res.json(); }
+      }catch(_){ /* ignore */ }
+      if(!data){
+        // Fallbacks
+        const urls = [
+          `https://raw.githubusercontent.com/amtbrs-03/AMTBRS/site-release/products.json?t=${Date.now()}`,
+          `https://cdn.jsdelivr.net/gh/amtbrs-03/AMTBRS@site-release/products.json`
+        ];
+        for(const url of urls){
+          try{ const r = await fetch(url, { cache:'no-store' }); if(r.ok){ data = await r.json(); break; } }catch(_){ }
+        }
+      }
+      if(!data){ throw new Error('products.json alınamadı'); }
+      const products = Array.isArray(data.items) ? data.items : (Array.isArray(data) ? data : []);
+      const p = products.find(x=> String(x.id) === String(id));
+      if(!p){ if(msgEl) msgEl.textContent='Ürün bulunamadı: '+id; return; }
+      // Update inputs
+      document.getElementById('editProductName').value = p.name || '';
+      document.getElementById('editProductPrice').value = p.price || '';
+      document.getElementById('editProductBadge').value = p.badge || '';
+      document.getElementById('editProductImage').value = p.image || '';
+      const imgs = Array.isArray(p.images) ? p.images : [];
+      const im2 = document.getElementById('editProductImage2'); if(im2) im2.value = imgs[1]||'';
+      const im3 = document.getElementById('editProductImage3'); if(im3) im3.value = imgs[2]||'';
+      const im4 = document.getElementById('editProductImage4'); if(im4) im4.value = imgs[3]||'';
+      // Update header and previews
+      try{
+        const heroName = document.getElementById('editHeroName'); if(heroName) heroName.textContent = p.name||'';
+        const heroBadge = document.getElementById('editHeroBadge'); if(heroBadge){ if(p.badge){ heroBadge.style.display='inline-block'; heroBadge.textContent=p.badge; } else { heroBadge.style.display='none'; heroBadge.textContent=''; } }
+        const heroPrice = document.getElementById('editHeroPrice'); if(heroPrice){ const n=Number(p.price||0); const parts=n.toFixed(2).split('.'); const intP=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,'.'); heroPrice.textContent = intP+','+parts[1]+' TL'; }
+        const primaryImg = p.image || (imgs[0]||'');
+        const hero = document.getElementById('editHeroThumb'); if(hero) hero.innerHTML = primaryImg ? `<img src="${primaryImg}" alt="thumb" style="width:100%;height:100%;object-fit:cover">` : '🌸';
+        // boxes
+        const boxMain = document.getElementById('editImgBoxMain'); if(boxMain) boxMain.innerHTML = primaryImg ? `<img src="${primaryImg}" alt="main" style="width:100%;height:100%;object-fit:cover">` : '🖼️';
+        const box1 = document.getElementById('editImgBox1'); if(box1) box1.innerHTML = imgs[1] ? `<img src="${imgs[1]}" alt="img1" style="width:100%;height:100%;object-fit:cover">` : '🖼️';
+        const box2 = document.getElementById('editImgBox2'); if(box2) box2.innerHTML = imgs[2] ? `<img src="${imgs[2]}" alt="img2" style="width:100%;height:100%;object-fit:cover">` : '🖼️';
+      }catch(_){ }
+      if(msgEl) msgEl.textContent = '✅ Güncellendi';
+    }catch(e){
+      const msgEl = document.getElementById('editProductMsg');
+      if(msgEl) msgEl.textContent = '❌ Hata: ' + (e.message||e);
+    }
+  }
+  document.addEventListener('DOMContentLoaded', function(){ const btn=document.getElementById('refreshEditBtn'); if(btn){ btn.addEventListener('click', refreshCurrentEditProduct); } });
   function addEditButtonsToProductCards(){
     document.querySelectorAll('.product-card').forEach(card=>{ if(!card.querySelector('.edit-btn')){ const btn=document.createElement('button'); btn.textContent='Düzenle'; btn.className='edit-btn'; btn.style='position:absolute;top:8px;right:8px;z-index:2;font-size:13px;'; btn.onclick=function(e){ e.stopPropagation(); const id=card.getAttribute('data-id'); fetch('products.json').then(r=>r.json()).then(products=>{ const p=products.items.find(x=>x.id===id); if(p) openProductEditPanel(p); }); }; card.appendChild(btn); } });
   }
