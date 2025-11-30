@@ -1010,6 +1010,13 @@
 const openBtn = document.getElementById('openGhUpload');
 const applyBtn = document.getElementById('applyGhImagePath');
 const autoBindEl = document.getElementById('ghAutoBind');
+// Ürün ID normalize: uzantı varsa ayırır, yoksa varsayılan .jpg kullanır
+function normalizeProductId(raw){
+  raw = (raw||'').trim();
+  const m = raw.match(/^(.*)\.(jpg|jpeg|png|webp)$/i);
+  if(m){ return { base: m[1], ext: m[2].toLowerCase(), hasExt: true }; }
+  return { base: raw, ext: 'jpg', hasExt: false };
+}
 async function verifyGitHubPathExists(path){
           try{
             const owner = 'amtbrs-03';
@@ -1036,7 +1043,8 @@ async function verifyGitHubPathExists(path){
         async function autoBindAfterUpload(pid){
           if (!pid) { setMsg('Ürün ID gerekli.', false); return false; }
           setMsg('⌛ Yükleme bekleniyor... (otomatik bağlama etkin)', true);
-          const exts = ['jpg','jpeg','png','webp'];
+          const norm = normalizeProductId(pid);
+          const exts = norm.hasExt ? [norm.ext, ...['jpg','jpeg','png','webp'].filter(e=>e!==norm.ext)] : ['jpg','jpeg','png','webp'];
           const start = Date.now();
           const timeout = 120000; // 2 dk
           let attempt = 0; let delay = 2000; // adaptif backoff
@@ -1044,7 +1052,7 @@ async function verifyGitHubPathExists(path){
             // iptal kontrolü
             if (!(autoBindEl && autoBindEl.checked)) { setMsg('Otomatik bağlama iptal edildi.', false); return false; }
             for (const ext of exts){
-              const pth = `images/products/${pid}.${ext}`;
+              const pth = norm.hasExt ? `images/products/${norm.base}.${ext}` : `images/products/${norm.base}.${ext}`;
               const ok = await verifyGitHubPathExists(pth);
               if (ok){
                 try{
@@ -1074,14 +1082,16 @@ async function verifyGitHubPathExists(path){
             const origText = openBtn.innerHTML;
             openBtn.innerHTML = '⏳ Açılıyor...';
             openBtn.disabled = true;
-            const pid = (pidEl && pidEl.value || '').trim();
+            const pidRaw = (pidEl && pidEl.value || '').trim();
+            const norm = normalizeProductId(pidRaw);
             const base = 'https://github.com/amtbrs-03/AMTBRS/upload/site-release';
-            const url = base + (pid ? `?suggested_path=images/products/${encodeURIComponent(pid)}.jpg` : '');
+            const suggested = norm.hasExt ? `images/products/${norm.base}.${norm.ext}` : `images/products/${norm.base}.jpg`;
+            const url = base + (pidRaw ? `?suggested_path=${encodeURIComponent(suggested)}` : '');
             window.open(url, '_blank', 'noopener');
-            if (pathEl && pid) pathEl.value = `images/products/${pid}.jpg`;
-            if (autoBindEl && autoBindEl.checked && pid){
+            if (pathEl && pidRaw) pathEl.value = suggested;
+            if (autoBindEl && autoBindEl.checked && pidRaw){
               // otomatik bağlamayı başlat
-              await autoBindAfterUpload(pid);
+              await autoBindAfterUpload(pidRaw);
             } else {
               setMsg('GitHub yükleme sayfası açıldı. Dosyayı yükledikten sonra dosya yolunu aşağıya girin.', true);
             }
@@ -1154,21 +1164,25 @@ async function verifyGitHubPathExists(path){
             products[idx].name=name; products[idx].price=price; products[idx].badge=badge; products[idx].image=image;
             // Local feedback only; remote commit if token exists
             const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
-            if(token){
+            if (applyBtn){
               try {
                 const apiUrl='https://api.github.com/repos/amtbrs-03/AMTBRS/contents/products.json';
                 // get sha
                 const getRes = await fetch(apiUrl+'?ref=site-release&t='+Date.now(), { headers:{ 'Accept':'application/vnd.github.v3+json','Authorization':'token '+token } });
                 let sha=null; let remoteObj={ updatedAt: Date.now(), items: [] };
-                if(getRes.ok){ const j=await getRes.json(); sha=j.sha; remoteObj=JSON.parse(fromBase64(j.content))||remoteObj; }
-                if(!Array.isArray(remoteObj.items)) remoteObj.items=[];
+                const pidRaw = (pidEl && pidEl.value || '').trim();
+                const norm = normalizeProductId(pidRaw);
+                let pth = (pathEl && pathEl.value || '').trim();
+                if(!pth && pidRaw){ pth = norm.hasExt ? `images/products/${norm.base}.${norm.ext}` : `images/products/${norm.base}.jpg`; if(pathEl) pathEl.value = pth; }
                 const ridx = remoteObj.items.findIndex(p=>String(p.id)===String(id));
+                const tokenCheck = getGitHubToken();
+                if(!tokenCheck){ setMsg('GitHub token ayarlanmamış. Önce token girin.', false); applyBtn.innerHTML=origText; applyBtn.disabled=false; return; }
                 if(ridx!==-1){ remoteObj.items[ridx]={ ...remoteObj.items[ridx], name, price, badge, image }; }
                 remoteObj.updatedAt=Date.now();
                 const putRes = await fetch(apiUrl, { method:'PUT', headers:{ 'Content-Type':'application/json','Authorization':'token '+token }, body: JSON.stringify({ message:`chore(admin): inline ürün güncelle (${id})`, content: toBase64(JSON.stringify(remoteObj,null,2)), branch:'site-release', ...(sha?{sha}:{}) }) });
                 if(!putRes.ok){ const t=await putRes.text().catch(()=> ''); throw new Error('GitHub güncelleme başarısız: '+putRes.status+' '+t); }
                 if(msg) msg.textContent='✅ Güncellendi (GitHub + lokal)';
-              } catch(e){ if(msg) msg.textContent='⚠️ Lokal güncellendi; GitHub hata: '+(e.message||e); }
+                  await updateProductsJsonImage(pidRaw, pth);
             } else {
               if(msg) msg.textContent='✅ Lokal güncellendi (GitHub token yok)';
             }
