@@ -1,5 +1,5 @@
 {
-  "updatedAt": 1764489198739,
+  "updatedAt": 1764489275984,
   "items": [
     {
       "id": "img_1974.jpg",
@@ -21,13 +21,6 @@
       "price": 0,
       "badge": "",
       "image": "images/products/IMG_1966.JPG"
-    },
-    {
-      "id": "IMG_1967.JPG",
-      "name": "Ürün IMG_1967",
-      "price": 0,
-      "badge": "",
-      "image": "images/products/IMG_1967.JPG"
     }
   ]
 }
