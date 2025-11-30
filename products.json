@@ -1,5 +1,5 @@
 {
-  "updatedAt": 1764489887948,
+  "updatedAt": 1764490649158,
   "items": [
     {
       "id": "img_1974.jpg",
@@ -9,18 +9,18 @@
       "image": "images/products/IMG_1974.JPG"
     },
     {
-      "id": "IMG_1966.JPG",
-      "name": "PHİLODENDRON FELİX",
-      "price": 1200,
-      "badge": "Popüler",
-      "image": "images/products/IMG_1966.JPG"
-    },
-    {
       "id": "IMG_1972.JPG",
       "name": "Ürün IMG_1972",
       "price": 0,
       "badge": "",
       "image": "images/products/IMG_1972.JPG"
+    },
+    {
+      "id": "IMG_1966.JPG",
+      "name": "PHİLODENDRON FELİX",
+      "price": 1200,
+      "badge": "Popüler",
+      "image": "images/products/IMG_1966.JPG"
     }
   ]
 }
