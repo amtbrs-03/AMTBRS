@@ -602,7 +602,19 @@
   <script>
     (function(){
       try {
-        if (sessionStorage.getItem('admin_auth_ok') !== '1') {
+        var ok = sessionStorage.getItem('admin_auth_ok') === '1';
+        var untilStr = sessionStorage.getItem('admin_auth_until');
+        var now = Date.now();
+        var valid = false;
+        if (ok && untilStr) {
+          var until = parseInt(untilStr, 10);
+          if (isFinite(until) && now < until) valid = true; else {
+            // süresi doldu, bayrakları temizle
+            try { sessionStorage.removeItem('admin_auth_ok'); } catch(_){}
+            try { sessionStorage.removeItem('admin_auth_until'); } catch(_){}
+          }
+        }
+        if (!valid) {
           var gate = document.getElementById('adminAuthGate');
           if (gate) { gate.classList.add('active'); gate.style.display='flex'; }
         } else {
@@ -827,6 +839,8 @@
         const ok = await verifyAdminPassword(v);
         if(ok){
           sessionStorage.setItem('admin_auth_ok','1');
+          // 30 dakika süreli oturum
+          try { sessionStorage.setItem('admin_auth_until', String(Date.now() + 30*60*1000)); } catch(_){}
           gate.classList.remove('active'); gate.style.display='none';
           const adminUI = document.getElementById('adminUI'); if (adminUI) adminUI.style.display = 'block';
           msg.textContent='';
