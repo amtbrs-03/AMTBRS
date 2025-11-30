@@ -623,72 +623,56 @@
         <button type="button" onclick="closeProductEditPanel()" class="btn btn-ghost" title="Kapat">✖</button>
       </div>
       <form id="productEditForm" class="form-content">
-        <!-- Body: left gallery rail + main preview; right form -->
-        <div style="display:grid;grid-template-columns:280px 1fr;gap:16px;align-items:start">
-          <!-- Left: vertical gallery rail -->
+        <!-- Üst: 3 görsel kutusu (Ana, Görsel-1, Görsel-2) -->
+        <div id="editTopVisuals" style="display:grid;grid-template-columns:repeat(3,minmax(220px,1fr));gap:12px;align-items:start">
           <div>
-            <div id="editGalleryRail" style="display:flex;flex-direction:column;gap:8px">
-              <!-- thumbnails injected dynamically -->
+            <div style="font-weight:600;margin-bottom:6px">Ana görsel</div>
+            <div id="editImgBoxMain" style="width:100%;height:200px;border:1px solid #e5e7eb;border-radius:12px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;overflow:hidden">🖼️</div>
+            <div class="small" style="color:#64748b;margin-top:6px">Ürün ID: <span id="editImgBoxMainId">—</span></div>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+              <input id="editProductImage" type="text" placeholder="images/products/&lt;id&gt;.jpg" required style="flex:1;">
+              <button type="button" onclick="openGalleryPickerForProductFor('editProductImage')" class="btn btn-ghost" title="Galeriden seç">📸</button>
             </div>
           </div>
-          <!-- Right: main preview + fields -->
           <div>
-            <div id="editMainPreview" style="width:100%;height:260px;border:1px solid #e5e7eb;border-radius:12px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;overflow:hidden">🖼️</div>
-            <div style="margin-top:12px;display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
-              <label>Ürün ID
-                <input id="editProductId" type="text" required readonly>
-              </label>
-              <label>Ürün Adı
-                <input id="editProductName" type="text" required>
-              </label>
-              <label>Fiyat (₺)
-                <input id="editProductPrice" type="number" min="0" step="0.01" required>
-              </label>
-              <label>Rozet
-                <select id="editProductBadge">
-                  <option value="">Yok</option>
-                  <option value="Yeni">Yeni</option>
-                  <option value="İndirim">İndirim</option>
-                  <option value="Popüler">Popüler</option>
-                </select>
-              </label>
-            </div>
-            <!-- Image inputs: primary + 3 optional, with gallery pickers -->
-            <div id="editImagesRow" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;align-items:start;margin-top:14px">
-              <div>
-                <label>Ana Görsel
-                  <div style="display:flex;gap:0.5rem;align-items:center;">
-                    <input id="editProductImage" type="text" placeholder="images/products/<id>.jpg" required style="flex:1;">
-                    <button type="button" onclick="openGalleryPickerForProductFor('editProductImage')" class="btn btn-ghost" style="padding:0.5rem 0.75rem;font-size:0.85rem;" title="Galeriden seç">📸</button>
-                  </div>
-                </label>
-              </div>
-              <div>
-                <label>Ek Görsel 2
-                  <div style="display:flex;gap:0.5rem;align-items:center;">
-                    <input id="editProductImage2" type="text" placeholder="images/products/<id>-2.jpg" style="flex:1;">
-                    <button type="button" onclick="openGalleryPickerForProductFor('editProductImage2')" class="btn btn-ghost" style="padding:0.5rem 0.75rem;font-size:0.85rem;" title="Galeriden seç">📸</button>
-                  </div>
-                </label>
-              </div>
-              <div>
-                <label>Ek Görsel 3
-                  <div style="display:flex;gap:0.5rem;align-items:center;">
-                    <input id="editProductImage3" type="text" placeholder="images/products/<id>-3.jpg" style="flex:1;">
-                    <button type="button" onclick="openGalleryPickerForProductFor('editProductImage3')" class="btn btn-ghost" style="padding:0.5rem 0.75rem;font-size:0.85rem;" title="Galeriden seç">📸</button>
-                  </div>
-                </label>
-              </div>
-              <div>
-                <label>Ek Görsel 4
-                  <div style="display:flex;gap:0.5rem;align-items:center;">
-                    <input id="editProductImage4" type="text" placeholder="images/products/<id>-4.jpg" style="flex:1;">
-                    <button type="button" onclick="openGalleryPickerForProductFor('editProductImage4')" class="btn btn-ghost" style="padding:0.5rem 0.75rem;font-size:0.85rem;" title="Galeriden seç">📸</button>
-                  </div>
-                </label>
-              </div>
+            <div style="font-weight:600;margin-bottom:6px">Görsel-1</div>
+            <div id="editImgBox1" style="width:100%;height:200px;border:1px solid #e5e7eb;border-radius:12px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;overflow:hidden">🖼️</div>
+            <div class="small" style="color:#64748b;margin-top:6px">Ürün ID: <span id="editImgBox1Id">—</span></div>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+              <input id="editProductImage2" type="text" placeholder="images/products/&lt;id&gt;-2.jpg" style="flex:1;">
+              <button type="button" onclick="openGalleryPickerForProductFor('editProductImage2')" class="btn btn-ghost" title="Galeriden seç">📸</button>
             </div>
           </div>
+          <div>
+            <div style="font-weight:600;margin-bottom:6px">Görsel-2</div>
+            <div id="editImgBox2" style="width:100%;height:200px;border:1px solid #e5e7eb;border-radius:12px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;overflow:hidden">🖼️</div>
+            <div class="small" style="color:#64748b;margin-top:6px">Ürün ID: <span id="editImgBox2Id">—</span></div>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+              <input id="editProductImage3" type="text" placeholder="images/products/&lt;id&gt;-3.jpg" style="flex:1;">
+              <button type="button" onclick="openGalleryPickerForProductFor('editProductImage3')" class="btn btn-ghost" title="Galeriden seç">📸</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alt: metin alanları (Ad, Fiyat, Rozet, Ürün ID) -->
+        <div style="margin-top:16px;display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
+          <label>Ürün Adı
+            <input id="editProductName" type="text" required>
+          </label>
+          <label>Fiyat (₺)
+            <input id="editProductPrice" type="number" min="0" step="0.01" required>
+          </label>
+          <label>Rozet
+            <select id="editProductBadge">
+              <option value="">Yok</option>
+              <option value="Yeni">Yeni</option>
+              <option value="İndirim">İndirim</option>
+              <option value="Popüler">Popüler</option>
+            </select>
+          </label>
+          <label>Ürün ID
+            <input id="editProductId" type="text" required readonly>
+          </label>
         </div>
         <div id="editProductMsg" style="margin:10px 0;color:#c00"></div>
         <div class="form-actions" style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:12px">
@@ -1073,35 +1057,19 @@
             heroThumb.innerHTML = primaryImg ? `<img src="${primaryImg}" alt="thumb" style="width:100%;height:100%;object-fit:cover">` : '🌸';
           }
 
-          // Main preview
-          const mainPrev = document.getElementById('editMainPreview');
-          if(mainPrev){ mainPrev.innerHTML = primaryImg ? `<img src="${primaryImg}" alt="preview" style="width:100%;height:100%;object-fit:cover">` : '🖼️'; }
-
-          // Gallery rail thumbnails
-          const rail = document.getElementById('editGalleryRail');
-          if(rail){
-            rail.innerHTML = '';
-            const allImgs = [];
-            if(primaryImg) allImgs.push(primaryImg);
-            imgs.forEach(u=>{ if(u && !allImgs.includes(u)) allImgs.push(u); });
-            if(!allImgs.length) {
-              const empty = document.createElement('div');
-              empty.className = 'small';
-              empty.style.color = '#64748b';
-              empty.textContent = 'Bu ürün için görsel yok';
-              rail.appendChild(empty);
-            } else {
-              allImgs.forEach((src, idx)=>{
-                const item = document.createElement('div');
-                item.style.cssText = 'display:flex;align-items:center;gap:8px;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;padding:8px;cursor:pointer';
-                item.innerHTML = `<div style="width:52px;height:52px;border-radius:8px;background:#f3f4f6;overflow:hidden;border:1px solid #e5e7eb"><img src="${src}" style="width:100%;height:100%;object-fit:cover"></div><div class="small" style="color:#374151">Görsel ${idx+1}</div>`;
-                item.addEventListener('click', function(){
-                  if(mainPrev) mainPrev.innerHTML = `<img src="${src}" alt="preview" style="width:100%;height:100%;object-fit:cover">`;
-                });
-                rail.appendChild(item);
-              });
-            }
-          }
+          // Üst 3 kutu önizlemelerini doldur
+          const boxMain = document.getElementById('editImgBoxMain');
+          const box1 = document.getElementById('editImgBox1');
+          const box2 = document.getElementById('editImgBox2');
+          if(boxMain) boxMain.innerHTML = primaryImg ? `<img src="${primaryImg}" alt="main" style="width:100%;height:100%;object-fit:cover">` : '🖼️';
+          if(box1) box1.innerHTML = imgs[1] ? `<img src="${imgs[1]}" alt="img1" style="width:100%;height:100%;object-fit:cover">` : '🖼️';
+          if(box2) box2.innerHTML = imgs[2] ? `<img src="${imgs[2]}" alt="img2" style="width:100%;height:100%;object-fit:cover">` : '🖼️';
+          const boxMainId = document.getElementById('editImgBoxMainId');
+          const box1Id = document.getElementById('editImgBox1Id');
+          const box2Id = document.getElementById('editImgBox2Id');
+          if(boxMainId) boxMainId.textContent = product.id || '—';
+          if(box1Id) box1Id.textContent = product.id || '—';
+          if(box2Id) box2Id.textContent = product.id || '—';
 
           panel.classList.add('active');
           panel.style.display = 'flex'; // Ensure modal is visible regardless of prior inline styles
