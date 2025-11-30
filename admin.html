@@ -800,11 +800,34 @@
     const token = (typeof getGitHubToken==='function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
     const headers = { 'Accept':'application/vnd.github.v3+json' };
     if(token) headers['Authorization'] = 'token ' + token;
-    const res = await fetch(url, { headers });
-    if(!res.ok) throw new Error('admin-config.json alınamadı ('+res.status+')');
-    const j = await res.json();
-    const cfg = JSON.parse(atob((j.content||'').replace(/\n/g,'')));
-    return { cfg, sha: j.sha };
+    // Önce Contents API ile dene (token varsa yetkili okuma), olmazsa raw/jsDelivr fallback
+    try {
+      const res = await fetch(url, { headers });
+      if(res.ok){
+        const j = await res.json();
+        const cfg = JSON.parse(atob((j.content||'').replace(/\n/g,'')));
+        return { cfg, sha: j.sha };
+      }
+      // 401/403 vb. durumlarda aşağıya geç
+    } catch(_){ /* fallback */ }
+    // Public fallback: raw.githubusercontent veya jsDelivr üzerinden okunur (SHA olmaz)
+    const fallbacks = [
+      `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/admin-config.json?_=${Date.now()}`,
+      `https://cdn.jsdelivr.net/gh/${owner}/${repo}@${branch}/admin-config.json`
+    ];
+    for(const u of fallbacks){
+      try{
+        const r = await fetch(u, { cache:'no-store' });
+        if(r.ok){
+          const txt = await r.text();
+          try{
+            const cfg = JSON.parse(txt);
+            return { cfg, sha: null };
+          }catch(e){ /* try next */ }
+        }
+      }catch(_){ /* continue */ }
+    }
+    throw new Error('admin-config.json alınamadı (401/403 veya public fallback başarısız)');
   }
   async function verifyAdminPassword(pass){
     const { cfg } = await fetchAdminConfig();
