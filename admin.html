@@ -910,8 +910,6 @@
                 </div>
                 <div class='actions'>
                   <button type='button' class='btn' data-action='edit' aria-expanded='false' data-id='${p.id}' onclick='if(window.openProductEditPanelById){ openProductEditPanelById("${p.id}"); } return false;'>Düzenle</button>
-                  <button type='button' class='btn btn-ghost' data-action='move-up' data-id='${p.id}'>⬆︎ Yukarı</button>
-                  <button type='button' class='btn btn-ghost' data-action='move-down' data-id='${p.id}'>⬇︎ Aşağı</button>
                   <button type='button' class='btn btn-danger' data-action='delete' data-id='${p.id}'>Sil</button>
                 </div>
                 <div class='prod-edit-panel' id='edit-panel-${p.id}' style='display:none;margin-top:8px;padding:10px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;'>
@@ -981,12 +979,6 @@
                         const btnEl = btn;
                         if(typeof toggleInlineEdit==='function') toggleInlineEdit(id, btnEl);
                       }catch(err){ console.warn('[admin] inline fallback failed', err); }
-                      break;
-                    case 'move-up':
-                      if(typeof moveProduct==='function') moveProduct(id, -1);
-                      break;
-                    case 'move-down':
-                      if(typeof moveProduct==='function') moveProduct(id, +1);
                       break;
                     case 'delete':
                       if(typeof deleteAdminProduct==='function') deleteAdminProduct(id);
