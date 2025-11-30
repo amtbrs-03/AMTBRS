@@ -326,7 +326,10 @@
       h1{font-size:1.5rem}
       .action-bar{padding:1rem}
       .btn{padding:0.6rem 1.2rem;font-size:0.875rem}
-                    <button class='btn btn-ghost' onclick='verifyInlineImagePath("${p.id}")'>Görsel Doğrula</button>
+      /* Ensure registered product action buttons are always clickable */
+      .prod-item{ position:relative; }
+      .prod-item .actions{ position:relative; z-index:10; }
+      .prod-item .actions .btn{ pointer-events:auto; }
     }
 
     /* Modal Styles */
