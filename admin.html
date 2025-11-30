@@ -997,39 +997,6 @@
             <button id="addCardBtn" class="btn" type="button" title="Yeni düzenleme kartı ekle" style="font-size:0.95rem;">➕ Kart Ekle</button>
           </div>
         </div>
-        <!-- Sabit Yeni Ürün Kartı Bölümü -->
-        <div id="newProductFixed" class="card" style="margin-bottom:1rem;">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;flex-wrap:wrap;">
-            <span class="small" style="font-weight:700;color:#065f46;">🆕 Yeni Ürün Ekle</span>
-            <button id="newProdSaveBtn" class="btn" type="button">Kaydet</button>
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:10px;align-items:start;">
-            <label>Ürün ID
-              <input id="newProdId" type="text" placeholder="p_abc123" />
-            </label>
-            <label>Ad
-              <input id="newProdName" type="text" placeholder="Ürün adı" />
-            </label>
-            <label>Fiyat (₺)
-              <input id="newProdPrice" type="text" placeholder="0,00" inputmode="decimal" />
-            </label>
-            <label>Rozet
-              <select id="newProdBadge">
-                <option value="">Yok</option>
-                <option value="Yeni">Yeni</option>
-                <option value="İndirim">İndirim</option>
-                <option value="Popüler">Popüler</option>
-              </select>
-            </label>
-            <label>Ana Görsel
-              <div style="display:flex;gap:8px;align-items:center;">
-                <input id="newProdImage" type="text" placeholder="images/products/p_abc123.jpg" style="flex:1;" />
-                <button id="newProdPickImg" type="button" class="btn btn-ghost" title="Galeriden seç">📸</button>
-              </div>
-            </label>
-          </div>
-          <div id="newProdMsg" class="small" style="margin-top:8px;color:#0f766e;"></div>
-        </div>
         <div id="products" class="products-list"></div>
         <script>
         // Product edit panel functions (must be defined before renderAdminProducts for event delegation)
@@ -1483,62 +1450,6 @@
             });
           }
 
-          // Sabit Yeni Ürün Kaydetme
-          const saveNewBtn = document.getElementById('newProdSaveBtn');
-          const pickNewBtn = document.getElementById('newProdPickImg');
-          if(pickNewBtn){
-            pickNewBtn.addEventListener('click', ()=>{
-              if(typeof openGalleryPickerForProductFor==='function'){
-                openGalleryPickerForProductFor('newProdImage');
-              } else {
-                alert('Galeri seçici bulunamadı. Görsel yolunu manuel girin.');
-              }
-            });
-          }
-          if(saveNewBtn){
-            saveNewBtn.addEventListener('click', async ()=>{
-              const msg = document.getElementById('newProdMsg');
-              function setMsg(t, ok){ if(msg){ msg.style.color = ok? '#065f46':'#b91c1c'; msg.textContent = t; } }
-              const id = (document.getElementById('newProdId')?.value||'').trim();
-              const name = (document.getElementById('newProdName')?.value||'').trim();
-              const priceStr = (document.getElementById('newProdPrice')?.value||'').trim();
-              const badge = (document.getElementById('newProdBadge')?.value||'').trim();
-              const image = (document.getElementById('newProdImage')?.value||'').trim();
-              if(!id || !name){ setMsg('ID ve Ad zorunludur.', false); return; }
-              // Fiyat parse (TL formatı destekler)
-              let s = priceStr.toLowerCase(); s = s.replace(/\s*tl$/,''); s = s.replace(/\s/g,''); s = s.replace(/\./g,''); s = s.replace(/,/g,'.');
-              const price = parseFloat(s); if(isNaN(price) || price<0){ setMsg('Geçersiz fiyat.', false); return; }
-              // Görsel yolu doğrulama (opsiyonel baştaki '/')
-              const imgRe=/^\/?images\/(products|gallery)\/[A-Za-z0-9._-]+\.(jpg|jpeg|png|webp)$/i;
-              if(image && !imgRe.test(image)){ setMsg('Geçerli görsel yolu girin (ör. images/products/p_abc123.jpg)', false); return; }
-              try{
-                // products.json oku
-                const res = await fetch('products.json?' + Date.now());
-                if(!res.ok) throw new Error('products.json alınamadı');
-                const data = await res.json();
-                const list = Array.isArray(data.items)?data.items:(Array.isArray(data)?data:[]);
-                // ID çakışmasını engelle
-                if(list.some(p=> String(p.id)===String(id))){ setMsg('Bu ID zaten mevcut.', false); return; }
-                const newProduct = { id, name, price, badge, image: image||'', images: image? [image]:[] };
-                const token = (typeof getGitHubToken==='function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
-                const owner='amtbrs-03'; const repo='AMTBRS'; const branch='site-release';
-                // Mevcut meta için API'den SHA al
-                const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/products.json`;
-                const getRes = await fetch(apiUrl+`?ref=${branch}&_=${Date.now()}`, { headers:{ 'Accept':'application/vnd.github.v3+json', ...(token?{'Authorization':'token '+token}:{}) }, cache:'no-store' });
-                if(!getRes.ok) throw new Error('Remote products.json alınamadı');
-                const meta = await getRes.json();
-                let remoteObj; try{ remoteObj = JSON.parse(fromBase64((meta.content||'').replace(/\n/g,''))) || {}; }catch(_){ remoteObj={}; }
-                let remoteList = Array.isArray(remoteObj.items)?remoteObj.items:(Array.isArray(remoteObj)?remoteObj:[]);
-                remoteList.push(newProduct);
-                const next = remoteObj.items? { ...remoteObj, items: remoteList, updatedAt: Date.now() } : { items: remoteList, updatedAt: Date.now() };
-                if(!token){ setMsg('GitHub token yok: yerel liste güncellendi, uzak kaydetmek için token ekleyin.', false); return; }
-                const putRes = await fetch(apiUrl, { method:'PUT', headers:{ 'Content-Type':'application/json','Authorization':'token '+token }, body: JSON.stringify({ message:`feat(admin): yeni ürün eklendi (${id})`, content: toBase64(JSON.stringify(next,null,2)), branch, sha: meta.sha }) });
-                if(!putRes.ok){ const t=await putRes.text().catch(()=> ''); throw new Error('GitHub kaydı başarısız: '+putRes.status+' '+t); }
-                setMsg('✅ Kaydedildi. Liste güncelleniyor...', true);
-                renderAdminProducts();
-              }catch(e){ setMsg('Hata: '+(e.message||e), false); }
-            });
-          }
         });
         </script>
       </div>
