@@ -1,12 +1,16 @@
 {
-  "updatedAt": 1764510542309,
+  "updatedAt": 1764528615438,
   "items": [
     {
       "id": "IMG_1966.JPG",
       "name": "PHİLODENDRON FELİX",
       "price": 1200,
       "badge": "Popüler",
-      "image": "images/products/IMG_1966.JPG"
+      "image": "images/products/IMG_1966.JPG",
+      "images": [
+        "images/products/IMG_1966.JPG",
+        "images/gallery/IMG_1972.JPG"
+      ]
     }
   ]
 }
