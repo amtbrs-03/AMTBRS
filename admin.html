@@ -805,27 +805,42 @@
       const token=localStorage.github_token||localStorage.gh_token;
       const repo='amtbrs-03/AMTBRS'; const branch='site-release';
       // Retry up to 3 times on 409 conflict
-      let attempt=0; const maxAttempts=3;
+      let attempt=0; const maxAttempts=3; let lastError=null;
       while(attempt < maxAttempts){
         attempt++;
+        if(attempt>1) msgEl.textContent=`⏳ Yeniden deneniyor (${attempt}/${maxAttempts})...`;
         try{
-          const url=`https://api.github.com/repos/${repo}/contents/products.json?ref=${branch}&t=${Date.now()}`;
-          const res=await fetch(url,{cache:'no-store'}); if(!res.ok) throw new Error('products.json alınamadı!');
+          const url=`https://api.github.com/repos/${repo}/contents/products.json?ref=${branch}&_=${Date.now()}`;
+          const res=await fetch(url,{cache:'no-store',headers:{'Cache-Control':'no-cache'}}); 
+          if(!res.ok) throw new Error('products.json alınamadı!');
           const data=await res.json(); let products=JSON.parse(fromBase64(data.content));
           let idx=products.items.findIndex(p=>p.id===id); if(idx===-1) throw new Error('Ürün bulunamadı!');
           products.items[idx]={ id, name, price, badge, image }; products.updatedAt=Date.now();
           if(token){
             const putUrl=`https://api.github.com/repos/${repo}/contents/products.json`;
             const putRes=await fetch(putUrl,{ method:'PUT', headers:{ 'Authorization':'token '+token,'Content-Type':'application/json' }, body:JSON.stringify({ message:`Ürün güncellendi: ${id}`, content:toBase64(JSON.stringify(products,null,2)), sha:data.sha, branch }) });
-            if(putRes.status===409 && attempt<maxAttempts){ await new Promise(r=>setTimeout(r,500*attempt)); continue; }
+            if(putRes.status===409 && attempt<maxAttempts){ 
+              msgEl.textContent=`⚠️ Çakışma algılandı, ${500*attempt}ms sonra tekrar...`;
+              await new Promise(r=>setTimeout(r,500*attempt)); 
+              continue; 
+            }
             if(!putRes.ok){ const t=await putRes.text().catch(()=>''); throw new Error('GitHub kaydı başarısız: '+putRes.status+' '+t); }
             msgEl.textContent='✅ Kaydedildi!';
           } else {
             msgEl.textContent='✅ Lokal güncellendi (GitHub token yok)';
           }
           break;
-        }catch(err){ if(err.message.includes('409') && attempt<maxAttempts){ await new Promise(r=>setTimeout(r,500*attempt)); continue; } throw err; }
+        }catch(err){ 
+          lastError=err;
+          if(err.message.includes('409') && attempt<maxAttempts){ 
+            msgEl.textContent=`⚠️ Çakışma (${attempt}), ${500*attempt}ms sonra tekrar...`;
+            await new Promise(r=>setTimeout(r,500*attempt)); 
+            continue; 
+          } 
+          throw err; 
+        }
       }
+      if(attempt>=maxAttempts && lastError) throw lastError;
       // UI yenile ve paneli kapat
       setTimeout(()=>{ try{ renderAdminProducts(); }catch(_){/* ignore */} closeProductEditPanel(); }, 1000);
     } catch(err){ msgEl.textContent='Hata: '+err.message; }
@@ -1538,11 +1553,12 @@ try {
               // Commit remote update with retry on 409
               const owner='amtbrs-03'; const repo='AMTBRS';
               const apiUrl=`https://api.github.com/repos/${owner}/${repo}/contents/products.json`;
-              let attempt=0; const maxAttempts=3;
+              let attempt=0; const maxAttempts=3; let lastError=null;
               while(attempt < maxAttempts){
                 attempt++;
+                if(attempt>1 && msg) msg.textContent=`⏳ Yeniden deneniyor (${attempt}/${maxAttempts})...`;
                 try{
-                  const getRes = await fetch(apiUrl+'?ref=site-release&t='+Date.now(), { headers:{ 'Accept':'application/vnd.github.v3+json','Authorization':'token '+token }, cache:'no-store' });
+                  const getRes = await fetch(apiUrl+`?ref=site-release&_=${Date.now()}`, { headers:{ 'Accept':'application/vnd.github.v3+json','Authorization':'token '+token,'Cache-Control':'no-cache' }, cache:'no-store' });
                   if(!getRes.ok) throw new Error('Remote products.json alınamadı');
                   const meta = await getRes.json();
                   let remoteObj; try{ remoteObj = JSON.parse(fromBase64((meta.content||'').replace(/\n/g,''))) || {}; }catch(_){ remoteObj={}; }
@@ -1551,12 +1567,25 @@ try {
                   if(remoteObj.items) remoteObj.items=list; else remoteObj=list;
                   remoteObj.updatedAt=Date.now();
                   const putRes = await fetch(apiUrl, { method:'PUT', headers:{ 'Content-Type':'application/json','Authorization':'token '+token }, body: JSON.stringify({ message:`chore(admin): inline ürün güncelle (${id})`, content: toBase64(JSON.stringify(remoteObj,null,2)), branch:'site-release', sha: meta.sha }) });
-                  if(putRes.status===409 && attempt<maxAttempts){ if(msg) msg.textContent=`⚠️ Çakışma, yeniden deneniyor (${attempt}/${maxAttempts})...`; await new Promise(r=>setTimeout(r,500*attempt)); continue; }
+                  if(putRes.status===409 && attempt<maxAttempts){ 
+                    if(msg) msg.textContent=`⚠️ Çakışma algılandı, ${500*attempt}ms sonra tekrar...`; 
+                    await new Promise(r=>setTimeout(r,500*attempt)); 
+                    continue; 
+                  }
                   if(!putRes.ok){ const t=await putRes.text().catch(()=> ''); throw new Error('GitHub güncelleme başarısız: '+putRes.status+' '+t); }
                   if(msg) msg.textContent='✅ Güncellendi (GitHub + lokal)';
                   break;
-                }catch(err){ if(err.message.includes('409') && attempt<maxAttempts){ await new Promise(r=>setTimeout(r,500*attempt)); continue; } throw err; }
+                }catch(err){ 
+                  lastError=err;
+                  if(err.message.includes('409') && attempt<maxAttempts){ 
+                    if(msg) msg.textContent=`⚠️ Çakışma (${attempt}), ${500*attempt}ms sonra tekrar...`;
+                    await new Promise(r=>setTimeout(r,500*attempt)); 
+                    continue; 
+                  } 
+                  throw err; 
+                }
               }
+              if(attempt>=maxAttempts && lastError) throw lastError;
             } else {
               if(msg) msg.textContent='✅ Lokal güncellendi (GitHub token yok)';
             }
