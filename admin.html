@@ -607,6 +607,74 @@
 
 </head>
 <body>
+  <!-- Token Modal -->
+  <div id="authModal" class="modal">
+    <div class="modal-content small-modal">
+      <div class="modal-header">
+        <h2>GitHub Token Girişi</h2>
+        <span class="close-modal" onclick="closeAuthModal()">&times;</span>
+      </div>
+      <div class="modal-body form-content">
+        <label for="loginToken">Kişisel erişim token'ınızı girin:</label>
+        <input type="password" id="loginToken" placeholder="ghp_..." autocomplete="off" style="width:100%;margin-bottom:1rem" />
+        <button class="btn" onclick="loginUser()">Kaydet</button>
+        <button class="btn" id="clearTokenBtn" style="background:#ef4444;margin-left:8px">Token'ı Sil</button>
+        <div id="patNotice" style="margin-top:1rem;color:#ef4444;display:none">Token eksik veya hatalı!</div>
+        <div style="margin-top:1rem;font-size:0.95em;color:#444">
+          <b>Bilgi:</b> Girdiğiniz token <b>tarayıcınızda</b> saklanır. Tarayıcıyı kapatsanız bile otomatik kullanılır. Token'ı silmek için <i>Token'ı Sil</i> butonunu kullanabilirsiniz.<br>
+          <span style="color:#b91c1c">Güvenlik için token'ınızı kimseyle paylaşmayın ve sadece kendi cihazınızda kullanın.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    // Token modal otomatik doldurma ve silme
+    document.addEventListener('DOMContentLoaded', function(){
+      var tokenInput = document.getElementById('loginToken');
+      var clearBtn = document.getElementById('clearTokenBtn');
+      if (tokenInput) {
+        var savedToken = localStorage.getItem('github_token') || '';
+        if (savedToken) tokenInput.value = savedToken;
+      }
+      if (clearBtn) {
+        clearBtn.onclick = function(){
+          localStorage.removeItem('github_token');
+          if (tokenInput) tokenInput.value = '';
+          var notice = document.getElementById('patNotice');
+          if (notice) notice.style.display = 'none';
+          alert('Token silindi. Yeniden girmek için sayfayı yenileyin veya yeni token girin.');
+        };
+      }
+    });
+  </script>
+  <script>
+    // Guard for mojibake normalizer: ensure `sweep` exists to avoid ReferenceError
+    (function(){
+      try {
+        if (typeof window.sweep !== 'function') {
+          window.sweep = function(s){
+            try { return String(s); } catch(_) { return s; }
+          };
+        }
+        if (typeof window.normalizeMojibake !== 'function') {
+          window.normalizeMojibake = function(text){
+            try {
+              var s = (typeof text === 'string') ? text : String(text);
+              // Replace common mojibake/unicode punctuation and normalize
+              s = s.replace(/\u00A0/g,' ')
+                   .replace(/[\u2018\u2019]/g, "'")
+                   .replace(/[\u201C\u201D]/g, '"')
+                   .replace(/[\u2013\u2014]/g, '-');
+              if (typeof s.normalize === 'function') {
+                s = s.normalize('NFC');
+              }
+              return window.sweep(s);
+            } catch(e) { return text; }
+          };
+        }
+      } catch(_){}
+    })();
+  </script>
   <!-- PAT Missing Notice -->
   <div id="patNotice" style="display:none; background:#fff3cd; color:#664d03; border:1px solid #ffe69c; padding:10px 12px; margin:10px; border-radius:8px;">
     <strong>GitHub Token eksik:</strong> Değişiklikler şu an <em>yerel olarak</em> kaydediliyor ve canlı siteye aktarılmıyor.
@@ -617,20 +685,12 @@
     (function(){
       try {
         // Bypass anahtarları: local ve config
-        var bypassLocal = localStorage.getItem('skip_admin_auth') === '1' || localStorage.getItem('disable_admin_password') === '1';
-        var bypass = bypassLocal;
+        var bypass = false;
         var ok = sessionStorage.getItem('admin_auth_ok') === '1';
         var untilStr = sessionStorage.getItem('admin_auth_until');
         var now = Date.now();
         var valid = false;
-        if (bypass) {
-          // Bypass aktifse oturumu geçerli say ve 24 saatlik süre yaz
-          try {
-            sessionStorage.setItem('admin_auth_ok','1');
-            sessionStorage.setItem('admin_auth_until', String(Date.now() + 24*60*60*1000));
-          } catch(_){}
-          valid = true;
-        } else if (ok && untilStr) {
+        if (ok && untilStr) {
           var until = parseInt(untilStr, 10);
           if (isFinite(until) && now < until) valid = true; else {
             // süresi doldu, bayrakları temizle
@@ -656,18 +716,7 @@
           }
         }
 
-        // Config dosyasından devre dışı bırakma bayrağını otomatik algıla (async)
-        try {
-          fetch('/admin-config.json')
-            .then(function(r){ return r.ok ? r.json() : null; })
-            .then(function(cfg){
-              if (cfg && (cfg.disableAdminPassword === true || cfg.disable_admin_password === true)) {
-                // Kalıcı bypass için localStorage anahtarını set et
-                try { localStorage.setItem('disable_admin_password','1'); } catch(_){}
-              }
-            })
-            .catch(function(_){});
-        } catch(_){}
+        // Config tabanlı bypass kaldırıldı; sadece skip_admin_auth anahtarı ile geçici baypas yapılır
       } catch(_){}
     })();
   </script>
@@ -958,7 +1007,7 @@
       try { sessionStorage.removeItem('admin_auth_ok'); } catch(_){}
       try { localStorage.removeItem('admin_logged_in'); } catch(_){}
       try { localStorage.removeItem('admin_passkey'); } catch(_){}
-      try { localStorage.removeItem('github_token'); } catch(_){}
+      // Token artık çıkışta silinmiyor
       try { localStorage.removeItem('pending_user_edits'); } catch(_){}
       closeLogoutConfirmModal();
       location.reload();
