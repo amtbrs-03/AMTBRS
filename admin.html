@@ -520,10 +520,6 @@
     if (logoutBtn) {
       logoutBtn.addEventListener('click', logoutAdminSession);
     }
-    const loginBtn = document.getElementById('adminLoginBtn');
-    if (loginBtn){
-      loginBtn.addEventListener('click', openAdminLogin);
-    }
   });
   // Parola doğrulama ve GitHub'dan config çekme
   async function sha256Hex(str){
@@ -574,13 +570,6 @@
     });
   }
   document.addEventListener('DOMContentLoaded', bindAdminGate);
-  // Admin giriş butonu: kilit modali aç
-  function openAdminLogin(){
-    const gate = document.getElementById('adminAuthGate');
-    const inp = document.getElementById('adminPassInput');
-    if(gate){ gate.classList.add('active'); gate.style.display='flex'; }
-    if(inp){ setTimeout(()=>inp.focus(), 50); }
-  }
   // Parola güncelleme: GitHub’a yeni hash yaz (isteğe bağlı kullanım için global yap)
   async function updateAdminPassword(newPass){
     const owner='amtbrs-03'; const repo='AMTBRS'; const branch='site-release';
@@ -596,7 +585,7 @@
     return true;
   }
   window.updateAdminPassword = updateAdminPassword;
-  window.openAdminLogin = openAdminLogin;
+  // (Giriş butonu kaldırıldı; modal otomatik açılıyor)
   // Oturum kapatma ve tarayıcı verilerini temizleme
   function logoutAdminSession(){
     try {
@@ -670,7 +659,6 @@
         <div class="subtitle">Ürün, Kullanıcı ve Sipariş Yönetimi</div>
       </div>
       <div style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;">
-        <button id="adminLoginBtn" class="btn" type="button" title="Yönetici girişi">🔐 Giriş</button>
         <a href="anasayfa.html" class="btn btn-ghost" title="Siteyi yeni sekmede aç">🏠 Siteyi Görüntüle</a>
         <button id="pageRefreshBtn" class="btn btn-ghost" type="button" title="Admin sayfasını yenile" onclick="window.location.reload()">🔄 Yenile</button>
         <button id="adminLogoutBtn" class="btn btn-danger" type="button" title="Oturumu kapat">🚪 Çıkış</button>
