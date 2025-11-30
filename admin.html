@@ -1127,7 +1127,7 @@
   document.getElementById('productEditForm').onsubmit = async function(e){
     e.preventDefault();
     const msgEl=document.getElementById('editProductMsg');
-    msgEl.textContent='⏳ Kaydediliyor...';
+    msgEl.textContent='⏳ Değişiklikler kaydediliyor (canlıya alma arka planda)...';
     const id=document.getElementById('editProductId').value.trim();
     const name=document.getElementById('editProductName').value.trim();
     const price=parseFloat(document.getElementById('editProductPrice').value);
@@ -1146,7 +1146,6 @@
         if(ver.exists) return true;
         if(!autoBind) return false;
         let attempts = 0; const maxAttempts = 10; let delay = 1000;
-        // Arka planda sessiz bekleme
         while(attempts < maxAttempts){
           attempts++;
           await new Promise(r=>setTimeout(r, delay));
@@ -1155,7 +1154,6 @@
           delay = Math.min(delay * 1.7, 15000);
         }
         if(!ver.exists) return false;
-        // Sessiz başarı
         return true;
       }
       // Check main + extra images if provided
@@ -1179,143 +1177,125 @@
         if(holder){ holder.innerHTML = val ? `<img src="${val.replace(/^images\//,'') ? val : val}" alt="${id}" style="width:100%;height:100%;object-fit:cover">` : '' }
       });
     } catch(_){/* ignore preview errors */}
-    try {
-      const token=localStorage.github_token||localStorage.gh_token;
-      const repo='amtbrs-03/AMTBRS'; const branch='site-release';
-      // Retry up to 3 times on 409 conflict
-      let attempt=0; const maxAttempts=3; let lastError=null;
-      while(attempt < maxAttempts){
-        attempt++;
-        if(attempt>1) msgEl.textContent=`⏳ Yeniden deneniyor (${attempt}/${maxAttempts})...`;
-        try{
-          const url=`https://api.github.com/repos/${repo}/contents/products.json?ref=${branch}&_=${Date.now()}`;
-          let res=await fetch(url,{cache:'no-store'});
-          if(!res.ok){
-            // Fallback: raw file
-            const rawUrl = 'https://raw.githubusercontent.com/amtbrs-03/AMTBRS/site-release/products.json?_=' + Date.now();
-            res = await fetch(rawUrl, { cache:'no-store' });
-            if(!res.ok) throw new Error('products.json alınamadı! ('+res.status+')');
-            const txt = await res.text();
-            let products = {};
-            try { products = JSON.parse(txt); } catch(e){ throw new Error('products.json parse hatası'); }
-            // Normalize structure
-            if(!Array.isArray(products.items)) products.items = Array.isArray(products) ? products : [];
-            // Continue with products object
-            // imagesArr and next defined below
-            const imagesArr=[image].concat([image2,image3,image4].filter(Boolean));
-            const next = { id, name, price, badge, image: imagesArr[0], images: imagesArr };
-            const idNorm = String(id).toLowerCase().replace(/\.(jpg|jpeg|png|webp)$/i,'');
-            let idx = -1;
-            if(Array.isArray(products.items)){
-              idx = products.items.findIndex(p=> String(p.id).toLowerCase().replace(/\.(jpg|jpeg|png|webp)$/i,'') === idNorm);
-            }
-            if(idx===-1){ products.items.push(next); } else { products.items[idx]=next; }
-            products.updatedAt=Date.now();
-            const token=localStorage.github_token||localStorage.gh_token;
-            if(token){
-              // Write back via GitHub API: we need latest sha
-              const metaRes = await fetch(url, { cache:'no-store' });
-              if(!metaRes.ok) throw new Error('products.json meta alınamadı: '+metaRes.status);
-              const dataMeta = await metaRes.json();
-              const putUrl=`https://api.github.com/repos/${repo}/contents/products.json`;
-              const actionMsg = (idx===-1) ? 'yeni ürün eklendi' : 'ürün güncellendi';
-              const putRes=await fetch(putUrl,{ method:'PUT', headers:{ 'Authorization':'token '+token,'Content-Type':'application/json' }, body:JSON.stringify({ message:`admin: ${actionMsg}: ${id}`, content:toBase64(JSON.stringify(products,null,2)), sha:dataMeta.sha, branch }) });
-              if(!putRes.ok){ 
-                const t=await putRes.text().catch(()=> '');
-                // Özel 403 mesajı: PAT kapsam/izin hatası, korunmuş dal, SSO veya repo erişimi
-                if(putRes.status===403){
-                  msgEl.innerHTML = `❌ GitHub kaydı başarısız (403).<br>
-                    <div class="small" style="color:#64748b;margin-top:6px">Olası nedenler:<ul style="margin:6px 0;">
-                    <li>Token kapsamı yetersiz: <b>repo</b> (classic) veya <b>fine-grained</b> token için bu repoya "Contents: Read & Write" izni verin.</li>
-                    <li>Reponun yazma izni yok: Token sahibi hesabın <b>amtbrs-03/AMTBRS</b> reposunda yazma yetkisi olmalı.</li>
-                    <li>Dal koruması: <b>site-release</b> dalı korumalıysa doğrudan yazmaya izin verilmeyebilir.</li>
-                    <li>Kurumsal SSO: Organizasyon token’ı için SSO yetkilendirmesi gerekiyor.</li>
-                    </ul></div>`;
-                }
-                throw new Error('GitHub kaydı başarısız: '+putRes.status+' '+t);
-              }
-              msgEl.textContent='✅ Kaydedildi!';
-            } else {
-              try { localStorage.setItem('products_override', JSON.stringify(products)); } catch(_){}
-              msgEl.textContent='✅ Yerel olarak kaydedildi (GitHub token yok)';
-              // Bilgi uyarısını otomatik gösterme — token ayarları kartından yönetilecek
-            }
-            // Refresh and close
-            setTimeout(()=>{ try{ renderAdminProducts(); }catch(_){} closeProductEditPanel(); }, 800);
-            return; // Done via raw fallback path
-          }
-          const data=await res.json(); let products=JSON.parse(fromBase64(data.content));
-          const imagesArr=[image].concat([image2,image3,image4].filter(Boolean));
-          const next = { id, name, price, badge, image: imagesArr[0], images: imagesArr };
-          // Case-insensitive ID karşılaştırması (uzantıyı temizle)
-          const idNorm = String(id).toLowerCase().replace(/\.(jpg|jpeg|png|webp)$/i,'');
-          let idx = -1;
-          if(Array.isArray(products.items)){
-            idx = products.items.findIndex(p=> String(p.id).toLowerCase().replace(/\.(jpg|jpeg|png|webp)$/i,'') === idNorm);
-          }
-          if(!Array.isArray(products.items)) products.items = Array.isArray(products) ? products : [];
-          if(idx===-1){
-            // Ürün yoksa ekle (upsert)
-            products.items.push(next);
-          } else {
-            // Ürün varsa güncelle
-            products.items[idx]=next;
-          }
-          products.updatedAt=Date.now();
-          if(token){
-            const putUrl=`https://api.github.com/repos/${repo}/contents/products.json`;
-            const actionMsg = (idx===-1) ? 'yeni ürün eklendi' : 'ürün güncellendi';
-            const putRes=await fetch(putUrl,{ method:'PUT', headers:{ 'Authorization':'token '+token,'Content-Type':'application/json' }, body:JSON.stringify({ message:`admin: ${actionMsg}: ${id}`, content:toBase64(JSON.stringify(products,null,2)), sha:data.sha, branch }) });
-            if(putRes.status===409 && attempt<maxAttempts){ 
-              msgEl.textContent=`⚠️ Çakışma algılandı, ${500*attempt}ms sonra tekrar...`;
-              await new Promise(r=>setTimeout(r,500*attempt)); 
-              continue; 
-            }
-            if(!putRes.ok){ 
-              const t=await putRes.text().catch(()=> '');
-              if(putRes.status===403){
-                msgEl.innerHTML = `❌ GitHub kaydı başarısız (403).<br>
-                  <div class="small" style="color:#64748b;margin-top:6px">Olası nedenler:<ul style="margin:6px 0;">
-                  <li>Token kapsamı yetersiz: <b>repo</b> (classic) veya <b>fine-grained</b> token için bu repoya "Contents: Read & Write" izni verin.</li>
-                  <li>Reponun yazma izni yok: Token sahibi hesabın <b>amtbrs-03/AMTBRS</b> reposunda yazma yetkisi olmalı.</li>
-                  <li>Dal koruması: <b>site-release</b> dalı korumalıysa doğrudan yazmaya izin verilmeyebilir.</li>
-                  <li>Kurumsal SSO: Organizasyon token’ı için SSO yetkilendirmesi gerekiyor.</li>
-                  </ul></div>`;
-              }
-              throw new Error('GitHub kaydı başarısız: '+putRes.status+' '+t);
-            }
-            msgEl.textContent='✅ Kaydedildi!';
-          } else {
-            // Token yoksa lokal override'a yaz ve UI'yi güncelle
-            try { localStorage.setItem('products_override', JSON.stringify(products)); } catch(_){}
-            msgEl.textContent='✅ Yerel olarak kaydedildi (GitHub token yok)';
-            // Uyarı otomatik açılmayacak; kullanıcı Ayarlar kartından token ekleyebilir
-          }
-          break;
-        }catch(err){ 
-          lastError=err;
-          if(err.message.includes('409') && attempt<maxAttempts){ 
-            msgEl.textContent=`⚠️ Çakışma (${attempt}), ${500*attempt}ms sonra tekrar...`;
-            await new Promise(r=>setTimeout(r,500*attempt)); 
-            continue; 
-          } 
-          throw err; 
+    // --- OPTIMIZED: Async commit, instant UI, CDN cache bypass ---
+    (async function(){
+      try {
+        // ...existing code for validation and preview...
+        // (copy-paste from above, unchanged)
+        // ---
+        // Prepare product data
+        const token=localStorage.github_token||localStorage.gh_token;
+        const repo='amtbrs-03/AMTBRS'; const branch='site-release';
+        // Async commit logic
+        function commitToGitHub(products, idx, actionMsg, sha){
+          return fetch(`https://api.github.com/repos/${repo}/contents/products.json`, {
+            method:'PUT',
+            headers:{ 'Authorization':'token '+token,'Content-Type':'application/json' },
+            body:JSON.stringify({ message:`admin: ${actionMsg}: ${id}`, content:toBase64(JSON.stringify(products,null,2)), sha, branch })
+          });
         }
-      }
-      if(attempt>=maxAttempts && lastError) throw lastError;
-      // UI yenile ve paneli kapat
-      setTimeout(()=>{
-        try{ renderAdminProducts(); }catch(_){/* ignore */}
-        // Düzenleme sonrası seçili görselleri hero ve kutulara yansıt
-        try {
-          const main = document.getElementById('editProductImage')?.value.trim();
-          if(main) updateEditImagePreview('editProductImage', main);
-          const im2 = document.getElementById('editProductImage2')?.value.trim(); if(im2) updateEditImagePreview('editProductImage2', im2);
-          const im3 = document.getElementById('editProductImage3')?.value.trim(); if(im3) updateEditImagePreview('editProductImage3', im3);
-        } catch(_){ }
-        closeProductEditPanel();
-      }, 800);
-    } catch(err){ msgEl.textContent='Hata: '+err.message; }
+        // Main logic (unchanged, but commit is async)
+        let attempt=0; const maxAttempts=3; let lastError=null;
+        (async function backgroundCommit(){
+          while(attempt < maxAttempts){
+            attempt++;
+            try{
+              const url=`https://api.github.com/repos/${repo}/contents/products.json?ref=${branch}&_=${Date.now()}`;
+              let res=await fetch(url,{cache:'no-store'});
+              if(!res.ok){
+                // Fallback: raw file
+                const rawUrl = 'https://raw.githubusercontent.com/amtbrs-03/AMTBRS/site-release/products.json?_=' + Date.now();
+                res = await fetch(rawUrl, { cache:'no-store' });
+                if(!res.ok) throw new Error('products.json alınamadı! ('+res.status+')');
+                const txt = await res.text();
+                let products = {};
+                try { products = JSON.parse(txt); } catch(e){ throw new Error('products.json parse hatası'); }
+                if(!Array.isArray(products.items)) products.items = Array.isArray(products) ? products : [];
+                const imagesArr=[image].concat([image2,image3,image4].filter(Boolean));
+                const next = { id, name, price, badge, image: imagesArr[0], images: imagesArr };
+                const idNorm = String(id).toLowerCase().replace(/\.(jpg|jpeg|png|webp)$/i,'');
+                let idx = -1;
+                if(Array.isArray(products.items)){
+                  idx = products.items.findIndex(p=> String(p.id).toLowerCase().replace(/\.(jpg|jpeg|png|webp)$/i,'') === idNorm);
+                }
+                if(idx===-1){ products.items.push(next); } else { products.items[idx]=next; }
+                products.updatedAt=Date.now();
+                if(token){
+                  // Async commit
+                  commitToGitHub(products, idx, (idx===-1?'yeni ürün eklendi':'ürün güncellendi'), null).then(async putRes=>{
+                    if(!putRes.ok){
+                      const t=await putRes.text().catch(()=> '');
+                      if(putRes.status===403){
+                        msgEl.innerHTML = `❌ GitHub kaydı başarısız (403).<br><div class="small" style="color:#64748b;margin-top:6px">Olası nedenler:<ul style="margin:6px 0;"><li>Token kapsamı yetersiz: <b>repo</b> (classic) veya <b>fine-grained</b> token için bu repoya "Contents: Read & Write" izni verin.</li><li>Reponun yazma izni yok: Token sahibi hesabın <b>amtbrs-03/AMTBRS</b> reposunda yazma yetkisi olmalı.</li><li>Dal koruması: <b>site-release</b> dalı korumalıysa doğrudan yazmaya izin verilmeyebilir.</li><li>Kurumsal SSO: Organizasyon token’ı için SSO yetkilendirmesi gerekiyor.</li></ul></div>`;
+                      }
+                    } else {
+                      msgEl.textContent='✅ Değişiklikler canlıya alındı!';
+                    }
+                  });
+                } else {
+                  try { localStorage.setItem('products_override', JSON.stringify(products)); } catch(_){}
+                  msgEl.textContent='✅ Yerel olarak kaydedildi (GitHub token yok)';
+                }
+                setTimeout(()=>{ try{ renderAdminProducts(); }catch(_){} closeProductEditPanel(); }, 800);
+                return;
+              }
+              const data=await res.json(); let products=JSON.parse(fromBase64(data.content));
+              const imagesArr=[image].concat([image2,image3,image4].filter(Boolean));
+              const next = { id, name, price, badge, image: imagesArr[0], images: imagesArr };
+              const idNorm = String(id).toLowerCase().replace(/\.(jpg|jpeg|png|webp)$/i,'');
+              let idx = -1;
+              if(Array.isArray(products.items)){
+                idx = products.items.findIndex(p=> String(p.id).toLowerCase().replace(/\.(jpg|jpeg|png|webp)$/i,'') === idNorm);
+              }
+              if(!Array.isArray(products.items)) products.items = Array.isArray(products) ? products : [];
+              if(idx===-1){ products.items.push(next); } else { products.items[idx]=next; }
+              products.updatedAt=Date.now();
+              if(token){
+                // Async commit
+                commitToGitHub(products, idx, (idx===-1?'yeni ürün eklendi':'ürün güncellendi'), data.sha).then(async putRes=>{
+                  if(putRes.status===409 && attempt<maxAttempts){
+                    msgEl.textContent=`⚠️ Çakışma algılandı, ${500*attempt}ms sonra tekrar...`;
+                    await new Promise(r=>setTimeout(r,500*attempt));
+                    return;
+                  }
+                  if(!putRes.ok){
+                    const t=await putRes.text().catch(()=> '');
+                    if(putRes.status===403){
+                      msgEl.innerHTML = `❌ GitHub kaydı başarısız (403).<br><div class="small" style="color:#64748b;margin-top:6px">Olası nedenler:<ul style="margin:6px 0;"><li>Token kapsamı yetersiz: <b>repo</b> (classic) veya <b>fine-grained</b> token için bu repoya "Contents: Read & Write" izni verin.</li><li>Reponun yazma izni yok: Token sahibi hesabın <b>amtbrs-03/AMTBRS</b> reposunda yazma yetkisi olmalı.</li><li>Dal koruması: <b>site-release</b> dalı korumalıysa doğrudan yazmaya izin verilmeyebilir.</li><li>Kurumsal SSO: Organizasyon token’ı için SSO yetkilendirmesi gerekiyor.</li></ul></div>`;
+                    }
+                  } else {
+                    msgEl.textContent='✅ Değişiklikler canlıya alındı!';
+                  }
+                });
+              } else {
+                try { localStorage.setItem('products_override', JSON.stringify(products)); } catch(_){}
+                msgEl.textContent='✅ Yerel olarak kaydedildi (GitHub token yok)';
+              }
+              break;
+            }catch(err){
+              lastError=err;
+              if(err.message.includes('409') && attempt<maxAttempts){
+                msgEl.textContent=`⚠️ Çakışma (${attempt}), ${500*attempt}ms sonra tekrar...`;
+                await new Promise(r=>setTimeout(r,500*attempt));
+                continue;
+              }
+              throw err;
+            }
+          }
+          if(attempt>=maxAttempts && lastError) throw lastError;
+          setTimeout(()=>{
+            try{ renderAdminProducts(); }catch(_){/* ignore */}
+            try {
+              const main = document.getElementById('editProductImage')?.value.trim();
+              if(main) updateEditImagePreview('editProductImage', main);
+              const im2 = document.getElementById('editProductImage2')?.value.trim(); if(im2) updateEditImagePreview('editProductImage2', im2);
+              const im3 = document.getElementById('editProductImage3')?.value.trim(); if(im3) updateEditImagePreview('editProductImage3', im3);
+            } catch(_){ }
+            closeProductEditPanel();
+          }, 800);
+        })();
+      } catch(err){ msgEl.textContent='Hata: '+err.message; }
+    })();
   };
   // Edit panel: refresh current product from GitHub and update fields
   async function refreshCurrentEditProduct(){
