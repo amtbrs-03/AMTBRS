@@ -623,7 +623,28 @@
         <button type="button" onclick="closeProductEditPanel()" class="btn btn-ghost" title="Kapat">✖</button>
       </div>
       <form id="productEditForm" class="form-content">
-        <!-- Üst: 3 görsel kutusu (Ana, Görsel-1, Görsel-2) -->
+        <!-- Üst: metin alanları (Ad, Fiyat, Rozet, Ürün ID) -->
+        <div style="margin-bottom:16px;display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
+          <label>Ürün Adı
+            <input id="editProductName" type="text" required>
+          </label>
+          <label>Fiyat (₺)
+            <input id="editProductPrice" type="number" min="0" step="0.01" required>
+          </label>
+          <label>Rozet
+            <select id="editProductBadge">
+              <option value="">Yok</option>
+              <option value="Yeni">Yeni</option>
+              <option value="İndirim">İndirim</option>
+              <option value="Popüler">Popüler</option>
+            </select>
+          </label>
+          <label>Ürün ID
+            <input id="editProductId" type="text" required readonly>
+          </label>
+        </div>
+
+        <!-- Alt: 3 görsel kutusu (Ana, Görsel-1, Görsel-2) -->
         <div id="editTopVisuals" style="display:grid;grid-template-columns:repeat(3,minmax(220px,1fr));gap:12px;align-items:start">
           <div>
             <div style="font-weight:600;margin-bottom:6px">Ana görsel</div>
@@ -652,27 +673,6 @@
               <button type="button" onclick="openGalleryPickerForProductFor('editProductImage3')" class="btn btn-ghost" title="Galeriden seç">📸</button>
             </div>
           </div>
-        </div>
-
-        <!-- Alt: metin alanları (Ad, Fiyat, Rozet, Ürün ID) -->
-        <div style="margin-top:16px;display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
-          <label>Ürün Adı
-            <input id="editProductName" type="text" required>
-          </label>
-          <label>Fiyat (₺)
-            <input id="editProductPrice" type="number" min="0" step="0.01" required>
-          </label>
-          <label>Rozet
-            <select id="editProductBadge">
-              <option value="">Yok</option>
-              <option value="Yeni">Yeni</option>
-              <option value="İndirim">İndirim</option>
-              <option value="Popüler">Popüler</option>
-            </select>
-          </label>
-          <label>Ürün ID
-            <input id="editProductId" type="text" required readonly>
-          </label>
         </div>
         <div id="editProductMsg" style="margin:10px 0;color:#c00"></div>
         <div class="form-actions" style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:12px">
