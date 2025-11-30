@@ -737,10 +737,10 @@
                   </div>
                 </div>
                 <div class='actions'>
-                  <button class='btn edit-toggle' aria-expanded='false' data-id='${p.id}' onclick='toggleInlineEdit("${p.id}", this)'>Düzenle</button>
-                  <button class='btn btn-danger' onclick='deleteAdminProduct("${p.id}")'>Sil</button>
-                  <button class='btn btn-ghost' onclick='moveProduct("${p.id}","up")' ${i===0?'disabled aria-disabled="true"':''}>⬆︎</button>
-                  <button class='btn btn-ghost' onclick='moveProduct("${p.id}","down")' ${i===(products.length-1)?'disabled aria-disabled="true"':''}>⬇︎</button>
+                  <button type='button' class='btn' data-action='edit' aria-expanded='false' data-id='${p.id}'>Düzenle</button>
+                  <button type='button' class='btn btn-danger' data-action='delete' data-id='${p.id}'>Sil</button>
+                  <button type='button' class='btn btn-ghost' data-action='move' data-dir='up' data-id='${p.id}' ${i===0?'disabled aria-disabled="true"':''}>⬆︎</button>
+                  <button type='button' class='btn btn-ghost' data-action='move' data-dir='down' data-id='${p.id}' ${i===(products.length-1)?'disabled aria-disabled="true"':''}>⬇︎</button>
                 </div>
                 <div class='prod-edit-panel' id='edit-panel-${p.id}' style='display:none;margin-top:8px;padding:10px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;'>
                   <div style='display:grid;gap:6px;'>
@@ -764,13 +764,47 @@
                   </div>
                   <div id='ep-msg-${p.id}' style='margin-top:6px;font-size:12px;color:#0f766e;min-height:18px;'></div>
                   <div style='display:flex;gap:6px;margin-top:8px;'>
-                    <button class='btn' onclick='saveInlineEdit("${p.id}")'>Kaydet</button>
-                    <button class='btn btn-ghost' onclick='cancelInlineEdit("${p.id}")'>İptal</button>
-                    <button class='btn btn-ghost' onclick='verifyInlineImagePath("${p.id}")'>Görsel Doğrula</button>
+                    <button type='button' class='btn' data-action='save-inline' data-id='${p.id}'>Kaydet</button>
+                    <button type='button' class='btn btn-ghost' data-action='cancel-inline' data-id='${p.id}'>İptal</button>
+                    <button type='button' class='btn btn-ghost' data-action='verify-img' data-id='${p.id}'>Görsel Doğrula</button>
                   </div>
                 </div>`;
               container.appendChild(card);
             });
+            // Event delegation for all product action buttons
+            if(!container.__delegated){
+              container.addEventListener('click', (e)=>{
+                const btn = e.target.closest('button[data-action]');
+                if(!btn) return;
+                const action = btn.getAttribute('data-action');
+                const id = btn.getAttribute('data-id');
+                if(!id) return;
+                try {
+                  switch(action){
+                    case 'edit':
+                      if(typeof toggleInlineEdit==='function') toggleInlineEdit(id, btn);
+                      break;
+                    case 'delete':
+                      if(typeof deleteAdminProduct==='function') deleteAdminProduct(id);
+                      break;
+                    case 'move':
+                      const dir = btn.getAttribute('data-dir');
+                      if(typeof moveProduct==='function') moveProduct(id, dir);
+                      break;
+                    case 'verify-img':
+                      if(typeof verifyInlineImagePath==='function') verifyInlineImagePath(id);
+                      break;
+                    case 'save-inline':
+                      if(typeof saveInlineEdit==='function') saveInlineEdit(id);
+                      break;
+                    case 'cancel-inline':
+                      if(typeof cancelInlineEdit==='function') cancelInlineEdit(id);
+                      break;
+                  }
+                } catch(err){ console.warn('[admin] button action error', action, err); }
+              });
+              container.__delegated = true;
+            }
             // Defensive: attach listeners in case inline onclick fails (ör. CSP veya future refactor)
             setTimeout(()=>{
               container.querySelectorAll('.edit-toggle').forEach(btn=>{
