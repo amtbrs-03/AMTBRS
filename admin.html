@@ -356,7 +356,8 @@
       to { opacity: 1; }
     }
     .modal-content {
-      background: linear-gradient(180deg, rgba(236, 253, 245, 0.95), rgba(209, 250, 229, 0.92)); /* hafif yeşil arka fon */
+      /* Daha belirgin yeşil tint: üstten alta yumuşak geçiş */
+      background: linear-gradient(180deg, rgba(236, 253, 245, 0.98), rgba(187, 247, 208, 0.96));
       padding: 2rem;
       border-radius: 20px;
       box-shadow: 0 20px 60px rgba(0,0,0,0.3);
@@ -366,7 +367,7 @@
       overflow-y: auto;
       position: relative;
       animation: slideUp 0.3s ease;
-      border: 2px solid rgba(16,185,129,0.18);
+      border: 2px solid rgba(16,185,129,0.22);
     }
     @keyframes slideUp {
       from { 
