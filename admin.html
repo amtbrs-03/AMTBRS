@@ -890,7 +890,11 @@
                     </label>
                   </div>
                   <div id='ep-msg-${p.id}' style='margin-top:6px;font-size:12px;color:#0f766e;min-height:18px;'></div>
-                  <div style='display:none;'></div>
+                  <div style='display:flex;gap:6px;margin-top:8px;'>
+                    <button type='button' class='btn' data-action='save-inline' data-id='${p.id}'>Kaydet</button>
+                    <button type='button' class='btn btn-ghost' data-action='cancel-inline' data-id='${p.id}'>İptal</button>
+                    <button type='button' class='btn btn-ghost' data-action='verify-img' data-id='${p.id}'>Görsel Doğrula</button>
+                  </div>
                 </div>`;
               container.appendChild(card);
             });
@@ -926,12 +930,29 @@
                     case 'delete':
                       if(typeof deleteAdminProduct==='function') deleteAdminProduct(id);
                       break;
+                    case 'verify-img':
+                      if(typeof verifyInlineImagePath==='function') verifyInlineImagePath(id);
+                      break;
+                    case 'save-inline':
+                      if(typeof saveInlineEdit==='function') saveInlineEdit(id);
+                      break;
+                    case 'cancel-inline':
+                      if(typeof cancelInlineEdit==='function') cancelInlineEdit(id);
+                      break;
                   }
                 } catch(err){ console.warn('[admin] button action error', action, err); }
               });
               container.__delegated = true;
             }
-            // Inline edit kaldırıldı; ek dinleyicilere gerek yok
+            // Defensive: attach listeners in case inline onclick fails (ör. CSP veya future refactor)
+            setTimeout(()=>{
+              container.querySelectorAll('.edit-toggle').forEach(btn=>{
+                if(!btn.__bound){
+                  btn.addEventListener('click', function(e){ e.preventDefault(); const id=this.getAttribute('data-id'); if(typeof toggleInlineEdit==='function') toggleInlineEdit(id, this); });
+                  btn.__bound = true;
+                }
+              });
+            }, 0);
           } catch(err){
             container.innerHTML = '<div style="color:#b91c1c">Hata: ' + err.message + '</div>';
           }
@@ -1408,10 +1429,27 @@ try {
             setTimeout(()=>{ renderAdminProducts(); }, 600);
           } catch(e){ if(msg) msg.textContent='Hata: '+(e.message||e); }
         }
+        async function verifyInlineImagePath(id){
+          const msg = document.getElementById('ep-msg-'+id);
+          const imageEl = document.getElementById('ep-image-'+id);
+          if(!imageEl){ if(msg) msg.textContent='Hata: Görsel alanı bulunamadı'; return; }
+          const image = imageEl.value.trim();
+          if(!image){ if(msg) msg.textContent='Lütfen görsel yolunu girin'; return; }
+          try{
+            if(/^images\/(products|gallery)\/.+\.(jpg|jpeg|png|webp)$/i.test(image)){
+              const ver = await verifyGitHubPathExists(image);
+              if(ver.exists){ if(msg) msg.textContent = '✅ Görsel mevcut: '+(ver.actualPath||image); }
+              else { if(msg) msg.textContent = '❌ Görsel bulunamadı: '+image; }
+            } else {
+              if(msg) msg.textContent = 'ℹ️ Harici URL veya farklı yol — doğrulama atlandı';
+            }
+          } catch(e){ if(msg) msg.textContent = 'Hata: '+(e.message||e); }
+        }
         window.openInlineEdit = openInlineEdit;
         window.toggleInlineEdit = toggleInlineEdit;
         window.cancelInlineEdit = cancelInlineEdit;
         window.saveInlineEdit = saveInlineEdit;
+        window.verifyInlineImagePath = verifyInlineImagePath;
         document.addEventListener('keydown', e=>{
           if(e.key==='Escape'){
             const open = Array.from(document.querySelectorAll('.prod-edit-panel')).find(p=>p.style.display!=='none');
