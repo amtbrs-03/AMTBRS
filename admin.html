@@ -1241,13 +1241,19 @@
     }
     function open(){ const m=document.getElementById('tokenModal'); if(!m) return; m.classList.add('active'); m.style.display='flex'; document.body.style.overflow='hidden'; const inp=document.getElementById('tokenModalInput'); if(inp) inp.value=getToken()||''; const st=document.getElementById('tokenModalStatus'); if(st){ st.textContent = getToken()? 'Kayıtlar GitHub’a yazılacak.' : 'Token eksik: kayıtlar yerelde kalır.'; } }
     function close(){ const m=document.getElementById('tokenModal'); if(!m) return; m.classList.remove('active'); m.style.display='none'; document.body.style.overflow=''; }
-    document.addEventListener('DOMContentLoaded', function(){
+    function bind(){
       const openBtn = document.getElementById('openTokenModalBtn'); if(openBtn) openBtn.addEventListener('click', open);
       const closeBtn = document.getElementById('closeTokenModalBtn'); if(closeBtn) closeBtn.addEventListener('click', close);
       const saveBtn = document.getElementById('tokenModalSave'); const valBtn = document.getElementById('tokenModalValidate'); const st = document.getElementById('tokenModalStatus'); const inp = document.getElementById('tokenModalInput');
       if(saveBtn && inp){ saveBtn.addEventListener('click', async ()=>{ const t=(inp.value||'').trim(); if(!t){ st.textContent='Lütfen token girin'; return; } setToken(t); const r=await validateToken(t); st.textContent=r.msg; const pat=document.getElementById('patNotice'); if(pat) pat.style.display = r.ok ? 'none' : 'block'; }); }
       if(valBtn){ valBtn.addEventListener('click', async ()=>{ const r=await validateToken(getToken()); st.textContent=r.msg; const pat=document.getElementById('patNotice'); if(pat) pat.style.display = r.ok ? 'none' : 'block'; }); }
-    });
+    }
+    if(document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', bind);
+    } else {
+      // DOM zaten hazırsa hemen bağla
+      bind();
+    }
   })();
   </script>
 
