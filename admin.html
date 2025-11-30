@@ -553,7 +553,20 @@
     const inp = document.getElementById('adminPassInput');
     const msg = document.getElementById('adminPassMsg');
     if(!gate||!btn||!inp) return;
+    // Brute force koruması: 5 hatalı denemede 5 dk kilit; 10 dk pencere
+    function getAttemptInfo(){ try{return JSON.parse(sessionStorage.getItem('admin_pass_attempts')||'{}');}catch(_){return {};}}
+    function saveAttemptInfo(o){ sessionStorage.setItem('admin_pass_attempts', JSON.stringify(o)); }
+    function resetAttempts(){ sessionStorage.removeItem('admin_pass_attempts'); }
+    const MAX_ATTEMPTS = 5, WINDOW_MS = 10*60*1000, LOCK_MS = 5*60*1000;
     btn.addEventListener('click', async ()=>{
+      let info = getAttemptInfo();
+      const now = Date.now();
+      if(info.lockUntil && now < info.lockUntil){
+        const remainingMin = Math.ceil((info.lockUntil - now)/60000);
+        msg.textContent = `🔒 Çok fazla yanlış deneme. ${remainingMin} dk sonra tekrar deneyin.`;
+        return;
+      }
+      if(!info.windowStart || now - info.windowStart > WINDOW_MS){ info = { count:0, windowStart: now }; }
       msg.textContent='Doğrulanıyor...';
       const v = (inp.value||'').trim();
       try {
@@ -561,10 +574,19 @@
         if(ok){
           sessionStorage.setItem('admin_auth_ok','1');
           gate.classList.remove('active'); gate.style.display='none';
-          var adminUI = document.getElementById('adminUI'); if (adminUI) adminUI.style.display = 'block';
+          const adminUI = document.getElementById('adminUI'); if (adminUI) adminUI.style.display = 'block';
           msg.textContent='';
+          resetAttempts();
         } else {
-          msg.textContent='❌ Parola yanlış';
+          info.count = (info.count||0)+1;
+            if(info.count >= MAX_ATTEMPTS){
+              info.lockUntil = now + LOCK_MS;
+              msg.textContent='🔒 Çok fazla yanlış deneme. 5 dk kilitlendi.';
+            } else {
+              const kalan = MAX_ATTEMPTS - info.count;
+              msg.textContent='❌ Parola yanlış. ' + (kalan>0 ? `${kalan} deneme kaldı.` : '');
+            }
+          saveAttemptInfo(info);
         }
       } catch(e){ msg.textContent='❌ Hata: ' + (e.message||e); }
     });
@@ -607,6 +629,8 @@
   function fromBase64(b64){
     try { const bin=atob(b64); const bytes=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i); return new TextDecoder().decode(bytes);}catch(e){ try{return decodeURIComponent(escape(atob(b64)));}catch(_){return '';} }
   }
+  // Yukarıdaki toBase64/fromBase64 bu dosyada KANONİK sürümdür. Yeni kopyalar eklemeyin;
+  // tekrar tanımlama tespiti yapan self-test bloğu alt kısımda mevcuttur.
   async function openProductEditPanelById(id) {
     try { const res = await fetch('products.json?' + Date.now()); if(!res.ok) throw new Error('products.json alınamadı!'); const data=await res.json(); const products=Array.isArray(data.items)?data.items:(Array.isArray(data)?data:[]); const p=products.find(x=>String(x.id)===String(id)); if(p) openProductEditPanel(p); else alert('Ürün bulunamadı!'); } catch(err){ alert('Hata: '+err.message); }
   }
@@ -814,6 +838,9 @@
           <button id="ghTokenSave" class="btn" type="button">Kaydet</button>
           <button id="ghTokenValidate" class="btn btn-ghost" type="button">Doğrula</button>
         </div>
+          <label style="display:flex;align-items:center;gap:6px;margin-top:0.5rem;font-size:0.78rem;color:#334155">
+            <input id="disableXorFallback" type="checkbox" /> XOR fallback'ı devre dışı bırak (gömülü token kullanma)
+          </label>
         <div id="ghTokenMsg" class="small" style="margin-top:0.5rem;color:#64748b"></div>
         <script>
         (function(){
@@ -821,6 +848,7 @@
           const save=document.getElementById('ghTokenSave');
           const val=document.getElementById('ghTokenValidate');
           const msg=document.getElementById('ghTokenMsg');
+            const disableCb=document.getElementById('disableXorFallback');
           if(inp && save && val){
             const existing = (typeof getGitHubToken==='function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
             if(existing){ inp.value = existing.replace(/.(?=.{4})/g,'•'); msg.textContent='Mevcut token yüklü (maskelenmiş).'; }
@@ -836,6 +864,13 @@
               const info = await validateGitHubToken(t);
               msg.textContent = info.valid ? '✅ Geçerli token' : ('❌ Geçersiz: ' + (info.reason||''));
             });
+              if(disableCb){
+                disableCb.checked = localStorage.getItem('disable_xor_token') === '1';
+                disableCb.addEventListener('change', ()=>{
+                  if(disableCb.checked){ localStorage.setItem('disable_xor_token','1'); msg.textContent='Gömülü XOR token fallback devre dışı bırakıldı.'; }
+                  else { localStorage.removeItem('disable_xor_token'); msg.textContent='Gömülü XOR token fallback tekrar etkin.'; }
+                });
+              }
           }
         })();
         </script>
@@ -989,6 +1024,7 @@ async function verifyGitHubPathExists(path){
           const exts = ['jpg','jpeg','png','webp'];
           const start = Date.now();
           const timeout = 120000; // 2 dk
+          let attempt = 0; let delay = 2000; // adaptif backoff
           while (Date.now() - start < timeout){
             // iptal kontrolü
             if (!(autoBindEl && autoBindEl.checked)) { setMsg('Otomatik bağlama iptal edildi.', false); return false; }
@@ -1005,8 +1041,12 @@ async function verifyGitHubPathExists(path){
                 }catch(e){ setMsg('Hata: ' + (e.message||e), false); return false; }
               }
             }
-            // 3 sn bekle
-            await new Promise(r=>setTimeout(r, 3000));
+            // adaptif bekleme: 2s -> 3s -> 5s
+            attempt++;
+            if(attempt === 1) delay = 3000; else delay = 5000; // hızlıca üst limite çıkar
+            const kalan = Math.max(0, timeout - (Date.now() - start));
+            setMsg(`⌛ Bekleniyor... (deneme ${attempt}, sonraki kontrol ${Math.round(delay/1000)}sn sonra, kalan ~${Math.round(kalan/1000)}sn)`, true);
+            await new Promise(r=>setTimeout(r, delay));
           }
           setMsg('Dosya bulunamadı. Lütfen yolu elle girip kaydedin.', false);
           return false;
@@ -1145,6 +1185,8 @@ async function verifyGitHubPathExists(path){
     function getGitHubToken() {
       let token = localStorage.getItem('github_token');
       if (!token) {
+        // XOR fallback devre dışı bırakıldıysa boş dön
+        if(localStorage.getItem('disable_xor_token') === '1') return '';
         const encoded = '":>r3\x0e,\' bj@\x06\x07\t5\'K"\x0b4\x08\tYUJ[f\x11\x0b\rK0\x0cs\x0f\x1dupY';
         const key = 'ERN-CICEK-2025';
         try {
@@ -2152,6 +2194,11 @@ async function verifyGitHubPathExists(path){
 
     function openUserDetail(idx){
       try{
+        // Düzenleme modunda kaydedilmemiş değişiklik uyarısı
+        if(window.__userEditDirty){
+          if(!confirm('Kaydedilmemiş değişiklikler var. Görüntüleme moduna dönmek istiyor musunuz?')){ return; }
+          window.__userEditDirty = false; window.__userEditOriginal = null;
+        }
         // Store current user index for refresh
         window.__currentUserDetailIdx = idx;
         
@@ -2429,6 +2476,32 @@ async function verifyGitHubPathExists(path){
           const pending = JSON.parse(localStorage.getItem('pending_user_edits')||'[]');
           if(!pending.length) flushBtn.style.display='none';
           flushBtn.addEventListener('click', ()=>{ flushPendingUserEdits(); setTimeout(()=>{ editUserInModal(idx); }, 800); });
+        }
+        // Dirty tracking setup
+        window.__userEditOriginal = JSON.stringify({ name:u.name, address:u.address });
+        window.__userEditDirty = false;
+        function computeCurrent(){
+          return JSON.stringify({
+            name: (document.getElementById('editName')?.value||'').trim(),
+            address: {
+              city:(document.getElementById('editCity')?.value||'').trim(),
+              district:(document.getElementById('editDistrict')?.value||'').trim(),
+              neighborhood:(document.getElementById('editNeighborhood')?.value||'').trim(),
+              postalCode:(document.getElementById('editPostalCode')?.value||'').trim(),
+              addressDetail:(document.getElementById('editAddressDetail')?.value||'').trim()
+            }
+          });
+        }
+        function bindDirty(id){ const el = document.getElementById(id); if(!el) return; el.addEventListener('input', ()=>{ const cur=computeCurrent(); window.__userEditDirty = (cur !== window.__userEditOriginal); }); }
+        ['editName','editCity','editDistrict','editNeighborhood','editPostalCode','editAddressDetail'].forEach(bindDirty);
+        if(!window.__userEditEscBound){
+          document.addEventListener('keydown', function(ev){
+            if(ev.key==='Escape' && window.__userEditDirty){
+              if(!confirm('Kaydedilmemiş değişiklikler var. İptal etmek istiyor musunuz?')){ ev.preventDefault(); }
+              else { window.__userEditDirty=false; window.__userEditOriginal=null; }
+            }
+          });
+          window.__userEditEscBound = true;
         }
       }catch(e){ console.error('editUserInModal error', e); }
     }
