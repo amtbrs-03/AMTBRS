@@ -616,11 +616,21 @@
   <script>
     (function(){
       try {
+        // Bypass anahtarları: local ve config
+        var bypassLocal = localStorage.getItem('skip_admin_auth') === '1' || localStorage.getItem('disable_admin_password') === '1';
+        var bypass = bypassLocal;
         var ok = sessionStorage.getItem('admin_auth_ok') === '1';
         var untilStr = sessionStorage.getItem('admin_auth_until');
         var now = Date.now();
         var valid = false;
-        if (ok && untilStr) {
+        if (bypass) {
+          // Bypass aktifse oturumu geçerli say ve 24 saatlik süre yaz
+          try {
+            sessionStorage.setItem('admin_auth_ok','1');
+            sessionStorage.setItem('admin_auth_until', String(Date.now() + 24*60*60*1000));
+          } catch(_){}
+          valid = true;
+        } else if (ok && untilStr) {
           var until = parseInt(untilStr, 10);
           if (isFinite(until) && now < until) valid = true; else {
             // süresi doldu, bayrakları temizle
@@ -630,11 +640,34 @@
         }
         if (!valid) {
           var gate = document.getElementById('adminAuthGate');
-          if (gate) { gate.classList.add('active'); gate.style.display='flex'; }
+          if (!bypass && gate) { gate.classList.add('active'); gate.style.display='flex'; }
         } else {
           var adminUI = document.getElementById('adminUI');
           if (adminUI) adminUI.style.display = 'block';
+          // Bilgilendirme: auth bypass aktifse küçük bir uyarı göster
+          if (bypass) {
+            try {
+              var warn = document.createElement('div');
+              warn.style.cssText='background:#fff3cd;color:#664d03;border:1px solid #ffe69c;padding:8px 10px;margin:10px;border-radius:8px;font-size:12px';
+              warn.innerHTML='Admin şifre ekranı <b>devre dışı</b>. Yeniden etkinleştirmek için localStorage.removeItem("skip_admin_auth") veya localStorage.removeItem("disable_admin_password") çalıştırın.';
+              var header = document.querySelector('.admin-header');
+              (header?header:document.body).insertAdjacentElement('afterend', warn);
+            }catch(_){}
+          }
         }
+
+        // Config dosyasından devre dışı bırakma bayrağını otomatik algıla (async)
+        try {
+          fetch('/admin-config.json')
+            .then(function(r){ return r.ok ? r.json() : null; })
+            .then(function(cfg){
+              if (cfg && (cfg.disableAdminPassword === true || cfg.disable_admin_password === true)) {
+                // Kalıcı bypass için localStorage anahtarını set et
+                try { localStorage.setItem('disable_admin_password','1'); } catch(_){}
+              }
+            })
+            .catch(function(_){});
+        } catch(_){}
       } catch(_){}
     })();
   </script>
