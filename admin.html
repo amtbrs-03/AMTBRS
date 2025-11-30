@@ -994,22 +994,56 @@
           <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
             <button id="refreshProductsBtn" class="btn btn-ghost" type="button" style="font-size:0.95rem;">🔄 Yenile</button>
             <button id="openGalleryBtn" class="btn btn-ghost" type="button" style="font-size:0.95rem;">📸 Galeri</button>
+            <button id="addCardBtn" class="btn" type="button" title="Yeni düzenleme kartı ekle" style="font-size:0.95rem;">➕ Kart Ekle</button>
           </div>
         </div>
         <div id="products" class="products-list"></div>
         <script>
         // Product edit panel functions (must be defined before renderAdminProducts for event delegation)
         async function openProductEditPanelById(id) {
-          try { 
-            const res = await fetch('products.json?' + Date.now()); 
-            if(!res.ok) throw new Error('products.json alınamadı!'); 
-            const data=await res.json(); 
-            const products=Array.isArray(data.items)?data.items:(Array.isArray(data)?data:[]); 
-            const p=products.find(x=>String(x.id)===String(id)); 
-            if(p) openProductEditPanel(p); 
-            else alert('Ürün bulunamadı!'); 
-          } catch(err){ alert('Hata: '+err.message); }
+          try {
+            const controller = new AbortController();
+            const t = setTimeout(()=>controller.abort(), 8000);
+            const res = await fetch('products.json?' + Date.now(), { signal: controller.signal, cache:'no-store' });
+            clearTimeout(t);
+            if(!res.ok){
+              const txt = await res.text().catch(()=> '');
+              throw new Error('products.json alınamadı ('+res.status+') '+txt);
+            }
+            const data = await res.json();
+            const products = Array.isArray(data.items)?data.items:(Array.isArray(data)?data:[]);
+            if(!Array.isArray(products) || !products.length) throw new Error('Ürün listesi boş veya geçersiz');
+            const p = products.find(x=>String(x.id)===String(id));
+            if(p) openProductEditPanel(p);
+            else throw new Error('Ürün bulunamadı: '+id);
+          } catch(err){
+            const msg = (err && err.name === 'AbortError') ? 'Zaman aşımı: products.json yüklenemedi' : (err.message||'Bilinmeyen hata');
+            alert('Hata: '+ msg);
+          }
         }
+
+        // Görsel yüklenemediğinde UI'nin kırılmasını önlemek için genel image fallback
+        // Inline SVG placeholder kullanıyoruz; depoya ekstra dosya eklemiyoruz
+        const IMG_PLACEHOLDER = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(
+          `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200">
+            <rect width="300" height="200" fill="#e5f5e9"/>
+            <rect x="20" y="20" width="260" height="160" fill="#cdebd4" stroke="#8aca9c" stroke-width="2"/>
+            <text x="150" y="105" font-size="16" text-anchor="middle" fill="#2e7d32" font-family="-apple-system,Segoe UI,Roboto,Arial,sans-serif">Görsel yüklenemedi</text>
+          </svg>`
+        );
+
+        // Capture fazında tüm IMG hatalarını yakala ve placeholder'a düş
+        document.addEventListener('error', function(e){
+          const target = e.target;
+          if (target && target.tagName === 'IMG') {
+            // Sonsuz döngüden kaçınmak için yalnızca bir kez değiştir
+            if (target.dataset.fallbackApplied === '1') return;
+            target.dataset.fallbackApplied = '1';
+            target.src = IMG_PLACEHOLDER;
+            target.alt = (target.alt || 'Görsel') + ' (yüklenemedi)';
+            target.classList && target.classList.add('img-fallback');
+          }
+        }, true);
         function openProductEditPanel(product){
           const panel = document.getElementById('productEditPanel');
           // Prevent accidental double-open from multiple click handlers firing in quick succession
@@ -1348,6 +1382,71 @@
             btn.addEventListener('click', ()=>{
               btn.disabled = true; const orig = btn.innerHTML; btn.innerHTML = '⏳ Yenileniyor...';
               renderAdminProducts(); setTimeout(()=>{ btn.disabled=false; btn.innerHTML=orig; },1200);
+            });
+          }
+          const addBtn = document.getElementById('addCardBtn');
+          if(addBtn){
+            addBtn.addEventListener('click', ()=>{
+              const host = document.getElementById('products');
+              if(!host){ alert('Hata: ürün konteyneri bulunamadı'); return; }
+              const card = document.createElement('div');
+              card.className = 'prod-item editable-card';
+              card.innerHTML = `
+                <div class='prod-row'>
+                  <div class='thumb' style='background:#e0e7ef;display:flex;align-items:center;justify-content:center;'>
+                    <img src='${IMG_PLACEHOLDER}' alt='Yeni Görsel' style='width:100%;height:100%;object-fit:cover;border-radius:10px;' />
+                  </div>
+                  <div style='flex:1;'>
+                    <div style='font-weight:700;font-size:1.08rem;'>Yeni Ürün Kartı</div>
+                    <div class='meta small'>Bu geçici kart üzerinden görsel ve metin girip düzenleme penceresinde açabilirsiniz.</div>
+                  </div>
+                </div>
+                <div class='prod-edit-panel' style='margin-top:8px;padding:10px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;'>
+                  <div style='display:grid;gap:6px;'>
+                    <label style='font-size:12px;'>Ürün Adı
+                      <input type='text' id='tmp-name' placeholder='Ürün adı' style='width:100%;padding:6px;font-size:13px;'>
+                    </label>
+                    <label style='font-size:12px;'>Fiyat (TL)
+                      <input type='text' id='tmp-price' placeholder='0,00' inputmode='decimal' style='width:100%;padding:6px;font-size:13px;'>
+                    </label>
+                    <label style='font-size:12px;'>Ana Görsel
+                      <input type='text' id='tmp-image' placeholder='images/products/<id>.jpg' style='width:100%;padding:6px;font-size:13px;'>
+                    </label>
+                  </div>
+                  <div style='display:flex;gap:6px;margin-top:8px;'>
+                    <button type='button' class='btn' data-action='pick-img'>Galeriden Seç</button>
+                    <button type='button' class='btn' data-action='open-edit'>Düzenleme Penceresinde Aç</button>
+                    <button type='button' class='btn btn-ghost' data-action='remove-card'>Kaldır</button>
+                  </div>
+                </div>`;
+
+              // Bind actions
+              const pickBtn = card.querySelector('[data-action="pick-img"]');
+              pickBtn?.addEventListener('click', ()=>{
+                if(typeof openGalleryPickerForProductFor === 'function'){
+                  openGalleryPickerForProductFor('tmp-image');
+                } else {
+                  alert('Galeri seçici bulunamadı. Görsel yolunu manuel girin.');
+                }
+              });
+              const openEditBtn = card.querySelector('[data-action="open-edit"]');
+              openEditBtn?.addEventListener('click', ()=>{
+                const name = card.querySelector('#tmp-name')?.value.trim() || 'Yeni Ürün';
+                const priceStr = card.querySelector('#tmp-price')?.value.trim() || '0';
+                const img = card.querySelector('#tmp-image')?.value.trim() || '';
+                const priceNum = (function(s){
+                  let v = String(s).trim().toLowerCase();
+                  v = v.replace(/\s*tl$/,''); v = v.replace(/\s/g,''); v = v.replace(/\./g,''); v = v.replace(/,/g,'.');
+                  const n = parseFloat(v); return isNaN(n)?0:n;
+                })(priceStr);
+                const tempProduct = { id: 'TEMP-'+Date.now(), name, price: priceNum, badge:'', image: img, images: img? [img]:[] };
+                if(typeof openProductEditPanel==='function'){ openProductEditPanel(tempProduct); }
+                else { alert('Düzenleme modalı bulunamadı.'); }
+              });
+              const removeBtn = card.querySelector('[data-action="remove-card"]');
+              removeBtn?.addEventListener('click', ()=>{ card.remove(); });
+
+              host.prepend(card);
             });
           }
         });
