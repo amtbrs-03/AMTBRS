@@ -629,7 +629,25 @@
         <label>Görsel Yolu
           <div style="display:flex;gap:0.5rem;align-items:center;">
             <input id="editProductImage" type="text" placeholder="images/products/<id>.jpg" required style="flex:1;">
-            <button type="button" onclick="openGalleryPickerForProduct()" class="btn btn-ghost" style="padding:0.5rem 0.75rem;font-size:0.85rem;" title="Galeriden seç">📸</button>
+            <button type="button" onclick="openGalleryPickerForProductFor('editProductImage')" class="btn btn-ghost" style="padding:0.5rem 0.75rem;font-size:0.85rem;" title="Galeriden seç">📸</button>
+          </div>
+        </label>
+        <label>Ek Görsel 2 (opsiyonel)
+          <div style="display:flex;gap:0.5rem;align-items:center;">
+            <input id="editProductImage2" type="text" placeholder="images/products/<id>-2.jpg" style="flex:1;">
+            <button type="button" onclick="openGalleryPickerForProductFor('editProductImage2')" class="btn btn-ghost" style="padding:0.5rem 0.75rem;font-size:0.85rem;" title="Galeriden seç">📸</button>
+          </div>
+        </label>
+        <label>Ek Görsel 3 (opsiyonel)
+          <div style="display:flex;gap:0.5rem;align-items:center;">
+            <input id="editProductImage3" type="text" placeholder="images/products/<id>-3.jpg" style="flex:1;">
+            <button type="button" onclick="openGalleryPickerForProductFor('editProductImage3')" class="btn btn-ghost" style="padding:0.5rem 0.75rem;font-size:0.85rem;" title="Galeriden seç">📸</button>
+          </div>
+        </label>
+        <label>Ek Görsel 4 (opsiyonel)
+          <div style="display:flex;gap:0.5rem;align-items:center;">
+            <input id="editProductImage4" type="text" placeholder="images/products/<id>-4.jpg" style="flex:1;">
+            <button type="button" onclick="openGalleryPickerForProductFor('editProductImage4')" class="btn btn-ghost" style="padding:0.5rem 0.75rem;font-size:0.85rem;" title="Galeriden seç">📸</button>
           </div>
         </label>
         <div id="editProductMsg" style="margin:8px 0;color:#c00"></div>
@@ -814,7 +832,14 @@
     const price=parseFloat(document.getElementById('editProductPrice').value);
     const badge=document.getElementById('editProductBadge').value;
     const image=document.getElementById('editProductImage').value.trim();
-    if(!/^images\/products\/[A-Za-z0-9._-]+\.(jpg|jpeg|png|webp)$/.test(image)){ msgEl.textContent='Geçerli görsel yolu girin!'; return; }
+    const image2=(document.getElementById('editProductImage2')?.value||'').trim();
+    const image3=(document.getElementById('editProductImage3')?.value||'').trim();
+    const image4=(document.getElementById('editProductImage4')?.value||'').trim();
+    const imgRe=/^images\/(products|gallery)\/[A-Za-z0-9._-]+\.(jpg|jpeg|png|webp)$/;
+    if(!imgRe.test(image)){ msgEl.textContent='Geçerli ana görsel yolu girin!'; return; }
+    if(image2 && !imgRe.test(image2)){ msgEl.textContent='Ek Görsel 2 için geçerli yol girin!'; return; }
+    if(image3 && !imgRe.test(image3)){ msgEl.textContent='Ek Görsel 3 için geçerli yol girin!'; return; }
+    if(image4 && !imgRe.test(image4)){ msgEl.textContent='Ek Görsel 4 için geçerli yol girin!'; return; }
     try {
       const token=localStorage.github_token||localStorage.gh_token;
       const repo='amtbrs-03/AMTBRS'; const branch='site-release';
@@ -829,7 +854,9 @@
           if(!res.ok) throw new Error('products.json alınamadı!');
           const data=await res.json(); let products=JSON.parse(fromBase64(data.content));
           let idx=products.items.findIndex(p=>p.id===id); if(idx===-1) throw new Error('Ürün bulunamadı!');
-          products.items[idx]={ id, name, price, badge, image }; products.updatedAt=Date.now();
+          const imagesArr=[image].concat([image2,image3,image4].filter(Boolean));
+          const next = { id, name, price, badge, image: imagesArr[0], images: imagesArr };
+          products.items[idx]=next; products.updatedAt=Date.now();
           if(token){
             const putUrl=`https://api.github.com/repos/${repo}/contents/products.json`;
             const putRes=await fetch(putUrl,{ method:'PUT', headers:{ 'Authorization':'token '+token,'Content-Type':'application/json' }, body:JSON.stringify({ message:`Ürün güncellendi: ${id}`, content:toBase64(JSON.stringify(products,null,2)), sha:data.sha, branch }) });
@@ -930,6 +957,10 @@
           document.getElementById('editProductPrice').value=product.price||'';
           document.getElementById('editProductBadge').value=product.badge||'';
           document.getElementById('editProductImage').value=product.image||'';
+          const imgs = Array.isArray(product.images)?product.images:[];
+          const im2 = document.getElementById('editProductImage2'); if(im2) im2.value = imgs[1]||'';
+          const im3 = document.getElementById('editProductImage3'); if(im3) im3.value = imgs[2]||'';
+          const im4 = document.getElementById('editProductImage4'); if(im4) im4.value = imgs[3]||'';
           document.getElementById('editProductMsg').textContent='';
           panel.classList.add('active');
           panel.style.display = 'flex'; // Ensure modal is visible regardless of prior inline styles
@@ -3719,6 +3750,8 @@ try {
   }
   
   // Gallery picker for product image selection
+  let __galleryTargetInputId = 'editProductImage';
+  function openGalleryPickerForProductFor(inputId){ __galleryTargetInputId = inputId || 'editProductImage'; return openGalleryPickerForProduct(); }
   async function openGalleryPickerForProduct() {
     const modal = document.createElement('div');
     modal.className = 'modal active';
@@ -3797,7 +3830,7 @@ try {
   }
   
   function selectGalleryImageForProduct(path, element) {
-    const input = document.getElementById('editProductImage');
+    const input = document.getElementById(__galleryTargetInputId || 'editProductImage');
     if (input) {
       input.value = path;
       showToast('✅ Resim seçildi: ' + path);
@@ -3825,6 +3858,7 @@ try {
   window.openGitHubGalleryUpload = openGitHubGalleryUpload;
   window.toggleGalleryView = toggleGalleryView;
   window.openGalleryPickerForProduct = openGalleryPickerForProduct;
+  window.openGalleryPickerForProductFor = openGalleryPickerForProductFor;
   window.selectGalleryImageForProduct = selectGalleryImageForProduct;
   </script>
   
