@@ -888,9 +888,7 @@
           } catch(err){ alert('Hata: '+err.message); }
         }
         function openProductEditPanel(product){
-          console.log('[admin] openProductEditPanel called with:', product);
           const panel = document.getElementById('productEditPanel');
-          console.log('[admin] productEditPanel element:', panel);
           if(!panel) { alert('Hata: Modal panel bulunamadı!'); return; }
           
           document.getElementById('editProductId').value=product.id||'';
@@ -901,7 +899,6 @@
           document.getElementById('editProductMsg').textContent='';
           panel.classList.add('active');
           panel.style.display=''; // Remove inline display:none to let CSS class take over
-          console.log('[admin] Added active class. Classes:', panel.className);
           document.body.style.overflow='hidden';
         }
         function closeProductEditPanel(){
@@ -1016,19 +1013,15 @@
             if(!container.__delegated){
               container.addEventListener('click', (e)=>{
                 const btn = e.target.closest('button[data-action]');
-                if(!btn) { console.log('[admin] Click not on action button'); return; }
+                if(!btn) return;
                 const action = btn.getAttribute('data-action');
                 const id = btn.getAttribute('data-id');
-                console.log('[admin] Button clicked:', { action, id, btn });
-                if(!id) { console.warn('[admin] No ID found on button'); return; }
+                if(!id) return;
                 try {
                   switch(action){
                     case 'edit':
-                      console.log('[admin] Edit action triggered for ID:', id);
                       try{
-                        console.log('[admin] openProductEditPanelById type:', typeof openProductEditPanelById);
                         if(typeof openProductEditPanelById==='function'){
-                          console.log('[admin] Calling openProductEditPanelById');
                           openProductEditPanelById(id);
                           break;
                         }
@@ -3893,17 +3886,14 @@ try {
     try {
       const needed = ['renderAdminProducts','deleteAdminProduct','openProductEditPanelById','addEditButtonsToProductCards'];
       const missing = needed.filter(n => typeof window[n] !== 'function');
-      console.log('[admin-diagnostic] Fonksiyon kontrolü:', { missing, present: needed.filter(n=>!missing.includes(n)) });
       if (missing.length) {
+        console.warn('[admin-diagnostic] Eksik fonksiyonlar:', missing);
         const warn = document.createElement('div');
         warn.style.cssText='position:fixed;bottom:10px;right:10px;background:#dc2626;color:#fff;padding:10px 14px;border-radius:8px;font-size:12px;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.25)';
         warn.textContent='Admin JS eksik fonksiyonlar: '+ missing.join(', ');
         document.body.appendChild(warn);
         setTimeout(()=>warn.remove(), 8000);
       }
-      const duplicates = [];
-      if (document.documentElement.innerHTML.indexOf('function toBase64(') !== document.documentElement.innerHTML.lastIndexOf('function toBase64(')) duplicates.push('toBase64');
-      if (duplicates.length) console.warn('[admin-diagnostic] Çift tanım uyarısı:', duplicates);
     } catch(e){ console.error('[admin-diagnostic] Hata:', e); }
   })();
   </script>
