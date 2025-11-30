@@ -766,11 +766,32 @@
   function safeInput(str) {
     return String(str).replace(/[<>&"']/g, function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;','\'':'&#39;'}[c]; });
   }
-  function toBase64(str){
-    try { const utf8 = new TextEncoder().encode(str); let bin=''; for(let i=0;i<utf8.length;i++) bin+=String.fromCharCode(utf8[i]); return btoa(bin);}catch(e){ try{return btoa(unescape(encodeURIComponent(str)));}catch(_){return '';} }
+  // Define canonical Base64 helpers only once; avoid duplicate redefinitions.
+  if (typeof window.toBase64 !== 'function') {
+    function toBase64(str){
+      try {
+        const utf8 = new TextEncoder().encode(str);
+        let bin='';
+        for(let i=0;i<utf8.length;i++) bin+=String.fromCharCode(utf8[i]);
+        return btoa(bin);
+      } catch(e) {
+        try { return btoa(unescape(encodeURIComponent(str))); } catch(_){ return ''; }
+      }
+    }
+    window.toBase64 = toBase64;
   }
-  function fromBase64(b64){
-    try { const bin=atob(b64); const bytes=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i); return new TextDecoder().decode(bytes);}catch(e){ try{return decodeURIComponent(escape(atob(b64)));}catch(_){return '';} }
+  if (typeof window.fromBase64 !== 'function') {
+    function fromBase64(b64){
+      try {
+        const bin=atob(b64);
+        const bytes=new Uint8Array(bin.length);
+        for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+        return new TextDecoder().decode(bytes);
+      } catch(e) {
+        try { return decodeURIComponent(escape(atob(b64))); } catch(_){ return ''; }
+      }
+    }
+    window.fromBase64 = fromBase64;
   }
   // Yukarıdaki toBase64/fromBase64 bu dosyada KANONİK sürümdür. Yeni kopyalar eklemeyin;
   // tekrar tanımlama tespiti yapan self-test bloğu alt kısımda mevcuttur.
@@ -889,6 +910,13 @@
         }
         function openProductEditPanel(product){
           const panel = document.getElementById('productEditPanel');
+          // Prevent accidental double-open from multiple click handlers firing in quick succession
+          const now = Date.now();
+          const last = panel.__lastOpenTs || 0;
+          if (now - last < 300 && panel.classList.contains('active')) {
+            return; // ignore rapid duplicate calls
+          }
+          panel.__lastOpenTs = now;
           if(!panel) { alert('Hata: Modal panel bulunamadı!'); return; }
           
           document.getElementById('editProductId').value=product.id||'';
@@ -898,7 +926,7 @@
           document.getElementById('editProductImage').value=product.image||'';
           document.getElementById('editProductMsg').textContent='';
           panel.classList.add('active');
-          panel.removeAttribute('style'); // Completely remove inline style to let CSS take over
+          panel.style.display = 'flex'; // Ensure modal is visible regardless of prior inline styles
           document.body.style.overflow='hidden';
         }
         function closeProductEditPanel(){
