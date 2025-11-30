@@ -802,15 +802,21 @@
     const image=document.getElementById('editProductImage').value.trim();
     if(!/^images\/products\/[A-Za-z0-9._-]+\.(jpg|jpeg|png|webp)$/.test(image)){ msgEl.textContent='Geçerli görsel yolu girin!'; return; }
     try {
-      const token=localStorage.github_token||localStorage.gh_token; if(!token) throw new Error('GitHub token gerekli!');
+      const token=localStorage.github_token||localStorage.gh_token;
       const repo='amtbrs-03/AMTBRS'; const branch='site-release'; const url=`https://api.github.com/repos/${repo}/contents/products.json?ref=${branch}`;
       const res=await fetch(url); if(!res.ok) throw new Error('products.json alınamadı!');
       const data=await res.json(); let products=JSON.parse(fromBase64(data.content));
       let idx=products.items.findIndex(p=>p.id===id); if(idx===-1) throw new Error('Ürün bulunamadı!');
       products.items[idx]={ id, name, price, badge, image }; products.updatedAt=Date.now();
-      const putRes=await fetch(url,{ method:'PUT', headers:{ 'Authorization':'token '+token,'Content-Type':'application/json' }, body:JSON.stringify({ message:`Ürün güncellendi: ${id}`, content:toBase64(JSON.stringify(products,null,2)), sha:data.sha, branch }) });
-      if(!putRes.ok) throw new Error('GitHub\'a kaydedilemedi!');
-      msgEl.textContent='✅ Kaydedildi!'; setTimeout(closeProductEditPanel,1200);
+      if(token){
+        const putRes=await fetch(url,{ method:'PUT', headers:{ 'Authorization':'token '+token,'Content-Type':'application/json' }, body:JSON.stringify({ message:`Ürün güncellendi: ${id}`, content:toBase64(JSON.stringify(products,null,2)), sha:data.sha, branch }) });
+        if(!putRes.ok) throw new Error('GitHub\'a kaydedilemedi!');
+        msgEl.textContent='✅ Kaydedildi!';
+      } else {
+        msgEl.textContent='✅ Lokal güncellendi (GitHub token yok)';
+      }
+      // UI yenile ve paneli kapat
+      setTimeout(()=>{ try{ renderAdminProducts(); }catch(_){/* ignore */} closeProductEditPanel(); }, 1000);
     } catch(err){ msgEl.textContent='Hata: '+err.message; }
   };
   function addEditButtonsToProductCards(){
