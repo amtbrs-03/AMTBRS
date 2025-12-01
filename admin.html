@@ -1976,14 +1976,76 @@
       <div class="card">
       </div>
 
-  <!-- Site Ayarı ve formlar kaldırıldı -->
+  <div class="card">
+    <div class="section-header" style="display:flex;flex-direction:column;align-items:flex-start;gap:1rem;">
+      <button id="siteSettingsMainBtn" class="btn" aria-expanded="true" style="background:linear-gradient(90deg,#16a34a 0%,#22d3ee 100%);color:#fff;border-radius:16px;font-weight:700;font-size:1.2rem;padding:1.1rem 2.2rem;box-shadow:0 4px 24px rgba(34,211,238,0.15);letter-spacing:0.04em;transition:all 0.2s;display:flex;align-items:center;gap:0.8rem;">
+        <span style="font-size:2rem;">⚙️</span>
+        <span>Site Ayarı</span>
+        <span id="siteSettingsChevron" aria-hidden="true" style="margin-left:0.2rem;display:inline-block;transition:transform 180ms ease;transform:rotate(0deg)">▾</span>
+      </button>
+      <div id="siteSettingsSubBtns" style="display:flex;flex-direction:row;gap:0.75rem;margin-top:0.5rem;flex-wrap:wrap;">
+        <button id="contactSettingsBtn" class="btn btn-ghost" style="font-size:1rem;padding:0.8rem 1.4rem;">📧 İletişim Ayarı</button>
+        <button id="homepageSettingsBtn" class="btn btn-ghost" style="font-size:1rem;padding:0.8rem 1.4rem;">🏠 Anasayfa Ayarı</button>
+        <button id="paymentSettingsBtn" class="btn btn-ghost" style="font-size:1rem;padding:0.8rem 1.4rem;">💳 Ödeme Ayarı</button>
+      </div>
+    </div>
+    <div id="siteSettingsForms" style="margin-top:1.0rem;">
+      <form id="contactSettingsForm" style="display:flex;flex-direction:column;gap:1rem;">
+        <div>
+          <label for="siteEmail">📧 İletişim E-posta</label>
+          <input id="siteEmail" type="email" placeholder="info@example.com" />
+        </div>
+        <div>
+          <label for="sitePhone">📞 Telefon</label>
+          <input id="sitePhone" type="text" placeholder="+90 5XX XXX XXXX" />
+        </div>
+        <div>
+          <label for="siteAddress">📍 Adres</label>
+          <input id="siteAddress" type="text" placeholder="Adresiniz Caddesi 1, Şehir" />
+        </div>
+        <div>
+          <label for="siteHours">🕐 Çalışma Saatleri</label>
+          <input id="siteHours" type="text" placeholder="Pzt-Cum 09:00-19:00" />
+        </div>
+        <div>
+          <label for="contactBtnText">✉️ İletişim Butonu</label>
+          <input id="contactBtnText" type="text" placeholder="İletişim" />
+        </div>
+      </form>
+      <form id="homepageSettingsForm" style="display:none;flex-direction:column;gap:1rem;">
+        <div>
+          <label for="homepageTitle">🏠 Anasayfa Başlığı</label>
+          <input id="homepageTitle" type="text" placeholder="Hoşgeldiniz" />
+        </div>
+        <div>
+          <label for="homepageSubtitle">📝 Anasayfa Alt Başlık</label>
+          <input id="homepageSubtitle" type="text" placeholder="Çiçeklerle dolu bir dünya" />
+        </div>
+        <div class="small meta">Not: Bu alanlar şimdilik sadece yerel kullanılacak; istersen bunları da site-settings.json'a ekleyebilirim.</div>
+      </form>
+      <form id="paymentSettingsForm" style="display:none;flex-direction:column;gap:1rem;">
+        <div>
+          <label for="siteIbanIn">💳 IBAN</label>
+          <input id="siteIbanIn" type="text" placeholder="TRxx xxxx xxxx ..." />
+        </div>
+      </form>
+      <div style="display:flex;gap:0.75rem;margin-top:1rem;align-items:center;flex-wrap:wrap;">
+        <button id="saveSettings" class="btn" type="button">Ayarları Kaydet</button>
+        <label style="display:flex;align-items:center;gap:0.5rem;font-weight:500;">
+          <input id="pushSettingsToGithub" type="checkbox" checked /> GitHub'a da kaydet
+        </label>
+        <button id="loadDefaultsSettings" class="btn btn-ghost" type="button">Varsayılanları Yükle</button>
+      </div>
+      <div class="small meta" style="margin-top:0.75rem">💾 Ayarlar tarayıcıda saklanır. "GitHub'a da kaydet" seçili ise site-settings.json güncellenir.</div>
+    </div>
+  </div>
 
       <!-- Passkey / WebAuthn Yönetimi -->
 
   </div>
 
   <script defer>
-    // Admin panel settings sub-button logic
+    // Admin panel settings sub-button + accordion logic
     document.addEventListener('DOMContentLoaded', function(){
       function showSettingsForm(formId) {
         const forms = ['contactSettingsForm', 'homepageSettingsForm', 'paymentSettingsForm'];
@@ -1998,7 +2060,30 @@
       if (contactBtn) contactBtn.addEventListener('click', () => showSettingsForm('contactSettingsForm'));
       if (homepageBtn) homepageBtn.addEventListener('click', () => showSettingsForm('homepageSettingsForm'));
       if (paymentBtn) paymentBtn.addEventListener('click', () => showSettingsForm('paymentSettingsForm'));
-      // Optionally, open contact form by default for clarity
+
+      // Accordion: toggle sub-buttons and forms via main button
+      const mainBtn = document.getElementById('siteSettingsMainBtn');
+      const subBtns = document.getElementById('siteSettingsSubBtns');
+      const formsWrap = document.getElementById('siteSettingsForms');
+      const chev = document.getElementById('siteSettingsChevron');
+      function setOpenState(isOpen){
+        if(subBtns) subBtns.style.display = isOpen ? 'flex' : 'none';
+        if(formsWrap) formsWrap.style.display = isOpen ? 'block' : 'none';
+        if(mainBtn) mainBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        if(chev) chev.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(-90deg)';
+      }
+      if (mainBtn) {
+        mainBtn.addEventListener('click', ()=>{
+          const currentlyOpen = subBtns && subBtns.style.display !== 'none';
+          setOpenState(!currentlyOpen);
+          if (!currentlyOpen) {
+            // just opened: ensure a default form is visible
+            showSettingsForm('contactSettingsForm');
+          }
+        });
+      }
+      // Start open by default
+      setOpenState(true);
       showSettingsForm('contactSettingsForm');
     });
 
