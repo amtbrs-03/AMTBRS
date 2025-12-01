@@ -15,28 +15,12 @@
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Çiçekçi - Online Çiçek Siparişi | Gül Buketi | ERN Çiçek" />
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        // kapalı bir SPA olduğundan, kök path'e yönlendiriyoruz
-                                        try { window.location.assign('/'); } catch(_){ window.location.href = '/'; }
-                                    }, { capture: true });
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Çiçekçi - Online Çiçek Siparişi | ERN Çiçek" />
     <meta name="twitter:description" content="Gül, lilyum, orkide ve tüm çiçek çeşitleri. Aynı gün teslimat." />
     <meta name="twitter:image" content="https://ern-cicek.com.tr/og-image.jpg" />
     
-    <link rel="icon" href="/favicon.ico" />
-                                            body {
-                                                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                                                    line-height: 1.6;
-                                                    color: #0b2f1f;
-                                                    background: url('images/gallery/floral-bg.jpg') no-repeat center center fixed; /* default */
-                                                    background-size: cover;
-                                                    -webkit-font-smoothing: antialiased;
-                                                    -moz-osx-font-smoothing: grayscale;
-                                                    min-height: 100%;
-                                                    padding-bottom: 4rem;
-                                            }
+        <link rel="icon" href="/favicon.ico" />
 
         <!-- Erken mojibake düzeltme: ilk boyama öncesi bozuk karakterleri gizle ve düzelt -->
         <style>html.__fixing{visibility:hidden !important}</style>
@@ -845,6 +829,23 @@
                         </script>
                 <!-- Decorative floral SVG background (purely visual) -->
                 <!-- decorative floral background removed -->
+                <script>
+                // Mobilde scroll ile header ve ürün başlığı bulanıklaşsın
+                (function(){
+                    function isMobile(){ return window.innerWidth <= 700; }
+                    function onScroll(){
+                        if(!isMobile()) return;
+                        var header = document.querySelector('header');
+                        var productsHeader = document.querySelector('.products-header');
+                        var scrolled = (window.scrollY || window.pageYOffset || 0) > 10;
+                        if(header) header.classList.toggle('blurred', scrolled);
+                        if(productsHeader) productsHeader.classList.toggle('blurred', scrolled);
+                    }
+                    window.addEventListener('scroll', onScroll, { passive: true });
+                    window.addEventListener('resize', onScroll);
+                    document.addEventListener('DOMContentLoaded', onScroll);
+                })();
+                </script>
                 <header>
                     <nav>
                         <div class="logo"><a href="/" style="color:inherit;text-decoration:none"><span class="logo-icon" aria-hidden="true">
@@ -874,6 +875,9 @@
                             <ul class="nav-links" style="display:flex;gap:0.6rem;align-items:center;list-style:none;margin:0;padding:0;">
                                 <li><button id="homeBtn" class="contact-btn" aria-expanded="false" data-action="go-home">Ana Sayfa</button></li>
                                     <li><a id="productsBtn" class="contact-btn" href="urunler.html" target="_blank" aria-controls="products" aria-expanded="false">Ürünler</a></li>
+                                <li>
+                                    <a id="bgGalleryLink" class="contact-btn" href="https://github.com/amtbrs-03/AMTBRS/tree/site-release/images/gallery" target="_blank" rel="noopener noreferrer">Arka Plan Görselleri</a>
+                                </li>
                                 <li id="cartContainer"><button id="cartBtn" class="cart-btn contact-btn" aria-controls="cartModal" aria-expanded="false" data-action="open-cart">Sepet <span id="cartCount" class="cart-count hidden">0</span></button></li>
                                 <li><button id="contactBtn" class="contact-btn" aria-expanded="false" aria-controls="contactPanel" data-action="toggle-contact"><span style="display:inline-block;margin-right:6px;line-height:1">📞</span><span>İletişim</span><span style="margin-left:8px;opacity:0.9">▾</span></button></li>
                                 <li style="position:relative;">
@@ -1628,7 +1632,10 @@
                                 address: 'Adresiniz Caddesi 1, Şehir, TR',
                                 hours: 'Pzt-Cum 09:00-19:00',
                                 iban: 'TR33 0006 1005 1978 6457 8413 26',
-                                contactBtnText: 'İletişim'
+                                contactBtnText: 'İletişim',
+                                homepageTitle: '',
+                                homepageSubtitle: '',
+                                homepageBackground: ''
                             };
                             const cfg = Object.assign({}, defaults, s || {});
                             // contact panel
@@ -1652,6 +1659,20 @@
                                 const span = contactBtn.querySelector('span:nth-child(2)');
                                 if (span) span.textContent = cfg.contactBtnText;
                             }
+                            // homepage visuals (if elements exist)
+                            try {
+                                if (cfg.homepageBackground) {
+                                    document.body.style.backgroundImage = "url('" + cfg.homepageBackground.replace(/^\//,'') + "')";
+                                    document.body.style.backgroundSize = 'cover';
+                                    document.body.style.backgroundRepeat = 'no-repeat';
+                                    document.body.style.backgroundAttachment = 'fixed';
+                                    document.body.style.backgroundPosition = 'center center';
+                                }
+                                const heroTitle = document.querySelector('.hero h1');
+                                const heroSub = document.querySelector('.hero p');
+                                if (heroTitle && cfg.homepageTitle) heroTitle.textContent = cfg.homepageTitle;
+                                if (heroSub && cfg.homepageSubtitle) heroSub.textContent = cfg.homepageSubtitle;
+                            } catch(_) { /* ignore */ }
                             // store locally for admin and other clients
                             try{ localStorage.setItem(SETTINGS_KEY, JSON.stringify(cfg)); }catch(e){}
                         }
