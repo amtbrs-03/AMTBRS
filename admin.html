@@ -2021,6 +2021,13 @@
           <label for="homepageSubtitle">📝 Anasayfa Alt Başlık</label>
           <input id="homepageSubtitle" type="text" placeholder="Çiçeklerle dolu bir dünya" />
         </div>
+        <div>
+          <label for="homepageBackground">🖼️ Arka Plan Görseli</label>
+          <input id="homepageBackground" type="text" placeholder="images/gallery/floral-bg.jpg" />
+          <div id="homepageBackgroundPreview" style="margin-top:0.5rem;width:100%;max-width:420px;height:120px;border:1px dashed #cbd5e1;border-radius:10px;display:flex;align-items:center;justify-content:center;background-size:cover;background-position:center;overflow:hidden;color:#64748b;">
+            Önizleme
+          </div>
+        </div>
         <div class="small meta">Not: Bu alanlar şimdilik sadece yerel kullanılacak; istersen bunları da site-settings.json'a ekleyebilirim.</div>
       </form>
       <form id="paymentSettingsForm" style="display:none;flex-direction:column;gap:1rem;">
@@ -2085,6 +2092,14 @@
       // Start open by default
       setOpenState(true);
       showSettingsForm('contactSettingsForm');
+      // Live preview background input
+      const bgInput = document.getElementById('homepageBackground');
+      const bgPrev = document.getElementById('homepageBackgroundPreview');
+      if (bgInput && bgPrev) {
+        const applyPrev = ()=>{ const v = bgInput.value.trim(); bgPrev.style.backgroundImage = v ? `url('${v}')` : 'none'; };
+        bgInput.addEventListener('input', applyPrev);
+        applyPrev();
+      }
     });
 
     // XOR decode for GitHub token
@@ -3158,6 +3173,8 @@ try {
         const elBtn = document.getElementById('contactBtnText'); if(elBtn) elBtn.value = s.contactBtnText || 'İletişim';
         const elHomeTitle = document.getElementById('homepageTitle'); if (elHomeTitle) elHomeTitle.value = s.homepageTitle || 'Hoşgeldiniz';
         const elHomeSubtitle = document.getElementById('homepageSubtitle'); if (elHomeSubtitle) elHomeSubtitle.value = s.homepageSubtitle || 'Çiçeklerle dolu bir dünya';
+        const elHomeBg = document.getElementById('homepageBackground'); if (elHomeBg) elHomeBg.value = s.homepageBackground || 'images/gallery/floral-bg.jpg';
+        const prev = document.getElementById('homepageBackgroundPreview'); if (prev) prev.style.backgroundImage = `url('${elHomeBg ? elHomeBg.value : (s.homepageBackground||'images/gallery/floral-bg.jpg')}')`;
       }
 
       // Backward compatibility: define global token accessor (eski tarayıcılar için block-scope düzeltmesi)
@@ -3179,7 +3196,8 @@ try {
             iban: (document.getElementById('siteIbanIn')?.value || '').trim(),
             contactBtnText: (document.getElementById('contactBtnText')?.value || 'İletişim').trim() || 'İletişim',
             homepageTitle: (document.getElementById('homepageTitle')?.value || 'Hoşgeldiniz').trim() || 'Hoşgeldiniz',
-            homepageSubtitle: (document.getElementById('homepageSubtitle')?.value || 'Çiçeklerle dolu bir dünya').trim() || 'Çiçeklerle dolu bir dünya'
+            homepageSubtitle: (document.getElementById('homepageSubtitle')?.value || 'Çiçeklerle dolu bir dünya').trim() || 'Çiçeklerle dolu bir dünya',
+            homepageBackground: (document.getElementById('homepageBackground')?.value || 'images/gallery/floral-bg.jpg').trim() || 'images/gallery/floral-bg.jpg'
           };
           setSiteSettings(s);
           
@@ -3269,7 +3287,8 @@ try {
             iban: 'TR33 0006 1005 1978 6457 8413 26',
             contactBtnText: 'İletişim',
             homepageTitle: 'Hoşgeldiniz',
-            homepageSubtitle: 'Çiçeklerle dolu bir dünya'
+            homepageSubtitle: 'Çiçeklerle dolu bir dünya',
+            homepageBackground: 'images/gallery/floral-bg.jpg'
           };
           setSiteSettings(defaults);
           loadSettingsIntoForm();
