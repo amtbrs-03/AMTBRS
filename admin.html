@@ -3150,12 +3150,14 @@ try {
 
       function loadSettingsIntoForm(){
         const s = getSiteSettings();
-        document.getElementById('siteEmail').value = s.email || 'amtbrs@icloud.com';
-        document.getElementById('sitePhone').value = s.phone || '+90 5XX XXX XXXX';
-        document.getElementById('siteAddress').value = s.address || 'Adresiniz Caddesi 1, Şehir, TR';
-        document.getElementById('siteHours').value = s.hours || 'Pzt-Cum 09:00-19:00';
-        document.getElementById('siteIbanIn').value = s.iban || 'TR33 0006 1005 1978 6457 8413 26';
-        document.getElementById('contactBtnText').value = s.contactBtnText || 'İletişim';
+        const elEmail = document.getElementById('siteEmail'); if(elEmail) elEmail.value = s.email || 'amtbrs@icloud.com';
+        const elPhone = document.getElementById('sitePhone'); if(elPhone) elPhone.value = s.phone || '+90 5XX XXX XXXX';
+        const elAddr = document.getElementById('siteAddress'); if(elAddr) elAddr.value = s.address || 'Adresiniz Caddesi 1, Şehir, TR';
+        const elHours = document.getElementById('siteHours'); if(elHours) elHours.value = s.hours || 'Pzt-Cum 09:00-19:00';
+        const elIban = document.getElementById('siteIbanIn'); if(elIban) elIban.value = s.iban || 'TR33 0006 1005 1978 6457 8413 26';
+        const elBtn = document.getElementById('contactBtnText'); if(elBtn) elBtn.value = s.contactBtnText || 'İletişim';
+        const elHomeTitle = document.getElementById('homepageTitle'); if (elHomeTitle) elHomeTitle.value = s.homepageTitle || 'Hoşgeldiniz';
+        const elHomeSubtitle = document.getElementById('homepageSubtitle'); if (elHomeSubtitle) elHomeSubtitle.value = s.homepageSubtitle || 'Çiçeklerle dolu bir dünya';
       }
 
       // Backward compatibility: define global token accessor (eski tarayıcılar için block-scope düzeltmesi)
@@ -3170,12 +3172,14 @@ try {
         const btn = ev.currentTarget;
         await withProgress(btn, '⏳ Ayarlar kaydediliyor...', async ()=>{
           const s = {
-          email: document.getElementById('siteEmail').value.trim(),
-          phone: document.getElementById('sitePhone').value.trim(),
-          address: document.getElementById('siteAddress').value.trim(),
-          hours: document.getElementById('siteHours').value.trim(),
-          iban: document.getElementById('siteIbanIn').value.trim(),
-          contactBtnText: document.getElementById('contactBtnText').value.trim() || 'İletişim'
+            email: (document.getElementById('siteEmail')?.value || '').trim(),
+            phone: (document.getElementById('sitePhone')?.value || '').trim(),
+            address: (document.getElementById('siteAddress')?.value || '').trim(),
+            hours: (document.getElementById('siteHours')?.value || '').trim(),
+            iban: (document.getElementById('siteIbanIn')?.value || '').trim(),
+            contactBtnText: (document.getElementById('contactBtnText')?.value || 'İletişim').trim() || 'İletişim',
+            homepageTitle: (document.getElementById('homepageTitle')?.value || 'Hoşgeldiniz').trim() || 'Hoşgeldiniz',
+            homepageSubtitle: (document.getElementById('homepageSubtitle')?.value || 'Çiçeklerle dolu bir dünya').trim() || 'Çiçeklerle dolu bir dünya'
           };
           setSiteSettings(s);
           
@@ -3258,12 +3262,14 @@ try {
         withProgress(btn, '⏳ Yükleniyor...', ()=>{
           if (!confirm('Varsayılan site ayarları yüklensin mi?')) return;
           const defaults = {
-          email: 'amtbrs@icloud.com',
-          phone: '+90 5XX XXX XXXX',
-          address: 'Adresiniz Caddesi 1, Şehir, TR',
-          hours: 'Pzt-Cum 09:00-19:00',
-          iban: 'TR33 0006 1005 1978 6457 8413 26',
-          contactBtnText: 'İletişim'
+            email: 'amtbrs@icloud.com',
+            phone: '+90 5XX XXX XXXX',
+            address: 'Adresiniz Caddesi 1, Şehir, TR',
+            hours: 'Pzt-Cum 09:00-19:00',
+            iban: 'TR33 0006 1005 1978 6457 8413 26',
+            contactBtnText: 'İletişim',
+            homepageTitle: 'Hoşgeldiniz',
+            homepageSubtitle: 'Çiçeklerle dolu bir dünya'
           };
           setSiteSettings(defaults);
           loadSettingsIntoForm();
