@@ -2731,8 +2731,7 @@
                     function addToCart(item) {
                         const user = getCurrentUser();
                         if (!user) {
-                            openAuthModal();
-                            // user not logged in; open auth modal silently
+                            // User not logged in; open auth modal
                             openAuthModal();
                             console.log('Kullanıcı giriş yapmalı: sepete ekleme engellendi.');
                             return;
@@ -3151,7 +3150,6 @@
                         });
                     }
 
-                    function openBank(){ document.getElementById('bankModal').style.display = 'block'; }
                     function openBank(){ document.getElementById('bankModal').style.display = 'block'; try{ const b = document.getElementById('paymentOpenBtn'); if (b) b.setAttribute('aria-expanded','true'); }catch(e){} }
                     function closeBank(){ document.getElementById('bankModal').style.display = 'none'; try{ const b = document.getElementById('paymentOpenBtn'); if (b) b.setAttribute('aria-expanded','false'); }catch(e){} }
                     function closePaymentWidget(){ document.getElementById('paymentWidget').style.display = 'none'; }
@@ -3270,9 +3268,6 @@
                         }catch(err){ console.error('delegation error', err); }
                     });
 
-                    // Diagnostic: check buttons with inline onclick and report missing handlers
-                    function checkAllButtons() {
-
                     // --- Ürün verisi utils ---
                     function exportCurrentProducts(){
                         try{
@@ -3379,6 +3374,9 @@
                         }
                         return true;
                     }
+
+                    // Diagnostic: check buttons with inline onclick and report missing handlers
+                    function checkAllButtons() {
                         const els = Array.from(document.querySelectorAll('[onclick]'));
                         const report = { total: els.length, checked: 0, missing: [] };
                         els.forEach(el => {
