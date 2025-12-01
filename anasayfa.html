@@ -1598,10 +1598,24 @@
                                 badge.setAttribute('aria-label','Durum');
                                 const img = document.createElement('div');
                                 img.className = 'product-image';
-                                if(p.image){
+                                // Resolve product image path: prefer explicit p.image; fallback to gallery or products folder
+                                let imgSrc = null;
+                                if (p.image) {
+                                    imgSrc = p.image; // full or relative path already provided
+                                } else if (p.galleryImage) {
+                                    // admin uploads often go to images/gallery; accept filename or subpath
+                                    const gi = String(p.galleryImage).replace(/^\//,'');
+                                    imgSrc = gi.startsWith('images/') ? gi : ('images/gallery/' + gi);
+                                } else if (p.slug || p.id) {
+                                    // fallback convention: images/products/<slug-or-id>.jpg
+                                    const base = String(p.slug || p.id);
+                                    imgSrc = 'images/products/' + base + '.jpg';
+                                }
+                                if(imgSrc){
                                     const imageEl = document.createElement('img');
-                                    imageEl.src = p.image;
+                                    imageEl.src = imgSrc;
                                     imageEl.alt = p.name || 'Ürün görseli';
+                                    imageEl.loading = 'lazy';
                                     imageEl.style.width='100%';
                                     imageEl.style.height='100%';
                                     imageEl.style.objectFit='cover';
