@@ -3074,8 +3074,65 @@
                         try { persistCartSnapshot(cart, user); } catch(e) { /* sessiz */ }
                     }
 
-                    // showToast is suppressed (no-op) to avoid UI notifications
-                    function showToast(msg){ /* suppressed */ }
+                    // Basit toast bildirimi (erişilebilir, otomatik kaybolur)
+                    function showToast(msg, opts){
+                        try {
+                            opts = opts || {};
+                            const id = 'toastContainer';
+                            let wrap = document.getElementById(id);
+                            if (!wrap) {
+                                wrap = document.createElement('div');
+                                wrap.id = id;
+                                wrap.setAttribute('aria-live','polite');
+                                wrap.style.position = 'fixed';
+                                wrap.style.top = '70px';
+                                wrap.style.right = '12px';
+                                wrap.style.display = 'flex';
+                                wrap.style.flexDirection = 'column';
+                                wrap.style.gap = '10px';
+                                wrap.style.zIndex = '99999';
+                                document.body.appendChild(wrap);
+                            }
+                            const t = document.createElement('div');
+                            t.textContent = msg;
+                            t.style.background = opts.type==='warn'? 'linear-gradient(135deg,#f59e0b,#d97706)' : 'linear-gradient(135deg,#10b981,#059669)';
+                            t.style.color = '#fff';
+                            t.style.padding = '0.75rem 1rem';
+                            t.style.borderRadius = '12px';
+                            t.style.fontSize = '.9rem';
+                            t.style.fontWeight = '600';
+                            t.style.boxShadow = '0 12px 32px rgba(0,0,0,0.25)';
+                            t.style.position = 'relative';
+                            t.style.maxWidth = '260px';
+                            t.style.wordBreak = 'break-word';
+                            const btn = document.createElement('button');
+                            btn.textContent = '✕';
+                            btn.style.position = 'absolute';
+                            btn.style.top = '4px'; btn.style.right = '6px';
+                            btn.style.background = 'rgba(255,255,255,0.25)';
+                            btn.style.border = 'none';
+                            btn.style.color = '#fff';
+                            btn.style.cursor = 'pointer';
+                            btn.style.fontSize = '.85rem';
+                            btn.style.borderRadius = '6px';
+                            btn.addEventListener('click', ()=>{ t.remove(); });
+                            t.appendChild(btn);
+                            wrap.appendChild(t);
+                            setTimeout(()=>{ try { t.style.opacity='0'; t.style.transition='opacity .4s'; setTimeout(()=>t.remove(),450); } catch(_){} }, opts.ttl || 4200);
+                        } catch(e) { /* ignore */ }
+                    }
+
+                    function showAvailabilityNoticeIfNeeded(cart){
+                        try {
+                            const flagKey = 'availability_notice_shown';
+                            if (sessionStorage.getItem(flagKey)) return; // zaten gösterildi
+                            const distinct = cart.length; // her ürün yalnız 1 adet olacak
+                            if (distinct > 1) {
+                                showToast('Ürün durumunu satıcıya sor', { type:'warn', ttl: 6000 });
+                                sessionStorage.setItem(flagKey, '1');
+                            }
+                        } catch(e){ /* sessiz */ }
+                    }
 
                     function addToCartFromBtn(btn) {
                         const card = btn.closest('.product-card');
@@ -3096,16 +3153,19 @@
                         }
                         const cart = loadCart();
                         const existing = cart.find(i => i.id === item.id);
+                        // Tek adet kuralı: aynı üründen ikinci kez eklenmesin
                         if (existing) {
-                            existing.qty = (existing.qty || 1) + 1;
-                        } else {
-                            cart.push({ id: item.id, name: item.name, price: item.price, qty: 1 });
+                            showToast('Bu üründen sepete yalnızca 1 adet ekleyebilirsiniz.', { type:'warn', ttl: 5000 });
+                            return; // değişiklik yok
                         }
+                        cart.push({ id: item.id, name: item.name, price: item.price, qty: 1 });
                         saveCart(cart);
                         updateCartCount();
-                        // Küçük bilgilendirme (non-blocking)
-                        const count = cart.reduce((s,i)=>s+i.qty,0);
-                        try{ showToast(item.name + ' sepete eklendi. (Toplam: ' + count + ')'); }catch(e){}
+                        // Küçük bilgilendirme
+                        const count = cart.length; // her ürün 1 adet
+                        try { showToast(item.name + ' sepete eklendi. (Ürün sayısı: ' + count + ')'); } catch(e){}
+                        // Birden fazla farklı ürün olduğunda satıcıya sor bildirimi
+                        showAvailabilityNoticeIfNeeded(cart);
                     }
 
                     function updateCartCount() {
