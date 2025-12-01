@@ -586,8 +586,8 @@
         @media (max-width:480px) {
             /* Tighten for narrow phones */
             .hero { padding: 2rem 0.8rem 3rem; }
-            .hero h1 { font-size:1.35rem; }
-            .hero p { font-size:0.95rem; }
+            .hero h1 { font-size:1.28rem; }
+            .hero p { font-size:0.93rem; }
 
             .products { grid-template-columns: 1fr; gap:0.7rem; }
             .product-image { aspect-ratio: 1 / 1; font-size:1.8rem; }
@@ -605,6 +605,28 @@
 
             /* Disable fancy hover transforms on small devices for stability */
             .product-card { transform: none; box-shadow: none; }
+        }
+
+        /* Ultra-narrow screens ≤360px: micro-tweaks for premium readability */
+        @media (max-width:360px) {
+            .hero { padding: 1.6rem 0.6rem 2.2rem; }
+            .hero h1 {
+                font-size: 1.12rem;
+                letter-spacing: 0.08px;
+                line-height: 1.18;
+            }
+            .hero p {
+                font-size: 0.9rem;
+                letter-spacing: 0.08px;
+                line-height: 1.22;
+            }
+            .contact-btn, .cart-btn, .auth-btn {
+                font-size: 0.98rem;
+                letter-spacing: 0.15px;
+                padding: 0.9rem 0.55rem;
+            }
+            .product-name { font-size: 0.95rem; letter-spacing: 0.08px; }
+            .product-price { font-size: 1.02rem; letter-spacing: 0.08px; }
         }
 
         /* Mobile auth compact layout: move auth row to left and use icon-only */
