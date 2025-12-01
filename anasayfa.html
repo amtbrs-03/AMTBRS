@@ -502,17 +502,18 @@
 
         @media (max-width:700px) {
             header nav { padding: 0 0.3rem; }
+            /* Mobile: place top action buttons in two columns */
             .nav-links {
-                gap:0.5rem;
-                flex-direction:column;
-                flex-wrap:nowrap;
-                align-items:stretch;
-                padding-bottom:0.5rem;
-                width:100%;
+                display: grid !important; /* override inline flex */
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0.5rem;
+                align-items: stretch;
+                padding-bottom: 0.5rem;
+                width: 100%;
             }
             .nav-links li {
-                margin-bottom: 0.5rem;
-                width:100%;
+                margin: 0; /* gaps handle spacing */
+                width: auto;
             }
             .contact-btn, .cart-btn, .auth-btn {
                 display:block;
@@ -676,6 +677,19 @@
             border: 1px solid rgba(16,185,129,0.12);
         }
         .contact-btn:focus { outline: 3px solid rgba(16,185,129,0.18); }
+        /* Mobile: header nav buttons in two columns */
+        @media (max-width: 700px) {
+            header { position: fixed; top: 0; left: 0; right: 0; z-index: 1200; }
+            .nav-top ul.nav-links { 
+                display: grid !important; 
+                grid-template-columns: repeat(2, minmax(0, 1fr)); 
+                gap: 0.5rem; 
+                align-items: stretch; 
+            }
+            .nav-top ul.nav-links > li { width: 100%; }
+            .nav-top ul.nav-links > li > .contact-btn,
+            .nav-top ul.nav-links > li > a.contact-btn { width: 100%; }
+        }
         /* Mini cart dropdown */
         .mini-cart {
             position: absolute;
