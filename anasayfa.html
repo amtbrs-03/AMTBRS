@@ -526,13 +526,27 @@
                 margin:0 auto;
                 min-width:unset;
                 max-width:100%;
-                white-space:normal;
+                /* Force single-line labels with graceful truncation */
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
             .nav-bottom { margin-top: 0.5rem; }
 
             .hero { padding: 1.5rem 0.3rem 2rem; }
-            .hero h1 { font-size:1.1rem; line-height:1.15; }
-            .hero p { font-size:0.95rem; }
+            .hero h1 { 
+                font-size:1.1rem; 
+                line-height:1.15; 
+                white-space: nowrap; 
+                overflow: hidden; 
+                text-overflow: ellipsis; 
+            }
+            .hero p { 
+                font-size:0.95rem; 
+                white-space: nowrap; 
+                overflow: hidden; 
+                text-overflow: ellipsis; 
+            }
             .products-wrapper { padding: 0 0.3rem 0.8rem; }
             .products { gap:0.4rem; grid-template-columns: 1fr; }
             .product-image { aspect-ratio: 1 / 1; font-size:1.3rem; height:90px; }
