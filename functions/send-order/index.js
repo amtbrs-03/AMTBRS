@@ -37,6 +37,18 @@ exports.handler = async function(event, context) {
     return { statusCode: 400, headers: CORS_HEADERS, body: 'Missing payerEmail' };
   }
 
+  // Build order object (single source of truth for commit + email)
+  const orderId = 'ORD-' + Date.now();
+  const order = {
+    id: orderId,
+    date: Date.now(),
+    payerEmail,
+    iban: iban || '',
+    items: (cart||[]).map(i=>({ id: i.id||i.name||'', name: i.name||'', price: Number(i.price)||0, qty: Number(i.qty)||1 })),
+    total: (cart||[]).reduce((s,i)=> s + ((Number(i.price)||0) * (Number(i.qty)||0)), 0),
+    status: 'pending'
+  };
+
   // Read SMTP / Gmail OAuth config from env
   const SMTP_HOST = process.env.SMTP_HOST;
   const SMTP_PORT = process.env.SMTP_PORT || 587;
@@ -56,8 +68,8 @@ exports.handler = async function(event, context) {
   }
 
   // Build simple HTML/text message
-  const total = (cart || []).reduce((s,i) => s + ((Number(i.price)||0) * (Number(i.qty)||0)), 0);
-  const itemsHtml = (cart || []).map(i => `<li>${escape(i.name)} x${escape(i.qty||1)} @ ₺${Number(i.price||0).toFixed(2)}</li>`).join('');
+  const total = order.total;
+  const itemsHtml = order.items.map(i => `<li>${escape(i.name)} x${escape(i.qty||1)} @ ₺${Number(i.price||0).toFixed(2)}</li>`).join('');
   const html = `
     <p>Yeni havale/eft bildirimi geldi.</p>
     <p>Gönderen e-posta: ${escape(payerEmail)}</p>
@@ -117,15 +129,59 @@ exports.handler = async function(event, context) {
     await transporter.sendMail({
       from: FROM_EMAIL,
       to: TO_EMAIL,
-      subject: 'Havale bildirimi - yeni sipariş',
+      subject: `Havale bildirimi - yeni sipariş (${orderId})`,
       text: `Yeni havale bildirimi from ${payerEmail} - toplam ₺${total.toFixed(2)}`,
       html
     });
 
+    // Optional GitHub commit (orders/<id>.json) using server-side token.
+    let commitOk = false, commitStatus = null;
+    try {
+      const GITHUB_TOKEN = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
+      const GITHUB_OWNER = process.env.GITHUB_OWNER || 'amtbrs-03';
+      const GITHUB_REPO = process.env.GITHUB_REPO || 'AMTBRS';
+      const GITHUB_BRANCH = process.env.GITHUB_BRANCH || 'site-release';
+      if (GITHUB_TOKEN) {
+        const path = `orders/${orderId}.json`;
+        const apiUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${encodeURIComponent(path)}`;
+        // First check if file exists to avoid collision
+        let existingSha = null;
+        try {
+          const headRes = await fetch(apiUrl + `?ref=${GITHUB_BRANCH}`, {
+            headers: { 'Authorization': `Bearer ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github+json' }
+          });
+          if (headRes.ok) {
+            const j = await headRes.json(); existingSha = j.sha;
+          }
+        } catch(_){}
+        const content = Buffer.from(JSON.stringify(order, null, 2), 'utf8').toString('base64');
+        const body = { message: `feat(order): create ${orderId}`, content, branch: GITHUB_BRANCH };
+        if (existingSha) body.sha = existingSha; // unlikely, but handle overwrite
+        const putRes = await fetch(apiUrl, {
+          method: 'PUT',
+            headers: {
+              'Authorization': `Bearer ${GITHUB_TOKEN}`,
+              'Accept': 'application/vnd.github+json',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
+        });
+        commitStatus = putRes.status;
+        if (putRes.ok) commitOk = true; else {
+          const txt = await putRes.text();
+          console.warn('GitHub commit failed', putRes.status, txt);
+        }
+      } else {
+        console.warn('GITHUB_TOKEN not set: skipping order commit');
+      }
+    } catch (commitErr) {
+      console.error('Order commit error', commitErr);
+    }
+
     return {
       statusCode: 200,
       headers: CORS_HEADERS,
-      body: JSON.stringify({ ok: true })
+      body: JSON.stringify({ ok: true, orderId, commitOk, commitStatus })
     };
   } catch (err) {
     console.error('mail error', err);
