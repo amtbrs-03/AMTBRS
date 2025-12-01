@@ -687,8 +687,8 @@
     </style>
   </head>
   <body>
-                        <!-- Ürün görseli lightbox/modal -->
-                        <div id="productLightbox" class="hidden" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(10,12,30,0.92);z-index:9999;display:flex;align-items:center;justify-content:center;transition:opacity 0.3s;">
+                        <!-- Ürün görseli lightbox/modal (mobil uyumlu, header/nav üstte kalır) -->
+                        <div id="productLightbox" class="hidden" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(10,12,30,0.92);z-index:9999;display:none;align-items:center;justify-content:center;transition:opacity 0.3s;">
                             <button id="lightboxClose" style="position:absolute;top:18px;right:18px;background:#fff;color:#222;border-radius:50%;width:44px;height:44px;font-size:2rem;border:none;box-shadow:0 2px 12px rgba(0,0,0,0.18);z-index:10001;cursor:pointer;">✖</button>
                             <button id="lightboxPrev" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);background:#fff;color:#222;border-radius:50%;width:44px;height:44px;font-size:2rem;border:none;box-shadow:0 2px 12px rgba(0,0,0,0.18);z-index:10001;cursor:pointer;">◀</button>
                             <button id="lightboxNext" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:#fff;color:#222;border-radius:50%;width:44px;height:44px;font-size:2rem;border:none;box-shadow:0 2px 12px rgba(0,0,0,0.18);z-index:10001;cursor:pointer;">▶</button>
@@ -696,7 +696,8 @@
                                 <img id="lightboxImg" src="" alt="Ürün görseli" style="max-width:96vw;max-height:90vh;border-radius:18px;box-shadow:0 8px 32px rgba(0,0,0,0.28);background:#fff;" />
                             </div>
                         </div>
-                        // Ürün görseli lightbox/modal fonksiyonu
+                        <script>
+                        // Ürün görseli lightbox/modal fonksiyonu (mobilde header/nav üstte kalır, scroll engellenir)
                         (function(){
                             let productImages = [];
                             let currentIndex = 0;
@@ -706,13 +707,17 @@
                                 if(!productImages[idx]) return;
                                 img.src = productImages[idx].src;
                                 lb.classList.remove('hidden');
+                                lb.style.display = 'flex';
                                 lb.style.opacity = '1';
+                                document.body.style.overflow = 'hidden'; // Mobilde scroll engelle
                                 currentIndex = idx;
                             }
                             function closeLightbox(){
                                 const lb = document.getElementById('productLightbox');
                                 lb.classList.add('hidden');
                                 lb.style.opacity = '0';
+                                lb.style.display = 'none';
+                                document.body.style.overflow = '';
                             }
                             function showPrev(){
                                 if(currentIndex > 0) openLightbox(currentIndex-1);
@@ -734,25 +739,35 @@
                                 // Klavye ile gezinme
                                 document.addEventListener('keydown', function(e){
                                     const lb = document.getElementById('productLightbox');
-                                    if(lb.classList.contains('hidden')) return;
+                                    if(lb.classList.contains('hidden') || lb.style.display === 'none') return;
                                     if(e.key === 'Escape') closeLightbox();
                                     if(e.key === 'ArrowLeft') showPrev();
                                     if(e.key === 'ArrowRight') showNext();
                                 });
                                 // Mobil swipe desteği
                                 let touchStartX = null;
+                                let touchStartY = null;
                                 document.getElementById('productLightbox').addEventListener('touchstart', function(e){
-                                    if(e.touches.length === 1) touchStartX = e.touches[0].clientX;
+                                    if(e.touches.length === 1) {
+                                        touchStartX = e.touches[0].clientX;
+                                        touchStartY = e.touches[0].clientY;
+                                    }
                                 });
                                 document.getElementById('productLightbox').addEventListener('touchend', function(e){
-                                    if(touchStartX === null) return;
+                                    if(touchStartX === null || touchStartY === null) return;
                                     const touchEndX = e.changedTouches[0].clientX;
-                                    if(touchEndX - touchStartX > 60) showPrev();
-                                    else if(touchStartX - touchEndX > 60) showNext();
+                                    const touchEndY = e.changedTouches[0].clientY;
+                                    // Yatay swipe ise (dikey scroll ile karışmasın)
+                                    if(Math.abs(touchEndX - touchStartX) > Math.abs(touchEndY - touchStartY)) {
+                                        if(touchEndX - touchStartX > 60) showPrev();
+                                        else if(touchStartX - touchEndX > 60) showNext();
+                                    }
                                     touchStartX = null;
+                                    touchStartY = null;
                                 });
                             });
                         })();
+                        </script>
                 <!-- Decorative floral SVG background (purely visual) -->
                 <!-- decorative floral background removed -->
                 <header>
