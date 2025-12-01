@@ -756,8 +756,8 @@
             #productsBtn { grid-area: products; }
             #cartContainer { grid-area: cart; }
             #contactBtn { grid-area: contact; }
-            /* hide About on mobile to fit two rows cleanly */
-            #aboutBtn { display: none !important; }
+            /* show About on mobile as requested; user can toggle panel */
+            #aboutBtn { display: block; }
             /* make auth/login occupy full-width on a third row under nav */
             .nav-bottom { display: block; padding: 0.4rem 0.2rem; }
             #authContainer, #userContainer { width: 100%; }
@@ -769,6 +769,14 @@
             #contactBtn.contact-btn, #aboutBtn.contact-btn { background: linear-gradient(135deg,#14b8a6,#0ea5e9); }
             /* cart pill counter contrast tweak on mobile */
             #cartBtn .cart-count { background:#fff; color:#0b1220; border:1px solid rgba(10,12,30,0.1); }
+
+            /* Ensure logo text remains single-line with ellipsis on mobile */
+            .logo-text {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 52vw; /* avoid overlapping nav */
+            }
         }
         /* Mini cart dropdown */
         .mini-cart {
