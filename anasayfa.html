@@ -686,6 +686,9 @@
             .nav-top ul.nav-links { 
                 display: grid !important;
                 grid-template-columns: repeat(2, minmax(0, 1fr));
+                grid-template-areas:
+                  "home products"
+                  "cart contact";
                 gap: 0.6rem;
                 align-items: stretch;
                 padding: 0.4rem 0.2rem;
@@ -696,6 +699,17 @@
                 width: 100%;
                 min-height: 44px; /* comfortable touch target */
             }
+            /* place items explicitly into two rows */
+            #homeBtn { grid-area: home; }
+            #productsBtn { grid-area: products; }
+            #cartContainer { grid-area: cart; }
+            #contactBtn { grid-area: contact; }
+            /* hide About on mobile to fit two rows cleanly */
+            #aboutBtn { display: none !important; }
+            /* make auth/login occupy full-width on a third row under nav */
+            .nav-bottom { display: block; padding: 0.4rem 0.2rem; }
+            #authContainer, #userContainer { width: 100%; }
+            #authBtn, #profileToggle { width: 100%; min-height: 44px; }
             /* distinct styles per action for visual variety */
             #homeBtn.contact-btn { background: linear-gradient(135deg,#22c55e,#16a34a); }
             #productsBtn.contact-btn { background: linear-gradient(135deg,#60a5fa,#3b82f6); }
