@@ -4,5 +4,8 @@
   "address": "Adresiniz Caddesi 1, Şehir, TR",
   "hours": "Pzt-Cum 09:00-19:00",
   "iban": "TR33 0006 1005 1978 6457 8413 26",
-  "contactBtnText": "İletişim"
+  "contactBtnText": "İletişim",
+  "homepageTitle": "Hoşgeldiniz",
+  "homepageSubtitle": "Çiçeklerle dolu bir dünya",
+  "homepageBackground": "images/gallery/IMG_1966.JPG"
 }
