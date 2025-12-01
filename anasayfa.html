@@ -1581,7 +1581,8 @@
                         try{
                             const res = await fetch('products.json', {cache:'no-store'});
                             if(!res.ok) throw new Error('products.json yüklenemedi');
-                            const list = await res.json();
+                            const listRaw = await res.json();
+                            const list = Array.isArray(listRaw) ? listRaw : (Array.isArray(listRaw.items) ? listRaw.items : []);
                             const grid = document.getElementById('products');
                             if(!grid) return;
                             grid.innerHTML = '';
