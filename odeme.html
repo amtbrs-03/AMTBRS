@@ -266,7 +266,40 @@
           setTimeout(() => { window.location.href = '/anasayfa.html'; }, 1500);
         } else {
           console.error('Sunucu uç noktası başarısız:', lastErr);
-          // GitHub Pages gibi statik ortamda 405/404 olabilir; mailto fallback kullan
+          // GitHub Pages gibi statik ortamda 405/404 olabilir; önce GitHub'a siparişi kaydetmeyi dene, ardından mailto fallback kullan
+          try {
+            const token = localStorage.getItem('github_token') || localStorage.getItem('gh_token');
+            if (token) {
+              const owner = 'amtbrs-03';
+              const repo = 'AMTBRS';
+              const branch = 'site-release';
+              const path = 'orders/' + (order.id || ('ORD-' + Date.now())) + '.json';
+              const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}?ref=${branch}`;
+              const payload = {
+                message: `feat(order): create ${order.id} via client`,
+                content: btoa(unescape(encodeURIComponent(JSON.stringify(order, null, 2)))) ,
+                branch
+              };
+              const ghRes = await fetch(apiUrl, {
+                method: 'PUT',
+                headers: {
+                  'Authorization': 'token ' + token,
+                  'Accept': 'application/vnd.github.v3+json',
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+              });
+              if (ghRes.ok) {
+                console.log('✓ Sipariş GitHub orders/ klasörüne kaydedildi:', path);
+              } else {
+                console.warn('GitHub commit başarısız:', ghRes.status, await ghRes.text());
+              }
+            } else {
+              console.warn('GitHub token bulunamadı; sipariş dosyası repoya commit edilemedi.');
+            }
+          } catch(ghErr) {
+            console.error('GitHub commit hatası:', ghErr);
+          }
           try {
             const subject = encodeURIComponent('Sipariş Bildirimi – ' + order.id);
             const bodyLines = [
