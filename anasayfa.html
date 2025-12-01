@@ -359,7 +359,7 @@
         }
         .products {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(3, 1fr);
             gap: 1.2rem;
             transform-style: preserve-3d;
         }
@@ -526,7 +526,7 @@
             .hero h1 { font-size:1.1rem; line-height:1.15; }
             .hero p { font-size:0.95rem; }
             .products-wrapper { padding: 0 0.3rem 0.8rem; }
-            .products { gap:0.4rem; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); }
+            .products { gap:0.4rem; grid-template-columns: 1fr; }
             .product-image { aspect-ratio: 1 / 1; font-size:1.3rem; height:90px; }
             .product-card { padding:.4rem; border-radius:7px }
 
@@ -551,7 +551,7 @@
             .hero h1 { font-size:1.35rem; }
             .hero p { font-size:0.95rem; }
 
-            .products { grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap:0.7rem; }
+            .products { grid-template-columns: 1fr; gap:0.7rem; }
             .product-image { aspect-ratio: 1 / 1; font-size:1.8rem; }
             .product-price { font-size:1.05rem; }
             .product-name { font-size:0.98rem; }
@@ -1398,13 +1398,7 @@
                 <!-- Hero section removed (big logo/title) per request -->
 
                 <div class="products-wrapper">
-                    <div class="products-header">
-                        <h2 class="products-title">Ürünler</h2>
-                        <div class="products-actions">
-                            <button class="btn" data-action="open-cart">Sepeti Gör</button>
-                            <button class="btn" style="background:#2563eb" data-action="save-products-github">GitHub’a Kaydet</button>
-                        </div>
-                    </div>
+                    <!-- products-header removed per request -->
                     <section class="products" id="products">
                         <div class="product-card" data-id="1" data-name="Ürün 1" data-price="99.99">
                             <span class="badge badge-green" aria-label="Yeni ürün">Yeni</span>
