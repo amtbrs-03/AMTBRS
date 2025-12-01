@@ -502,9 +502,13 @@
             console.log('Fetching order:', file.name);
             const token = localStorage.github_token || localStorage.gh_token;
             const headers = token ? { 'Authorization': 'token ' + token } : {};
-            const orderRes = await fetch(file.download_url, { headers });
+            // GitHub API üzerinden içerik çek
+            const apiOrderUrl = `https://api.github.com/repos/amtbrs-03/AMTBRS/contents/orders/${file.name}?ref=site-release`;
+            const orderRes = await fetch(apiOrderUrl, { headers });
             if (orderRes.ok) {
-              const orderData = await orderRes.json();
+              const orderJson = await orderRes.json();
+              // İçerik base64, decode et
+              const orderData = JSON.parse(atob(orderJson.content));
               console.log('Order loaded:', orderData.id);
               ordersData.push(orderData);
             } else {
