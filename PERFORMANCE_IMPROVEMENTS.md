@@ -205,21 +205,23 @@ try{ const b = document.getElementById('cartBtn'); if (b) b.setAttribute('aria-e
 
 ## Priority Fixes
 
+### Completed ✅
+1. Remove duplicate `openBank()` definition
+2. Remove duplicate `openAuthModal()` call in `addToCart()`
+3. Fix broken `checkAllButtons()` function structure
+
 ### High Priority (Should Fix Now)
-1. ✅ Remove duplicate `openBank()` definition - **FIXED**
-2. ✅ Remove duplicate `openAuthModal()` call in `addToCart()` - **FIXED**
-3. ✅ Fix broken `checkAllButtons()` function structure - **FIXED**
-4. Consider consolidating event delegation handlers
+4. Consolidate event delegation handlers
 
 ### Medium Priority (Recommended)
-4. Cache DOM element references
-5. Reduce mojibake sweep intervals
-6. Use debouncing for localStorage saves
+5. Cache DOM element references
+6. Reduce mojibake sweep intervals
+7. Use debouncing for localStorage saves
 
 ### Low Priority (Future Optimization)
-7. Extract CSS/JS to separate files
-8. Use DocumentFragment for batch rendering
-9. Implement service worker for caching
+8. Extract CSS/JS to separate files
+9. Use DocumentFragment for batch rendering
+10. Implement service worker for caching
 
 ---
 
