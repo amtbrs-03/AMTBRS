@@ -212,32 +212,34 @@
       console.log('Sipariş oluşturuldu:', order);
 
       try {
-        // Save to GitHub via repository_dispatch
-        const token = getGitHubToken();
-        const owner = 'amtbrs-03';
-        const repo = 'AMTBRS';
-        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/dispatches`;
-        
-        console.log('GitHub\'a gönderiliyor:', apiUrl);
-        
-        const response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: {
-            'Accept': 'application/vnd.github.v3+json',
-            'Authorization': `token ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            event_type: 'save-order',
-            client_payload: {
-              order: order
-            }
-          })
-        });
+        // Send via serverless function (Netlify/Vercel) instead of GitHub API
+        const endpointCandidates = [
+          '/.netlify/functions/send-order',
+          '/api/send-order',
+          '/functions/send-order'
+        ];
+        let resp = null;
+        let lastErr = null;
+        for (const url of endpointCandidates) {
+          try {
+            console.log('Sunucu uç noktasına gönderiliyor:', url);
+            resp = await fetch(url, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                payerEmail: order.customerEmail,
+                cart: order.items,
+                iban: order.iban
+              })
+            });
+            if (resp && resp.ok) break;
+            lastErr = new Error('HTTP ' + (resp ? resp.status : 'no-response'));
+          } catch (e) {
+            lastErr = e;
+          }
+        }
 
-        console.log('GitHub yanıtı:', response.status, response.statusText);
-
-        if (response.status === 204 || response.ok) {
+        if (resp && resp.ok) {
           // Save to localStorage as backup
           const backupKey = 'orders_' + (payerEmail || 'guest');
           let orders = [];
@@ -263,9 +265,8 @@
           alert('✅ Siparişiniz kaydedildi!\n\nSipariş No: ' + order.id + '\n\nÖdemeniz kontrol edildikten sonra siparişiniz işleme alınacaktır.');
           setTimeout(() => { window.location.href = '/anasayfa.html'; }, 1500);
         } else {
-          const errorText = await response.text().catch(() => 'Bilinmeyen hata');
-          console.error('GitHub API hatası:', response.status, errorText);
-          throw new Error(`GitHub API yanıt vermedi: ${response.status} - ${errorText}`);
+          console.error('Sunucu uç noktası başarısız:', lastErr);
+          throw new Error('Sipariş sunucuya iletilemedi: ' + (lastErr ? lastErr.message : 'bilinmeyen hata'));
         }
       } catch(err) {
         console.error('Sipariş kaydı başarısız:', err);
