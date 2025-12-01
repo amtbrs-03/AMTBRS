@@ -734,10 +734,9 @@
             header { position: fixed; top: 0; left: 0; right: 0; z-index: 1200; }
             .nav-top ul.nav-links { 
                 display: grid !important;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                grid-template-areas:
-                  "home products"
-                  "cart contact";
+                /* Tek satırda 4 buton: Ana Sayfa, Sepet, İletişim, Hakkımızda */
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                grid-template-areas: "home cart contact about";
                 gap: 0.6rem;
                 align-items: stretch;
                 padding: 0.4rem 0.2rem;
@@ -750,18 +749,16 @@
             }
             /* place items explicitly into two rows */
             #homeBtn { grid-area: home; }
-            #productsBtn { grid-area: products; }
             #cartContainer { grid-area: cart; }
             #contactBtn { grid-area: contact; }
-            /* show About on mobile as requested; user can toggle panel */
-            #aboutBtn { display: block; }
+            /* show About and place it in the fourth column */
+            #aboutBtn { grid-area: about; display: block; }
             /* make auth/login occupy full-width on a third row under nav */
             .nav-bottom { display: block; padding: 0.4rem 0.2rem; }
             #authContainer, #userContainer { width: 100%; }
             #authBtn, #profileToggle { width: 100%; min-height: 44px; }
             /* distinct styles per action for visual variety */
             #homeBtn.contact-btn { background: linear-gradient(135deg,#22c55e,#16a34a); }
-            #productsBtn.contact-btn { background: linear-gradient(135deg,#60a5fa,#3b82f6); }
             #cartBtn.contact-btn { background: linear-gradient(135deg,#f59e0b,#d97706); }
             #contactBtn.contact-btn, #aboutBtn.contact-btn { background: linear-gradient(135deg,#14b8a6,#0ea5e9); }
             /* cart pill counter contrast tweak on mobile */
