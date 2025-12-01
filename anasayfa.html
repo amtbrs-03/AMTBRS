@@ -657,38 +657,52 @@
 
         /* contact button styles */
         .contact-btn {
-            background: linear-gradient(90deg,#10b981,#059669);
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 10px;
+            background: linear-gradient(135deg,#10b981,#059669);
+            color: #fff;
+            padding: 0.8rem 1.1rem;
+            border-radius: 14px;
             border: none;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
             cursor: pointer;
-            font-weight:700;
-            font-size: 1rem;
+            font-weight: 700;
+            font-size: 0.98rem;
             justify-content: center;
-            box-shadow: 0 8px 22px rgba(16,185,129,0.18);
+            box-shadow: 0 10px 24px rgba(16,185,129,0.20);
+            transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
         }
         .contact-btn.active {
-            box-shadow: 0 10px 30px rgba(16,185,129,0.28);
+            box-shadow: 0 18px 36px rgba(16,185,129,0.28);
             transform: translateY(-1px);
             border: 1px solid rgba(16,185,129,0.12);
         }
-        .contact-btn:focus { outline: 3px solid rgba(16,185,129,0.18); }
+        .contact-btn:hover { transform: translateY(-2px); box-shadow: 0 18px 36px rgba(16,185,129,0.3); }
+        .contact-btn:active { transform: translateY(0); box-shadow: 0 8px 18px rgba(16,185,129,0.22); }
+        .contact-btn:focus { outline: 3px solid rgba(16,185,129,0.18); outline-offset: 2px; }
         /* Mobile: header nav buttons in two columns */
         @media (max-width: 700px) {
             header { position: fixed; top: 0; left: 0; right: 0; z-index: 1200; }
             .nav-top ul.nav-links { 
-                display: grid !important; 
-                grid-template-columns: repeat(2, minmax(0, 1fr)); 
-                gap: 0.5rem; 
-                align-items: stretch; 
+                display: grid !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0.6rem;
+                align-items: stretch;
+                padding: 0.4rem 0.2rem;
             }
             .nav-top ul.nav-links > li { width: 100%; }
             .nav-top ul.nav-links > li > .contact-btn,
-            .nav-top ul.nav-links > li > a.contact-btn { width: 100%; }
+            .nav-top ul.nav-links > li > a.contact-btn {
+                width: 100%;
+                min-height: 44px; /* comfortable touch target */
+            }
+            /* distinct styles per action for visual variety */
+            #homeBtn.contact-btn { background: linear-gradient(135deg,#22c55e,#16a34a); }
+            #productsBtn.contact-btn { background: linear-gradient(135deg,#60a5fa,#3b82f6); }
+            #cartBtn.contact-btn { background: linear-gradient(135deg,#f59e0b,#d97706); }
+            #contactBtn.contact-btn, #aboutBtn.contact-btn { background: linear-gradient(135deg,#14b8a6,#0ea5e9); }
+            /* cart pill counter contrast tweak on mobile */
+            #cartBtn .cart-count { background:#fff; color:#0b1220; border:1px solid rgba(10,12,30,0.1); }
         }
         /* Mini cart dropdown */
         .mini-cart {
