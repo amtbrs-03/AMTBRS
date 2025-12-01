@@ -123,6 +123,14 @@
     <style>
                 /* Mobilde scroll ile bulanıklaşan başlık/menü */
                 @media (max-width:700px) {
+                    /* Header'ı sabitle ve gerçek yüksekliğini üst boşluğa uygula (JS ile ayarlanacak) */
+                    header {
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        z-index: 1000; /* mobilde sabit başlık en üstte kalsın */
+                    }
                     header.blurred, .products-header.blurred {
                         background: rgba(30,143,85,0.55);
                         backdrop-filter: blur(8px);
@@ -133,6 +141,10 @@
                         background: rgba(255,255,255,0.65);
                         backdrop-filter: blur(8px);
                         -webkit-backdrop-filter: blur(8px);
+                    }
+                    /* İçerik, başlık tarafından örtülmesin; JS header yüksekliğini body padding-top'a yazar */
+                    body.mobile-header-offset {
+                        padding-top: var(--mobile-header-h, 72px);
                     }
                 }
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -706,17 +718,46 @@
                                 // Mobilde scroll ile header ve başlıkları bulanıklaştır
                                 (function(){
                                     function isMobile(){ return window.innerWidth <= 700; }
+                                    // Başlık yüksekliğini ölç ve body'ye üst boşluk uygula
+                                    function applyMobileHeaderOffset(){
+                                        var body = document.body;
+                                        var header = document.querySelector('header');
+                                        if(!isMobile()){
+                                            body.classList.remove('mobile-header-offset');
+                                            body.style.setProperty('--mobile-header-h','');
+                                            return;
+                                        }
+                                        if(!header){ return; }
+                                        // Reflow sonrası gerçek yükseklik
+                                        var h = header.offsetHeight || 72;
+                                        body.style.setProperty('--mobile-header-h', h + 'px');
+                                        body.classList.add('mobile-header-offset');
+                                    }
+
                                     function onScroll(){
-                                        if(!isMobile()) return;
                                         var header = document.querySelector('header');
                                         var productsHeader = document.querySelector('.products-header');
-                                        var scrolled = window.scrollY > 24;
-                                        if(header) header.classList.toggle('blurred', scrolled);
-                                        if(productsHeader) productsHeader.classList.toggle('blurred', scrolled);
+                                        if(isMobile()){
+                                            var scrolled = (window.scrollY||0) > 24;
+                                            if(header) header.classList.toggle('blurred', scrolled);
+                                            if(productsHeader) productsHeader.classList.toggle('blurred', scrolled);
+                                        } else {
+                                            if(header) header.classList.remove('blurred');
+                                            if(productsHeader) productsHeader.classList.remove('blurred');
+                                        }
                                     }
-                                    window.addEventListener('scroll', onScroll);
-                                    window.addEventListener('resize', onScroll);
-                                    document.addEventListener('DOMContentLoaded', onScroll);
+
+                                    function onResize(){
+                                        applyMobileHeaderOffset();
+                                        onScroll();
+                                    }
+
+                                    window.addEventListener('scroll', onScroll, { passive: true });
+                                    window.addEventListener('resize', onResize);
+                                    document.addEventListener('DOMContentLoaded', function(){
+                                        applyMobileHeaderOffset();
+                                        onScroll();
+                                    });
                                 })();
                                 </script>
                         <!-- Ürün görseli lightbox/modal (mobil uyumlu, header/nav üstte kalır) -->
@@ -829,23 +870,7 @@
                         </script>
                 <!-- Decorative floral SVG background (purely visual) -->
                 <!-- decorative floral background removed -->
-                <script>
-                // Mobilde scroll ile header ve ürün başlığı bulanıklaşsın
-                (function(){
-                    function isMobile(){ return window.innerWidth <= 700; }
-                    function onScroll(){
-                        if(!isMobile()) return;
-                        var header = document.querySelector('header');
-                        var productsHeader = document.querySelector('.products-header');
-                        var scrolled = (window.scrollY || window.pageYOffset || 0) > 10;
-                        if(header) header.classList.toggle('blurred', scrolled);
-                        if(productsHeader) productsHeader.classList.toggle('blurred', scrolled);
-                    }
-                    window.addEventListener('scroll', onScroll, { passive: true });
-                    window.addEventListener('resize', onScroll);
-                    document.addEventListener('DOMContentLoaded', onScroll);
-                })();
-                </script>
+                
                 <header>
                     <nav>
                         <div class="logo"><a href="/" style="color:inherit;text-decoration:none"><span class="logo-icon" aria-hidden="true">
