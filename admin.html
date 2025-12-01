@@ -1467,9 +1467,6 @@
         <button id="openGalleryUploadBtn" class="btn" type="button" title="images/gallery klasörüne resim yüklemek için GitHub yükleme sayfasını açar">
           🖼️ Galeriyi GitHub’da aç ve resim yükle
         </button>
-        <button id="openGalleryModalBtn" class="btn btn-ghost" type="button" title="Admin içinden sürükle-bırak ile galeriye yükle">
-          ⬆️ Admin’den sürükle-bırak yükleme (Beta)
-        </button>
       </div>
 
 
@@ -1500,80 +1497,7 @@
           if(btn){ btn.addEventListener('click', openUpload); }
         })();
 
-        // In-app Gallery Upload Modal (drag & drop -> commit to images/gallery via GitHub API)
-        (function galleryModal(){
-          const owner = 'amtbrs-03';
-          const repo = 'AMTBRS';
-          const branch = 'site-release';
-          function getToken(){ try { return localStorage.getItem('github_token')||''; }catch(_){ return ''; } }
-          function toBase64(str){ return btoa(unescape(encodeURIComponent(str))); }
-          function fileToBase64(file){ return new Promise((resolve,reject)=>{ const r=new FileReader(); r.onload=()=>{ const data = r.result.split(',')[1]||''; resolve(data); }; r.onerror=reject; r.readAsDataURL(file); }); }
-          function ensureModal(){
-            if(document.getElementById('galleryUploadModal')) return;
-            const modal = document.createElement('div');
-            modal.id = 'galleryUploadModal';
-            modal.setAttribute('role','dialog');
-            modal.setAttribute('aria-modal','true');
-            modal.setAttribute('aria-labelledby','galleryUploadTitle');
-            modal.style.cssText = 'position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(2,6,23,0.5);z-index:9999;';
-            modal.innerHTML = `
-              <div style="background:#fff;border-radius:14px;box-shadow:0 24px 64px rgba(2,6,23,0.3);width: min(720px, 94vw);padding: 1rem 1rem 1.2rem 1rem;border:1px solid rgba(10,12,30,0.08)">
-                <div style="display:flex;justify-content:space-between;align-items:center;gap:.6rem;margin-bottom:.6rem">
-                  <h3 id="galleryUploadTitle" style="margin:0;font-size:1.1rem">Galeri Yükleme (images/gallery)</h3>
-                  <button id="galleryUploadClose" class="btn" type="button" aria-label="Yükleme modali kapat" style="background:#e53e3e">Kapat</button>
-                </div>
-                <div style="margin-bottom:.6rem;color:#334155;font-size:.95rem">PAT token gerekiyor. Token yoksa GitHub’a yazılamaz; yerel yükleme yapılmaz.</div>
-                <div id="galleryDropZone" tabindex="0" aria-label="Dosyaları buraya sürükleyip bırakın veya tıklayıp seçin" style="border:2px dashed #93c5fd;background:#f8fafc;border-radius:12px;padding:1rem;text-align:center;cursor:pointer;outline:none">Dosyaları sürükleyin veya tıklayın</div>
-                <div id="galleryFileList" style="margin-top:.8rem;color:#334155;font-size:.9rem"></div>
-                <div style="display:flex;gap:.6rem;margin-top:1rem;align-items:center">
-                  <input id="galleryTargetPath" type="text" placeholder="Hedef klasör" value="images/gallery/" style="flex:1;border:1px solid #cbd5e1;border-radius:8px;padding:.5rem" aria-label="Hedef klasör yolu" />
-                  <button id="galleryCommitBtn" class="btn" type="button" aria-label="Seçilen dosyaları GitHub’a commit et">GitHub’a Yükle</button>
-                </div>
-                <div id="galleryStatus" role="status" aria-live="polite" style="margin-top:.6rem;color:#0b1220;font-weight:600"></div>
-              </div>`;
-            document.body.appendChild(modal);
-          }
-          function open(){ ensureModal(); const m=document.getElementById('galleryUploadModal'); if(m){ m.style.display='flex'; document.body.style.overflow='hidden'; bindOnce(); } }
-          function close(){ const m=document.getElementById('galleryUploadModal'); if(m){ m.style.display='none'; document.body.style.overflow=''; } }
-          let bound=false, files=[];
-          function bindOnce(){ if(bound) return; bound=true; const dz=document.getElementById('galleryDropZone'); const fl=document.getElementById('galleryFileList'); const st=document.getElementById('galleryStatus'); const tgt=document.getElementById('galleryTargetPath'); const commitBtn=document.getElementById('galleryCommitBtn'); const closeBtn=document.getElementById('galleryUploadClose');
-            function renderList(){ fl.innerHTML = files.length? ('Seçilen dosyalar: ' + files.map(f=>f.name).join(', ')) : 'Henüz dosya seçilmedi.'; }
-            function pick(){ const inp=document.createElement('input'); inp.type='file'; inp.multiple=true; inp.accept='image/*'; inp.onchange = ()=>{ if(inp.files && inp.files.length){ files = Array.from(inp.files); renderList(); } }; inp.click(); }
-            dz.addEventListener('click', pick);
-            dz.addEventListener('dragover', e=>{ e.preventDefault(); dz.style.background = '#eff6ff'; });
-            dz.addEventListener('dragleave', e=>{ dz.style.background = '#f8fafc'; });
-            dz.addEventListener('drop', e=>{ e.preventDefault(); dz.style.background = '#f8fafc'; const dropped = Array.from(e.dataTransfer.files||[]).filter(f=>/^image\//.test(f.type)); if(dropped.length){ files = dropped; renderList(); }
-            });
-            closeBtn.addEventListener('click', close);
-            renderList();
-            commitBtn.addEventListener('click', async ()=>{
-              const token = getToken();
-              if(!token){ st.textContent = '❌ Token bulunamadı. Önce token girin.'; return; }
-              if(!files.length){ st.textContent = 'Dosya seçilmedi.'; return; }
-              let basePath = (tgt.value||'images/gallery/').trim();
-              if(!basePath.endsWith('/')) basePath += '/';
-              st.textContent = '⏳ Yükleniyor...';
-              try{
-                for(const file of files){
-                  const contentB64 = await fileToBase64(file);
-                  const path = basePath + file.name.replace(/\s+/g,'-');
-                  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`;
-                  // Check if exists to get sha
-                  let sha=null; {
-                    const head = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`, { headers:{ 'Accept':'application/vnd.github+json','Authorization':'token '+token } });
-                    if(head.ok){ const meta=await head.json(); if(meta && meta.sha) sha = meta.sha; }
-                  }
-                  const body = { message: `feat(admin): gallery upload ${file.name}`, content: contentB64, branch };
-                  if(sha) body.sha = sha;
-                  const put = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}`, { method:'PUT', headers:{ 'Accept':'application/vnd.github+json','Authorization':'token '+token,'Content-Type':'application/json' }, body: JSON.stringify(body) });
-                  if(!put.ok){ const t = await put.text().catch(()=> ''); throw new Error('Yükleme hatası: '+put.status+' '+t); }
-                }
-                st.textContent = '✅ Yükleme tamamlandı.';
-              } catch(e){ st.textContent = '❌ Hata: '+(e.message||e); }
-            });
-          }
-          const openBtn = document.getElementById('openGalleryModalBtn'); if(openBtn){ openBtn.addEventListener('click', open); }
-        })();
+        
 
         // Product edit panel functions (must be defined before renderAdminProducts for event delegation)
         async function openProductEditPanelById(id) {
