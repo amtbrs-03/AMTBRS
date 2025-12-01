@@ -534,16 +534,16 @@
                 min-width:unset;
                 max-width:100%;
                 /* Force single-line labels with graceful truncation */
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                text-rendering: optimizeLegibility;
-            }
-            .nav-bottom { margin-top: 0.5rem; }
-
-            .hero { padding: 1.5rem 0.3rem 2rem; }
-            .hero h1 { 
-                font-size:1.18rem; 
+                    .nav-top ul.nav-links { 
+                        display: grid !important;
+                        /* Second row: place 4 actions in a single line */
+                        grid-template-columns: repeat(4, minmax(0, 1fr));
+                        grid-template-areas:
+                          "home cart contact about";
+                        gap: 0.6rem;
+                        align-items: stretch;
+                        padding: 0.4rem 0.2rem;
+                    }
                 line-height:1.2; 
                 font-weight: 800;
                 letter-spacing: 0.1px;
@@ -551,19 +551,16 @@
                 overflow: hidden; 
                 text-overflow: ellipsis; 
                 text-shadow: 0 4px 14px rgba(0,0,0,0.28);
-            }
-            .hero p { 
+                    #homeBtn { grid-area: home; }
                 font-size:0.98rem; 
                 line-height: 1.25;
-                letter-spacing: 0.1px;
-                white-space: nowrap; 
+                    #aboutBtn { grid-area: about; display: block; }
                 overflow: hidden; 
                 text-overflow: ellipsis; 
                 opacity: .92;
             }
             .products-wrapper { padding: 0 0.3rem 0.8rem; }
             .products { gap:0.4rem; grid-template-columns: 1fr; }
-            .product-image { aspect-ratio: 1 / 1; font-size:1.3rem; height:90px; }
             .product-card { padding:.45rem; border-radius:8px }
             .product-name { font-size:0.98rem; font-weight:700; letter-spacing:0.1px; }
             .product-price { font-size:1.08rem; font-weight:800; letter-spacing:0.1px; }
