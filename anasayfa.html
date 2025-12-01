@@ -734,10 +734,11 @@
                             </div>
                         </div>
                         <script>
-                        // Ürün görseli lightbox/modal fonksiyonu (mobilde header/nav üstte kalır, scroll engellenir)
+                        // Ürün görseli lightbox/modal fonksiyonu (mobilde tam ekran FullScreen API ile)
                         (function(){
                             let productImages = [];
                             let currentIndex = 0;
+                            function isMobile(){ return window.innerWidth <= 700; }
                             function openLightbox(idx){
                                 const lb = document.getElementById('productLightbox');
                                 const img = document.getElementById('lightboxImg');
@@ -746,8 +747,14 @@
                                 lb.classList.remove('hidden');
                                 lb.style.display = 'flex';
                                 lb.style.opacity = '1';
-                                document.body.style.overflow = 'hidden'; // Mobilde scroll engelle
+                                document.body.style.overflow = 'hidden';
                                 currentIndex = idx;
+                                // Mobilde tam ekran modunu dene
+                                if(isMobile() && lb.requestFullscreen){
+                                    try { lb.requestFullscreen(); } catch(e){}
+                                } else if(isMobile() && lb.webkitRequestFullscreen){
+                                    try { lb.webkitRequestFullscreen(); } catch(e){}
+                                }
                             }
                             function closeLightbox(){
                                 const lb = document.getElementById('productLightbox');
@@ -755,6 +762,14 @@
                                 lb.style.opacity = '0';
                                 lb.style.display = 'none';
                                 document.body.style.overflow = '';
+                                // Tam ekrandan çık
+                                if(document.fullscreenElement || document.webkitFullscreenElement){
+                                    if(document.exitFullscreen){
+                                        try { document.exitFullscreen(); } catch(e){}
+                                    } else if(document.webkitExitFullscreen){
+                                        try { document.webkitExitFullscreen(); } catch(e){}
+                                    }
+                                }
                             }
                             function showPrev(){
                                 if(currentIndex > 0) openLightbox(currentIndex-1);
