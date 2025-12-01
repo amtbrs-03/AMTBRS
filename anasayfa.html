@@ -1723,7 +1723,7 @@
                                 const span = contactBtn.querySelector('span:nth-child(2)');
                                 if (span) span.textContent = cfg.contactBtnText;
                             }
-                            // homepage visuals (if elements exist)
+                            // homepage visuals and document titles (if elements exist)
                             try {
                                 if (cfg.homepageBackground) {
                                     document.body.style.backgroundImage = "url('" + cfg.homepageBackground.replace(/^\//,'') + "')";
@@ -1736,6 +1736,24 @@
                                 const heroSub = document.querySelector('.hero p');
                                 if (heroTitle && cfg.homepageTitle) heroTitle.textContent = cfg.homepageTitle;
                                 if (heroSub && cfg.homepageSubtitle) heroSub.textContent = cfg.homepageSubtitle;
+
+                                // Update document <title> and social meta titles from settings
+                                (function updateDocTitles(){
+                                    var baseTitle = 'ERN-ÇİÇEK';
+                                    var titleText = (cfg.homepageTitle && cfg.homepageTitle.trim()) ? cfg.homepageTitle.trim() : baseTitle;
+                                    var subText = (cfg.homepageSubtitle && cfg.homepageSubtitle.trim()) ? cfg.homepageSubtitle.trim() : '';
+                                    // Compose a concise title for tab text
+                                    var composed = subText ? (titleText + ' — ' + subText) : titleText;
+                                    try { document.title = composed; } catch(_){}
+                                    // Open Graph and Twitter titles
+                                    var ogTitle = document.querySelector('meta[property="og:title"]');
+                                    if (ogTitle) ogTitle.setAttribute('content', composed);
+                                    var twTitle = document.querySelector('meta[name="twitter:title"]');
+                                    if (twTitle) twTitle.setAttribute('content', composed);
+                                    // Optionally update description from subtitle if present
+                                    var desc = document.querySelector('meta[name="description"]');
+                                    if (desc && subText) desc.setAttribute('content', subText);
+                                })();
                             } catch(_) { /* ignore */ }
                             // store locally for admin and other clients
                             try{ localStorage.setItem(SETTINGS_KEY, JSON.stringify(cfg)); }catch(e){}
