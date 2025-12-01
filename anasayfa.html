@@ -737,7 +737,7 @@
                 /* Tek satırda 4 buton: Ana Sayfa, Sepet, İletişim, Hakkımızda */
                 grid-template-columns: repeat(4, minmax(0, 1fr));
                 grid-template-areas: "home cart contact about";
-                gap: 0.6rem;
+                gap: 0.45rem; /* araları aç ama tek satıra sığacak kadar kompakt */
                 align-items: stretch;
                 padding: 0.4rem 0.2rem;
             }
@@ -745,7 +745,10 @@
             .nav-top ul.nav-links > li > .contact-btn,
             .nav-top ul.nav-links > li > a.contact-btn {
                 width: 100%;
-                min-height: 44px; /* comfortable touch target */
+                min-height: 42px; /* touch hedefi korunur, yükseklik biraz azaltıldı */
+                padding: 0.7rem 0.55rem; /* yanlardan kompakt, üst üste binmeyi önler */
+                font-size: 0.95rem; /* tek satıra sığma için yazı boyutu optimize */
+                white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
             }
             /* place items explicitly into two rows */
             #homeBtn { grid-area: home; }
