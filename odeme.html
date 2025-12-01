@@ -266,7 +266,48 @@
           setTimeout(() => { window.location.href = '/anasayfa.html'; }, 1500);
         } else {
           console.error('Sunucu uç noktası başarısız:', lastErr);
-          throw new Error('Sipariş sunucuya iletilemedi: ' + (lastErr ? lastErr.message : 'bilinmeyen hata'));
+          // GitHub Pages gibi statik ortamda 405/404 olabilir; mailto fallback kullan
+          try {
+            const subject = encodeURIComponent('Sipariş Bildirimi – ' + order.id);
+            const bodyLines = [
+              'Sipariş No: ' + order.id,
+              'Tarih: ' + new Date(order.date).toLocaleString(),
+              'Ödeyen: ' + (order.customerName || '') + ' <' + (order.customerEmail || '') + '>',
+              'IBAN: ' + (order.iban || ''),
+              'Toplam: ' + (order.total || ''),
+              'Adres: ' + (order.address || ''),
+              '',
+              'Ürünler:'
+            ];
+            (order.items||[]).forEach(i=>{
+              bodyLines.push('- ' + (i.name||'Ürün') + ' x' + (i.qty||1) + ' @ ₺' + (Number(i.price||0).toFixed(2)));
+            });
+            const body = encodeURIComponent(bodyLines.join('\n'));
+            const mailto = 'mailto:amtbrs@icloud.com?subject=' + subject + '&body=' + body;
+            // Local backup yine de yaz
+            const backupKey = 'orders_' + (payerEmail || 'guest');
+            let orders = [];
+            try { orders = JSON.parse(localStorage.getItem(backupKey) || '[]'); } catch(e) {}
+            orders.push(order);
+            localStorage.setItem(backupKey, JSON.stringify(orders));
+            // Sepeti temizle
+            if (payerEmail) {
+              try { localStorage.removeItem('cart_' + payerEmail); } catch(e) {}
+            } else {
+              try {
+                for (let i = localStorage.length - 1; i >= 0; i--) {
+                  const k = localStorage.key(i);
+                  if (k && k.indexOf('cart_') === 0) localStorage.removeItem(k);
+                }
+              } catch(e) {}
+            }
+            // Kullanıcıya bilgi ve mailto aç
+            alert('✅ Sunucuya doğrudan bildirim yapılamadı, e-posta ile bildirim ekranı açılıyor.\n\nSipariş No: ' + order.id + '\n\nLütfen açılan e-posta taslağını gönderin.');
+            window.location.href = mailto;
+            setTimeout(() => { window.location.href = '/anasayfa.html'; }, 1800);
+          } catch(fallbackErr) {
+            throw new Error('Sipariş sunucuya iletilemedi ve e-posta fallback başarısız: ' + (fallbackErr && fallbackErr.message ? fallbackErr.message : 'bilinmeyen hata'));
+          }
         }
       } catch(err) {
         console.error('Sipariş kaydı başarısız:', err);
