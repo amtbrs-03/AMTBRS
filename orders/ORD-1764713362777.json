@@ -2,16 +2,16 @@
   "id": "ORD-1764713362777",
   "date": 1764713362777,
   "customerEmail": "amtbrs@icloud.com",
-  "customerName": "Müşteri",
+  "customerName": "MÃ¼Återi",
   "iban": "TR33 0006 1005 1978 6457 8413 26",
   "items": [
     {
       "id": "IMG_1966.JPG",
-      "name": "PHİLODENDRON FELİX",
+      "name": "PHÄ°LODENDRON FELÄ°X",
       "price": 1200,
       "qty": 1
     }
   ],
   "total": "1200.00",
-  "status": "pending"
+  "status": "ready"
 }
