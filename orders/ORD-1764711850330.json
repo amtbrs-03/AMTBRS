@@ -1,0 +1,17 @@
+{
+  "id": "ORD-1764711850330",
+  "date": 1764711850330,
+  "customerEmail": "test@example.com",
+  "customerName": "Deneme Ü",
+  "iban": "TRXXXXXXXXXXXXXXXXXXXXXXX",
+  "items": [
+    {
+      "id": "Gül",
+      "name": "Gül",
+      "price": 45,
+      "qty": 1
+    }
+  ],
+  "total": "45.00",
+  "status": "pending"
+}
