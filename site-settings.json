@@ -7,5 +7,6 @@
   "contactBtnText": "İletişim",
   "homepageTitle": "HOŞGELDİNİZ",
   "homepageSubtitle": "ÇİÇEKLERİN BÜYÜLEYİCİ DÜNYASI",
-  "homepageBackground": "images/gallery/IMG_1966.JPG"
+  "homepageBackground": "images/gallery/IMG_1966.JPG",
+  "orderEndpoint": ""
 }

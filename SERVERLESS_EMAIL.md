@@ -35,7 +35,22 @@ Bu proje için opsiyonel olarak mailto: yerine sunucu tarafından e-posta gönde
 - Netlify'da site ayarlarından yukarıdaki environment variable'ları ekleyin.
 - Deploy edin.
 
-5) İstemci (tarayıcı) örneği (fetch ile)
+5) GitHub Pages ile birlikte kullanma (Önerilen)
+
+- Statik siteyi GitHub Pages'ta barındırabilir, yalnızca fonksiyonu Netlify/Vercel gibi bir yerde çalıştırabilirsiniz.
+- Bunun için `site-settings.json` içine bir ayar eklendi: `orderEndpoint`.
+  - Örnek: `"orderEndpoint": "https://<netlify-site-adınız>.netlify.app/.netlify/functions/send-order"`
+  - `odeme.html` önce bu URL'yi dener; 2xx alırsa doğrudan sunucuya bildirim yapılır. Aksi halde mailto fallback devreye girer.
+
+6) İleri düzey (Opsiyonel GitHub commit)
+
+- `functions/send-order/index.js` içinde isterseniz siparişi `orders/` klasörüne commit eden bir adım da vardır.
+- Bunun için deploy ortamına şu env değişkenlerini ekleyin:
+  - `GITHUB_TOKEN` (repo'ya yazma yetkisi olan bir token)
+  - `GITHUB_OWNER`, `GITHUB_REPO`, `GITHUB_BRANCH` (opsiyonel; varsayılan repo/branch kullanılır)
+- Başarılı olursa API `commitOk: true` döndürür; istemci tarafında bu bilgi kullanıcıya gösterilir.
+
+7) İstemci (tarayıcı) örneği (fetch ile)
 
 ```js
 fetch('/.netlify/functions/send-order', {
@@ -46,6 +61,7 @@ fetch('/.netlify/functions/send-order', {
 ```
 
 Notlar ve güvenlik
+
 - SMTP kimlik bilgilerini asla istemci tarafında saklamayın.
 - Bu örnek basittir; üretim için rate limiting, doğrulama ve logging ekleyin.
 - Eğer isterseniz bu fonksiyonu doğrudan projeye entegre edip `anasayfa.html`'de mailto çağrısını yerine fetch çağrısı yapan bir seçenek ekleyebilirim.

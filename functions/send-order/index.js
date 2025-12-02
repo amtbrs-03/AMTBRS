@@ -39,13 +39,26 @@ exports.handler = async function(event, context) {
 
   // Build order object (single source of truth for commit + email)
   const orderId = 'ORD-' + Date.now();
+  // Attempt to derive customer name/address from optional payload fields
+  const customerName = payload.customerName || payload.name || 'Müşteri';
+  const addressParts = [];
+  if (payload.address) addressParts.push(payload.address);
+  if (payload.city) addressParts.push(payload.city);
+  if (payload.district) addressParts.push(payload.district);
+  if (payload.neighborhood) addressParts.push(payload.neighborhood);
+  if (payload.addressDetail) addressParts.push(payload.addressDetail);
+  if (payload.postalCode) addressParts.push('PK: ' + payload.postalCode);
+  const addressStr = addressParts.filter(Boolean).join(', ');
+
   const order = {
     id: orderId,
     date: Date.now(),
-    payerEmail,
+    customerEmail: payerEmail,
+    customerName,
+    address: addressStr || undefined,
     iban: iban || '',
     items: (cart||[]).map(i=>({ id: i.id||i.name||'', name: i.name||'', price: Number(i.price)||0, qty: Number(i.qty)||1 })),
-    total: (cart||[]).reduce((s,i)=> s + ((Number(i.price)||0) * (Number(i.qty)||0)), 0),
+    total: (cart||[]).reduce((s,i)=> s + ((Number(i.price)||0) * (Number(i.qty)||0)), 0).toFixed(2),
     status: 'pending'
   };
 

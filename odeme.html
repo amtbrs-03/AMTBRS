@@ -35,6 +35,7 @@
     <p>Lütfen aşağıdaki IBAN'a ödeme yapınız. Ödeme sonrası siteden "Siparişi Bildir" butonunu kullanınız.</p>
     <div id="iban" class="iban">(IBAN yok)</div>
     <div id="total" class="muted">Toplam: ₺0.00</div>
+    <div id="orderStatus" class="muted" aria-live="polite" style="margin-top:0.5rem;min-height:1.2em"></div>
     <div style="margin-top:1rem;">
       <a id="copyBtn" class="btn" href="#">IBAN'ı Kopyala</a>
       <a id="notifyBtn" class="btn" href="#" style="background:#10b981;margin-left:8px">Siparişi Bildir</a>
@@ -43,6 +44,16 @@
   </div>
 
   <script>
+        // Lazy-load site settings (for optional orderEndpoint override)
+        let __settings = null;
+        async function loadSettings(){
+          if (__settings) return __settings;
+          try{
+            const r = await fetch('/site-settings.json', { cache:'no-store' });
+            if (r.ok) { __settings = await r.json(); return __settings; }
+          }catch(_){/* ignore */}
+          return null;
+        }
     console.log('=== ÖDEME SAYFASI AÇILDI ===');
     console.log('URL:', window.location.href);
     console.log('localStorage anahtarları:', Object.keys(localStorage));
@@ -100,11 +111,18 @@
     }
 
     // Siparişi Bildir - save to GitHub instead of email
+    const statusEl = document.getElementById('orderStatus');
+    function setStatus(msg, cls){
+      if(!statusEl) return;
+      statusEl.textContent = msg;
+      statusEl.className = 'muted ' + (cls || '');
+    }
     document.getElementById('notifyBtn').addEventListener('click', async function(e){
       e.preventDefault();
       const btn = this;
       btn.textContent = 'Kaydediliyor...';
       btn.disabled = true;
+      setStatus('Sipariş gönderiliyor...', '');
       
       const current = (function(){ try{ const c = localStorage.getItem('currentUser'); return c?JSON.parse(c):null }catch(e){return null} })();
       const payerEmail = current && current.email ? current.email : null;
@@ -218,6 +236,14 @@
           '/api/send-order',
           '/functions/send-order'
         ];
+        try{
+          const s = await loadSettings();
+          if (s && s.orderEndpoint && typeof s.orderEndpoint === 'string') {
+            // Absolute endpoint should be tried first when on static hosting
+            endpointCandidates.unshift(s.orderEndpoint);
+            console.log('Site settings orderEndpoint öne alındı:', s.orderEndpoint);
+          }
+        }catch(_){/* ignore */}
         let resp = null;
         let lastErr = null;
         for (const url of endpointCandidates) {
@@ -240,6 +266,9 @@
         }
 
         if (resp && resp.ok) {
+          let data = null;
+          try { data = await resp.json(); } catch(_){}
+          console.log('Sunucu yanıtı:', data);
           // Save to localStorage as backup
           const backupKey = 'orders_' + (payerEmail || 'guest');
           let orders = [];
@@ -262,43 +291,21 @@
             } catch(e) {}
           }
           
-          alert('✅ Siparişiniz kaydedildi!\n\nSipariş No: ' + order.id + '\n\nÖdemeniz kontrol edildikten sonra siparişiniz işleme alınacaktır.');
+          const finalId = (data && data.orderId) ? data.orderId : order.id;
+          const commitInfo = (data && typeof data.commitOk === 'boolean')
+            ? (data.commitOk ? 'Depo kaydı tamamlandı.' : 'Depo kaydı başarısız: ' + (data.commitStatus || 'bilinmeyen durum'))
+            : 'Depo kaydı bilgisi alınamadı.';
+          setStatus('Sipariş alındı. No: ' + finalId + ' – ' + commitInfo, 'status-success');
+          alert('✅ Siparişiniz kaydedildi!\n\nSipariş No: ' + finalId + '\n' + commitInfo + '\n\nÖdemeniz kontrol edildikten sonra siparişiniz işleme alınacaktır.');
           setTimeout(() => { window.location.href = '/anasayfa.html'; }, 1500);
         } else {
           console.error('Sunucu uç noktası başarısız:', lastErr);
           // GitHub Pages gibi statik ortamda 405/404 olabilir; önce GitHub'a siparişi kaydetmeyi dene, ardından mailto fallback kullan
           try {
-            const token = localStorage.getItem('github_token') || localStorage.getItem('gh_token');
-            if (token) {
-              const owner = 'amtbrs-03';
-              const repo = 'AMTBRS';
-              const branch = 'site-release';
-              const path = 'orders/' + (order.id || ('ORD-' + Date.now())) + '.json';
-              const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}?ref=${branch}`;
-              const payload = {
-                message: `feat(order): create ${order.id} via client`,
-                content: btoa(unescape(encodeURIComponent(JSON.stringify(order, null, 2)))) ,
-                branch
-              };
-              const ghRes = await fetch(apiUrl, {
-                method: 'PUT',
-                headers: {
-                  'Authorization': 'token ' + token,
-                  'Accept': 'application/vnd.github.v3+json',
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-              });
-              if (ghRes.ok) {
-                console.log('✓ Sipariş GitHub orders/ klasörüne kaydedildi:', path);
-              } else {
-                console.warn('GitHub commit başarısız:', ghRes.status, await ghRes.text());
-              }
-            } else {
-              console.warn('GitHub token bulunamadı; sipariş dosyası repoya commit edilemedi.');
-            }
+            // Sunucu tarafı commit yoksa ve ortam static ise kullanıcıya net bilgi ver
+            console.warn('Sunucu commit başarısız; static ortam: GitHub token istemcide kullanılmıyor.');
           } catch(ghErr) {
-            console.error('GitHub commit hatası:', ghErr);
+            console.error('GitHub commit hatası (beklenmeyen):', ghErr);
           }
           try {
             const subject = encodeURIComponent('Sipariş Bildirimi – ' + order.id);
@@ -335,6 +342,7 @@
               } catch(e) {}
             }
             // Kullanıcıya bilgi ve mailto aç
+            setStatus('Sunucuya kaydedilemedi, e-posta bildirimi açıldı. Sipariş No: ' + order.id, 'status-warn');
             alert('✅ Sunucuya doğrudan bildirim yapılamadı, e-posta ile bildirim ekranı açılıyor.\n\nSipariş No: ' + order.id + '\n\nLütfen açılan e-posta taslağını gönderin.');
             window.location.href = mailto;
             setTimeout(() => { window.location.href = '/anasayfa.html'; }, 1800);
@@ -344,6 +352,7 @@
         }
       } catch(err) {
         console.error('Sipariş kaydı başarısız:', err);
+        setStatus('Sipariş hatası: ' + err.message, 'status-error');
         alert('❌ Sipariş kaydedilemedi: ' + err.message + '\n\nLütfen tekrar deneyin veya iletişime geçin.');
         btn.textContent = 'Siparişi Bildir';
         btn.disabled = false;
