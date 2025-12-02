@@ -4,6 +4,7 @@
   "address": "Adresiniz Caddesi 1, Şehir, TR",
   "hours": "Pzt-Cum 09:00-19:00",
   "iban": "TR33 0006 1005 1978 6457 8413 26",
+  "orderEndpoint": "https://ern-site.amtbrs-03.workers.dev/send-order",
   "contactBtnText": "İletişim",
   "homepageTitle": "HOŞGELDİNİZ",
   "homepageSubtitle": "ÇİÇEKLERİN BÜYÜLEYİCİ DÜNYASI",
