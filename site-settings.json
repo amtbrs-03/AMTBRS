@@ -8,5 +8,5 @@
   "homepageTitle": "HOŞGELDİNİZ",
   "homepageSubtitle": "ÇİÇEKLERİN BÜYÜLEYİCİ DÜNYASI",
   "homepageBackground": "images/gallery/IMG_1966.JPG",
-  "orderEndpoint": "https://<netlify-site>.netlify.app/.netlify/functions/send-order"
+  "orderEndpoint": "https://amtbrs-03.netlify.app/.netlify/functions/send-order"
 }
