@@ -445,7 +445,7 @@
     <header>
         <nav>
             <div class="logo">[ERN-ÇİÇEK]</div>
-            <ul class="nav-links"></ul>
+            <ul class="nav-links">
                 <li><a href="#home">Ana Sayfa</a></li>
                 <li><a href="#products">Ürünler</a></li>
                 <li><a href="#about">Hakkında</a></li>
@@ -470,10 +470,10 @@
     <!-- Auth Modal -->
     <div id="authModal" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="closeAuthModal()">&times;</span>
+            <button type="button" class="close" onclick="closeAuthModal()" onkeydown="if(event.key==='Enter'||event.key===' '){closeAuthModal()}" aria-label="Kapat" style="background:transparent;border:none;padding:0;line-height:1;cursor:pointer">&times;</button>
             <h2 style="margin-bottom: 1.5rem; color: #0b1220;">Hoşgeldiniz</h2>
             
-            <div class="form-tabs"></div>
+            <div class="form-tabs">
                 <button class="form-tab active" onclick="switchTab('login', this)">Giriş</button>
                 <button class="form-tab" onclick="switchTab('register', this)">Kayıt</button>
             </div>
@@ -481,11 +481,11 @@
             <!-- Giriş Formu -->
             <div id="login" class="form-content active">
                 <div class="form-group">
-                    <label>Email</label>
+                    <label for="loginEmail">Email</label>
                     <input type="email" id="loginEmail" placeholder="Email adresiniz">
                 </div>
                 <div class="form-group">
-                    <label>Şifre</label>
+                    <label for="loginPassword">Şifre</label>
                     <input type="password" id="loginPassword" placeholder="Şifreniz">
                 </div>
                 <button onclick="loginUser()" style="width: 100%; margin-top: 1rem;">Giriş Yap</button>
@@ -494,19 +494,23 @@
             <!-- Kayıt Formu -->
             <div id="register" class="form-content">
                 <div class="form-group">
-                    <label>Ad Soyad</label>
+                    <label for="registerName">Ad Soyad</label>
                     <input type="text" id="registerName" placeholder="Ad Soyadınız">
                 </div>
                 <div class="form-group">
-                    <label>Email</label>
+                    <label for="registerEmail">Email</label>
                     <input type="email" id="registerEmail" placeholder="Email adresiniz">
                 </div>
                 <div class="form-group">
-                    <label>Şifre</label>
+                    <label for="registerPhone">Telefon</label>
+                    <input type="tel" id="registerPhone" placeholder="+90 5XX XXX XX XX" pattern="^\+?\d[\d\s]{9,}$" title="Telefon numarası (+90 5XX XXX XX XX)">
+                </div>
+                <div class="form-group">
+                    <label for="registerPassword">Şifre</label>
                     <input type="password" id="registerPassword" placeholder="Şifreniz">
                 </div>
-                <div class="form-group"></div>
-                    <label>Şifre Tekrar</label>
+                <div class="form-group">
+                    <label for="registerPassword2">Şifre Tekrar</label>
                     <input type="password" id="registerPassword2" placeholder="Şifreniz tekrar">
                 </div>
                 <button onclick="registerUser()" style="width: 100%; margin-top: 1rem;">Kayıt Ol</button>
@@ -517,7 +521,7 @@
     <!-- Cart Modal -->
     <div id="cartModal" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="closeCart()">&times;</span>
+            <button type="button" class="close" onclick="closeCart()" onkeydown="if(event.key==='Enter'||event.key===' '){closeCart()}" aria-label="Kapat" style="background:transparent;border:none;padding:0;line-height:1;cursor:pointer">&times;</button>
             <h2 style="margin-bottom: 1rem; color: #0b1220;">Sepetiniz</h2>
             <div id="cartBody">
                 <ul id="cartItems" class="cart-items"></ul>
@@ -594,11 +598,12 @@
         function registerUser() {
             const name = document.getElementById('registerName').value.trim();
             const email = document.getElementById('registerEmail').value.trim();
+            const phone = document.getElementById('registerPhone') ? document.getElementById('registerPhone').value.trim() : '';
             const password = document.getElementById('registerPassword').value;
             const password2 = document.getElementById('registerPassword2').value;
 
-            if (!name || !email || !password || !password2) {
-                console.log('Lütfen tüm alanları doldurunuz!');
+            if (!name || !email || !phone || !password || !password2) {
+                console.log('Lütfen tüm alanları (telefon dahil) doldurunuz!');
                 return;
             }
             if (password !== password2) {
@@ -606,12 +611,13 @@
                 return;
             }
 
-            const user = { name, email, password };
+            const user = { name, email, phone, password };
             localStorage.setItem('user_' + email, JSON.stringify(user));
             console.log('Kayıt başarılı! Giriş yapabilirsiniz.');
             switchTab('login', document.querySelector('.form-tab'));
             document.getElementById('registerName').value = '';
             document.getElementById('registerEmail').value = '';
+            if (document.getElementById('registerPhone')) document.getElementById('registerPhone').value = '';
             document.getElementById('registerPassword').value = '';
             document.getElementById('registerPassword2').value = '';
         }

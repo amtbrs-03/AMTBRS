@@ -122,6 +122,13 @@
       text-align:center;
       transition: all 0.3s ease;
       border: 2px solid rgba(16, 185, 129, 0.1);
+      width:100%;
+      display:block;
+      cursor:pointer;
+      border:none;
+      color:inherit;
+      font: inherit;
+      background-clip: padding-box;
     }
 
     .stat-card:hover{
@@ -405,18 +412,18 @@
     </div>
 
     <div class="stats">
-      <div class="stat-card">
+      <button class="stat-card" type="button" aria-controls="section-all" data-scroll-target="#section-all" style="text-align:center;">
         <div class="label">📊 Toplam Sipariş</div>
         <div class="number" id="totalOrders">0</div>
-      </div>
-      <div class="stat-card">
+      </button>
+      <button class="stat-card" type="button" aria-controls="section-pending" data-scroll-target="#section-pending" style="text-align:center;">
         <div class="label">⏳ Bekleyen</div>
         <div class="number" id="pendingOrders">0</div>
-      </div>
-      <div class="stat-card">
+      </button>
+      <button class="stat-card" type="button" aria-controls="section-ready" data-scroll-target="#section-ready" style="text-align:center;">
         <div class="label">✅ Hazır</div>
         <div class="number" id="readyOrders">0</div>
-      </div>
+      </button>
       <div class="stat-card">
         <div class="label">💰 Toplam Tutar</div>
         <div class="number" id="totalAmount">₺0</div>
@@ -425,11 +432,18 @@
 
     <div class="orders-container">
       <div class="orders-header">
-        <h2>Sipariş Listesi</h2>
+        <h2 id="section-all">Sipariş Listesi</h2>
         <div id="lastUpdate" style="color:var(--muted);font-size:0.9rem;"></div>
       </div>
       <div id="ordersContent">
         <div class="loading">⏳ Siparişler yükleniyor...</div>
+      </div>
+      <!-- Status sections anchors for scroll -->
+      <div style="margin-top:1rem;">
+        <h3 id="section-pending" style="margin:0;color:#b45309;font-weight:800;">⏳ Bekleyen Siparişler</h3>
+      </div>
+      <div style="margin-top:1rem;">
+        <h3 id="section-ready" style="margin:0;color:#065f46;font-weight:800;">✅ Hazır Siparişler</h3>
       </div>
     </div>
   </div>
@@ -457,15 +471,14 @@
       contentEl.innerHTML = '<div class="loading">⏳ Siparişler GitHub\'dan çekiliyor...</div>';
 
       try {
-        // Fetch orders from GitHub with cache busting
+        // Prefer raw listing via GitHub pages (not available), so we still need Contents API for directory.
+        // But when fetching individual files, use raw first to avoid rate limits.
         const owner = 'amtbrs-03';
         const repo = 'AMTBRS';
         const branch = 'site-release';
         const cacheBuster = Date.now();
         const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/orders?ref=${branch}&_cb=${cacheBuster}`;
-        
         console.log('Siparişler şu adresten çekiliyor:', apiUrl);
-        
         const res = await fetch(apiUrl, {
           headers: (() => {
             const token = localStorage.github_token || localStorage.gh_token;
@@ -474,15 +487,12 @@
             return h;
           })()
         });
-        
         console.log('GitHub API yanıtı:', res.status, res.statusText);
-        
         if (!res.ok) {
           const errorText = await res.text().catch(() => '');
           console.error('GitHub API hata detayları:', errorText);
           throw new Error(`GitHub API şu yanıtı verdi: ${res.status} - ${res.statusText}${errorText ? ' — Detay: ' + errorText : ''}`);
         }
-        
         const files = await res.json();
         console.log('orders/ klasöründe dosya sayısı:', files.length);
         
@@ -499,17 +509,26 @@
         ordersData = [];
         for (const file of orderFiles) {
           try {
-            console.log('Fetching order:', file.name);
+            console.log('Fetching order (raw-first):', file.name);
+            // Try raw URL first
+            const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/orders/${file.name}`;
+            let orderRes = await fetch(rawUrl + `?t=${Date.now()}`);
+            if (orderRes.ok) {
+              const orderData = await orderRes.json();
+              ordersData.push(orderData);
+              continue;
+            }
+            // Fallback to Contents API
             const token = localStorage.github_token || localStorage.gh_token;
-            const headers = token ? { 'Authorization': 'token ' + token } : {};
-            // GitHub API üzerinden içerik çek
-            const apiOrderUrl = `https://api.github.com/repos/amtbrs-03/AMTBRS/contents/orders/${file.name}?ref=site-release`;
-            const orderRes = await fetch(apiOrderUrl, { headers });
+            const headers = {
+              'Accept': 'application/vnd.github.v3+json',
+              ...(token ? { 'Authorization': 'token ' + token } : {})
+            };
+            const apiOrderUrl = `https://api.github.com/repos/${owner}/${repo}/contents/orders/${file.name}?ref=${branch}`;
+            orderRes = await fetch(apiOrderUrl, { headers });
             if (orderRes.ok) {
               const orderJson = await orderRes.json();
-              // İçerik base64, decode et
               const orderData = JSON.parse(atob(orderJson.content));
-              console.log('Order loaded:', orderData.id);
               ordersData.push(orderData);
             } else {
               console.error('Failed to fetch order file:', file.name, orderRes.status);
@@ -598,6 +617,7 @@
       html += '<th>💰 Toplam</th>';
       html += '<th>📅 Tarih</th>';
       html += '<th>📊 Durum</th>';
+      html += '<th style="width:18%; padding:0.9rem 0.75rem; text-align:center; font-weight:700; font-size:0.95rem; border-bottom:2px solid rgba(255,255,255,0.2);">📞 Telefon</th>';
       html += '<th>📍 Adres</th>';
       html += '</tr></thead><tbody>';
       
@@ -633,6 +653,7 @@
         const custEmail = normalizeText(order.customerEmail || order.payerEmail || '');
         html += `<td style="font-weight:600;">${escapeHtml(custName || '-')}</td>`;
         html += `<td style="color:var(--muted);font-size:0.9rem;">${escapeHtml(custEmail || '-')}</td>`;
+          html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; color:#0f172a;">${escapeHtml(order.customerPhone || '-')}</td>`;
         html += `<td style="font-weight:700;color:#059669;">₺${escapeHtml(order.total || '0')}</td>`;
         html += `<td style="color:var(--muted);font-size:0.9rem;">${orderDate}</td>`;
         html += `<td>${statusBadge}</td>`;
@@ -780,6 +801,37 @@
 
     // Load orders on page load
     loadOrders();
+
+    // Smooth scroll for stat cards
+    (function(){
+      function smoothScrollTo(selector){
+        if(selector === '#section-pending'){
+          const row = document.querySelector('#ordersTable tbody tr .status-badge.status-pending')?.closest('tr');
+          if (row) { row.scrollIntoView({ behavior:'smooth', block:'start' }); return; }
+        }
+        if(selector === '#section-ready'){
+          const row = document.querySelector('#ordersTable tbody tr .status-badge.status-ready')?.closest('tr');
+          if (row) { row.scrollIntoView({ behavior:'smooth', block:'start' }); return; }
+        }
+        // default: scroll to anchor
+        const el = document.querySelector(selector);
+        if(!el) return;
+        el.scrollIntoView({ behavior:'smooth', block:'start' });
+      }
+      function bindScrollButtons(){
+        document.querySelectorAll('.stat-card[data-scroll-target]').forEach(card => {
+          const target = card.getAttribute('data-scroll-target');
+          card.addEventListener('click', () => smoothScrollTo(target));
+          card.addEventListener('keydown', (e) => {
+            if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); smoothScrollTo(target); }
+          });
+        });
+      }
+      bindScrollButtons();
+      // Re-bind after orders load to ensure table exists
+      const origLoad = loadOrders;
+      window.loadOrders = async function(){ await origLoad(); bindScrollButtons(); };
+    })();
   </script>
 </body>
 </html>

@@ -76,6 +76,7 @@
         <button id="createInvoiceBtn" class="btn btn-orange">🧾 Fatura Oluştur</button>
         <a href="siparisler.html" class="btn btn-white">← Sipariş Listesine Dön</a>
         <button id="editOrderBtn" class="btn">✏️ Düzenle</button>
+        <button id="refreshAddressBtn" class="btn btn-white">📥 Müşteri Adresini Çek</button>
         <button id="deleteOrderBtn" class="btn btn-orange" style="background:#dc2626">🗑️ Sil</button>
       </div>
     </div>
@@ -110,33 +111,38 @@
       }
 
       try {
-        // Fetch order from GitHub
+        // Try raw GitHub first to avoid REST API rate limits
         const owner = 'amtbrs-03';
         const repo = 'AMTBRS';
         const branch = 'site-release';
         const fileName = `${orderId}.json`;
-        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/orders/${fileName}?ref=${branch}`;
-        
-        console.log('Fetching order:', apiUrl);
-        
-        const res = await fetch(apiUrl, {
-          headers: { 'Accept': 'application/vnd.github.v3+json' }
-        });
-        
-        if (!res.ok) {
-          if (res.status === 404) {
-            throw new Error('Sipariş bulunamadı. Sipariş numarası geçersiz olabilir.');
-          }
-          throw new Error(`GitHub API responded with ${res.status}: ${res.statusText}`);
-        }
-        
-        const fileData = await res.json();
-        const orderRes = await fetch(fileData.download_url);
-        
+        const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/orders/${fileName}`;
+        console.log('Fetching order (raw):', rawUrl);
+        let orderRes = await fetch(rawUrl + `?t=${Date.now()}`);
         if (!orderRes.ok) {
-          throw new Error('Sipariş verileri yüklenemedi.');
+          // Fallback to Contents API with Authorization token to increase rate limit
+          const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/orders/${fileName}?ref=${branch}`;
+          const token = getGitHubToken();
+          console.log('Raw fetch failed, using Contents API. Token?', !!token);
+          const res = await fetch(apiUrl, {
+            headers: {
+              'Accept': 'application/vnd.github.v3+json',
+              ...(token ? { 'Authorization': `token ${token}`, 'User-Agent': 'ERN-CICEK-App', 'X-GitHub-Api-Version': '2022-11-28' } : {})
+            }
+          });
+          if (!res.ok) {
+            if (res.status === 404) {
+              throw new Error('Sipariş bulunamadı. Sipariş numarası geçersiz olabilir.');
+            }
+            const txt = await res.text();
+            throw new Error(`GitHub API ${res.status}: ${res.statusText}\n${txt}`);
+          }
+          const fileData = await res.json();
+          orderRes = await fetch(fileData.download_url + `?t=${Date.now()}`);
+          if (!orderRes.ok) {
+            throw new Error('Sipariş verileri yüklenemedi.');
+          }
         }
-        
         currentOrder = await orderRes.json();
         console.log('Order loaded:', currentOrder);
         
@@ -209,6 +215,11 @@
       html += '</div>';
       
       html += '<div class="info-item">';
+      html += '<div class="info-label">📞 Telefon</div>';
+      html += `<div class="info-value">${escapeHtml(normalizeText(order.customerPhone) || '-')}</div>`;
+      html += '</div>';
+
+      html += '<div class="info-item">';
       html += '<div class="info-label">📧 Email</div>';
       html += `<div class="info-value">${escapeHtml(normalizeText(order.customerEmail) || '-')}</div>`;
       html += '</div>';
@@ -224,17 +235,30 @@
       html += '</div>';
       html += '</div>';
       
-      // Address
-      if (order.address) {
+      // Address (view + edit)
+      {
         const cleanAddress = (function(s){
-          s = String(s || '');
+          s = String((order.address || '') || '');
           try{ if (/%[0-9A-Fa-f]{2}/.test(s) || s.includes('+')) s = decodeURIComponent(s.replace(/\+/g,' ')); }catch(_){}
           try{ const ta = document.createElement('textarea'); ta.innerHTML = s; s = ta.value; }catch(_){}
           return s.replace(/\s+/g,' ').trim();
         })(order.address);
         html += '<div class="info-item" style="margin-bottom:2rem;">';
         html += '<div class="info-label">📍 Teslimat Adresi</div>';
-        html += `<div class="info-value">${escapeHtml(normalizeText(cleanAddress))}</div>`;
+        html += `<div id="orderAddressText" class="info-value">${escapeHtml(normalizeText(cleanAddress || '-'))}</div>`;
+        // Edit controls
+        html += '<div class="info-actions" style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">';
+        html += '<button id="startEditAddressBtn" class="btn btn-white" type="button">✏️ Adresi Düzenle</button>';
+        html += '<button id="refreshAddressBtnInline" class="btn btn-white" type="button">📥 Müşteri Adresini Çek</button>';
+        html += '</div>';
+        // Hidden editor
+        html += '<div id="addressEditor" style="margin-top:10px; display:none;">';
+        html += '<textarea id="addressEditTextarea" rows="3" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:8px; font-size:1rem;"></textarea>';
+        html += '<div style="margin-top:8px; display:flex; gap:8px;">';
+        html += '<button id="saveAddressBtn" class="btn" type="button">💾 Kaydet</button>';
+        html += '<button id="cancelAddressBtn" class="btn btn-white" type="button">❌ İptal</button>';
+        html += '</div>';
+        html += '</div>';
         html += '</div>';
       }
       
@@ -600,6 +624,112 @@
       }
     }
 
+    // Fetch latest customer address from users/<email>_full.json (raw-first) and update order file
+    async function refreshCustomerAddress() {
+      if (!currentOrder) { alert('Sipariş yüklenmedi!'); return; }
+      const email = currentOrder.customerEmail || currentOrder.payerEmail;
+      if (!email) { alert('Müşteri e-postası bulunamadı.'); return; }
+      try {
+        // Pull user profile file
+        const userPath = `users/${encodeURIComponent(email)}_full.json`;
+        const rawUrl = `https://raw.githubusercontent.com/amtbrs-03/AMTBRS/site-release/${userPath}`;
+        let userData = null;
+        // Try raw first (avoids rate limits, no token needed)
+        try {
+          const rawRes = await fetch(rawUrl + `?t=${Date.now()}`, { cache: 'no-store' });
+          if (rawRes.ok) {
+            userData = await rawRes.json();
+          }
+        } catch (e) {
+          // continue to fallback
+        }
+        if (!userData) {
+          const apiUrl = `https://api.github.com/repos/amtbrs-03/AMTBRS/contents/${userPath}?ref=site-release&t=${Date.now()}`;
+          const apiRes = await fetch(apiUrl, { headers: { 'Accept': 'application/vnd.github.v3+json' }, cache: 'no-store' });
+          if (!apiRes.ok) {
+            const txt = await apiRes.text();
+            console.error('User fetch failed:', apiRes.status, txt);
+            alert('❌ Müşteri profili alınamadı.');
+            return;
+          }
+          const userFile = await apiRes.json();
+          try {
+            userData = JSON.parse(atob(userFile.content));
+          } catch (_) {
+            const dl = await fetch(userFile.download_url + `?t=${Date.now()}`, { cache: 'no-store' });
+            userData = await dl.json();
+          }
+        }
+        // Determine latest address
+        const addresses = Array.isArray(userData.addresses) ? userData.addresses : [];
+        const preferred = addresses.find(a => a.default) || addresses[0];
+        const latestAddress = preferred ? (preferred.fullAddress || [preferred.city, preferred.district, preferred.neighborhood, preferred.streetAddress, preferred.postalCode].filter(Boolean).join(' ')) : (userData.address || '');
+        if (!latestAddress) {
+          alert('Müşteri profilinde adres bulunamadı.');
+          return;
+        }
+        // If address missing or changed, update order file and remote user profile
+        const needsUpdate = !currentOrder.address || String(currentOrder.address).trim() !== String(latestAddress).trim();
+        if (!needsUpdate) {
+          alert('Adres zaten güncel.');
+          return;
+        }
+        // First update remote user profile via /update-user if endpoint is configured
+        try {
+          const settingsRes = await fetch('site-settings.json', { cache: 'no-store' });
+          if (settingsRes.ok) {
+            const settings = await settingsRes.json();
+            const orderEndpoint = settings.orderEndpoint || '';
+            if (orderEndpoint) {
+              const updateEndpoint = orderEndpoint.replace(/\/send-order$/, '/update-user');
+              const profileBody = { email, address: latestAddress };
+              await fetch(updateEndpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(profileBody)
+              }).catch(()=>{});
+            }
+          }
+        } catch (e) {
+          console.warn('Uzak profil güncelleme başarısız (devam ediliyor):', e);
+        }
+
+        // Update order file with this address
+        const token = getGitHubToken();
+        if (!token) { alert('⚠️ GitHub token bulunamadı.'); return; }
+        const getRes = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/orders/${currentOrder.id}.json?ref=site-release&t=${Date.now()}`,{
+          headers:{ 'Accept':'application/vnd.github.v3+json','Authorization':`token ${token}` }
+        });
+        if (!getRes.ok) { alert('❌ Sipariş dosyası alınamadı.'); return; }
+        const fileData = await getRes.json();
+        const orderObj = JSON.parse(atob(fileData.content));
+        orderObj.address = latestAddress;
+        const putRes = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/orders/${currentOrder.id}.json`,{
+          method:'PUT',
+          headers:{ 'Accept':'application/vnd.github.v3+json','Authorization':`token ${token}`,'Content-Type':'application/json' },
+          body: JSON.stringify({
+            message: `Sipariş adresi müşteri profilinden güncellendi: ${currentOrder.id}`,
+            content: btoa(unescape(encodeURIComponent(JSON.stringify(orderObj, null, 2)))) ,
+            sha: fileData.sha,
+            branch:'site-release'
+          })
+        });
+        if (putRes.ok) {
+          alert('✅ Adres müşteri profilinden çekildi ve güncellendi.');
+          // Update UI immediately without full reload
+          currentOrder.address = latestAddress;
+          renderOrderDetail(currentOrder);
+        } else {
+          const txt = await putRes.text();
+          console.error('Refresh address failed:', putRes.status, txt);
+          alert('❌ Adres güncelleme başarısız.');
+        }
+      } catch (e) {
+        console.error('Refresh address error:', e);
+        alert('❌ Adres çekme sırasında hata oluştu.');
+      }
+    }
+
     async function deleteOrder() {
       if (!currentOrder) { alert('Sipariş yüklenmedi!'); return; }
       if (!confirm('Bu siparişi silmek istediğinizden emin misiniz?')) return;
@@ -716,10 +846,134 @@
     // Event Listeners
     document.getElementById('createInvoiceBtn').addEventListener('click', createInvoice);
     document.getElementById('editOrderBtn').addEventListener('click', editOrder);
+    document.getElementById('refreshAddressBtn').addEventListener('click', refreshCustomerAddress);
     document.getElementById('deleteOrderBtn').addEventListener('click', deleteOrder);
+    // Inline address editor wiring (after first render, re-wire inside render)
 
     // Load order on page load
     loadOrderDetail();
+
+    // Helper to (re)wire address editor events after render
+    function wireAddressEditor() {
+      const startBtn = document.getElementById('startEditAddressBtn');
+      const refreshInlineBtn = document.getElementById('refreshAddressBtnInline');
+      const editor = document.getElementById('addressEditor');
+      const ta = document.getElementById('addressEditTextarea');
+      const saveBtn = document.getElementById('saveAddressBtn');
+      const cancelBtn = document.getElementById('cancelAddressBtn');
+      const textEl = document.getElementById('orderAddressText');
+      if (!startBtn || !editor || !ta || !saveBtn || !cancelBtn || !textEl) return;
+
+      startBtn.onclick = () => {
+        ta.value = (currentOrder && currentOrder.address) ? String(currentOrder.address) : '';
+        editor.style.display = 'block';
+        ta.focus();
+      };
+      cancelBtn.onclick = () => {
+        editor.style.display = 'none';
+      };
+      refreshInlineBtn && (refreshInlineBtn.onclick = () => refreshCustomerAddress());
+
+      saveBtn.onclick = async () => {
+        const newAddr = (ta.value || '').trim();
+        if (!newAddr) { alert('Adres boş olamaz.'); return; }
+        try {
+          // 1) Update user profile via Worker update-user (if configured)
+          const email = (currentOrder && (currentOrder.customerEmail || currentOrder.payerEmail)) || '';
+          let workerUpdated = false;
+          try {
+            const settingsRes = await fetch('site-settings.json', { cache: 'no-store' });
+            if (settingsRes.ok) {
+              const settings = await settingsRes.json();
+              const orderEndpoint = settings.orderEndpoint || '';
+              if (orderEndpoint) {
+                const updateEndpoint = orderEndpoint.replace(/\/send-order$/, '/update-user');
+                const resp = await fetch(updateEndpoint, {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ email, address: newAddr })
+                });
+                workerUpdated = resp.ok;
+              }
+            }
+          } catch (_) {}
+
+          // 2) Fallback: update users/<email>_full.json directly via GitHub API
+          if (!workerUpdated && email) {
+            const token = getGitHubToken();
+            if (!token) { alert('⚠️ GitHub token yok, profil dosyasını güncelleyemedik.'); }
+            else {
+              const userPath = `users/${encodeURIComponent(email)}_full.json`;
+              const getRes = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/${userPath}?ref=site-release&t=${Date.now()}`,{
+                headers:{ 'Accept':'application/vnd.github.v3+json','Authorization':`token ${token}` }
+              });
+              if (getRes.ok) {
+                const fileData = await getRes.json();
+                let profile;
+                try { profile = JSON.parse(atob(fileData.content)); }
+                catch { const dl = await fetch(fileData.download_url + `?t=${Date.now()}`); profile = await dl.json(); }
+
+                // Update a simple address field and keep addresses array coherent
+                profile.address = newAddr;
+                if (Array.isArray(profile.addresses)) {
+                  const def = profile.addresses.find(a => a.default) || profile.addresses[0];
+                  if (def) def.fullAddress = newAddr;
+                }
+                const putRes = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/${userPath}`,{
+                  method:'PUT', headers:{ 'Accept':'application/vnd.github.v3+json','Authorization':`token ${token}`,'Content-Type':'application/json' },
+                  body: JSON.stringify({
+                    message: `Müşteri adresi güncellendi: ${email}`,
+                    content: btoa(unescape(encodeURIComponent(JSON.stringify(profile, null, 2)))) ,
+                    sha: fileData.sha,
+                    branch:'site-release'
+                  })
+                });
+                if (!putRes.ok) {
+                  const txt = await putRes.text();
+                  console.error('Profil güncelleme hatası:', putRes.status, txt);
+                }
+              }
+            }
+          }
+
+          // 3) Update current order address and commit
+          const token2 = getGitHubToken();
+          if (!token2) { alert('⚠️ GitHub token bulunamadı. Sipariş dosyası güncellenemedi.'); return; }
+          const getOrderRes = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/orders/${currentOrder.id}.json?ref=site-release&t=${Date.now()}`,{
+            headers:{ 'Accept':'application/vnd.github.v3+json','Authorization':`token ${token2}` }
+          });
+          if (!getOrderRes.ok) { alert('❌ Sipariş dosyası alınamadı.'); return; }
+          const orderFile = await getOrderRes.json();
+          const orderObj = JSON.parse(atob(orderFile.content));
+          orderObj.address = newAddr;
+          const putOrderRes = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/orders/${currentOrder.id}.json`,{
+            method:'PUT', headers:{ 'Accept':'application/vnd.github.v3+json','Authorization':`token ${token2}`,'Content-Type':'application/json' },
+            body: JSON.stringify({
+              message: `Sipariş adresi admin tarafından güncellendi: ${currentOrder.id}`,
+              content: btoa(unescape(encodeURIComponent(JSON.stringify(orderObj, null, 2)))) ,
+              sha: orderFile.sha,
+              branch:'site-release'
+            })
+          });
+          if (putOrderRes.ok) {
+            currentOrder.address = newAddr;
+            textEl.textContent = newAddr;
+            editor.style.display = 'none';
+            alert('✅ Adres kaydedildi ve sipariş güncellendi.');
+          } else {
+            const txt = await putOrderRes.text();
+            console.error('Sipariş güncelleme hatası:', putOrderRes.status, txt);
+            alert('❌ Sipariş güncelleme başarısız.');
+          }
+        } catch (e) {
+          console.error('Adres kaydetme hatası:', e);
+          alert('❌ Adres kaydedilirken bir hata oluştu.');
+        }
+      };
+    }
+
+    // Re-wire after each render
+    const _origRender = renderOrderDetail;
+    renderOrderDetail = function(order){ _origRender(order); try{ wireAddressEditor(); }catch(_){} };
   </script>
 </body>
 </html>

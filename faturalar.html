@@ -318,11 +318,19 @@
         invoicesData = [];
         for (const file of invoiceFiles) {
           try {
-            console.log('Fatura çekiliyor:', file.name);
-            const invoiceRes = await fetch(file.download_url);
+            console.log('Fatura çekiliyor (raw-first):', file.name);
+            // Try raw first
+            const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/invoices/${file.name}`;
+            let invoiceRes = await fetch(rawUrl + `?t=${Date.now()}`);
             if (invoiceRes.ok) {
               const invoiceData = await invoiceRes.json();
-              console.log('Fatura yüklendi:', invoiceData.orderId);
+              invoicesData.push(invoiceData);
+              continue;
+            }
+            // Fallback to download_url
+            invoiceRes = await fetch(file.download_url + `?t=${Date.now()}`);
+            if (invoiceRes.ok) {
+              const invoiceData = await invoiceRes.json();
               invoicesData.push(invoiceData);
             }
           } catch(e) {

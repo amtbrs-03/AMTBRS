@@ -1270,6 +1270,28 @@
                             
                             <button data-action="register" style="width: 100%; margin-top: 1rem;">Kayıt Ol</button>
                         </div>
+
+                        <!-- Hesap / Adres Düzenleme -->
+                        <div id="account" class="form-content">
+                            <div class="form-group">
+                                <label for="accountName">Ad Soyad</label>
+                                <input type="text" id="accountName" placeholder="Ad Soyadınız">
+                            </div>
+                            <div class="form-group">
+                                <label for="accountEmail">Email (değiştirilemez)</label>
+                                <input type="email" id="accountEmail" placeholder="Email" disabled>
+                            </div>
+                            <div style="margin-top:1rem; padding-top:1rem; border-top:2px solid rgba(10,12,30,0.1);">
+                                <h3 style="font-size:1.1rem; margin-bottom:1rem; color:#0b1220;">📍 Kayıtlı Adresi Düzenle</h3>
+                                <div class="form-group"><label for="accountCity">İl</label><input type="text" id="accountCity" placeholder="İl"></div>
+                                <div class="form-group"><label for="accountDistrict">İlçe</label><input type="text" id="accountDistrict" placeholder="İlçe"></div>
+                                <div class="form-group"><label for="accountNeighborhood">Mahalle</label><input type="text" id="accountNeighborhood" placeholder="Mahalle"></div>
+                                <div class="form-group"><label for="accountAddressDetail">Adres Detayı</label><input type="text" id="accountAddressDetail" placeholder="Sokak/Cadde, No"></div>
+                                <div class="form-group"><label for="accountPostalCode">Posta Kodu</label><input type="text" id="accountPostalCode" placeholder="34000"></div>
+                                <button id="accountSaveBtn" style="width:100%; margin-top:0.5rem;">Kaydet ve Senkronize Et</button>
+                                <div id="accountStatus" class="muted" style="margin-top:0.5rem; min-height:1.2em"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -4039,4 +4061,86 @@ document.addEventListener('click', function(ev){
 })();
 </script>
 </body>
+    <script>
+    // Hesap panelini aç ve alanları doldur
+    (function(){
+        const tabs = document.querySelectorAll('.form-tabs .form-tab');
+        function switchTab(to){
+            document.querySelectorAll('.form-content').forEach(el=>el.classList.remove('active'));
+            const target = document.getElementById(to);
+            if (target) target.classList.add('active');
+            tabs.forEach(b=>b.classList.toggle('active', b.getAttribute('data-tab')===to));
+        }
+        document.querySelector('[data-action="open-account"]').addEventListener('click', function(){
+            const modal = document.getElementById('authModal');
+            modal.style.display = 'block';
+            switchTab('account');
+            // doldur
+            let cu = null; try{ cu = JSON.parse(localStorage.getItem('currentUser')||'null'); }catch(_){}
+            const email = cu?.email || '';
+            const name = cu?.name || '';
+            const fullStr = email ? localStorage.getItem('user_'+email) : null;
+            let full = null; try { full = fullStr ? JSON.parse(fullStr) : null; } catch(_){}
+            document.getElementById('accountEmail').value = email;
+            document.getElementById('accountName').value = name || full?.name || '';
+            const addr = (full?.addresses && full.addresses[0]) || full?.address || {};
+            document.getElementById('accountCity').value = addr.city || addr.il || '';
+            document.getElementById('accountDistrict').value = addr.district || addr.ilce || '';
+            document.getElementById('accountNeighborhood').value = addr.neighborhood || addr.mahalle || '';
+            document.getElementById('accountAddressDetail').value = addr.addressDetail || addr.street || '';
+            document.getElementById('accountPostalCode').value = addr.postalCode || addr.zip || '';
+        });
+
+        // Kaydet ve GitHub ile senkronize et
+        document.getElementById('accountSaveBtn').addEventListener('click', async function(){
+            const statusEl = document.getElementById('accountStatus');
+            function setStatus(t){ statusEl.textContent = t; }
+            const email = document.getElementById('accountEmail').value.trim();
+            const name = document.getElementById('accountName').value.trim();
+            const address = {
+                city: document.getElementById('accountCity').value.trim(),
+                district: document.getElementById('accountDistrict').value.trim(),
+                neighborhood: document.getElementById('accountNeighborhood').value.trim(),
+                addressDetail: document.getElementById('accountAddressDetail').value.trim(),
+                postalCode: document.getElementById('accountPostalCode').value.trim(),
+                isDefault: true
+            };
+            if (!email){ setStatus('Email bulunamadı. Lütfen giriş yapınız.'); return; }
+            setStatus('Kaydediliyor...');
+
+            // localStorage güncelle
+            try {
+                const key = 'user_'+email;
+                const curr = JSON.parse(localStorage.getItem(key)||'{}');
+                curr.name = name || curr.name || '';
+                curr.email = email;
+                curr.address = address;
+                curr.addresses = Array.isArray(curr.addresses) ? curr.addresses : [];
+                const def = curr.addresses.find(a=>a&&a.isDefault);
+                const defObj = Object.assign({ id:'default', title:'Varsayılan Adres', isDefault:true }, address);
+                if (def) Object.assign(def, defObj); else curr.addresses.unshift(defObj);
+                curr.updatedAt = Date.now();
+                localStorage.setItem(key, JSON.stringify(curr));
+                // currentUser eşitle
+                const cu = JSON.parse(localStorage.getItem('currentUser')||'{}');
+                cu.email = email; cu.name = name || cu.name || '';
+                localStorage.setItem('currentUser', JSON.stringify(cu));
+            } catch(_){ }
+
+            // Sunucuya gönder ve GitHub'a yazdır
+            let endpoint = '/send-order';
+            try{ const s = await (await fetch('/site-settings.json',{cache:'no-store'})).json(); if (s && s.orderEndpoint) endpoint = s.orderEndpoint; }catch(_){}
+            endpoint = endpoint.replace(/\/send-order$/, '/update-user');
+            try {
+                const resp = await fetch(endpoint, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, name, address })
+                });
+                const data = await resp.json().catch(()=>null);
+                if (resp.ok && data && data.commitOk){ setStatus('✅ Adres GitHub ile senkronize edildi.'); }
+                else { setStatus('⚠️ Sunucu yanıtı: ' + (data?.commitError || resp.status)); }
+            } catch(e){ setStatus('❌ Hata: ' + e.message); }
+        });
+    })();
+    </script>
 </html>

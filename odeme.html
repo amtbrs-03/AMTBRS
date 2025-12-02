@@ -55,7 +55,19 @@
           return null;
         }
     console.log('=== ÖDEME SAYFASI AÇILDI ===');
-    console.log('URL:', window.location.href);
+    let customerPhone = '';
+    try {
+      // Prefer currentUser.phone
+      const cu = JSON.parse(localStorage.getItem('currentUser')||'null');
+      if (cu && cu.phone) customerPhone = cu.phone;
+      // Fallback: registration record
+      if (!customerPhone && payerEmail) {
+        const reg = JSON.parse(localStorage.getItem('user_'+payerEmail)||'null');
+        if (reg && reg.phone) customerPhone = reg.phone;
+      }
+    } catch(_){}
+    
+    function decodeToken(encoded, key){
     console.log('localStorage anahtarları:', Object.keys(localStorage));
     
     // Check currentUser
@@ -125,8 +137,8 @@
       setStatus('Sipariş gönderiliyor...', '');
       
       const current = (function(){ try{ const c = localStorage.getItem('currentUser'); return c?JSON.parse(c):null }catch(e){return null} })();
-      const payerEmail = current && current.email ? current.email : null;
-      const payerName = current && current.name ? current.name : 'Misafir';
+      let payerEmail = current && current.email ? current.email : null;
+      let payerName = current && current.name ? current.name : 'Misafir';
       
       console.log('Geçerli kullanıcı:', current);
       console.log('Ödeyen e-posta:', payerEmail);
@@ -152,6 +164,20 @@
               cartKey = k;
               cart = JSON.parse(localStorage.getItem(k) || '[]');
               console.log('Sepet anahtarı bulundu:', k, 'öğeler:', cart);
+              // Infer email from cart key for guest and try to resolve name from user_<email>
+              if (!payerEmail) {
+                try {
+                  const inferredEmail = k.substring('cart_'.length);
+                  if (inferredEmail) {
+                    payerEmail = inferredEmail;
+                    const userRaw = localStorage.getItem('user_' + inferredEmail);
+                    if (userRaw) {
+                      const u = JSON.parse(userRaw);
+                      if (u && u.name) payerName = u.name;
+                    }
+                  }
+                } catch(_) {}
+              }
               break;
             }
           }
@@ -197,11 +223,12 @@
             return s.replace(/\s+/g,' ').trim();
           };
 
-          const city = normalize(addr.city);
-          const district = normalize(addr.district);
-          const neighborhood = normalize(addr.neighborhood);
-          const addressDetail = normalize(addr.addressDetail);
-          const postalCode = normalize(addr.postalCode);
+          // Support common alias fields
+          const city = normalize(addr.city || addr.il || addr.sehir || addr.addressCity);
+          const district = normalize(addr.district || addr.ilce || addr.county || addr.addressDistrict);
+          const neighborhood = normalize(addr.neighborhood || addr.mahalle || addr.quarter || addr.addressNeighborhood);
+          const addressDetail = normalize(addr.addressDetail || addr.detail || addr.street || addr.streetAddress || addr.fullAddress);
+          const postalCode = normalize(addr.postalCode || addr.zip || addr.postCode || addr.pk);
 
           // Human-friendly Turkish format: Adres Detayı, Mahalle, İlçe, İl, Posta Kodu 34000
           const parts = [];
@@ -215,6 +242,26 @@
       }
 
       // Create order object
+      // Determine best email to resolve address:
+      // 1) payerEmail if present
+      // 2) email extracted from cart key (cart_<email>)
+      // 3) any existing user_<email> in localStorage (first match)
+      let addressEmailCandidate = payerEmail || null;
+      if (!addressEmailCandidate && cartKey && cartKey.indexOf('cart_') === 0) {
+        addressEmailCandidate = cartKey.substring('cart_'.length);
+      }
+      if (!addressEmailCandidate) {
+        try {
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && k.indexOf('user_') === 0) {
+              addressEmailCandidate = k.substring('user_'.length);
+              break;
+            }
+          }
+        } catch(_) {}
+      }
+
       const order = {
         id: 'ORD-' + Date.now(),
         date: Date.now(),
@@ -224,7 +271,7 @@
         total: totalText,
         iban: ibanText,
         status: 'pending',
-        address: buildDefaultAddressFor(payerEmail)
+        address: buildDefaultAddressFor(addressEmailCandidate)
       };
 
       console.log('Sipariş oluşturuldu:', order);
@@ -253,9 +300,20 @@
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
+                // Distinguish payer vs customer for future-proofing
                 payerEmail: order.customerEmail,
+                customerEmail: order.customerEmail,
+                customerName: order.customerName,
                 cart: order.items,
-                iban: order.iban
+                iban: order.iban,
+                total: order.total,
+                address: order.address,
+                // Provide a minimal user profile snapshot for server-side pass-through
+                userProfile: {
+                  email: order.customerEmail,
+                  name: order.customerName,
+                  address: order.address
+                }
               })
             });
             if (resp && resp.ok) break;
