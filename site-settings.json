@@ -8,5 +8,5 @@
   "homepageTitle": "HOŞGELDİNİZ",
   "homepageSubtitle": "ÇİÇEKLERİN BÜYÜLEYİCİ DÜNYASI",
   "homepageBackground": "images/gallery/IMG_1966.JPG",
-  "orderEndpoint": "https://amtbrs-03.workers.dev/send-order"
+  "orderEndpoint": "https://ern-site.amtbrs-03.workers.dev/send-order"
 }
