@@ -39,7 +39,7 @@ export default {
         if (token) {
           const path = `orders/${orderId}.json`;
           const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}`;
-          const content = btoa(JSON.stringify(order, null, 2));
+          const content = toBase64Utf8(JSON.stringify(order, null, 2));
           const body = { message: `feat(order): create ${orderId}`, content, branch };
           const putRes = await fetch(apiUrl, {
             method: 'PUT',
@@ -115,4 +115,14 @@ function buildAddress(p){
   if (p.addressDetail) parts.push(p.addressDetail);
   if (p.postalCode) parts.push('PK: ' + p.postalCode);
   return parts.filter(Boolean).join(', ');
+}
+
+// Helper: Base64 encode UTF-8 content safely for GitHub API
+function toBase64Utf8(str){
+  const bytes = new TextEncoder().encode(str);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
 }
