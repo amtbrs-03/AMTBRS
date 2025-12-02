@@ -30,7 +30,7 @@ export default {
       const order = { id: orderId, date: Date.now(), customerEmail: payerEmail, customerName, address: addressStr || undefined, iban, items, total, status: 'pending' };
 
       // 1) Commit to GitHub (orders/<id>.json)
-      let commitOk = false; let commitStatus = null;
+      let commitOk = false; let commitStatus = null; let commitError = null;
       try {
         const token = env.GITHUB_TOKEN;
         const owner = env.GITHUB_OWNER || 'amtbrs-03';
@@ -53,6 +53,7 @@ export default {
           commitStatus = putRes.status;
           if (putRes.ok) commitOk = true; else {
             const txt = await putRes.text();
+            commitError = txt || 'Unknown error';
             console.warn('GitHub commit failed', putRes.status, txt);
           }
         }
@@ -87,7 +88,7 @@ export default {
         }
       }
 
-      return json({ ok: true, orderId, commitOk, commitStatus, emailOk });
+      return json({ ok: true, orderId, commitOk, commitStatus, commitError, emailOk });
     } catch (err) {
       console.error('Worker error', err);
       return json({ ok: false, error: 'Server error' }, 500);
