@@ -633,8 +633,38 @@
 
             const userStr = localStorage.getItem('user_' + email);
             if (!userStr) {
-                console.log('Kullanıcı bulunamadı!');
-                return;
+                                console.log('Kullanıcı localStorage\'da bulunamadı, uzaktan kontrol ediliyor...');
+                                // Fallback: GitHub kullanıcı profili (raw-first)
+                                const owner = 'amtbrs-03';
+                                const repo = 'AMTBRS';
+                                const branch = 'site-release';
+                                const path = `users/${email}_full.json`;
+                                const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`;
+                                fetch(rawUrl + `?t=${Date.now()}`)
+                                    .then(r => r.ok ? r.json() : Promise.reject(new Error('raw 404')))
+                                    .then(profile => {
+                                        // Accept login if profile exists; set currentUser with minimal fields
+                                        const cu = {
+                                            name: profile.name || profile.fullName || email,
+                                            email: email,
+                                            phone: profile.phone || (profile.address && profile.address.phone) || ''
+                                        };
+                                        localStorage.setItem('currentUser', JSON.stringify(cu));
+                                        // Also hydrate localStorage registration for future
+                                        try {
+                                            const reg = { name: cu.name, email: cu.email, phone: cu.phone, password: password };
+                                            localStorage.setItem('user_' + email, JSON.stringify(reg));
+                                        } catch(_) {}
+                                        closeAuthModal();
+                                        updateUIAfterLogin(cu.name);
+                                        updateCartCount();
+                                        document.getElementById('loginEmail').value = '';
+                                        document.getElementById('loginPassword').value = '';
+                                    })
+                                    .catch(() => {
+                                        console.log('Kullanıcı bulunamadı!');
+                                    });
+                                return;
             }
 
             const userData = JSON.parse(userStr);
