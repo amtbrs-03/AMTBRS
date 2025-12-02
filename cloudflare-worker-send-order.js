@@ -47,7 +47,8 @@ export default {
               'Authorization': `Bearer ${token}`,
               'Accept': 'application/vnd.github+json',
               'Content-Type': 'application/json',
-              'User-Agent': 'ern-cicek-worker/1.0'
+              'User-Agent': 'CloudflareWorkers/4.51 ern-cicek/1.0',
+              'X-GitHub-Api-Version': '2022-11-28'
             },
             body: JSON.stringify(body)
           });
