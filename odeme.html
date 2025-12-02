@@ -55,17 +55,7 @@
           return null;
         }
     console.log('=== ÖDEME SAYFASI AÇILDI ===');
-    let customerPhone = '';
-    try {
-      // Prefer currentUser.phone
-      const cu = JSON.parse(localStorage.getItem('currentUser')||'null');
-      if (cu && cu.phone) customerPhone = cu.phone;
-      // Fallback: registration record
-      if (!customerPhone && payerEmail) {
-        const reg = JSON.parse(localStorage.getItem('user_'+payerEmail)||'null');
-        if (reg && reg.phone) customerPhone = reg.phone;
-      }
-    } catch(_){}
+    // customerPhone hesaplamasını tıklama akışında yapacağız (payerEmail belirlendikten sonra)
     
     // Diagnostic logs and initial UI wiring
     console.log('localStorage anahtarları:', Object.keys(localStorage));
@@ -258,11 +248,24 @@
         } catch(_) {}
       }
 
+      // Müşteri telefonu: currentUser.phone veya user_<email>.phone üzerinden
+      let customerPhone = '';
+      try {
+        const cu2 = (function(){ try{ const c = localStorage.getItem('currentUser'); return c?JSON.parse(c):null }catch(e){return null} })();
+        if (cu2 && cu2.phone) customerPhone = cu2.phone;
+        const lookupEmail = addressEmailCandidate || payerEmail;
+        if (!customerPhone && lookupEmail) {
+          const reg2 = (function(){ try{ const r = localStorage.getItem('user_'+lookupEmail); return r?JSON.parse(r):null }catch(e){return null} })();
+          if (reg2 && reg2.phone) customerPhone = reg2.phone;
+        }
+      } catch(_){}
+
       const order = {
         id: 'ORD-' + Date.now(),
         date: Date.now(),
         customerEmail: payerEmail || 'misafir@ern-cicek.com',
         customerName: payerName,
+        customerPhone: customerPhone || '',
         items: cart,
         total: totalText,
         iban: ibanText,
@@ -300,6 +303,7 @@
                 payerEmail: order.customerEmail,
                 customerEmail: order.customerEmail,
                 customerName: order.customerName,
+                customerPhone: order.customerPhone,
                 cart: order.items,
                 iban: order.iban,
                 total: order.total,
@@ -308,6 +312,7 @@
                 userProfile: {
                   email: order.customerEmail,
                   name: order.customerName,
+                  phone: order.customerPhone,
                   address: order.address
                 }
               })
