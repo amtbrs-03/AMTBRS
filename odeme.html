@@ -67,12 +67,8 @@
       }
     } catch(_){}
     
-    function decodeToken(encoded, key){
+    // Diagnostic logs and initial UI wiring
     console.log('localStorage anahtarları:', Object.keys(localStorage));
-    
-    // Check currentUser
-    const currentUser = (function(){ try{ const c = localStorage.getItem('currentUser'); return c?JSON.parse(c):null }catch(e){return null} })();
-    console.log('localStorage\'dan currentUser:', currentUser);
     
     // Check all cart_ keys
     const cartKeys = [];
@@ -84,7 +80,7 @@
       }
     }
     console.log('Tüm sepet anahtarları:', cartKeys);
-    
+
     function qs(key){
       try{const u=new URL(location.href); return u.searchParams.get(key);}catch(e){return null}
     }
