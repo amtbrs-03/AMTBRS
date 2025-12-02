@@ -46,7 +46,8 @@ export default {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Accept': 'application/vnd.github+json',
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              'User-Agent': 'ern-cicek-worker/1.0'
             },
             body: JSON.stringify(body)
           });
