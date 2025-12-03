@@ -21,8 +21,46 @@ export default {
         const payload = await readJsonLoose(request);
         // TODO: Commit order to GitHub if needed using env bindings
         const orderId = payload?.order?.id || `ORD-${Date.now()}`;
-        const body = JSON.stringify({ commitOk: true, orderId });
-        return new Response(body, { status: 200, headers: jsonHeaders(allowOrigin) });
+        // Normalize order structure
+        const order = {
+          id: orderId,
+          date: Date.now(),
+          customerEmail: payload?.order?.customerEmail || payload?.body?.email || '',
+          customerName: payload?.order?.customerName || 'Misafir',
+          address: payload?.order?.address || '',
+          iban: payload?.order?.iban || payload?.body?.iban || '',
+          status: 'pending',
+          items: Array.isArray(payload?.order?.items) ? payload.order.items : (Array.isArray(payload?.body?.items) ? payload.body.items : []),
+          total: typeof payload?.order?.total === 'number' ? payload.order.total : 0
+        };
+        // Attempt GitHub commit if env is configured
+        let commitOk = false, commitStatus = null, commitError = null;
+        try {
+          const owner = env.GITHUB_OWNER || 'amtbrs-03';
+          const repo = env.GITHUB_REPO || 'AMTBRS';
+          const branch = env.GITHUB_BRANCH || 'site-release';
+          const token = env.GITHUB_TOKEN || env.GH_TOKEN;
+          if (token) {
+            const path = `orders/${orderId}.json`;
+            const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}`;
+            // check existing
+            let existingSha = null;
+            try {
+              const headRes = await fetch(apiUrl + `?ref=${branch}`, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' } });
+              if (headRes.ok) { const j = await headRes.json(); existingSha = j.sha; }
+            } catch (_) {}
+            const content = btoa(unescape(encodeURIComponent(JSON.stringify(order, null, 2))));
+            const body = { message: `feat(order): create ${orderId}`, content, branch };
+            if (existingSha) body.sha = existingSha;
+            const putRes = await fetch(apiUrl, { method: 'PUT', headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            commitStatus = putRes.status;
+            if (putRes.ok) commitOk = true; else commitError = await safeText(putRes);
+          }
+        } catch (e) {
+          commitError = (e && e.message) ? e.message : String(e);
+        }
+        const body = JSON.stringify({ ok: true, orderId, commitOk, commitStatus, commitError, order });
+        return new Response(body, { status: commitOk ? 201 : 200, headers: jsonHeaders(allowOrigin) });
       }
 
       if (path === '/update-user' && request.method === 'POST') {
@@ -64,4 +102,8 @@ async function readJsonLoose(request) {
   }
   const txt = await request.text();
   try { return JSON.parse(txt || '{}'); } catch { return {}; }
+}
+
+async function safeText(res) {
+  try { return await res.text(); } catch { return null; }
 }
