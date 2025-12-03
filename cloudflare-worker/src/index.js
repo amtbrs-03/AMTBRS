@@ -12,7 +12,7 @@ export default {
     if (request.method === 'OPTIONS') {
       return new Response(null, {
         status: 204,
-        headers: corsHeaders(allowOrigin)
+        headers: corsHeaders(allowOrigin, request)
       });
     }
 
@@ -40,13 +40,15 @@ export default {
   }
 }
 
-function corsHeaders(origin) {
+function corsHeaders(origin, request) {
+  const reqMethod = request?.headers?.get('Access-Control-Request-Method');
+  const reqHeaders = request?.headers?.get('Access-Control-Request-Headers');
   return {
     'Access-Control-Allow-Origin': origin,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Methods': reqMethod || 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': reqHeaders || 'Content-Type, Authorization',
     'Access-Control-Max-Age': '86400',
-    'Vary': 'Origin'
+    'Vary': 'Origin, Access-Control-Request-Method, Access-Control-Request-Headers'
   };
 }
 
