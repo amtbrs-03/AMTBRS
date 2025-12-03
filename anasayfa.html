@@ -3544,50 +3544,95 @@
 
                     function sendBankNotificationFromWidget(){ sendBankNotification(); }
 
-                    function sendBankNotification(){
-                        // Try serverless endpoint first
+                    async function sendBankNotification(){
                         const payerEmail = (document.getElementById('payerEmail')||{}).value || '';
                         const cart = loadCart();
                         const total = cart.reduce((s,i)=>s + (i.price||0)*(i.qty||0),0).toFixed(2);
-        const user = getCurrentUser();
-        const body = {
-            email: payerEmail || (user||{}).email || '',
-            total: total,
-            items: cart
-        };
+                        const user = getCurrentUser();
+                        const body = {
+                            email: payerEmail || (user||{}).email || '',
+                            total: total,
+                            items: cart
+                        };
 
-        // create order object to persist for user
-        const order = { 
-            id: 'ORD' + Date.now().toString(36), 
-            date: Date.now(), 
-            customerName: (user||{}).name || 'Misafir',
-            customerEmail: payerEmail || (user||{}).email || '',
-            items: cart, 
-            total: Number(total),
-            address: (user && user.address) ? `${user.address.city || ''}, ${user.address.district || ''}, ${user.address.neighborhood || ''}, ${user.address.addressDetail || ''}`.trim() : 'Adres bilgisi yok',
-            status: 'pending'
-        };                        // POST to functions/send-order if available (netlify functions)
-                        fetch('/.netlify/functions/send-order', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) })
-                        .then(r=>{ if (!r.ok) throw new Error('send failed'); return r.text(); })
-                        .then(()=>{
+                        const order = {
+                            id: 'ORD' + Date.now().toString(36),
+                            date: Date.now(),
+                            customerName: (user||{}).name || 'Misafir',
+                            customerEmail: payerEmail || (user||{}).email || '',
+                            items: cart,
+                            total: Number(total),
+                            address: (user && user.address) ? `${user.address.city || ''}, ${user.address.district || ''}, ${user.address.neighborhood || ''}, ${user.address.addressDetail || ''}`.trim() : 'Adres bilgisi yok',
+                            status: 'pending'
+                        };
+
+                        // Determine endpoint: prefer site-settings.json orderEndpoint, then common fallbacks
+                        let endpointCandidates = [
+                            '/.netlify/functions/send-order',
+                            '/functions/send-order',
+                            'https://ern-site.amtbrs-03.workers.dev/send-order'
+                        ];
+                        try{
+                            const sres = await fetch('/site-settings.json', { cache:'no-store' });
+                            if (sres.ok){
+                                const s = await sres.json();
+                                if (s && s.orderEndpoint && typeof s.orderEndpoint === 'string'){
+                                    endpointCandidates.unshift(s.orderEndpoint);
+                                    console.log('Siparişi Bildir: site-settings orderEndpoint kullanılacak:', s.orderEndpoint);
+                                }
+                            }
+                        }catch(_){ /* ignore */ }
+
+                        let sent = false; let lastError = null;
+                        for (const ep of endpointCandidates){
+                            try{
+                                const isAbsolute = /^https?:\/\//i.test(ep);
+                                const origin = isAbsolute ? (new URL(ep)).origin : location.origin;
+                                const crossSite = origin !== location.origin;
+                                const payload = JSON.stringify({ order, body });
+                                // Use text/plain for cross-site to avoid CORS preflight; fallback to JSON if needed
+                                let headers = crossSite ? { 'Content-Type': 'text/plain;charset=UTF-8' } : { 'Content-Type': 'application/json' };
+                                let resp = await fetch(ep, { method:'POST', headers, body: payload, mode:'cors' });
+                                if (!resp.ok && !crossSite) {
+                                    // keep as-is for same-origin
+                                } else if (!resp.ok && crossSite) {
+                                    // Retry with JSON content-type in case server expects it
+                                    try {
+                                        headers = { 'Content-Type': 'application/json' };
+                                        resp = await fetch(ep, { method:'POST', headers, body: payload, mode:'cors' });
+                                    } catch(_){ /* ignore */ }
+                                }
+                                if (resp.ok){
+                                    let ok = true;
+                                    try{
+                                        const data = await resp.json();
+                                        ok = !!(data && (data.commitOk || data.ok));
+                                        if (data && data.orderId) order.id = data.orderId;
+                                    }catch(_){ /* non-JSON ok */ }
+                                    if (ok){ sent = true; break; }
+                                } else {
+                                    lastError = new Error('HTTP '+resp.status);
+                                }
+                            }catch(e){ lastError = e; }
+                        }
+
+                        if (sent){
                             console.log('Sipariş bildirimi gönderildi.');
-                            // persist order for logged-in user (or for provided payer email)
-                            const user = getCurrentUser();
-                            if (user && user.email) saveOrderForUser(user.email, order);
+                            const u = getCurrentUser();
+                            if (u && u.email) saveOrderForUser(u.email, order);
                             else if (body.email) saveOrderForUser(body.email, order);
-                            // clear cart
-                            if (user) localStorage.removeItem(cartKeyForUser(user.email));
+                            if (u) localStorage.removeItem(cartKeyForUser(u.email));
                             renderCart(); updateCartCount(); closeBank();
-                        })
-                        .catch(()=>{
-                            // Fallback: persist order if possible then open mailto
-                            const user = getCurrentUser();
-                            if (user && user.email) saveOrderForUser(user.email, order);
-                            else if (body.email) saveOrderForUser(body.email, order);
-                            const subject = encodeURIComponent('Yeni Sipariş - ' + (body.email||'misafir'));
-                            const bodyText = encodeURIComponent('Yeni sipariş:\nToplam: ' + total + '\n\n' + JSON.stringify(cart, null, 2));
-                            window.location.href = 'mailto:amtbrs@icloud.com?subject='+subject+'&body='+bodyText;
-                        });
+                            return;
+                        }
+
+                        console.warn('Sunucuya doğrudan bildirim yapılamıyor:', lastError && lastError.message ? lastError.message : lastError);
+                        const u = getCurrentUser();
+                        if (u && u.email) saveOrderForUser(u.email, order);
+                        else if (body.email) saveOrderForUser(body.email, order);
+                        const subject = encodeURIComponent('Yeni Sipariş - ' + (body.email||'misafir'));
+                        const bodyText = encodeURIComponent('Yeni sipariş:\nToplam: ' + total + '\n\n' + JSON.stringify(cart, null, 2));
+                        window.location.href = 'mailto:amtbrs@icloud.com?subject='+subject+'&body='+bodyText;
                     }
 
                     function openBank(){ document.getElementById('bankModal').style.display = 'block'; }
@@ -3711,6 +3756,21 @@
 
                     // Diagnostic: check buttons with inline onclick and report missing handlers
                     function checkAllButtons() {
+                        try {
+                            // Scan for buttons that rely on inline onclick handlers and warn if missing
+                            const btns = document.querySelectorAll('button[onclick]');
+                            btns.forEach(btn => {
+                                const code = String(btn.getAttribute('onclick') || '').trim();
+                                // Very basic check: if onclick contains a reference to a global function that does not exist, log it
+                                const m = code.match(/([a-zA-Z_$][\w$]*)\s*\(/);
+                                if (m && m[1] && typeof window[m[1]] !== 'function') {
+                                    console.warn('Eksik global handler:', m[1], '→', code);
+                                }
+                            });
+                        } catch (e) {
+                            console.warn('checkAllButtons çalıştırılamadı:', e);
+                        }
+                    }
 
                     // --- Ürün verisi utils ---
                     function exportCurrentProducts(){
@@ -3818,35 +3878,7 @@
                         }
                         return true;
                     }
-                        const els = Array.from(document.querySelectorAll('[onclick]'));
-                        const report = { total: els.length, checked: 0, missing: [] };
-                        els.forEach(el => {
-                            const src = el.getAttribute('onclick') || '';
-                            // try to extract first identifier (function name) before '(' or whitespace
-                            const m = src.match(/\s*([\w$]+)\s*\(/);
-                            if (m && m[1]) {
-                                report.checked++;
-                                const fn = m[1];
-                                if (typeof window[fn] !== 'function') {
-                                    report.missing.push({ el: describeElement(el), handler: fn, src });
-                                }
-                            } else {
-                                // couldn't parse a single function name; still count
-                                report.checked++;
-                                // don't attempt to run complex inline handlers here
-                            }
-                        });
-                        console.info('Button diagnostic:', report);
-                        return report;
-                    }
-
-                    function describeElement(el){
-                        const parts = [el.tagName.toLowerCase()];
-                        if (el.id) parts.push('#'+el.id);
-                        if (el.className) parts.push('.'+String(el.className).split(' ').join('.'));
-                        if (el.getAttribute && el.getAttribute('aria-controls')) parts.push('[aria-controls="'+el.getAttribute('aria-controls')+'"]');
-                        return parts.join('');
-                    }
+                    
 
                     // Run diagnostics shortly after init so functions defined by script are present
                     setTimeout(function(){ try{ checkAllButtons(); }catch(e){ console.error('checkAllButtons error', e); } }, 400);

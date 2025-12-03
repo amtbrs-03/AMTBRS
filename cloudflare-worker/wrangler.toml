@@ -1,0 +1,13 @@
+name = "ern-site"
+main = "src/index.js"
+compatibility_date = "2024-11-21"
+
+# Uncomment and set if you bind secrets/vars later
+# [vars]
+# GITHUB_TOKEN = ""
+
+routes = []
+# You can later add a custom route like:
+# routes = [
+#   { pattern = "api.ern-cicek.com.tr/send-order", custom_domain = true }
+# ]
