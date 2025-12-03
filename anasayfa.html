@@ -3306,14 +3306,22 @@
                             // Dosya yolu: email'i encode etme; GitHub '@' karakterini destekler.
                             const filePath = `carts/${user.email}.json`;
                             const payload = { files: [{ path: filePath, contentBase64 }], message: `chore: cart snapshot ${user.email}` };
-                            const endpoints = ['/.netlify/functions/commit-file','/api/commit-file','/functions/commit-file'];
+                            // Sunucu commit uç noktası: site-settings.json içinde 'commitEndpoint' varsa onu kullan; yoksa yerel/Netlify yollarına deneme yapma.
                             let committed = false;
-                            for (const ep of endpoints) {
-                                try {
-                                    const res = await fetch(ep, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
-                                    if (res.ok) { committed = true; break; }
-                                } catch(e) { /* ignore */ }
-                            }
+                            try {
+                                const sres = await fetch('/site-settings.json', { cache:'no-store' });
+                                if (sres.ok) {
+                                    const s = await sres.json();
+                                    const commitEp = s && s.commitEndpoint ? String(s.commitEndpoint) : '';
+                                    if (commitEp) {
+                                        try {
+                                            const res = await fetch(commitEp, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload), mode:'cors' });
+                                            committed = res.ok;
+                                        } catch(_) { /* sessiz */ }
+                                    }
+                                }
+                            } catch(_) { /* sessiz */ }
+                            // Eski yerel/Netlify fallback'ları kaldırıldı; 405 üretmemesi için yalnızca yapılandırılmış commitEndpoint kullanılır.
                             // GitHub token varsa doğrudan API üzerinden fallback commit dene (ör: serverless çalışmıyorsa)
                             if(!committed){
                                 try {
