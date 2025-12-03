@@ -1318,6 +1318,15 @@
                                     <div id="acctEmail" style="font-size:0.95rem;color:#334155"></div>
                                 </div>
 
+                                <div style="margin:0.75rem 0; padding:0.75rem; background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px;">
+                                    <label for="acctPhoneInput" style="display:block; font-weight:600; color:#334155; margin-bottom:0.4rem;">Telefon Numarası</label>
+                                    <div style="display:flex; gap:0.5rem;">
+                                        <input type="tel" id="acctPhoneInput" placeholder="Örnek: +90 530 000 00 00" pattern="^\+?\d[\d\s()-]{7,}$" style="flex:1; padding:0.6rem; border:1px solid #d1d5db; border-radius:8px;">
+                                        <button onclick="saveUserPhone()" style="min-width:140px; background:#10b981; color:white; border:none; border-radius:8px; padding:0.6rem; cursor:pointer; font-weight:600;">Telefonu Kaydet</button>
+                                    </div>
+                                    <div style="font-size:0.8rem;color:#6b7280;margin-top:4px">Kayıtlı üyeler telefon bilgisini burada güncelleyebilir.</div>
+                                </div>
+
                                 <div style="margin-top:1rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
                                     <button data-action="close-account" style="flex:1; min-width:120px;">Kapat</button>
                                     <button data-action="logout" style="flex:1; min-width:120px; background:#f59e0b;color:#fff">Çıkış Yap</button>
@@ -2978,6 +2987,29 @@
                     function closeProfileMenu(){ const m = document.getElementById('profileMenu'); const t = document.getElementById('profileToggle'); if (m){ m.classList.add('hidden'); if (t) t.setAttribute('aria-expanded','false'); } }
                     document.addEventListener('click', function(ev){ try{ const wrap = document.getElementById('profileWrap'); const menu = document.getElementById('profileMenu'); const toggle = document.getElementById('profileToggle'); if (!wrap || !menu) return; const target = ev.target; if (wrap.contains(target)) return; if (!menu.classList.contains('hidden')) closeProfileMenu(); }catch(e){} });
                     document.getElementById && document.getElementById('profileToggle') && document.getElementById('profileToggle').addEventListener('click', function(e){ e.stopPropagation(); const menu = document.getElementById('profileMenu'); if (!menu) return; if (menu.classList.contains('hidden')) openProfileMenu(); else closeProfileMenu(); });
+
+                    async function saveUserPhone(){
+                        try{
+                            const cu = getCurrentUser();
+                            if (!cu || !cu.email){ alert('Lütfen önce giriş yapın.'); return; }
+                            const input = document.getElementById('acctPhoneInput');
+                            if (!input){ alert('Telefon alanı bulunamadı.'); return; }
+                            const phone = input.value.trim();
+                            if (!phone){ alert('Telefon numarası boş olamaz.'); return; }
+                            const re = /^\+?\d[\d\s()-]{7,}$/;
+                            if (!re.test(phone)){ alert('Telefon numarası formatı geçersiz. Lütfen +90 530 000 00 00 gibi giriniz.'); return; }
+                            // Full user record merge
+                            let full = null;
+                            try{ full = JSON.parse(localStorage.getItem('user_' + cu.email) || 'null'); }catch(_){ full = null; }
+                            if (!full || typeof full !== 'object') full = { name: cu.name, email: cu.email };
+                            full.phone = phone;
+                            try{ localStorage.setItem('user_' + cu.email, JSON.stringify(full)); }catch(_){}
+                            // Sync to GitHub via Contents API
+                            const ok = await commitFullUserToRepo(full);
+                            if (ok){ alert('Telefon numaranız kaydedildi ve senkronize edildi.'); }
+                            else { alert('Telefon kaydı yerelde güncellendi, ancak uzak sunucuya gönderilemedi. Daha sonra tekrar deneyin.'); }
+                        }catch(e){ alert('Telefon kaydı sırasında hata: ' + (e && e.message ? e.message : e)); }
+                    }
 
                     // Confirm-protected logout used in modal and profile menu
                     function logoutConfirm(){ 
