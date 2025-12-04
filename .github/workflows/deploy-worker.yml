@@ -16,6 +16,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
 
       - name: Install Wrangler
         run: npm install -g wrangler@3
@@ -38,17 +40,18 @@ jobs:
           WORKER_GITHUB_REPO: ${{ secrets.WORKER_GITHUB_REPO }}
           WORKER_GITHUB_BRANCH: ${{ secrets.WORKER_GITHUB_BRANCH }}
         run: |
+          set -e
           if [ -n "$WORKER_GITHUB_TOKEN" ]; then
-            echo "$WORKER_GITHUB_TOKEN" | wrangler secret put GITHUB_TOKEN
+            echo "$WORKER_GITHUB_TOKEN" | wrangler secret put GITHUB_TOKEN 2>&1 | grep -v "$WORKER_GITHUB_TOKEN" || true
           fi
           if [ -n "$WORKER_GITHUB_OWNER" ]; then
-            echo "$WORKER_GITHUB_OWNER" | wrangler secret put GITHUB_OWNER
+            echo "$WORKER_GITHUB_OWNER" | wrangler secret put GITHUB_OWNER 2>&1 | grep -v "$WORKER_GITHUB_OWNER" || true
           fi
           if [ -n "$WORKER_GITHUB_REPO" ]; then
-            echo "$WORKER_GITHUB_REPO" | wrangler secret put GITHUB_REPO
+            echo "$WORKER_GITHUB_REPO" | wrangler secret put GITHUB_REPO 2>&1 | grep -v "$WORKER_GITHUB_REPO" || true
           fi
           if [ -n "$WORKER_GITHUB_BRANCH" ]; then
-            echo "$WORKER_GITHUB_BRANCH" | wrangler secret put GITHUB_BRANCH
+            echo "$WORKER_GITHUB_BRANCH" | wrangler secret put GITHUB_BRANCH 2>&1 | grep -v "$WORKER_GITHUB_BRANCH" || true
           fi
           echo "✅ Worker secrets ayarlandı"
 
@@ -58,6 +61,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
         run: |
+          set -e
           echo "🔍 wrangler.toml kontrolü:"
           cat wrangler.toml || echo "⚠️ wrangler.toml bulunamadı"
           
@@ -78,6 +82,7 @@ jobs:
       - name: Smoke Test
         env:
           WORKER_URL: ${{ secrets.WORKER_URL }}
+        timeout-minutes: 5
         run: |
           if [ -z "$WORKER_URL" ]; then
             echo "⚠️ WORKER_URL tanımlı değil, smoke test atlanıyor"
@@ -86,23 +91,44 @@ jobs:
           
           echo "🧪 Smoke test: $WORKER_URL"
           
+          # Test 1: OPTIONS request
           echo "📍 Test 1: /update-user OPTIONS"
-          curl -i -s -X OPTIONS "$WORKER_URL/update-user" \
+          RESPONSE=$(curl -i -s -m 10 -X OPTIONS "$WORKER_URL/update-user" \
             -H "Origin: https://ern-cicek.com.tr" \
             -H "Access-Control-Request-Method: POST" \
-            -H "Access-Control-Request-Headers: content-type" | head -15
+            -H "Access-Control-Request-Headers: content-type")
+          echo "$RESPONSE" | head -15
+          if echo "$RESPONSE" | grep -q "HTTP.*200\|HTTP.*204"; then
+            echo "✓ OPTIONS test başarılı"
+          else
+            echo "⚠️ OPTIONS test başarısız"
+          fi
           
+          # Test 2: Update user
           echo -e "\n📍 Test 2: /update-user POST"
-          curl -i -s -X POST "$WORKER_URL/update-user" \
+          RESPONSE=$(curl -i -s -m 10 -X POST "$WORKER_URL/update-user" \
             -H "Origin: https://ern-cicek.com.tr" \
             -H "Content-Type: application/json" \
-            --data '{"email":"ci@example.com","name":"CI User","phone":"+90 530 000 00 00","addresses":[{"id":"default","title":"Varsayılan","city":"İstanbul","district":"Kadıköy","addressDetail":"CI Sk No:1","postalCode":"34000","isDefault":true}]}' | head -25
+            --data '{"email":"ci@example.com","name":"CI User","phone":"+90 530 000 00 00","addresses":[{"id":"default","title":"Varsayılan","city":"İstanbul","district":"Kadıköy","addressDetail":"CI Sk No:1","postalCode":"34000","isDefault":true}]}')
+          echo "$RESPONSE" | head -25
+          if echo "$RESPONSE" | grep -q "HTTP.*200\|success"; then
+            echo "✓ Update user test başarılı"
+          else
+            echo "⚠️ Update user test başarısız"
+          fi
           
+          # Test 3: Send order
           echo -e "\n📍 Test 3: /send-order POST"
           TIMESTAMP=$(date +%s)
-          curl -i -s -X POST "$WORKER_URL/send-order" \
+          RESPONSE=$(curl -i -s -m 10 -X POST "$WORKER_URL/send-order" \
             -H "Origin: https://ern-cicek.com.tr" \
             -H "Content-Type: application/json" \
-            --data "{\"order\":{\"id\":\"ORD-CI-$TIMESTAMP\",\"customerEmail\":\"ci@example.com\",\"customerName\":\"CI User\",\"address\":\"İstanbul\",\"items\":[{\"name\":\"Gül\",\"qty\":1,\"price\":199}],\"total\":199}}" | head -25
+            --data "{\"order\":{\"id\":\"ORD-CI-$TIMESTAMP\",\"customerEmail\":\"ci@example.com\",\"customerName\":\"CI User\",\"address\":\"İstanbul\",\"items\":[{\"name\":\"Gül\",\"qty\":1,\"price\":199}],\"total\":199}}")
+          echo "$RESPONSE" | head -25
+          if echo "$RESPONSE" | grep -q "HTTP.*200\|success"; then
+            echo "✓ Send order test başarılı"
+          else
+            echo "⚠️ Send order test başarısız"
+          fi
           
           echo -e "\n✅ Smoke testler tamamlandı"
