@@ -19,19 +19,20 @@ export default {
     try {
       if (path === '/send-order' && request.method === 'POST') {
         const payload = await readJsonLoose(request);
-        // TODO: Commit order to GitHub if needed using env bindings
+        // Support both nested order object and flat structure
         const orderId = payload?.order?.id || `ORD-${Date.now()}`;
-        // Normalize order structure
+        // Normalize order structure - handle both odeme.html (flat) and other sources (nested)
         const order = {
           id: orderId,
           date: Date.now(),
-          customerEmail: payload?.order?.customerEmail || payload?.body?.email || '',
-          customerName: payload?.order?.customerName || 'Misafir',
-          address: payload?.order?.address || '',
-          iban: payload?.order?.iban || payload?.body?.iban || '',
+          customerEmail: payload?.order?.customerEmail || payload?.customerEmail || payload?.payerEmail || '',
+          customerName: payload?.order?.customerName || payload?.customerName || 'Misafir',
+          customerPhone: payload?.order?.customerPhone || payload?.customerPhone || '',
+          address: payload?.order?.address || payload?.address || '',
+          iban: payload?.order?.iban || payload?.iban || '',
           status: 'pending',
-          items: Array.isArray(payload?.order?.items) ? payload.order.items : (Array.isArray(payload?.body?.items) ? payload.body.items : []),
-          total: typeof payload?.order?.total === 'number' ? payload.order.total : 0
+          items: Array.isArray(payload?.order?.items) ? payload.order.items : (Array.isArray(payload?.cart) ? payload.cart : []),
+          total: payload?.order?.total || payload?.total || '0'
         };
         // Attempt GitHub commit if env is configured
         let commitOk = false, commitStatus = null, commitError = null;
