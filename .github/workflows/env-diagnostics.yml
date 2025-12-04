@@ -1,0 +1,37 @@
+name: Env Diagnostics
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show Secrets/Variables Presence (safe)
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          WORKER_GITHUB_TOKEN: ${{ secrets.WORKER_GITHUB_TOKEN }}
+          WORKER_URL: ${{ secrets.WORKER_URL }}
+          WORKER_GITHUB_OWNER: ${{ secrets.WORKER_GITHUB_OWNER }}
+          WORKER_GITHUB_REPO: ${{ secrets.WORKER_GITHUB_REPO }}
+          WORKER_GITHUB_BRANCH: ${{ secrets.WORKER_GITHUB_BRANCH }}
+        run: |
+          echo "CF_API_TOKEN length: ${#CF_API_TOKEN}"
+          echo "CF_ACCOUNT_ID length: ${#CF_ACCOUNT_ID}"
+          echo "WORKER_GITHUB_TOKEN length: ${#WORKER_GITHUB_TOKEN}"
+          echo "WORKER_URL length: ${#WORKER_URL}"
+          echo "WORKER_GITHUB_OWNER: ${WORKER_GITHUB_OWNER:-not-set}"
+          echo "WORKER_GITHUB_REPO: ${WORKER_GITHUB_REPO:-not-set}"
+          echo "WORKER_GITHUB_BRANCH: ${WORKER_GITHUB_BRANCH:-not-set}"
+          MISSING=0
+          for n in CF_API_TOKEN CF_ACCOUNT_ID WORKER_GITHUB_TOKEN WORKER_URL; do
+            v="$(eval echo \"\${$n}\")"; if [ -z "$v" ]; then echo "MISSING: $n"; MISSING=1; fi; done
+          if [ $MISSING -ne 0 ]; then echo "One or more required secrets are missing"; exit 1; fi
+
+      - name: Check Wrangler Configs
+        run: |
+          echo "Repo root wrangler.toml:"; [ -f wrangler.toml ] && sed -n '1,200p' wrangler.toml || echo "(not found)"
+          echo "cloudflare-worker/wrangler.toml:"; [ -f cloudflare-worker/wrangler.toml ] && sed -n '1,200p' cloudflare-worker/wrangler.toml || echo "(not found)"

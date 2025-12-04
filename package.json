@@ -9,7 +9,7 @@
   },
   "scripts": {
     "start": "netlify dev",
-    "test": "node -e \"console.log('no tests')\""
+    "test": "node scripts/test-user-update.js"
   },
   "dependencies": {
     "nodemailer": "^6.9.4",

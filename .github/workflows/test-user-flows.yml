@@ -1,0 +1,27 @@
+name: Test User Flows
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ site-release ]
+    paths:
+      - 'anasayfa.html'
+      - 'scripts/test-user-update.js'
+      - '.github/workflows/test-user-flows.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          npm ci || npm i
+
+      - name: Run tests
+        run: npm test
