@@ -12,6 +12,92 @@
     .muted{color:#666;margin-top:0.5rem}
     a.btn{display:inline-block;margin-top:1rem;padding:0.6rem 1rem;background:#2563eb;color:#fff;border-radius:8px;text-decoration:none}
     
+    /* Notification Modal */
+    #notificationModal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+    }
+    #notificationModal.show {
+      display: flex;
+    }
+    .notification-box {
+      background: #fff;
+      border-radius: 12px;
+      padding: 2rem;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      text-align: center;
+      animation: slideIn 0.3s ease-out;
+    }
+    @keyframes slideIn {
+      from { transform: translateY(-30px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .notification-box.success {
+      border-left: 5px solid #10b981;
+    }
+    .notification-box.error {
+      border-left: 5px solid #ef4444;
+    }
+    .notification-box.warn {
+      border-left: 5px solid #f59e0b;
+    }
+    .notification-box h2 {
+      margin: 0 0 1rem 0;
+      font-size: 1.5rem;
+    }
+    .notification-box p {
+      margin: 0.5rem 0;
+      line-height: 1.6;
+      color: #555;
+    }
+    .notification-box .code {
+      display: inline-block;
+      background: #f3f4f6;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      font-family: monospace;
+      margin: 0.5rem 0;
+      word-break: break-all;
+    }
+    .notification-buttons {
+      margin-top: 1.5rem;
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+    }
+    .notification-buttons button {
+      padding: 0.6rem 1.5rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+    .notification-buttons .btn-primary {
+      background: #2563eb;
+      color: #fff;
+    }
+    .notification-buttons .btn-primary:hover {
+      background: #1d4ed8;
+    }
+    .notification-buttons .btn-secondary {
+      background: #e5e7eb;
+      color: #333;
+    }
+    .notification-buttons .btn-secondary:hover {
+      background: #d1d5db;
+    }
+    
     /* Responsive */
     @media(max-width:768px){
       body{padding:1rem}
@@ -43,7 +129,47 @@
     </div>
   </div>
 
+  <!-- Notification Modal -->
+  <div id="notificationModal">
+    <div class="notification-box" id="notificationContent">
+      <h2 id="notificationTitle">Bildirim</h2>
+      <div id="notificationMessage"></div>
+      <div class="notification-buttons">
+        <button class="btn-primary" onclick="closeNotification()">Tamam</button>
+      </div>
+    </div>
+  </div>
+
   <script>
+        // Notification Modal Functions
+        function showNotification(title, message, type = 'info', onClose = null) {
+          const modal = document.getElementById('notificationModal');
+          const box = document.getElementById('notificationContent');
+          const titleEl = document.getElementById('notificationTitle');
+          const messageEl = document.getElementById('notificationMessage');
+          
+          titleEl.textContent = title;
+          messageEl.innerHTML = message;
+          
+          // Remove previous type classes
+          box.classList.remove('success', 'error', 'warn');
+          if (type) box.classList.add(type);
+          
+          modal.classList.add('show');
+          
+          // Store callback
+          window.__notificationCallback = onClose;
+        }
+        
+        function closeNotification() {
+          const modal = document.getElementById('notificationModal');
+          modal.classList.remove('show');
+          if (window.__notificationCallback) {
+            window.__notificationCallback();
+            window.__notificationCallback = null;
+          }
+        }
+        
         // Lazy-load site settings (for optional orderEndpoint override)
         let __settings = null;
         async function loadSettings(){
@@ -90,8 +216,17 @@
     document.getElementById('copyBtn').addEventListener('click', function(e){
       e.preventDefault();
       const txt = document.getElementById('iban').textContent.trim();
-      if(!txt || txt==='(IBAN yok)') return alert('IBAN bulunamadı');
-      navigator.clipboard?.writeText(txt).then(()=>alert('IBAN kopyalandı: '+txt)).catch(()=>{prompt('Lütfen kopyalayın:', txt)});
+      if(!txt || txt==='(IBAN yok)') {
+        showNotification('Hata', '<p>IBAN bulunamadı</p>', 'error');
+        return;
+      }
+      navigator.clipboard?.writeText(txt)
+        .then(() => {
+          showNotification('✅ Başarılı', '<p>IBAN kopyalandı:</p><div class="code">' + txt + '</div>', 'success');
+        })
+        .catch(() => {
+          showNotification('Kopyala', '<p>Lütfen kopyalayın:</p><div class="code">' + txt + '</div>', 'warn');
+        });
     });
 
     // XOR token decoder (same as admin)
@@ -176,7 +311,7 @@
       console.log('Sepet uzunluğu:', cart ? cart.length : 0);
       
       if(!cart || cart.length === 0){
-        alert('Sepetiniz boş!');
+        showNotification('Sepet Boş', '<p>Lütfen önce ürün seçiniz.</p>', 'warn');
         btn.textContent = 'Siparişi Bildir';
         btn.disabled = false;
         return;
@@ -358,8 +493,13 @@
             ? (data.commitOk ? 'Depo kaydı tamamlandı.' : 'Depo kaydı başarısız: ' + (data.commitStatus || 'bilinmeyen durum'))
             : 'Depo kaydı bilgisi alınamadı.';
           setStatus('Sipariş alındı. No: ' + finalId + ' – ' + commitInfo, 'status-success');
-          alert('✅ Siparişiniz kaydedildi!\n\nSipariş No: ' + finalId + '\n' + commitInfo + '\n\nÖdemeniz kontrol edildikten sonra siparişiniz işleme alınacaktır.');
-          setTimeout(() => { window.location.href = '/anasayfa.html'; }, 1500);
+          const successMsg = '<p><strong>Siparişiniz başarıyla kaydedildi!</strong></p>' +
+            '<p>Sipariş No: <span class="code">' + finalId + '</span></p>' +
+            '<p>' + commitInfo + '</p>' +
+            '<p>Ödemeniz kontrol edildikten sonra siparişiniz işleme alınacaktır.</p>';
+          showNotification('✅ Başarılı', successMsg, 'success', () => {
+            window.location.href = '/anasayfa.html';
+          });
         } else {
           console.error('Sunucu uç noktası başarısız:', lastErr);
           // GitHub Pages gibi statik ortamda 405/404 olabilir; önce GitHub'a siparişi kaydetmeyi dene, ardından mailto fallback kullan
@@ -405,9 +545,14 @@
             }
             // Kullanıcıya bilgi ve mailto aç
             setStatus('Sunucuya kaydedilemedi, e-posta bildirimi açıldı. Sipariş No: ' + order.id, 'status-warn');
-            alert('✅ Sunucuya doğrudan bildirim yapılamadı, e-posta ile bildirim ekranı açılıyor.\n\nSipariş No: ' + order.id + '\n\nLütfen açılan e-posta taslağını gönderin.');
-            window.location.href = mailto;
-            setTimeout(() => { window.location.href = '/anasayfa.html'; }, 1800);
+            const fallbackMsg = '<p><strong>Sunucuya doğrudan bildirim yapılamadı.</strong></p>' +
+              '<p>E-posta ile bildirim ekranı açılıyor...</p>' +
+              '<p>Sipariş No: <span class="code">' + order.id + '</span></p>' +
+              '<p>Lütfen açılan e-posta taslağını gönderin.</p>';
+            showNotification('⚠️ E-posta Bildirimi', fallbackMsg, 'warn', () => {
+              window.location.href = mailto;
+              setTimeout(() => { window.location.href = '/anasayfa.html'; }, 1800);
+            });
           } catch(fallbackErr) {
             throw new Error('Sipariş sunucuya iletilemedi ve e-posta fallback başarısız: ' + (fallbackErr && fallbackErr.message ? fallbackErr.message : 'bilinmeyen hata'));
           }
@@ -415,7 +560,10 @@
       } catch(err) {
         console.error('Sipariş kaydı başarısız:', err);
         setStatus('Sipariş hatası: ' + err.message, 'status-error');
-        alert('❌ Sipariş kaydedilemedi: ' + err.message + '\n\nLütfen tekrar deneyin veya iletişime geçin.');
+        const errorMsg = '<p><strong>Sipariş kaydedilemedi!</strong></p>' +
+          '<p>Hata: ' + (err.message || 'bilinmeyen hata') + '</p>' +
+          '<p>Lütfen tekrar deneyin veya iletişime geçin.</p>';
+        showNotification('❌ Hata', errorMsg, 'error');
         btn.textContent = 'Siparişi Bildir';
         btn.disabled = false;
       }
