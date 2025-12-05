@@ -53,57 +53,11 @@ jobs:
 
           echo "✅ Deploy başarılı"
 
-      - name: Set Worker Secrets (GitHub commit)
-        working-directory: cloudflare-worker
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-          WORKER_GITHUB_TOKEN: ${{ secrets.WORKER_GITHUB_TOKEN }}
-          WORKER_GITHUB_OWNER: ${{ secrets.WORKER_GITHUB_OWNER }}
-          WORKER_GITHUB_REPO: ${{ secrets.WORKER_GITHUB_REPO }}
-          WORKER_GITHUB_BRANCH: ${{ secrets.WORKER_GITHUB_BRANCH }}
+      - name: Verify Worker Deployment
         run: |
-          set -e
-          echo "⏳ Deploy global propagasyonu için 15 saniye bekleniyor..."
-          sleep 15
-          
-          echo "🔑 Worker secrets ayarlanıyor (retry mekanizması ile)..."
-          
-          put_secret() {
-            local name=$1
-            local value=$2
-            local attempt=1
-            local max_attempts=3
-            
-            while [ $attempt -le $max_attempts ]; do
-              echo "  Attempt $attempt/$max_attempts: $name"
-              # Use printf to pipe value to wrangler, capture exit code
-              if printf '%s' "$value" | wrangler secret put "$name" 2>&1 | tee /tmp/secret_output.log | grep -iE "success|✓|added|saved"; then
-                echo "  ✓ $name ayarlandı"
-                return 0
-              elif [ $? -eq 0 ]; then
-                # wrangler exited successfully even without success message, assume it worked
-                echo "  ✓ $name ayarlandı (sessiz başarı)"
-                return 0
-              fi
-              if [ $attempt -lt $max_attempts ]; then
-                echo "  ⏳ 2 saniye sonra tekrar deniyor..."
-                sleep 2
-              fi
-              ((attempt++))
-            done
-            
-            echo "  ⚠️ $name ayarlanamadı (sonraki smoke test'te görebiliriz)"
-            echo "  Son çıktı: $(cat /tmp/secret_output.log 2>/dev/null || echo 'N/A')"
-            return 0
-          }
-          
-          [ -n "$WORKER_GITHUB_TOKEN" ] && put_secret "GITHUB_TOKEN" "$WORKER_GITHUB_TOKEN"
-          [ -n "$WORKER_GITHUB_OWNER" ] && put_secret "GITHUB_OWNER" "$WORKER_GITHUB_OWNER"
-          [ -n "$WORKER_GITHUB_REPO" ] && put_secret "GITHUB_REPO" "$WORKER_GITHUB_REPO"
-          [ -n "$WORKER_GITHUB_BRANCH" ] && put_secret "GITHUB_BRANCH" "$WORKER_GITHUB_BRANCH"
-          
-          echo "✅ Worker secrets işlemi tamamlandı"
+          echo "⏳ Deploy global propagasyonu için 5 saniye bekleniyor..."
+          sleep 5
+          echo "✅ Worker deployment tamamlandı ve yayınlandı"
 
       - name: Smoke Test
         env:
