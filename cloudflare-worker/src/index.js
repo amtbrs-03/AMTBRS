@@ -76,7 +76,64 @@ export default {
         } catch (e) {
           commitError = (e && e.message) ? e.message : String(e);
         }
-        const body = JSON.stringify({ ok: true, orderId, commitOk, commitStatus, commitError, order });
+        // Attempt email notification via Resend if order was committed
+        let emailOk = false, emailError = null;
+        if (commitOk) {
+          try {
+            const toEmail = env.TO_EMAIL || '';
+            const fromEmail = env.FROM_EMAIL || 'no-reply@ern-cicek.com.tr';
+            const resendKey = env.RESEND_API_KEY || '';
+            if (toEmail && resendKey) {
+              const emailBody = `
+Yeni Sipariş Received! 🎉
+
+Sipariş ID: ${orderId}
+Müşteri: ${order.customerName}
+Email: ${order.customerEmail}
+Telefon: ${order.customerPhone}
+
+Adres: ${order.address}
+IBAN: ${order.iban}
+
+Ürünler:
+${order.items.map((item, i) => `  ${i + 1}. ${item.name} - ${item.quantity}x @ ${item.price}`).join('\n')}
+
+Toplam: ${order.total}
+
+Tarih: ${new Date(order.date).toLocaleString('tr-TR')}
+Status: ${order.status}
+
+---
+Yönetim Paneli: https://ern-cicek.com.tr/admin.html
+              `.trim();
+              const emailRes = await fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${resendKey}`,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  from: fromEmail,
+                  to: toEmail,
+                  subject: `Yeni Sipariş: ${orderId}`,
+                  text: emailBody
+                })
+              });
+              if (emailRes.ok) {
+                emailOk = true;
+                const emailData = await emailRes.json();
+                console.log('✅ Email sent via Resend:', emailData);
+              } else {
+                emailError = await safeText(emailRes);
+                console.log('❌ Email send failed:', emailRes.status, emailError);
+              }
+            }
+          } catch (e) {
+            emailError = (e && e.message) ? e.message : String(e);
+            console.log('❌ Email exception:', emailError);
+          }
+        }
+        const body = JSON.stringify({ ok: true, orderId, commitOk, commitStatus, commitError, emailOk, emailError, order });
         return new Response(body, { status: commitOk ? 201 : 200, headers: jsonHeaders(allowOrigin) });
       }
 
