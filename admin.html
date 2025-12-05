@@ -1003,6 +1003,13 @@
         }
       } catch(e){ msg.textContent='❌ Hata: ' + (e.message||e); }
     });
+    // Enter tuşu ile giriş
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        btn.click();
+      }
+    });
   }
   document.addEventListener('DOMContentLoaded', bindAdminGate);
   // Parola güncelleme: GitHub’a yeni hash yaz (isteğe bağlı kullanım için global yap)
