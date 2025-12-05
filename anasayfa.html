@@ -2100,24 +2100,42 @@
                         
                         // GitHub'a tam kullanıcı verisiyle kaydet (Contents API) - ZORUNLU
                         console.log('registerUser: GitHub içeriklerine kaydediliyor...');
+                        let remoteSuccess = false;
                         try{
-                            const remoteSuccess = await commitFullUserToRepo(stored);
+                            remoteSuccess = await commitFullUserToRepo(stored);
                             if (remoteSuccess) {
                                 console.log('registerUser: ✓ GitHub kaydı başarılı');
+                                // Kayıt başarılı - giriş yapabilir
+                                alert('✅ Kayıt başarıyla tamamlandı!\n\nBilgileriniz güvenli bir şekilde kaydedildi.\nŞimdi giriş yapabilirsiniz.');
+                                switchTab('login', document.querySelector('.form-tab'));
+                                document.getElementById('loginEmail').value = email;
+                                return;
                             } else {
                                 console.error('registerUser: GitHub kayıt başarısız oldu');
-                                alert('Kayıt sırasında bir hata oluştu. Lütfen internet bağlantınızı kontrol edip tekrar deneyin.');
+                                alert('❌ Kayıt başarısız oldu!\n\nSunucuya bağlanılamadı veya kayıt işlemi tamamlanamadı.\n\nLütfen:\n- İnternet bağlantınızı kontrol edin\n- Birkaç dakika bekleyip tekrar deneyin\n- Sorun devam ederse destek ile iletişime geçin');
                                 return;
                             }
                         }catch(e){
                             console.error('registerUser: GitHub kayıt hatası', e);
-                            alert('Kayıt sırasında bir hata oluştu: ' + (e.message || 'Bilinmeyen hata') + '. Lütfen internet bağlantınızı kontrol edip tekrar deneyin.');
+                            const errorMsg = e.message || 'Bilinmeyen hata';
+                            let userFriendlyMsg = '❌ Kayıt sırasında hata oluştu!\n\n';
+                            
+                            // Hata tipine göre özelleştirilmiş mesajlar
+                            if (errorMsg.includes('network') || errorMsg.includes('fetch')) {
+                                userFriendlyMsg += 'Ağ bağlantısı hatası tespit edildi.\n\nLütfen internet bağlantınızı kontrol edin ve tekrar deneyin.';
+                            } else if (errorMsg.includes('401') || errorMsg.includes('403')) {
+                                userFriendlyMsg += 'Yetkilendirme hatası.\n\nSistem geçici olarak kullanılamıyor olabilir.\nLütfen daha sonra tekrar deneyin.';
+                            } else if (errorMsg.includes('422') || errorMsg.includes('409')) {
+                                userFriendlyMsg += 'Bu email adresi zaten kayıtlı olabilir.\n\nLütfen giriş yapmayı deneyin veya farklı bir email kullanın.';
+                            } else if (errorMsg.includes('500') || errorMsg.includes('503')) {
+                                userFriendlyMsg += 'Sunucu geçici olarak hizmet veremiyor.\n\nLütfen birkaç dakika bekleyip tekrar deneyin.';
+                            } else {
+                                userFriendlyMsg += 'Teknik Hata: ' + errorMsg + '\n\nLütfen daha sonra tekrar deneyin veya destek ile iletişime geçin.';
+                            }
+                            
+                            alert(userFriendlyMsg);
                             return;
                         }
-                        
-                        // Tek bildirim göster
-                        alert('Kayıt başarılı! Şimdi giriş yapabilirsiniz.');
-                        switchTab('login', document.querySelector('.form-tab'));
                         document.getElementById('registerName').value = '';
                         document.getElementById('registerEmail').value = '';
                         document.getElementById('registerPassword').value = '';
