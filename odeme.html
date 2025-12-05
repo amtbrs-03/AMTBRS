@@ -407,6 +407,17 @@
         status: 'pending',
         address: buildDefaultAddressFor(addressEmailCandidate)
       };
+      
+      console.log('📋 Sipariş objesi oluşturuldu:');
+      console.log('   ID:', order.id);
+      console.log('   Email:', order.customerEmail);
+      console.log('   Ad:', order.customerName);
+      console.log('   Telefon:', order.customerPhone);
+      console.log('   Ürün sayısı:', order.items?.length || 0);
+      console.log('   Toplam:', order.total);
+      console.log('   IBAN:', order.iban ? 'Var' : 'Yok');
+      console.log('   Adres:', order.address);
+      console.log('   Tüm sipariş:', order);
 
       console.log('Sipariş oluşturuldu:', order);
 
@@ -428,11 +439,23 @@
             console.log('Site settings orderEndpoint öne alındı:', s.orderEndpoint);
           }
         }catch(_){/* ignore */}
+        
+        console.log('🔗 Denecek uç noktalar sırası:');
+        endpointCandidates.forEach((url, i) => console.log(`   ${i + 1}. ${url}`));
+
         let resp = null;
         let lastErr = null;
         for (const url of endpointCandidates) {
           try {
-            console.log('Sunucu uç noktasına gönderiliyor:', url);
+            console.log('📤 Deneme uç noktası:', url);
+            console.log('📦 Gönderilen veri:', {
+              customerEmail: order.customerEmail,
+              customerName: order.customerName,
+              total: order.total,
+              itemCount: order.items?.length || 0
+            });
+            
+            const reqStart = Date.now();
             resp = await fetch(url, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -455,9 +478,32 @@
                 }
               })
             });
-            if (resp && resp.ok) break;
-            lastErr = new Error('HTTP ' + (resp ? resp.status : 'no-response'));
+            
+            const reqTime = Date.now() - reqStart;
+            console.log(`⏱️ İstek süresi: ${reqTime}ms`);
+            console.log(`📥 Yanıt durumu: ${resp.status} ${resp.statusText}`);
+            console.log(`📋 Yanıt başlıkları:`, {
+              'content-type': resp.headers.get('content-type'),
+              'content-length': resp.headers.get('content-length')
+            });
+            
+            if (resp && resp.ok) {
+              console.log('✅ Uç nokta başarılı!');
+              break;
+            }
+            
+            // Read response body for error details
+            let respText = '';
+            try {
+              respText = await resp.clone().text();
+            } catch(e) {
+              console.log('⚠️ Yanıt gövdesi okunamadı:', e.message);
+            }
+            console.log(`❌ Uç nokta başarısız. Yanıt:`, respText.substring(0, 200));
+            lastErr = new Error('HTTP ' + (resp ? resp.status : 'no-response') + ' - ' + respText.substring(0, 100));
           } catch (e) {
+            console.error('🔴 Fetch hatası:', e.message);
+            console.error('Stack:', e.stack);
             lastErr = e;
           }
         }
@@ -492,6 +538,11 @@
           const commitInfo = (data && typeof data.commitOk === 'boolean')
             ? (data.commitOk ? 'Depo kaydı tamamlandı.' : 'Depo kaydı başarısız: ' + (data.commitStatus || 'bilinmeyen durum'))
             : 'Depo kaydı bilgisi alınamadı.';
+          console.log('✅ Sipariş başarıyla işlendi:', {
+            orderId: finalId,
+            commitInfo: commitInfo,
+            serverData: data
+          });
           setStatus('Sipariş alındı. No: ' + finalId + ' – ' + commitInfo, 'status-success');
           const successMsg = '<p><strong>Siparişiniz başarıyla kaydedildi!</strong></p>' +
             '<p>Sipariş No: <span class="code">' + finalId + '</span></p>' +
@@ -501,7 +552,10 @@
             window.location.href = '/anasayfa.html';
           });
         } else {
-          console.error('Sunucu uç noktası başarısız:', lastErr);
+          console.error('❌ Tüm uç noktalar başarısız oldu!');
+          console.error('Son hata:', lastErr);
+          console.error('Hata mesajı:', lastErr?.message);
+          console.error('Hata stack:', lastErr?.stack);
           // GitHub Pages gibi statik ortamda 405/404 olabilir; önce GitHub'a siparişi kaydetmeyi dene, ardından mailto fallback kullan
           try {
             // Sunucu tarafı commit yoksa ve ortam static ise kullanıcıya net bilgi ver
@@ -532,6 +586,8 @@
             try { orders = JSON.parse(localStorage.getItem(backupKey) || '[]'); } catch(e) {}
             orders.push(order);
             localStorage.setItem(backupKey, JSON.stringify(orders));
+            console.log('💾 Sipariş localStorage\'a kaydedildi:', backupKey);
+            
             // Sepeti temizle
             if (payerEmail) {
               try { localStorage.removeItem('cart_' + payerEmail); } catch(e) {}
@@ -543,6 +599,8 @@
                 }
               } catch(e) {}
             }
+            console.log('🗑️ Sepet temizlendi');
+            
             // Kullanıcıya bilgi ve mailto aç
             setStatus('Sunucuya kaydedilemedi, e-posta bildirimi açıldı. Sipariş No: ' + order.id, 'status-warn');
             const fallbackMsg = '<p><strong>Sunucuya doğrudan bildirim yapılamadı.</strong></p>' +
@@ -558,11 +616,15 @@
           }
         }
       } catch(err) {
-        console.error('Sipariş kaydı başarısız:', err);
+        console.error('🔴 Sipariş kaydı başarısız!');
+        console.error('Hata mesajı:', err.message);
+        console.error('Hata stack:', err.stack);
+        console.error('Tüm hata objesi:', err);
         setStatus('Sipariş hatası: ' + err.message, 'status-error');
         const errorMsg = '<p><strong>Sipariş kaydedilemedi!</strong></p>' +
           '<p>Hata: ' + (err.message || 'bilinmeyen hata') + '</p>' +
-          '<p>Lütfen tekrar deneyin veya iletişime geçin.</p>';
+          '<p>Lütfen tekrar deneyin veya iletişime geçin.</p>' +
+          '<p style="font-size:0.85rem;color:#888;margin-top:1rem;word-break:break-all;">' + err.stack + '</p>';
         showNotification('❌ Hata', errorMsg, 'error');
         btn.textContent = 'Siparişi Bildir';
         btn.disabled = false;
