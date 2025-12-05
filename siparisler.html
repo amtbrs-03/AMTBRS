@@ -655,8 +655,8 @@
         const custEmail = normalizeText(order.customerEmail || order.payerEmail || '');
         html += `<td style="font-weight:600;">${escapeHtml(custName || '-')}</td>`;
         html += `<td style="color:var(--muted);font-size:0.9rem;">${escapeHtml(custEmail || '-')}</td>`;
-          html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; color:#0f172a;">${escapeHtml(order.customerPhone || '-')}</td>`;
-        html += `<td style="font-weight:700;color:#059669;">₺${escapeHtml(order.total || '0')}</td>`;
+          html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; color:#0f172a;">${escapeHtml(String(order.customerPhone || '-'))}</td>`;
+        html += `<td style="font-weight:700;color:#059669;">₺${escapeHtml(String(order.total || '0'))}</td>`;
         html += `<td style="color:var(--muted);font-size:0.9rem;">${orderDate}</td>`;
         html += `<td>${statusBadge}</td>`;
         html += `<td style="color:#334155;font-size:0.9rem;" title="${escapeHtml(addressText)}">${escapeHtml(addressShort)}</td>`;
