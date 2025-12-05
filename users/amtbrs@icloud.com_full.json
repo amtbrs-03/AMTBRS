@@ -1,0 +1,19 @@
+{
+  "name": "AHMET BURSA",
+  "email": "amtbrs@icloud.com",
+  "pw": {
+    "algo": "PBKDF2-SHA256",
+    "iterations": 150000,
+    "salt": "8cgQTzp1kJ4ZdoAfwH66xg==",
+    "hash": "K6udErvzapyyz8FKAYoGCoKgd02RIOrhbew9o45yfMM="
+  },
+  "address": {
+    "city": "İstanbul",
+    "district": "Kağıthane",
+    "neighborhood": "çağlayan mahallesi",
+    "addressDetail": "Fevziçakmak caddesi No:47 Kısmet Apt. Daire:8",
+    "postalCode": "34100"
+  },
+  "phone": "+90 530 306 9081",
+  "createdAt": 1764978907554
+}
