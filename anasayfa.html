@@ -2562,8 +2562,41 @@
                             return false;
                         }
                         console.log('commitFullUserToRepo: başlıyor →', userRecord.email);
-                        // Client-side direct commit disabled; use Worker instead
-                        return false;
+                        
+                        // Worker endpoint'ine kullanıcı kaydını gönder
+                        try {
+                            const workerUrl = 'https://ern-site.amtbrs-03.workers.dev/update-user';
+                            console.log('commitFullUserToRepo: Worker endpoint çağrılıyor:', workerUrl);
+                            
+                            const response = await fetch(workerUrl, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(userRecord)
+                            });
+                            
+                            console.log('commitFullUserToRepo: Worker yanıtı:', response.status);
+                            
+                            if (response.ok) {
+                                const result = await response.json();
+                                console.log('commitFullUserToRepo: Worker sonucu:', result);
+                                
+                                if (result.commitOk) {
+                                    console.log('commitFullUserToRepo: ✓ GitHub kaydı başarılı');
+                                    return true;
+                                } else {
+                                    console.error('commitFullUserToRepo: Worker commitOk=false:', result.commitError);
+                                    return false;
+                                }
+                            } else {
+                                console.error('commitFullUserToRepo: Worker HTTP hatası:', response.status);
+                                return false;
+                            }
+                        } catch (error) {
+                            console.error('commitFullUserToRepo: Worker çağrı hatası:', error);
+                            return false;
+                        }
                     }
                     
                     // Kullanıcı kaydını uzak repodan getir (raw/CDN + Contents API yedekli)
