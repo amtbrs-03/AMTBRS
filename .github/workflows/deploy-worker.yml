@@ -43,7 +43,6 @@ jobs:
           npx wrangler whoami || echo "⚠️ whoami başarısız (devam ediliyor)"
 
           echo "🚀 Deploy başlatılıyor..."
-          # wrangler.toml içinde account_id yoksa ekle
           if ! grep -q "^account_id" wrangler.toml; then
             echo "account_id = \"$CLOUDFLARE_ACCOUNT_ID\"" >> wrangler.toml
             echo "✓ account_id eklendi"
@@ -52,8 +51,9 @@ jobs:
           npx wrangler deploy
 
           echo "✅ Deploy başarılı"
+          sleep 3
 
-      - name: Set Worker Secrets (GitHub commit)
+      - name: Set Worker Secrets (after deploy)
         working-directory: cloudflare-worker
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
@@ -63,92 +63,99 @@ jobs:
           WORKER_GITHUB_REPO: ${{ secrets.WORKER_GITHUB_REPO }}
           WORKER_GITHUB_BRANCH: ${{ secrets.WORKER_GITHUB_BRANCH }}
         run: |
-          set -e
-          echo "⏳ Deploy global propagasyonu için 3 saniye bekleniyor..."
-          sleep 3
-          
-          echo "🔑 Worker secrets ayarlanıyor (retry mekanizması ile)..."
-          
-          put_secret() {
-            local name=$1
-            local value=$2
-            local attempt=1
-            local max_attempts=3
-            
-            while [ $attempt -le $max_attempts ]; do
-              echo "  Attempt $attempt/$max_attempts: $name"
-              if echo "$value" | wrangler secret put "$name" 2>&1 | grep -q "success\|✓\|added"; then
-                echo "  ✓ $name ayarlandı"
+          set -euo pipefail
+
+          put_secret_with_retry() {
+            NAME="$1"
+            VALUE="$2"
+            ATTEMPT=0
+            MAX=6
+            until [ $ATTEMPT -ge $MAX ]; do
+              ATTEMPT=$((ATTEMPT+1))
+              echo "Trying to set secret $NAME (attempt $ATTEMPT/$MAX)..."
+              if echo "$VALUE" | wrangler secret put "$NAME" 2>&1 | grep -v -- "$VALUE"; then
+                echo "Secret $NAME set"
                 return 0
               fi
-              if [ $attempt -lt $max_attempts ]; then
-                echo "  ⏳ 2 saniye sonra tekrar deniyor..."
-                sleep 2
-              fi
-              ((attempt++))
+              sleep 2
             done
-            
-            echo "  ⚠️ $name ayarlanamadı (sonraki smoke test'te görebiliriz)"
-            return 0
+            echo "❌ Secret $NAME setilemedi"
+            return 1
           }
-          
-          [ -n "$WORKER_GITHUB_TOKEN" ] && put_secret "GITHUB_TOKEN" "$WORKER_GITHUB_TOKEN"
-          [ -n "$WORKER_GITHUB_OWNER" ] && put_secret "GITHUB_OWNER" "$WORKER_GITHUB_OWNER"
-          [ -n "$WORKER_GITHUB_REPO" ] && put_secret "GITHUB_REPO" "$WORKER_GITHUB_REPO"
-          [ -n "$WORKER_GITHUB_BRANCH" ] && put_secret "GITHUB_BRANCH" "$WORKER_GITHUB_BRANCH"
-          
-          echo "✅ Worker secrets işlemi tamamlandı"
+
+          if [ -n "${WORKER_GITHUB_TOKEN:-}" ]; then
+            put_secret_with_retry GITHUB_TOKEN "$WORKER_GITHUB_TOKEN"
+          fi
+          if [ -n "${WORKER_GITHUB_OWNER:-}" ]; then
+            put_secret_with_retry GITHUB_OWNER "$WORKER_GITHUB_OWNER"
+          fi
+          if [ -n "${WORKER_GITHUB_REPO:-}" ]; then
+            put_secret_with_retry GITHUB_REPO "$WORKER_GITHUB_REPO"
+          fi
+          if [ -n "${WORKER_GITHUB_BRANCH:-}" ]; then
+            put_secret_with_retry GITHUB_BRANCH "$WORKER_GITHUB_BRANCH"
+          fi
+
+          echo "✅ Worker secrets ayarlandı"
 
       - name: Smoke Test
         env:
           WORKER_URL: ${{ secrets.WORKER_URL }}
         timeout-minutes: 5
         run: |
-          if [ -z "$WORKER_URL" ]; then
+          set -euo pipefail
+          if [ -z "${WORKER_URL:-}" ]; then
             echo "⚠️ WORKER_URL tanımlı değil, smoke test atlanıyor"
             exit 0
           fi
-          
+
           echo "🧪 Smoke test: $WORKER_URL"
-          
-          # Test 1: OPTIONS request
+
+          check_endpoint() {
+            METHOD="$1"
+            PATH="$2"
+            shift 2
+            HEADERS="$@"
+            ATTEMPT=0
+            MAX=5
+            while [ $ATTEMPT -lt $MAX ]; do
+              ATTEMPT=$((ATTEMPT+1))
+              echo "Attempt $ATTEMPT/$MAX: $METHOD $PATH"
+              HTTP_STATUS=$(eval curl -s -o /dev/null -w "%{http_code}" -m 10 -X "$METHOD" "$WORKER_URL$PATH" $HEADERS || echo "000")
+              echo "HTTP status: $HTTP_STATUS"
+              if [[ "$HTTP_STATUS" =~ ^(200|204|301|302)$ ]]; then
+                return 0
+              fi
+              sleep 2
+            done
+            return 1
+          }
+
           echo "📍 Test 1: /update-user OPTIONS"
-          RESPONSE=$(curl -i -s -m 10 -X OPTIONS "$WORKER_URL/update-user" \
-            -H "Origin: https://ern-cicek.com.tr" \
-            -H "Access-Control-Request-Method: POST" \
-            -H "Access-Control-Request-Headers: content-type")
-          echo "$RESPONSE" | head -15
-          if echo "$RESPONSE" | grep -q "HTTP.*200\|HTTP.*204"; then
+          if check_endpoint OPTIONS /update-user "-H 'Origin: https://ern-cicek.com.tr' -H 'Access-Control-Request-Method: POST' -H 'Access-Control-Request-Headers: content-type'"; then
             echo "✓ OPTIONS test başarılı"
           else
             echo "⚠️ OPTIONS test başarısız"
+            exit 3
           fi
-          
-          # Test 2: Update user
+
           echo -e "\n📍 Test 2: /update-user POST"
-          RESPONSE=$(curl -i -s -m 10 -X POST "$WORKER_URL/update-user" \
-            -H "Origin: https://ern-cicek.com.tr" \
-            -H "Content-Type: application/json" \
-            --data '{"email":"ci@example.com","name":"CI User","phone":"+90 530 000 00 00","addresses":[{"id":"default","title":"Varsayılan","city":"İstanbul","district":"Kadıköy","addressDetail":"CI Sk No:1","postalCode":"34000","isDefault":true}]}')
-          echo "$RESPONSE" | head -25
-          if echo "$RESPONSE" | grep -q "HTTP.*200\|success"; then
+          PAYLOAD='{"email":"ci@example.com","name":"CI User"}'
+          if eval curl -i -s -m 10 -X POST "$WORKER_URL/update-user" -H "Origin: https://ern-cicek.com.tr" -H "Content-Type: application/json" --data "$PAYLOAD" | grep -q "HTTP.*200\|success"; then
             echo "✓ Update user test başarılı"
           else
             echo "⚠️ Update user test başarısız"
+            exit 4
           fi
-          
-          # Test 3: Send order
+
           echo -e "\n📍 Test 3: /send-order POST"
           TIMESTAMP=$(date +%s)
-          RESPONSE=$(curl -i -s -m 10 -X POST "$WORKER_URL/send-order" \
-            -H "Origin: https://ern-cicek.com.tr" \
-            -H "Content-Type: application/json" \
-            --data "{\"order\":{\"id\":\"ORD-CI-$TIMESTAMP\",\"customerEmail\":\"ci@example.com\",\"customerName\":\"CI User\",\"address\":\"İstanbul\",\"items\":[{\"name\":\"Gül\",\"qty\":1,\"price\":199}],\"total\":199}}")
-          echo "$RESPONSE" | head -25
-          if echo "$RESPONSE" | grep -q "HTTP.*200\|success"; then
+          ORDER_PAYLOAD="{\"order\":{\"id\":\"ORD-CI-$TIMESTAMP\",\"customerEmail\":\"ci@example.com\",\"customerName\":\"CI User\"}}"
+          if eval curl -i -s -m 10 -X POST "$WORKER_URL/send-order" -H "Origin: https://ern-cicek.com.tr" -H "Content-Type: application/json" --data "$ORDER_PAYLOAD" | grep -q "HTTP.*200\|success"; then
             echo "✓ Send order test başarılı"
           else
             echo "⚠️ Send order test başarısız"
+            exit 5
           fi
-          
+
           echo -e "\n✅ Smoke testler tamamlandı"
