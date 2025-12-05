@@ -47,13 +47,13 @@ export default {
             // check existing
             let existingSha = null;
             try {
-              const headRes = await fetch(apiUrl + `?ref=${branch}`, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' } });
+              const headRes = await fetch(apiUrl + `?ref=${branch}`, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'Cloudflare-Worker' } });
               if (headRes.ok) { const j = await headRes.json(); existingSha = j.sha; }
             } catch (_) {}
             const content = btoa(unescape(encodeURIComponent(JSON.stringify(order, null, 2))));
             const body = { message: `feat(order): create ${orderId}`, content, branch };
             if (existingSha) body.sha = existingSha;
-            const putRes = await fetch(apiUrl, { method: 'PUT', headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            const putRes = await fetch(apiUrl, { method: 'PUT', headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json', 'User-Agent': 'Cloudflare-Worker' }, body: JSON.stringify(body) });
             commitStatus = putRes.status;
             if (putRes.ok) commitOk = true; else commitError = await safeText(putRes);
           }
@@ -86,13 +86,13 @@ export default {
             // check existing
             let existingSha = null;
             try {
-              const headRes = await fetch(apiUrl + `?ref=${branch}`, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' } });
+              const headRes = await fetch(apiUrl + `?ref=${branch}`, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'Cloudflare-Worker' } });
               if (headRes.ok) { const j = await headRes.json(); existingSha = j.sha; }
             } catch (_) {}
             const content = btoa(unescape(encodeURIComponent(JSON.stringify(user, null, 2))));
             const body = { message: `feat(user): update ${safeEmail}`, content, branch };
             if (existingSha) body.sha = existingSha;
-            const putRes = await fetch(apiUrl, { method: 'PUT', headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            const putRes = await fetch(apiUrl, { method: 'PUT', headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json', 'User-Agent': 'Cloudflare-Worker' }, body: JSON.stringify(body) });
             commitStatus = putRes.status;
             if (putRes.ok) commitOk = true; else commitError = await safeText(putRes);
           } else {
