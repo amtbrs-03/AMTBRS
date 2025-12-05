@@ -1,4 +1,4 @@
-name = "send-order-worker"
+name = "ern-site"
 main = "cloudflare-worker/send-order.js"
 compatibility_date = "2025-12-02"
 
