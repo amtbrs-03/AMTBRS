@@ -45,7 +45,7 @@ jobs:
           echo "🚀 Deploy başlatılıyor..."
           # wrangler.toml içinde account_id yoksa ekle
           if ! grep -q "^account_id" wrangler.toml; then
-            echo "account_id = \"$CLOUDFLARE_ACCOUNT_ID\"" > wrangler.toml
+            echo "account_id = \"$CLOUDFLARE_ACCOUNT_ID\"" >> wrangler.toml
             echo "✓ account_id eklendi"
           fi
 
@@ -76,8 +76,8 @@ jobs:
             until [ $ATTEMPT -ge $MAX ]; do
               ATTEMPT=$((ATTEMPT+1))
               echo "Trying to set secret $NAME (attempt $ATTEMPT/$MAX)..."
-              # Use echo to stream value to wrangler and filter the value out of logs for safety
-              if echo "$VALUE" | wrangler secret put "$NAME" 2>&1 | grep -v -- "$VALUE"; then
+              # Use echo to stream value to wrangler, suppress stderr to avoid leaking secret
+              if echo "$VALUE" | wrangler secret put "$NAME" 2>/dev/null; then
                 echo "Secret $NAME set"
                 return 0
               fi
@@ -117,17 +117,16 @@ jobs:
           echo "🧪 Smoke test: $WORKER_URL"
 
           # helper to check endpoints with retries
-          check_endpoint() {
-            METHOD="$1"
-            PATH="$2"
-            shift 2
-            HEADERS="$@"
+          check_endpoint_options() {
             ATTEMPT=0
             MAX=5
             while [ $ATTEMPT -lt $MAX ]; do
               ATTEMPT=$((ATTEMPT+1))
-              echo "Attempt $ATTEMPT/$MAX: $METHOD $PATH"
-              HTTP_STATUS=$(eval curl -s -o /dev/null -w "%{http_code}" -m 10 -X "$METHOD" "$WORKER_URL$PATH" $HEADERS || echo "000")
+              echo "Attempt $ATTEMPT/$MAX: OPTIONS /update-user"
+              HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -m 10 -X OPTIONS "$WORKER_URL/update-user" \
+                -H "Origin: https://ern-cicek.com.tr" \
+                -H "Access-Control-Request-Method: POST" \
+                -H "Access-Control-Request-Headers: content-type" || echo "000")
               echo "HTTP status: $HTTP_STATUS"
               if [[ "$HTTP_STATUS" =~ ^(200|204|301|302)$ ]]; then
                 return 0
@@ -138,7 +137,7 @@ jobs:
           }
 
           echo "📍 Test 1: /update-user OPTIONS"
-          if check_endpoint OPTIONS /update-user "-H 'Origin: https://ern-cicek.com.tr' -H 'Access-Control-Request-Method: POST' -H 'Access-Control-Request-Headers: content-type'"; then
+          if check_endpoint_options; then
             echo "✓ OPTIONS test başarılı"
           else
             echo "⚠️ OPTIONS test başarısız"
@@ -148,7 +147,10 @@ jobs:
           echo -e "\n📍 Test 2: /update-user POST"
           # POST payload truncated for brevity; keep same payload as original repo
           PAYLOAD='{"email":"ci@example.com","name":"CI User"}'
-          if eval curl -i -s -m 10 -X POST "$WORKER_URL/update-user" -H "Origin: https://ern-cicek.com.tr" -H "Content-Type: application/json" --data "$PAYLOAD" | grep -q "HTTP.*200\|success"; then
+          if curl -i -s -m 10 -X POST "$WORKER_URL/update-user" \
+            -H "Origin: https://ern-cicek.com.tr" \
+            -H "Content-Type: application/json" \
+            --data "$PAYLOAD" | grep -q "HTTP.*200\|success"; then
             echo "✓ Update user test başarılı"
           else
             echo "⚠️ Update user test başarısız"
@@ -158,7 +160,10 @@ jobs:
           echo -e "\n📍 Test 3: /send-order POST"
           TIMESTAMP=$(date +%s)
           ORDER_PAYLOAD="{\"order\":{\"id\":\"ORD-CI-$TIMESTAMP\",\"customerEmail\":\"ci@example.com\",\"customerName\":\"CI User\"}}"
-          if eval curl -i -s -m 10 -X POST "$WORKER_URL/send-order" -H "Origin: https://ern-cicek.com.tr" -H "Content-Type: application/json" --data "$ORDER_PAYLOAD" | grep -q "HTTP.*200\|success"; then
+          if curl -i -s -m 10 -X POST "$WORKER_URL/send-order" \
+            -H "Origin: https://ern-cicek.com.tr" \
+            -H "Content-Type: application/json" \
+            --data "$ORDER_PAYLOAD" | grep -q "HTTP.*200\|success"; then
             echo "✓ Send order test başarılı"
           else
             echo "⚠️ Send order test başarısız"
