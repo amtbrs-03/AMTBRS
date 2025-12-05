@@ -5,7 +5,12 @@ export default {
     const origin = request.headers.get('Origin') || '';
 
     // Allow only our site in production; adjust as needed
-    const allowed = [/^https?:\/\/(www\.)?ern-cicek\.com\.tr$/i];
+    const allowed = [
+      /^https?:\/\/(www\.)?ern-cicek\.com\.tr$/i,
+      /^https?:\/\/amtbrs-03\.github\.io(?:\/.*)?$/i,
+      /^https?:\/\/ern-site\.amtbrs-03\.workers\.dev$/i,
+      /^https?:\/\/localhost(?::\d+)?$/i
+    ];
     const allowOrigin = allowed.some(r => r.test(origin)) ? origin : '*';
 
     // CORS Preflight

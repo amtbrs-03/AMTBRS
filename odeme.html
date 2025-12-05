@@ -282,6 +282,9 @@
           '/api/send-order',
           '/functions/send-order'
         ];
+        // Daima bilinen Worker uç noktasını en başa ekle (settings yüklenemese bile)
+        const defaultWorkerEndpoint = 'https://ern-site.amtbrs-03.workers.dev/send-order';
+        endpointCandidates.unshift(defaultWorkerEndpoint);
         try{
           const s = await loadSettings();
           if (s && s.orderEndpoint && typeof s.orderEndpoint === 'string') {
