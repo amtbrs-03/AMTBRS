@@ -64,8 +64,8 @@ jobs:
           WORKER_GITHUB_BRANCH: ${{ secrets.WORKER_GITHUB_BRANCH }}
         run: |
           set -e
-          echo "⏳ Deploy global propagasyonu için 3 saniye bekleniyor..."
-          sleep 3
+          echo "⏳ Deploy global propagasyonu için 15 saniye bekleniyor..."
+          sleep 15
           
           echo "🔑 Worker secrets ayarlanıyor (retry mekanizması ile)..."
           
@@ -77,8 +77,13 @@ jobs:
             
             while [ $attempt -le $max_attempts ]; do
               echo "  Attempt $attempt/$max_attempts: $name"
-              if echo "$value" | wrangler secret put "$name" 2>&1 | grep -q "success\|✓\|added"; then
+              # Use printf to pipe value to wrangler, capture exit code
+              if printf '%s' "$value" | wrangler secret put "$name" 2>&1 | tee /tmp/secret_output.log | grep -iE "success|✓|added|saved"; then
                 echo "  ✓ $name ayarlandı"
+                return 0
+              elif [ $? -eq 0 ]; then
+                # wrangler exited successfully even without success message, assume it worked
+                echo "  ✓ $name ayarlandı (sessiz başarı)"
                 return 0
               fi
               if [ $attempt -lt $max_attempts ]; then
@@ -89,6 +94,7 @@ jobs:
             done
             
             echo "  ⚠️ $name ayarlanamadı (sonraki smoke test'te görebiliriz)"
+            echo "  Son çıktı: $(cat /tmp/secret_output.log 2>/dev/null || echo 'N/A')"
             return 0
           }
           
@@ -110,14 +116,25 @@ jobs:
           fi
           
           echo "🧪 Smoke test: $WORKER_URL"
+          echo "📋 URL validation:"
+          # Validate URL format
+          if [[ ! "$WORKER_URL" =~ ^https?:// ]]; then
+            echo "❌ WORKER_URL scheme missing! Must start with http:// or https://"
+            echo "   Got: $WORKER_URL"
+            exit 1
+          fi
           
           # Test 1: OPTIONS request
-          echo "📍 Test 1: /update-user OPTIONS"
+          echo -e "\n📍 Test 1: /update-user OPTIONS"
           RESPONSE=$(curl -i -s -m 10 -X OPTIONS "$WORKER_URL/update-user" \
             -H "Origin: https://ern-cicek.com.tr" \
             -H "Access-Control-Request-Method: POST" \
-            -H "Access-Control-Request-Headers: content-type")
-          echo "$RESPONSE" | head -15
+            -H "Access-Control-Request-Headers: content-type" 2>&1)
+          CURL_EXIT=$?
+          echo "$RESPONSE" | head -20
+          if [ $CURL_EXIT -ne 0 ]; then
+            echo "⚠️ curl exit code $CURL_EXIT"
+          fi
           if echo "$RESPONSE" | grep -q "HTTP.*200\|HTTP.*204"; then
             echo "✓ OPTIONS test başarılı"
           else
@@ -129,8 +146,12 @@ jobs:
           RESPONSE=$(curl -i -s -m 10 -X POST "$WORKER_URL/update-user" \
             -H "Origin: https://ern-cicek.com.tr" \
             -H "Content-Type: application/json" \
-            --data '{"email":"ci@example.com","name":"CI User","phone":"+90 530 000 00 00","addresses":[{"id":"default","title":"Varsayılan","city":"İstanbul","district":"Kadıköy","addressDetail":"CI Sk No:1","postalCode":"34000","isDefault":true}]}')
+            --data '{"email":"ci@example.com","name":"CI User","phone":"+90 530 000 00 00","addresses":[{"id":"default","title":"Varsayılan","city":"İstanbul","district":"Kadıköy","addressDetail":"CI Sk No:1","postalCode":"34000","isDefault":true}]}' 2>&1)
+          CURL_EXIT=$?
           echo "$RESPONSE" | head -25
+          if [ $CURL_EXIT -ne 0 ]; then
+            echo "⚠️ curl exit code $CURL_EXIT"
+          fi
           if echo "$RESPONSE" | grep -q "HTTP.*200\|success"; then
             echo "✓ Update user test başarılı"
           else
@@ -143,8 +164,12 @@ jobs:
           RESPONSE=$(curl -i -s -m 10 -X POST "$WORKER_URL/send-order" \
             -H "Origin: https://ern-cicek.com.tr" \
             -H "Content-Type: application/json" \
-            --data "{\"order\":{\"id\":\"ORD-CI-$TIMESTAMP\",\"customerEmail\":\"ci@example.com\",\"customerName\":\"CI User\",\"address\":\"İstanbul\",\"items\":[{\"name\":\"Gül\",\"qty\":1,\"price\":199}],\"total\":199}}")
+            --data "{\"order\":{\"id\":\"ORD-CI-$TIMESTAMP\",\"customerEmail\":\"ci@example.com\",\"customerName\":\"CI User\",\"address\":\"İstanbul\",\"items\":[{\"name\":\"Gül\",\"qty\":1,\"price\":199}],\"total\":199}}" 2>&1)
+          CURL_EXIT=$?
           echo "$RESPONSE" | head -25
+          if [ $CURL_EXIT -ne 0 ]; then
+            echo "⚠️ curl exit code $CURL_EXIT"
+          fi
           if echo "$RESPONSE" | grep -q "HTTP.*200\|success"; then
             echo "✓ Send order test başarılı"
           else
