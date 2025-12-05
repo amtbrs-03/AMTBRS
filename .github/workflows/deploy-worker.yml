@@ -29,31 +29,6 @@ jobs:
           [ -n "$CLOUDFLARE_ACCOUNT_ID" ] || (echo "❌ CLOUDFLARE_ACCOUNT_ID (CF_ACCOUNT_ID) eksik" && exit 1)
           echo "✅ Cloudflare secrets hazır"
 
-      - name: Set Worker Secrets (GitHub commit)
-        working-directory: cloudflare-worker
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-          WORKER_GITHUB_TOKEN: ${{ secrets.WORKER_GITHUB_TOKEN }}
-          WORKER_GITHUB_OWNER: ${{ secrets.WORKER_GITHUB_OWNER }}
-          WORKER_GITHUB_REPO: ${{ secrets.WORKER_GITHUB_REPO }}
-          WORKER_GITHUB_BRANCH: ${{ secrets.WORKER_GITHUB_BRANCH }}
-        run: |
-          set -e
-          if [ -n "$WORKER_GITHUB_TOKEN" ]; then
-            echo "$WORKER_GITHUB_TOKEN" | wrangler secret put GITHUB_TOKEN 2>&1 | grep -v "$WORKER_GITHUB_TOKEN" || true
-          fi
-          if [ -n "$WORKER_GITHUB_OWNER" ]; then
-            echo "$WORKER_GITHUB_OWNER" | wrangler secret put GITHUB_OWNER 2>&1 | grep -v "$WORKER_GITHUB_OWNER" || true
-          fi
-          if [ -n "$WORKER_GITHUB_REPO" ]; then
-            echo "$WORKER_GITHUB_REPO" | wrangler secret put GITHUB_REPO 2>&1 | grep -v "$WORKER_GITHUB_REPO" || true
-          fi
-          if [ -n "$WORKER_GITHUB_BRANCH" ]; then
-            echo "$WORKER_GITHUB_BRANCH" | wrangler secret put GITHUB_BRANCH 2>&1 | grep -v "$WORKER_GITHUB_BRANCH" || true
-          fi
-          echo "✅ Worker secrets ayarlandı"
-
       - name: Deploy Worker
         working-directory: cloudflare-worker
         env:
@@ -77,6 +52,52 @@ jobs:
           npx wrangler deploy
 
           echo "✅ Deploy başarılı"
+
+      - name: Set Worker Secrets (GitHub commit)
+        working-directory: cloudflare-worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          WORKER_GITHUB_TOKEN: ${{ secrets.WORKER_GITHUB_TOKEN }}
+          WORKER_GITHUB_OWNER: ${{ secrets.WORKER_GITHUB_OWNER }}
+          WORKER_GITHUB_REPO: ${{ secrets.WORKER_GITHUB_REPO }}
+          WORKER_GITHUB_BRANCH: ${{ secrets.WORKER_GITHUB_BRANCH }}
+        run: |
+          set -e
+          echo "⏳ Deploy global propagasyonu için 3 saniye bekleniyor..."
+          sleep 3
+          
+          echo "🔑 Worker secrets ayarlanıyor (retry mekanizması ile)..."
+          
+          put_secret() {
+            local name=$1
+            local value=$2
+            local attempt=1
+            local max_attempts=3
+            
+            while [ $attempt -le $max_attempts ]; do
+              echo "  Attempt $attempt/$max_attempts: $name"
+              if echo "$value" | wrangler secret put "$name" 2>&1 | grep -q "success\|✓\|added"; then
+                echo "  ✓ $name ayarlandı"
+                return 0
+              fi
+              if [ $attempt -lt $max_attempts ]; then
+                echo "  ⏳ 2 saniye sonra tekrar deniyor..."
+                sleep 2
+              fi
+              ((attempt++))
+            done
+            
+            echo "  ⚠️ $name ayarlanamadı (sonraki smoke test'te görebiliriz)"
+            return 0
+          }
+          
+          [ -n "$WORKER_GITHUB_TOKEN" ] && put_secret "GITHUB_TOKEN" "$WORKER_GITHUB_TOKEN"
+          [ -n "$WORKER_GITHUB_OWNER" ] && put_secret "GITHUB_OWNER" "$WORKER_GITHUB_OWNER"
+          [ -n "$WORKER_GITHUB_REPO" ] && put_secret "GITHUB_REPO" "$WORKER_GITHUB_REPO"
+          [ -n "$WORKER_GITHUB_BRANCH" ] && put_secret "GITHUB_BRANCH" "$WORKER_GITHUB_BRANCH"
+          
+          echo "✅ Worker secrets işlemi tamamlandı"
 
       - name: Smoke Test
         env:
