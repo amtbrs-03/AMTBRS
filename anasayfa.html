@@ -1254,11 +1254,13 @@
                                 </div>
                                 <div class="form-group">
                                     <label>İlçe</label>
-                                    <input type="text" id="registerDistrict" placeholder="İlçe" style="width:100%; padding:0.8rem; border:1px solid rgba(10,12,30,0.1); border-radius:8px; font-size:1rem;">
+                                    <select id="registerDistrict" style="width:100%; padding:0.8rem; border:1px solid rgba(10,12,30,0.1); border-radius:8px; font-size:1rem; background:white; cursor:pointer;">
+                                        <option value="">Önce il seçiniz</option>
+                                    </select>
                                 </div>
                                 <div class="form-group">
                                     <label>Mahalle</label>
-                                    <input type="text" id="registerNeighborhood" placeholder="Mahalle" style="width:100%; padding:0.8rem; border:1px solid rgba(10,12,30,0.1); border-radius:8px; font-size:1rem;">
+                                    <input type="text" id="registerNeighborhood" placeholder="Mahalle adı giriniz" style="width:100%; padding:0.8rem; border:1px solid rgba(10,12,30,0.1); border-radius:8px; font-size:1rem;">
                                 </div>
                                 <div class="form-group">
                                     <label>Adres Detayı</label>
@@ -4295,6 +4297,45 @@ document.addEventListener('click', function(ev){
                 if (resp.ok && data && data.commitOk){ setStatus('✅ Adres GitHub ile senkronize edildi.'); }
                 else { setStatus('⚠️ Sunucu yanıtı: ' + (data?.commitError || resp.status)); }
             } catch(e){ setStatus('❌ Hata: ' + e.message); }
+        });
+    })();
+
+    // İl/İlçe/Mahalle dinamik yükleme sistemi
+    (function(){
+        // Türkiye illeri ve ilçeleri (kompakt veri - en çok kullanılan iller)
+        const cityData = {
+            "İstanbul": ["Adalar","Arnavutköy","Ataşehir","Avcılar","Bağcılar","Bahçelievler","Bakırköy","Başakşehir","Bayrampaşa","Beşiktaş","Beykoz","Beylikdüzü","Beyoğlu","Büyükçekmece","Çatalca","Çekmeköy","Esenler","Esenyurt","Eyüpsultan","Fatih","Gaziosmanpaşa","Güngören","Kadıköy","Kağıthane","Kartal","Küçükçekmece","Maltepe","Pendik","Sancaktepe","Sarıyer","Silivri","Sultanbeyli","Sultangazi","Şile","Şişli","Tuzla","Ümraniye","Üsküdar","Zeytinburnu"],
+            "Ankara": ["Akyurt","Altındağ","Ayaş","Balâ","Beypazarı","Çamlıdere","Çankaya","Çubuk","Elmadağ","Etimesgut","Evren","Gölbaşı","Güdül","Haymana","Kahramankazan","Kalecik","Keçiören","Kızılcahamam","Mamak","Nallıhan","Polatlı","Pursaklar","Sincan","Şereflikoçhisar","Yenimahalle"],
+            "İzmir": ["Aliağa","Balçova","Bayındır","Bayraklı","Bergama","Beydağ","Bornova","Buca","Çeşme","Çiğli","Dikili","Foça","Gaziemir","Güzelbahçe","Karabağlar","Karaburun","Karşıyaka","Kemalpaşa","Kınık","Kiraz","Konak","Menderes","Menemen","Narlıdere","Ödemiş","Seferihisar","Selçuk","Tire","Torbalı","Urla"],
+            "Adana": ["Aladağ","Ceyhan","Çukurova","Feke","İmamoğlu","Karaisalı","Karataş","Kozan","Pozantı","Saimbeyli","Sarıçam","Seyhan","Tufanbeyli","Yumurtalık","Yüreğir"],
+            "Bursa": ["Büyükorhan","Gemlik","Gürsu","Harmancık","İnegöl","İznik","Karacabey","Keles","Kestel","Mudanya","Mustafakemalpaşa","Nilüfer","Orhaneli","Orhangazi","Osmangazi","Yenişehir","Yıldırım"],
+            "Antalya": ["Akseki","Alanya","Aksu","Demre","Döşemealtı","Elmalı","Finike","Gazipaşa","Gündoğmuş","İbradı","Kaş","Kemer","Kepez","Konyaaltı","Korkuteli","Kumluca","Manavgat","Muratpaşa","Serik"]
+        };
+
+        const districtSelect = document.getElementById('registerDistrict');
+        const citySelect = document.getElementById('registerCity');
+
+        if (!citySelect || !districtSelect) return;
+
+        // İl seçildiğinde ilçeleri yükle
+        citySelect.addEventListener('change', function(){
+            const city = this.value;
+            districtSelect.innerHTML = '<option value="">İlçe Seçiniz</option>';
+            
+            if (city && cityData[city]) {
+                cityData[city].forEach(district => {
+                    const opt = document.createElement('option');
+                    opt.value = district;
+                    opt.textContent = district;
+                    districtSelect.appendChild(opt);
+                });
+            } else if (city) {
+                // Listede olmayan iller için manuel giriş opsiyonu
+                const opt = document.createElement('option');
+                opt.value = "";
+                opt.textContent = "İlçe adını manuel yazınız";
+                districtSelect.appendChild(opt);
+            }
         });
     })();
     </script>
