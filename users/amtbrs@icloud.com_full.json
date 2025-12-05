@@ -1,31 +1,4 @@
 {
-  "name": "Ahmet BURSA",
   "email": "amtbrs@icloud.com",
-  "pw": {
-    "algo": "PBKDF2-SHA256",
-    "iterations": 150000,
-    "salt": "rhE3hOdyBJB7CWuMXbXirQ==",
-    "hash": "oQpOb2H/gwPH2/ZRl7alWdGssCbnw95dx4aCaCAXIF4="
-  },
-  "address": {
-    "city": "İstanbul",
-    "district": "kağıthane",
-    "neighborhood": "çağlayan",
-    "postalCode": "34100",
-    "addressDetail": "çağlayan mah. fevziçakmak cad. no:47"
-  },
-  "createdAt": 1764188468297,
-  "lastLogin": 1764485452260,
-  "addresses": [
-    {
-      "id": "default",
-      "title": "Varsayılan Adres",
-      "city": "İstanbul",
-      "district": "kağıthane",
-      "neighborhood": "çağlayan",
-      "addressDetail": "çağlayan mah. fevziçakmak cad. no:47",
-      "postalCode": "34100",
-      "isDefault": true
-    }
-  ]
+  "address": "İstanbul kağıthane çağlayan 34100"
 }
