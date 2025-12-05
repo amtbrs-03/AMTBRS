@@ -4,13 +4,13 @@
   "customerEmail": "amtbrs@icloud.com",
   "customerName": "Ahmet BURSA",
   "customerPhone": "",
-  "address": "İstanbul kağıthane çağlayan 34100",
+  "address": "İstanbul kağıthane çağlayan",
   "iban": "TR33 0006 1005 1978 6457 8413 26",
   "status": "pending",
   "items": [
     {
       "id": "IMG_1966.JPG",
-      "name": "PHÄ°LODENDRON FELÄ°X",
+      "name": "PHÃÂ°LODENDRON FELÃÂ°X",
       "price": 1200,
       "qty": 1
     }
