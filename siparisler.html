@@ -451,7 +451,9 @@
   <script>
     // Utility function for HTML escaping
     function escapeHtml(s){ 
-      return (s||'').replace(/[&<>\"']/g, function(m){
+      if (s === undefined || s === null) return '';
+      const str = String(s);
+      return str.replace(/[&<>\"']/g, function(m){
         return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]
       }) 
     }
