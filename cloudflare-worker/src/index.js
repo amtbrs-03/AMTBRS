@@ -15,8 +15,9 @@ export default {
     ];
     const allowOrigin = origin || '*';
 
-    // CORS Preflight
+    // CORS Preflight - must handle ALL paths
     if (request.method === 'OPTIONS') {
+      console.log('✓ OPTIONS preflight request for:', path);
       return new Response(null, {
         status: 204,
         headers: corsHeaders(allowOrigin, request)
