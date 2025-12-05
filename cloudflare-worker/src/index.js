@@ -24,6 +24,14 @@ export default {
     }
 
     try {
+      // Health check endpoint
+      if (path === '/send-order' && request.method === 'GET') {
+        return new Response(JSON.stringify({ ok: true, message: 'Worker is running' }), { 
+          status: 200, 
+          headers: jsonHeaders(allowOrigin) 
+        });
+      }
+
       if (path === '/send-order' && request.method === 'POST') {
         const payload = await readJsonLoose(request);
         // Support both nested order object and flat structure
