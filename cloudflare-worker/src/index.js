@@ -5,13 +5,15 @@ export default {
     const origin = request.headers.get('Origin') || '';
 
     // Allow only our site in production; adjust as needed
+    // CORS: yelpaze genişlet — origin geldiyse geri yansıt, yoksa * kullan
+    // Bilinen barındırmalar için regex tutulmaya devam ediliyor ancak izin verici politika öncelikli.
     const allowed = [
       /^https?:\/\/(www\.)?ern-cicek\.com\.tr$/i,
       /^https?:\/\/amtbrs-03\.github\.io(?:\/.*)?$/i,
       /^https?:\/\/ern-site\.amtbrs-03\.workers\.dev$/i,
       /^https?:\/\/localhost(?::\d+)?$/i
     ];
-    const allowOrigin = allowed.some(r => r.test(origin)) ? origin : '*';
+    const allowOrigin = origin || '*';
 
     // CORS Preflight
     if (request.method === 'OPTIONS') {
