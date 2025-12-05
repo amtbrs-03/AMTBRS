@@ -132,8 +132,8 @@ function corsHeaders(origin, request) {
   const reqMethod = request?.headers?.get('Access-Control-Request-Method');
   const reqHeaders = request?.headers?.get('Access-Control-Request-Headers');
   return {
-    'Access-Control-Allow-Origin': origin,
-    'Access-Control-Allow-Methods': reqMethod || 'POST, OPTIONS',
+    'Access-Control-Allow-Origin': origin || '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': reqHeaders || 'Content-Type, Authorization',
     'Access-Control-Max-Age': '86400',
     'Vary': 'Origin, Access-Control-Request-Method, Access-Control-Request-Headers'
