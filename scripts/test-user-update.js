@@ -1,3 +1,46 @@
+// Telefon kaydetme ve localStorage testi
+function testSaveUserPhone() {
+  // Mock input
+  global.document = global.document || {};
+  global.document.getElementById = function(id) {
+    if (id === 'acctPhoneInput') {
+      return { value: '+90 555 123 45 67', focus: function() {} };
+    }
+    return null;
+  };
+  // Temizle
+  localStorage.setItem('user_test@example.com', JSON.stringify({ name: 'Test', email: 'test@example.com' }));
+  // Fonksiyonu çağır
+  if (typeof saveUserPhone === 'function') {
+    saveUserPhone();
+    var user = JSON.parse(localStorage.getItem('user_test@example.com') || '{}');
+    if (user.phone === '+90 555 123 45 67') {
+      console.log('✓ Telefon kaydı localStorage testinden geçti.');
+    } else {
+      console.error('✗ Telefon kaydı localStorage testinden geçemedi!');
+    }
+  } else {
+    console.error('saveUserPhone fonksiyonu bulunamadı!');
+  }
+}
+testSaveUserPhone();
+// Test ortamı için fetch ve window.alert mock'u
+if (typeof fetch === 'undefined') {
+  global.fetch = function(url, opts) {
+    return Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve({ success: true, url, opts })
+    });
+  };
+}
+if (typeof window === 'undefined') {
+  global.window = {};
+}
+if (typeof window.alert !== 'function') {
+  window.alert = function(msg) {
+    console.log('[alert]', msg);
+  };
+}
 #!/usr/bin/env node
 /*
 Headless sanity tests for phone and address update flows using jsdom.
