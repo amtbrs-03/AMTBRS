@@ -1,5 +1,5 @@
 {
-  "updatedAt": 1764534601325,
+  "updatedAt": 1764996515731,
   "items": [
     {
       "id": "IMG_1966.JPG",
@@ -11,6 +11,18 @@
         "images/products/IMG_1966.JPG",
         "images/gallery/IMG_1972.JPG",
         "images/gallery/IMG_1973.JPG"
+      ]
+    },
+    {
+      "id": "TEMP-1764996468432",
+      "name": "xxxxxx",
+      "price": 3000,
+      "badge": "Yeni",
+      "image": "images/gallery/IMG_1974.JPG",
+      "images": [
+        "images/gallery/IMG_1974.JPG",
+        "images/gallery/IMG_1974.JPG",
+        "images/gallery/IMG_1974.JPG"
       ]
     }
   ]
