@@ -2023,7 +2023,8 @@
                             if (remoteUser) {
                                 console.log('registerUser: User already exists in GitHub');
                                 alert('Bu email adresi ile zaten bir kayıt bulunmaktadır. Lütfen giriş yapın.');
-                                switchTab('login', document.querySelector('.form-tab'));
+                                const loginTab1 = document.querySelector('[data-tab="login"]');
+                                switchTab('login', loginTab1);
                                 document.getElementById('loginEmail').value = email;
                                 return;
                             }
@@ -2037,7 +2038,8 @@
                             if (existingUser) {
                                 console.log('registerUser: User exists in localStorage');
                                 alert('Bu email adresi ile zaten bir kayıt bulunmaktadır. Lütfen giriş yapın.');
-                                switchTab('login', document.querySelector('.form-tab'));
+                                const loginTab2 = document.querySelector('[data-tab="login"]');
+                                switchTab('login', loginTab2);
                                 document.getElementById('loginEmail').value = email;
                                 return;
                             }
@@ -2112,7 +2114,8 @@
                                 console.log('registerUser: ✓ GitHub kaydı başarılı');
                                 // Kayıt başarılı - giriş yapabilir
                                 alert('✅ Kayıt başarıyla tamamlandı!\n\nBilgileriniz güvenli bir şekilde kaydedildi.\nŞimdi giriş yapabilirsiniz.');
-                                switchTab('login', document.querySelector('.form-tab'));
+                                const loginTab = document.querySelector('[data-tab="login"]');
+                                switchTab('login', loginTab);
                                 document.getElementById('loginEmail').value = email;
                                 return;
                             } else {
@@ -2411,7 +2414,7 @@
 
                                     if (msg) msg.textContent = '✅ Parola sıfırlandı. Lütfen yeni parola ile giriş yapın.';
                                     // switch back to login tab and prefill email
-                                    setTimeout(()=>{ switchTab('login', document.querySelector('.form-tab')); document.getElementById('loginEmail').value = email; }, 900);
+                                    setTimeout(()=>{ const loginTab4 = document.querySelector('[data-tab="login"]'); switchTab('login', loginTab4); document.getElementById('loginEmail').value = email; }, 900);
                                 } catch(err) {
                                     console.error('forceReset error', err);
                                     if (msg) msg.textContent = 'Parola sıfırlama sırasında hata oluştu.';
