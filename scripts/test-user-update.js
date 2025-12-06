@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 // Telefon kaydetme ve localStorage testi
 function testSaveUserPhone() {
   // Mock input
@@ -36,12 +37,12 @@ if (typeof fetch === 'undefined') {
 if (typeof window === 'undefined') {
   global.window = {};
 }
+
 if (typeof window.alert !== 'function') {
   window.alert = function(msg) {
     console.log('[alert]', msg);
   };
 }
-#!/usr/bin/env node
 /*
 Headless sanity tests for phone and address update flows using jsdom.
 - Loads anasayfa.html scripts in a JSDOM document
