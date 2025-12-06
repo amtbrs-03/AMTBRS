@@ -1974,11 +1974,14 @@
                     }
 
                     async function registerUser() {
+                        console.log('🔵 registerUser() çağrıldı');
                         const name = document.getElementById('registerName').value.trim();
                         const email = document.getElementById('registerEmail').value.trim().toLowerCase();
                         const password = document.getElementById('registerPassword').value;
                         const password2 = document.getElementById('registerPassword2').value;
                         const phone = (document.getElementById('registerPhone')||{value:''}).value.trim();
+                        
+                        console.log('📋 Form verileri:', { name, email, phone, passwordLength: password.length });
                         
                         // Address fields
                         const city = document.getElementById('registerCity').value.trim();
@@ -1988,11 +1991,13 @@
                         const postalCode = document.getElementById('registerPostalCode').value.trim();
 
                         if (!name || !email || !password || !password2 || !phone) {
+                            console.log('❌ Zorunlu alanlar eksik');
                             alert('Lütfen tüm zorunlu alanları doldurunuz!');
                             return;
                         }
                         // Basit telefon doğrulaması
                         if (!/^\+?\d[\d\s()-]{7,}$/.test(phone)) {
+                            console.log('❌ Telefon numarası geçersiz:', phone);
                             alert('Telefon numarası formatı geçersiz. Lütfen +90 530 000 00 00 gibi giriniz.');
                             return;
                         }
@@ -4083,8 +4088,8 @@
                                     case 'close-about': { try{ closeAbout(); }catch(e){} break; }
                                     case 'close-auth': { try{ closeAuthModal(); }catch(e){} break; }
                                     case 'switch-tab': { try{ const tab = t.dataset.tab; if (tab) switchTab(tab); }catch(e){} break; }
-                                    case 'login': { try{ loginUser(); }catch(e){} break; }
-                                    case 'register': { try{ registerUser(); }catch(e){} break; }
+                                    case 'login': { try{ loginUser(); }catch(e){ console.error('Login hatası:', e); } break; }
+                                    case 'register': { try{ registerUser(); }catch(e){ console.error('Register hatası:', e); } break; }
                                     case 'close-account': { try{ closeAccountModal(); }catch(e){} break; }
                                     case 'download-all-invoices': { try{ downloadAllInvoices(); }catch(e){} break; }
                                     case 'logout': { try{ logout(); }catch(e){} break; }
