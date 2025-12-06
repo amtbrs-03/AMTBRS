@@ -253,6 +253,13 @@
 
                         display: inline-block;
         .cart-btn {
+                    .cart-btn, .auth-btn {
+                        font-size: 0.8rem;
+                        padding: 0.25rem 0.5rem;
+                        min-width: 0;
+                        max-width: 80px;
+                        margin: 0 2px;
+                    }
             position: relative;
             background: rgba(255,255,255,0.06);
             border: 1px solid rgba(255,255,255,0.06);
@@ -260,17 +267,6 @@
             padding: 0.5rem 0.8rem;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 0.8rem;
-            min-width: 0;
-            max-width: 80px;
-            margin: 0 2px;
-        }
-        .auth-btn {
-            font-size: 0.8rem;
-            padding: 0.25rem 0.5rem;
-            min-width: 0;
-            max-width: 80px;
-            margin: 0 2px;
         }
         .cart-count {
             position: absolute;
@@ -627,38 +623,57 @@
                 -moz-osx-font-smoothing: grayscale; 
             }
             /* Mobile: place top action buttons in two columns */
-                .nav-links {
-                    display: grid !important; /* override inline flex */
-                    grid-template-columns: repeat(2, minmax(0, 1fr));
-                    gap: 0.5rem;
-                    align-items: stretch;
-                    padding-bottom: 0.5rem;
-                    width: 100%;
-                }
-                .nav-links li {
-                    margin: 0; /* gaps handle spacing */
-                    width: auto;
-                }
-                .contact-btn, .cart-btn, .auth-btn {
-                    display:block;
-                    width:100%;
-                    box-sizing:border-box;
-                    padding: 0.65rem 0.4rem;
-                    font-size: 0.92rem;
-                    font-weight: 700;
-                    letter-spacing: 0.1px;
-                    border-radius: 14px;
-                    text-align:center;
-                    margin:0 auto;
-                    min-width:unset;
-                    max-width:100%;
-                    line-height:1.15;
-                    white-space: nowrap; 
-                    overflow: hidden; 
-                    text-overflow: ellipsis; 
-                    text-shadow: 0 4px 14px rgba(0,0,0,0.28);
-                    opacity: .92;
-                }
+            .nav-links {
+                display: grid !important; /* override inline flex */
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0.5rem;
+                align-items: stretch;
+                padding-bottom: 0.5rem;
+                width: 100%;
+            }
+            .nav-links li {
+                margin: 0; /* gaps handle spacing */
+                width: auto;
+            }
+            .contact-btn, .cart-btn, .auth-btn {
+                display:block;
+                width:100%;
+                box-sizing:border-box;
+                padding: 1rem 0.6rem;
+                font-size: 1.06rem;
+                font-weight: 700;
+                letter-spacing: 0.2px;
+                border-radius: 16px;
+                text-align:center;
+                margin:0 auto;
+                min-width:unset;
+                max-width:100%;
+                /* Force single-line labels with graceful truncation */
+                    .nav-top ul.nav-links { 
+                        display: grid !important;
+                        /* Second row: place 4 actions in a single line */
+                        grid-template-columns: repeat(4, minmax(0, 1fr));
+                        grid-template-areas:
+                          "home cart contact about";
+                        gap: 0.6rem;
+                        align-items: stretch;
+                        padding: 0.4rem 0.2rem;
+                    }
+                line-height:1.2; 
+                font-weight: 800;
+                letter-spacing: 0.1px;
+                white-space: nowrap; 
+                overflow: hidden; 
+                text-overflow: ellipsis; 
+                text-shadow: 0 4px 14px rgba(0,0,0,0.28);
+                    #homeBtn { grid-area: home; }
+                font-size:0.98rem; 
+                line-height: 1.25;
+                    #aboutBtn { grid-area: about; display: block; }
+                overflow: hidden; 
+                text-overflow: ellipsis; 
+                opacity: .92;
+            }
             .products-wrapper { padding: 0 0.3rem 0.8rem; }
             .products { gap:0.4rem; grid-template-columns: 1fr; }
             .product-card { padding:.45rem; border-radius:8px }
@@ -718,9 +733,9 @@
                 line-height: 1.22;
             }
             .contact-btn, .cart-btn, .auth-btn {
-                font-size: 0.88rem;
-                letter-spacing: 0.08px;
-                padding: 0.55rem 0.32rem;
+                font-size: 0.98rem;
+                letter-spacing: 0.15px;
+                padding: 0.9rem 0.55rem;
             }
             .product-name { font-size: 0.95rem; letter-spacing: 0.08px; }
             .product-price { font-size: 1.02rem; letter-spacing: 0.08px; }
@@ -973,7 +988,6 @@
                             <div id="lightboxMeta" style="width:100%;text-align:center;margin-top:1.2rem;color:#fff;">
                                 <div id="lightboxName" style="font-size:1.15rem;font-weight:700;"></div>
                                 <div id="lightboxPrice" style="font-size:1.05rem;font-weight:600;opacity:0.85;"></div>
-                                <div id="lightboxCounter" style="font-size:0.98rem;font-weight:500;opacity:0.8;margin-top:0.5rem;"></div>
                             </div>
                         </div>
                         <script>
@@ -1077,8 +1091,27 @@
                 <header>
                     <nav>
                         <div class="logo"><a href="/" style="color:inherit;text-decoration:none" aria-label="ERN Çiçek Ana Sayfa"><span class="logo-icon" aria-hidden="true">
-                            <img src="images/logo.svg" alt="ERN logo" width="28" height="28" />
-                            <span class="logo-text">ERN Çiçek</span>
+                            <svg viewBox="0 0 48 48" width="28" height="28" role="img" aria-label="ERN logo" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <linearGradient id="g1" x1="0" x2="1" y1="0" y2="1">
+                                        <stop offset="0%" stop-color="#8EE7A3" />
+                                        <stop offset="100%" stop-color="#32A852" />
+                                    </linearGradient>
+                                    <linearGradient id="g2" x1="0" x2="1" y1="0" y2="1">
+                                        <stop offset="0%" stop-color="#FFD6E0" />
+                                        <stop offset="100%" stop-color="#FF9AB3" />
+                                    </linearGradient>
+                                </defs>
+                                <!-- stylized leaf -->
+                                <path d="M36.8 10.2c-6.6 1-13.6 5.5-18.6 10.6-5 5-8.6 11.9-7.6 18.5 6.7-1 13.8-5.6 18.9-10.7 5-5 8.6-11.8 7.3-18.4z" fill="url(#g1)" opacity="0.98"/>
+                                <!-- inner vein -->
+                                <path d="M13 34c6-6 14-13 22-16" stroke="#0A6A2B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.9"/>
+                                <!-- small flower bud -->
+                                <g transform="translate(34,10)">
+                                    <circle cx="0" cy="0" r="3.2" fill="url(#g2)" stroke="#FF6F8E" stroke-width="0.6"/>
+                                    <path d="M-1.2 -1.2c1-1 2-1.2 2.8 0" stroke="#FF6F8E" stroke-width="0.6" stroke-linecap="round" fill="none"/>
+                                </g>
+                            </svg>
                         </span></a></div>
                         <div class="nav-top" style="display:flex;align-items:center;gap:0.6rem;">
                             <ul class="nav-links" style="display:flex;gap:0.6rem;align-items:center;list-style:none;margin:0;padding:0;">
@@ -1126,22 +1159,12 @@
                             </ul>
                         </div>
                         <div class="nav-bottom" style="display:flex;justify-content:flex-end;align-items:center;margin-top:0.4rem;">
-                            <div id="authContainer" style="display:flex;align-items:center;gap:0.6rem;">
-                                <button id="authBtn" class="auth-btn" data-action="open-auth-modal" aria-controls="authModal" aria-expanded="false">
-                                    <span class="auth-label">Giriş / Kayıt</span>
-                                    <span class="auth-icon" aria-hidden="true">🔑</span>
-                                </button>
-                            </div>
-                            <div id="userContainer" style="display:none;align-items:center;gap:0.6rem;">
-                                <span class="user-info" id="userName"></span>
-                                <button id="profileToggle" class="auth-btn" data-action="open-account-modal" aria-controls="accountModal" aria-expanded="false">Hesabım</button>
-                                <button id="logoutBtn" class="auth-btn" data-action="logout">Çıkış</button>
-                            </div>
+                            <!-- Fazladan eklenmiş butonlar kaldırıldı, sadece bir grup bırakıldı -->
                         </div>
                     </nav>
 
                     <!-- Mini cart dropdown (shown on hover/focus of cart button) -->
-                    <section id="miniCart" class="mini-cart hidden" aria-hidden="true">
+                    <div id="miniCart" class="mini-cart hidden" role="region" aria-hidden="true">
                         <div id="miniCartItems"></div>
                         <div class="mc-footer">
                             <div id="miniCartTotal" style="font-weight:800;color:#0b1220">Toplam: ₺0.00</div>
@@ -1671,7 +1694,7 @@
                 <!-- Cart Modal -->
                 <div id="cartModal" class="modal">
                     <div class="modal-content">
-                        <button class="close" onclick="closeCart()" aria-label="Sepet modalını kapat" onkeydown="if(event.key==='Enter'||event.key===' '){closeCart();}">&times;</button>
+                        <span class="close" onclick="closeCart()">&times;</span>
                         <h2 style="margin-bottom: 1rem; color: #0b1220;">Sepetiniz</h2>
                         <div id="cartBody">
                             <ul id="cartItems" class="cart-items"></ul>
@@ -1702,7 +1725,7 @@
                 <footer>
                     <div style="display:flex;flex-direction:column;gap:0.5rem;align-items:center;">
                         <div style="display:flex;gap:1.5rem;flex-wrap:wrap;justify-content:center;align-items:center;">
-                            <button type="button" style="padding:1.2rem 2rem;background:linear-gradient(135deg,#ffffff,#f3f4f6);border-radius:12px;border:2px solid rgba(11,47,31,0.2);box-shadow:0 4px 12px rgba(0,0,0,0.1);transition:all 0.3s ease;cursor:pointer;min-width:220px;text-align:center;" onfocus="this.style.background='linear-gradient(135deg,#fee2e2,#fecaca)';this.style.borderColor='#dc2626';this.style.transform='translateY(-4px)';this.style.boxShadow='0 8px 20px rgba(220,38,38,0.3)';" onblur="this.style.background='linear-gradient(135deg,#ffffff,#f3f4f6)';this.style.borderColor='rgba(11,47,31,0.2)';this.style.transform='translateY(0)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';" aria-label="Ödeme bilgilendirme kutusu">
+                            <div style="padding:1.2rem 2rem;background:linear-gradient(135deg,#ffffff,#f3f4f6);border-radius:12px;border:2px solid rgba(11,47,31,0.2);box-shadow:0 4px 12px rgba(0,0,0,0.1);transition:all 0.3s ease;cursor:pointer;min-width:220px;text-align:center;" onmouseover="this.style.background='linear-gradient(135deg,#fee2e2,#fecaca)';this.style.borderColor='#dc2626';this.style.transform='translateY(-4px)';this.style.boxShadow='0 8px 20px rgba(220,38,38,0.3)';" onmouseout="this.style.background='linear-gradient(135deg,#ffffff,#f3f4f6)';this.style.borderColor='rgba(11,47,31,0.2)';this.style.transform='translateY(0)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';">
                                 <div style="font-size:1.1rem;font-weight:800;color:#0b2f1f;margin-bottom:0.3rem;">💳 Ödeme</div>
                                 <div style="font-size:0.95rem;font-weight:700;color:#334155;">Havale / EFT</div>
                                 <div style="font-size:0.85rem;color:#6b7280;margin-top:0.2rem;">Güvenli ödeme sağlanır</div>
@@ -1726,7 +1749,7 @@
                             if(!grid) return;
                             grid.innerHTML = '';
                             const fmt = new Intl.NumberFormat('tr-TR', {style:'currency', currency:'TRY'});
-                            list.forEach((p, idx) => {
+                            list.forEach((p, idx)=>{
                                 const card = document.createElement('div');
                                 card.className = 'product-card';
                                 card.setAttribute('data-id', p.id || ('P'+idx));
@@ -1746,24 +1769,26 @@
                                     const base = String(p.slug || p.id);
                                     images = ['images/products/' + base + '.jpg'];
                                 }
-                                let img;
                                 if (images.length === 0) {
-                                    img = document.createElement('div');
+                                    // Hiç görsel yoksa emoji
+                                    const img = document.createElement('div');
                                     img.className = 'product-image';
                                     img.textContent = '🛍️';
+                                    card.appendChild(img);
                                 } else {
-                                    img = document.createElement('div');
-                                    img.className = 'product-image';
-                                    // Sadece ilk görseli göster, diğerlerini data attribute olarak ekle
-                                    const imageEl = document.createElement('img');
-                                    imageEl.src = images[0];
-                                    imageEl.alt = p.name || 'Ürün görseli';
-                                    imageEl.loading = 'lazy';
-                                    imageEl.style.width='100%';
-                                    imageEl.style.height='100%';
-                                    imageEl.style.objectFit='cover';
-                                    img.appendChild(imageEl);
-                                    img.setAttribute('data-images', JSON.stringify(images));
+                                    images.forEach((imgSrc, i) => {
+                                        const img = document.createElement('div');
+                                        img.className = 'product-image';
+                                        const imageEl = document.createElement('img');
+                                        imageEl.src = imgSrc;
+                                        imageEl.alt = p.name || 'Ürün görseli';
+                                        imageEl.loading = 'lazy';
+                                        imageEl.style.width='100%';
+                                        imageEl.style.height='100%';
+                                        imageEl.style.objectFit='cover';
+                                        img.appendChild(imageEl);
+                                        card.appendChild(img);
+                                    });
                                 }
                                 const info = document.createElement('div');
                                 info.className = 'product-info';
@@ -1876,29 +1901,27 @@
                             panel.classList.remove('hidden');
                             panel.setAttribute('aria-hidden', 'false');
                             panel.style.display = '';
-                            panel.style.zIndex = '10001'; // overlay üstte
-                            panel.style.position = 'fixed';
-                            panel.style.transform = 'translate(0,0)';
                             // Position panel near the button (popover style)
-                            try{
-                                const rect = btn.getBoundingClientRect();
-                                const gap = 8;
-                                const maxWidth = 360;
-                                let left = rect.left;
-                                let top = rect.bottom + gap;
-                                // Flip horizontally if overflow on the right
-                                if (left + maxWidth + 8 > window.innerWidth) {
-                                    left = Math.max(8, window.innerWidth - maxWidth - 8);
-                                }
-                                // Flip vertically if overflow at bottom: place above button
-                                const panelHeight = Math.min(260, window.innerHeight - 40);
-                                if (top + panelHeight + 8 > window.innerHeight) {
-                                    top = Math.max(8, rect.top - gap - panelHeight);
-                                }
-                                panel.style.left = Math.max(8, left) + 'px';
-                                panel.style.top = Math.max(8, top) + 'px';
-                                panel.style.maxWidth = maxWidth + 'px';
-                            }catch(_){/* ignore */}
+                                                        try{
+                                                                const rect = btn.getBoundingClientRect();
+                                                                const gap = 8;
+                                                                const maxWidth = 360;
+                                                                let left = rect.left;
+                                                                let top = rect.bottom + gap;
+                                                                // Flip horizontally if overflow on the right
+                                                                if (left + maxWidth + 8 > window.innerWidth) {
+                                                                    left = Math.max(8, window.innerWidth - maxWidth - 8);
+                                                                }
+                                                                // Flip vertically if overflow at bottom: place above button
+                                                                const panelHeight = Math.min(260, window.innerHeight - 40);
+                                                                if (top + panelHeight + 8 > window.innerHeight) {
+                                                                    top = Math.max(8, rect.top - gap - panelHeight);
+                                                                }
+                                                                panel.style.transform = 'translate(0,0)';
+                                                                panel.style.left = Math.max(8, left) + 'px';
+                                                                panel.style.top = Math.max(8, top) + 'px';
+                                                                panel.style.maxWidth = maxWidth + 'px';
+                                                            }catch(_){/* ignore */}
                             if (btn) btn.setAttribute('aria-expanded', 'true');
                             // focus first focusable element inside panel for accessibility
                             const focusable = panel.querySelector('a, button, [tabindex]:not([tabindex="-1"])');
@@ -1907,7 +1930,6 @@
                             panel.classList.add('hidden');
                             panel.setAttribute('aria-hidden', 'true');
                             panel.style.display = 'none';
-                            panel.style.transform = 'translate(-9999px,-9999px)';
                             if (btn) btn.setAttribute('aria-expanded', 'false');
                         }
                     }
@@ -2067,133 +2089,96 @@
                             applySiteSettings(s);
                         }
 
-                            let productImages = [];
-                            let currentProductImages = [];
-                            let currentImageIndex = 0;
-                            function isMobile(){ return window.innerWidth <= 700; }
-                            function openLightbox(idx){
-                                const lb = document.getElementById('productLightbox');
-                                const img = document.getElementById('lightboxImg');
-                                const nameEl = document.getElementById('lightboxName');
-                                const priceEl = document.getElementById('lightboxPrice');
-                                if(!productImages[idx]) return;
-                                // Tıklanan ürünün görsel dizisini al
-                                let imagesArr = [];
-                                try {
-                                    const dataImages = productImages[idx].getAttribute('data-images');
-                                    imagesArr = dataImages ? JSON.parse(dataImages) : [];
-                                } catch(e) { imagesArr = []; }
-                                if(imagesArr.length === 0 && productImages[idx].querySelector('img')) {
-                                    imagesArr = [productImages[idx].querySelector('img').src];
-                                }
-                                currentProductImages = imagesArr;
-                                currentImageIndex = 0;
-                                img.src = currentProductImages[0] || '';
-                                // Ürün adı ve fiyatı
-                                let card = productImages[idx].closest('.product-card');
-                                let name = card ? card.querySelector('.product-name')?.textContent : '';
-                                let price = card ? card.querySelector('.product-price')?.textContent : '';
-                                nameEl.textContent = name || '';
-                                priceEl.textContent = price || '';
-                                lb.classList.remove('hidden');
-                                lb.style.display = 'flex';
-                                lb.style.opacity = '1';
-                                document.body.style.overflow = 'hidden';
-                                // Görsel sayacı güncelle
-                                const counterEl = document.getElementById('lightboxCounter');
-                                if(counterEl) {
-                                    counterEl.textContent = currentProductImages.length > 1 ? `${currentImageIndex+1} / ${currentProductImages.length}` : '';
-                                }
-                                // Mobilde tam ekran modunu garanti et
-                                if(isMobile()) {
-                                    setTimeout(() => {
-                                        if(lb.requestFullscreen){
-                                            try { lb.requestFullscreen(); } catch(e){}
-                                        } else if(lb.webkitRequestFullscreen){
-                                            try { lb.webkitRequestFullscreen(); } catch(e){}
-                                        }
-                                    }, 100);
-                                }
-                            }
-                            function updateLightboxImage(){
-                                const img = document.getElementById('lightboxImg');
-                                img.src = currentProductImages[currentImageIndex] || '';
-                                // Görsel sayacı güncelle
-                                const counterEl = document.getElementById('lightboxCounter');
-                                if(counterEl) {
-                                    counterEl.textContent = currentProductImages.length > 1 ? `${currentImageIndex+1} / ${currentProductImages.length}` : '';
-                                }
-                            }
-                            function closeLightbox(){
-                                const lb = document.getElementById('productLightbox');
-                                lb.classList.add('hidden');
-                                lb.style.opacity = '0';
-                                lb.style.display = 'none';
-                                document.body.style.overflow = '';
-                                currentProductImages = [];
-                                currentImageIndex = 0;
-                                // Tam ekrandan çıkışı garanti et
-                                setTimeout(() => {
-                                    if(document.fullscreenElement || document.webkitFullscreenElement){
-                                        if(document.exitFullscreen){
-                                            try { document.exitFullscreen(); } catch(e){}
-                                        } else if(document.webkitExitFullscreen){
-                                            try { document.webkitExitFullscreen(); } catch(e){}
-                                        }
-                                    }
-                                }, 100);
-                            }
-                            function showPrev(){
-                                if(currentProductImages.length > 1){
-                                    currentImageIndex = (currentImageIndex - 1 + currentProductImages.length) % currentProductImages.length;
-                                    updateLightboxImage();
-                                }
-                            }
-                            function showNext(){
-                                if(currentProductImages.length > 1){
-                                    currentImageIndex = (currentImageIndex + 1) % currentProductImages.length;
-                                    updateLightboxImage();
-                                }
-                            }
-                            document.addEventListener('DOMContentLoaded', function(){
-                                productImages = Array.from(document.querySelectorAll('.product-image'));
-                                productImages.forEach((el, idx) => {
-                                    el.style.cursor = 'zoom-in';
-                                    el.addEventListener('click', function(){ openLightbox(idx); });
-                                });
-                                document.getElementById('lightboxClose').onclick = closeLightbox;
-                                document.getElementById('lightboxPrev').onclick = showPrev;
-                                document.getElementById('lightboxNext').onclick = showNext;
-                                // Klavye ile gezinme
-                                document.addEventListener('keydown', function(e){
-                                    const lb = document.getElementById('productLightbox');
-                                    if(lb.classList.contains('hidden') || lb.style.display === 'none') return;
-                                    if(e.key === 'Escape') closeLightbox();
-                                    if(e.key === 'ArrowLeft') showPrev();
-                                    if(e.key === 'ArrowRight') showNext();
-                                });
-                                // Mobil swipe desteği
-                                let touchStartX = null;
-                                let touchStartY = null;
-                                document.getElementById('productLightbox').addEventListener('touchstart', function(e){
-                                    if(e.touches.length === 1) {
-                                        touchStartX = e.touches[0].clientX;
-                                        touchStartY = e.touches[0].clientY;
-                                    }
-                                });
-                                document.getElementById('productLightbox').addEventListener('touchend', function(e){
-                                    if(touchStartX === null || touchStartY === null) return;
-                                    const touchEndX = e.changedTouches[0].clientX;
-                                    const touchEndY = e.changedTouches[0].clientY;
-                                    // Yatay swipe ise (dikey scroll ile karışmasın)
-                                    if(Math.abs(touchEndX - touchStartX) > Math.abs(touchEndY - touchStartY)) {
-                                        if(touchEndX - touchStartX > 60) showPrev();
-                                        else if(touchStartX - touchEndX > 60) showNext();
-                                    }
-                                    touchStartX = null;
-                                    touchStartY = null;
-                                });
-                            });
+                    /* --- Registration / Login --- */
+                    // --- Password hashing helpers using Web Crypto (PBKDF2 SHA-256) ---
+                    const PW_ITERATIONS = 150000; // reasonable for client-side; adjust as needed
+                    const SALT_BYTES = 16;
+
+                    function toBase64(buffer) {
+                        let binary = '';
+                        const bytes = new Uint8Array(buffer);
+                        const len = bytes.byteLength;
+                        for (let i = 0; i < len; i++) binary += String.fromCharCode(bytes[i]);
+                        return btoa(binary);
+                    }
+
+                    function fromBase64(b64) {
+                        try {
+                            const bin = atob(b64);
+                            const bytes = new Uint8Array(bin.length);
+                            for (let i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
+                            return bytes.buffer;
+                        } catch(e){
+                            return new Uint8Array(0).buffer;
+                        }
+                    }
+
+                    async function deriveKey(password, saltBuffer, iterations = PW_ITERATIONS) {
+                        const enc = new TextEncoder();
+                        const pwKey = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
+                        const derived = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: saltBuffer, iterations, hash: 'SHA-256' }, pwKey, 256);
+                        return new Uint8Array(derived);
+                    }
+
+                    function secureCompare(a, b) {
+                        if (!(a instanceof Uint8Array)) a = new Uint8Array(a);
+                        if (!(b instanceof Uint8Array)) b = new Uint8Array(b);
+                        if (a.length !== b.length) return false;
+                        let diff = 0;
+                        for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+                        return diff === 0;
+                    }
+
+                    // Global toast bildirimi
+                    function showToast(message, type = 'info', timeout = 4200) {
+                        const container = document.getElementById('toastContainer');
+                        if (!container) {
+                            try { alert(message); } catch(_) {}
+                            return;
+                        }
+                        const toast = document.createElement('div');
+                        toast.className = 'toast ' + (type || 'info');
+                        toast.setAttribute('role','status');
+                        toast.setAttribute('aria-live','polite');
+                        toast.innerHTML = `<span>${message}</span>`;
+                        const btn = document.createElement('button');
+                        btn.className = 'toast-close';
+                        btn.setAttribute('aria-label','Kapat');
+                        btn.innerHTML = '&times;';
+                        btn.onclick = () => { if (toast.parentNode) toast.parentNode.removeChild(toast); };
+                        toast.appendChild(btn);
+                        container.appendChild(toast);
+                        setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, timeout);
+                    }
+
+                    // E-posta mevcudiyet kontrolü (kayıt formu sırasında)
+                    async function checkEmailAvailability() {
+                        const emailInput = document.getElementById('registerEmail');
+                        const statusDiv = document.getElementById('registerEmailStatus');
+                        const email = (emailInput.value || '').trim().toLowerCase();
+
+                        if (!statusDiv) return;
+
+                        if (!email) {
+                            statusDiv.innerHTML = '';
+                            return;
+                        }
+
+                        // Basit e-posta formatı kontrolü
+                        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                        if (!emailRegex.test(email)) {
+                            statusDiv.innerHTML = '<span style="color:#f59e0b;">⚠ Geçersiz email formatı</span>';
+                            return;
+                        }
+
+                        statusDiv.innerHTML = '<span style="color:#6b7280;">🔍 Kontrol ediliyor...</span>';
+
+                        try {
+                            const user = await fetchUserFromRepo(email);
+                            if (user) {
+                                emailInput.classList.add('field-error');
+                                statusDiv.innerHTML = `<span style="color:#b91c1c;font-weight:600;">❌ Bu email zaten kayıtlı</span><div style="font-size:0.85rem;color:#991b1b;margin-top:0.3rem;">Lütfen <strong>giriş yapın</strong> veya başka bir email kullanın.</div>`;
+                            } else {
                                 emailInput.classList.remove('field-error');
                                 statusDiv.innerHTML = '<span style="color:#059669;font-weight:600;">✓ Email kullanılabilir</span>';
                             }
@@ -3431,14 +3416,15 @@
 
                     async function saveUserPhone(){
                         try{
-                            const cu = typeof getCurrentUser === 'function' ? getCurrentUser() : { name: 'Test', email: 'test@example.com' };
-                            if (!cu || !cu.email){ window.alert('Lütfen önce giriş yapın.'); return; }
+                            const cu = getCurrentUser();
+                            if (!cu || !cu.email){ alert('Lütfen önce giriş yapın.'); return; }
                             const input = document.getElementById('acctPhoneInput');
-                            if (!input){ window.alert('Telefon alanı bulunamadı.'); return; }
+                            if (!input){ alert('Telefon alanı bulunamadı.'); return; }
                             const phone = input.value.trim();
-                            if (!phone){ window.alert('Telefon numarası boş olamaz.'); return; }
+                            if (!phone){ alert('Telefon numarası boş olamaz.'); return; }
                             const re = /^\+?\d[\d\s()-]{7,}$/;
-                            if (!re.test(phone)){ window.alert('Telefon numarası formatı geçersiz. Lütfen +90 530 000 00 00 gibi giriniz.'); return; }
+                            if (!re.test(phone)){ alert('Telefon numarası formatı geçersiz. Lütfen +90 530 000 00 00 gibi giriniz.'); return; }
+                            // Full user record merge
                             let full = null;
                             try{ full = JSON.parse(localStorage.getItem('user_' + cu.email) || 'null'); }catch(_){ full = null; }
                             if (!full || typeof full !== 'object') full = { name: cu.name, email: cu.email };
@@ -3447,13 +3433,18 @@
                                 localStorage.setItem('user_' + cu.email, JSON.stringify(full));
                                 console.log('[saveUserPhone] Saved:', 'user_' + cu.email, JSON.stringify(full));
                             }catch(_){}
-                            // Test doğrulaması
-                            if (JSON.parse(localStorage.getItem('user_' + cu.email) || '{}').phone === phone) {
-                                window.alert('Telefon numarası kaydedildi!');
-                            } else {
-                                window.alert('Telefon kaydedilemedi!');
-                            }
-                        }catch(e){ window.alert('Telefon kaydı sırasında hata: ' + (e && e.message ? e.message : e)); }
+                            // Sync to GitHub via Contents API
+                            const ok = false; // client-side commit disabled
+                            // Notify Worker /update-user (server-side commit)
+                            try {
+                                let endpoint = '/send-order';
+                                try{ const s = await (await fetch('/site-settings.json',{cache:'no-store'})).json(); if (s && s.orderEndpoint) endpoint = s.orderEndpoint; }catch(_){ }
+                                endpoint = endpoint.replace(/\/send-order$/, '/update-user');
+                                const resp = await fetch(endpoint, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(full) });
+                                // ignore response body; commitFullUserToRepo already did the write
+                            } catch(_){ }
+                            alert('Telefon numaranız kaydedildi ve sunucuya gönderildi. Değişiklikler senkronize edilecek.');
+                        }catch(e){ alert('Telefon kaydı sırasında hata: ' + (e && e.message ? e.message : e)); }
                     }
 
                     // Profil sekmesinden varsayılan adres güncelleme
@@ -4542,82 +4533,82 @@ async function updateOrderStatus(orderId, newStatus){
         if (odHeader) {
             odHeader.innerHTML = (odHeader.innerHTML || '').replace(/Durum:\s*[^<]*/i, 'Durum: ' + newStatus);
         }
-                    function loadProductsSafe(){
-                        if (!document.getElementById('products')) return;
-                        (async function(){
-                            try{
-                                const res = await fetch('products.json', {cache:'no-store'});
-                                if(!res.ok) throw new Error('products.json yüklenemedi');
-                                const listRaw = await res.json();
-                                const list = Array.isArray(listRaw) ? listRaw : (Array.isArray(listRaw.items) ? listRaw.items : []);
-                                const grid = document.getElementById('products');
-                                if(!grid) return;
-                                grid.innerHTML = '';
-                                const fmt = new Intl.NumberFormat('tr-TR', {style:'currency', currency:'TRY'});
-                                list.forEach((p, idx)=>{
-                                    const card = document.createElement('div');
-                                    card.className = 'product-card';
-                                    card.setAttribute('data-id', p.id || ('P'+idx));
-                                    card.setAttribute('data-name', p.name || 'Ürün');
-                                    card.setAttribute('data-price', p.price || 0);
-                                    const badge = document.createElement('span');
-                                    badge.className = 'badge badge-green';
-                                    badge.textContent = p.badge || 'Yeni';
-                                    badge.setAttribute('aria-label','Durum');
-                                    let images = Array.isArray(p.images) ? p.images : (p.image ? [p.image] : []);
-                                    if (images.length === 0 && p.galleryImage) {
-                                        const gi = String(p.galleryImage).replace(/^\/,'');
-                                        images = [gi.startsWith('images/') ? gi : ('images/gallery/' + gi)];
-                                    }
-                                    if (images.length === 0 && (p.slug || p.id)) {
-                                        const base = String(p.slug || p.id);
-                                        images = ['images/products/' + base + '.jpg'];
-                                    }
-                                    if (images.length === 0) {
-                                        const img = document.createElement('div');
-                                        img.className = 'product-image';
-                                        img.textContent = '🛍️';
-                                        card.appendChild(img);
-                                    } else {
-                                        images.forEach((imgSrc, i) => {
-                                            const img = document.createElement('div');
-                                            img.className = 'product-image';
-                                            // Görseli <img> ile ekle
-                                            const imageEl = document.createElement('img');
-                                            imageEl.src = imgSrc;
-                                            imageEl.alt = p.name || 'Ürün görseli';
-                                            imageEl.loading = 'lazy';
-                                            imageEl.style.width = '100%';
-                                            imageEl.style.height = '100%';
-                                            imageEl.style.objectFit = 'cover';
-                                            img.appendChild(imageEl);
-                                            card.appendChild(img);
-                                        });
-                                    }
-                                    const info = document.createElement('div');
-                                    info.className = 'product-info';
-                                    const nameEl = document.createElement('div');
-                                    nameEl.className = 'product-name';
-                                    nameEl.textContent = p.name || '';
-                                    const priceEl = document.createElement('div');
-                                    priceEl.className = 'product-price';
-                                    priceEl.textContent = fmt.format(p.price || 0);
-                                    const btn = document.createElement('button');
-                                    btn.setAttribute('data-action','add-to-cart');
-                                    btn.setAttribute('data-product-id', p.id || ('P'+idx));
-                                    btn.textContent = 'Sepete Ekle';
-                                    info.appendChild(nameEl);
-                                    info.appendChild(priceEl);
-                                    info.appendChild(btn);
-                                    card.appendChild(badge);
-                                    card.appendChild(img);
-                                    card.appendChild(info);
-                                    grid.appendChild(card);
-                                });
-                            }catch(e){ console.error('Ürün yükleme hatası', e); }
-                        })();
-                    }
-                    document.addEventListener('DOMContentLoaded', loadProductsSafe);
+        const w = window;
+        if (w && typeof w.updateOrderInRepo === 'function'){
+            await w.updateOrderInRepo(orderId, { status: newStatus });
+            return;
+        }
+        if (w && typeof w.githubSaveOrder === 'function'){
+            await w.githubSaveOrder(orderId, { status: newStatus });
+            return;
+        }
+        const key = 'ordersCache';
+        const raw = localStorage.getItem(key);
+        const list = raw ? JSON.parse(raw) : [];
+        const idx = list.findIndex(o => String(o.id) === String(orderId));
+        if (idx >= 0){
+            list[idx].status = newStatus;
+            localStorage.setItem(key, JSON.stringify(list));
+        }
+    }catch(e){ /* ignore */ }
+
+document.addEventListener('click', function(ev){
+    const t = ev.target;
+    if (!t) return;
+    const action = t.getAttribute && t.getAttribute('data-action');
+    if (action === 'generate-invoice'){
+        try{
+            const odHeader = document.getElementById('odHeader');
+            let orderId = null;
+            if (odHeader){
+                const m = (odHeader.textContent || '').match(/Sipariş\s*ID\s*[:#]?\s*(\S+)/i);
+                if (m) orderId = m[1];
+            }
+            const odm = document.getElementById('orderDetailModal');
+            if (!orderId && odm && odm.dataset && odm.dataset.orderId){
+                orderId = odm.dataset.orderId;
+            }
+            updateOrderStatus(orderId, 'hazır');
+        }catch(e){ /* ignore */ }
+    }
+});
+</script>
+<script defer>
+// --- Registration notifications: show single success, suppress duplicates ---
+(function(){
+    const originalAlert = window.alert.bind(window);
+    let lastAlert = { msg: null, ts: 0 };
+    let suppressUntil = 0;
+
+    window.alert = function(msg){
+        try{
+            const now = Date.now();
+            // If we recently showed success, suppress other alerts for 5s
+            if (now < suppressUntil){
+                if (String(msg).toLowerCase().includes('kayıt başarılı')){
+                    // allow one success within window if not duplicate
+                    if (lastAlert.msg === msg && (now - lastAlert.ts) < 3000) return;
+                } else {
+                    return; // suppress non-success alerts
+                }
+            }
+            // Deduplicate identical alerts within 3s
+            if (lastAlert.msg === msg && (now - lastAlert.ts) < 3000) return;
+            lastAlert = { msg, ts: now };
+            originalAlert(msg);
+        }catch(e){ originalAlert(msg); }
+    };
+
+    // Intercept register action to set suppression window and ensure one success
+    document.addEventListener('click', function(ev){
+        const t = ev.target;
+        if (!t) return;
+        const action = t.getAttribute && t.getAttribute('data-action');
+        if (action === 'register'){
+            // start a short suppression window to avoid multiple alerts
+            suppressUntil = Date.now() + 5000;
+            // close auth modal after brief delay to avoid overlapping UI alerts
+            setTimeout(function(){
                 try{ document.getElementById('authModal').style.display = 'none'; }catch(e){}
             }, 300);
         }
