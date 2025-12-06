@@ -423,8 +423,22 @@
     function viewInvoice(orderId) {
       const invoice = invoicesData.find(inv => inv.orderId === orderId);
       if (invoice && invoice.html) {
+        let html = invoice.html;
+        // Durum: hazır olarak değiştir
+        html = html.replace(/(<span class=\"info-label\">Durum:<\/span>\s*)(Beklemede|Hazır|[A-Za-zÇçĞğİıÖöŞşÜü ]+)/, '$1Hazır');
+
+        // Kullanıcı telefonunu ekle
+        let userPhone = '';
+        try {
+          const userData = JSON.parse(localStorage.getItem('user'));
+          userPhone = userData && userData.phone ? userData.phone : '';
+        } catch(e) {}
+        if (userPhone) {
+          // Müşteri Bilgileri kutusuna telefon ekle
+          html = html.replace(/(<h3>👤 Müşteri Bilgileri<\/h3>\s*<p><strong>[^<]+<\/strong><\/p>\s*<p>[^<]+<\/p>)/, '$1<p>' + userPhone + '</p>');
+        }
         const invoiceWindow = window.open('', '_blank');
-        invoiceWindow.document.write(invoice.html);
+        invoiceWindow.document.write(html);
         invoiceWindow.document.close();
       } else {
         alert('Fatura içeriği bulunamadı!');
