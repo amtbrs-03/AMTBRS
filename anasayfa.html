@@ -1775,14 +1775,67 @@
                     });
 
                     /* --- Auth modal and tabs --- */
+                    function saveRegisterFormDraft() {
+                        try {
+                            const draft = {
+                                registerName: document.getElementById('registerName')?.value || '',
+                                registerEmail: document.getElementById('registerEmail')?.value || '',
+                                registerPhone: document.getElementById('registerPhone')?.value || '',
+                                registerCity: document.getElementById('registerCity')?.value || '',
+                                registerDistrict: document.getElementById('registerDistrict')?.value || '',
+                                registerNeighborhood: document.getElementById('registerNeighborhood')?.value || '',
+                                registerAddressDetail: document.getElementById('registerAddressDetail')?.value || '',
+                                registerPostalCode: document.getElementById('registerPostalCode')?.value || '',
+                                savedAt: Date.now()
+                            };
+                            sessionStorage.setItem('registerFormDraft', JSON.stringify(draft));
+                            console.log('✓ Form draft saved to sessionStorage');
+                        } catch(e) {
+                            console.error('Form draft save error:', e);
+                        }
+                    }
+
+                    function restoreRegisterFormDraft() {
+                        try {
+                            const draft = sessionStorage.getItem('registerFormDraft');
+                            if (!draft) return;
+                            
+                            const data = JSON.parse(draft);
+                            const fields = ['registerName', 'registerEmail', 'registerPhone', 'registerCity', 'registerDistrict', 'registerNeighborhood', 'registerAddressDetail', 'registerPostalCode'];
+                            
+                            fields.forEach(id => {
+                                const el = document.getElementById(id);
+                                if (el && data[id]) {
+                                    el.value = data[id];
+                                    // Clear error for this field if it was restored
+                                    const errorMsg = document.getElementById(id + '-error');
+                                    if (errorMsg) errorMsg.remove();
+                                    const errorClass = el.classList.remove('error');
+                                }
+                            });
+                            
+                            console.log('✓ Form draft restored from sessionStorage');
+                        } catch(e) {
+                            console.error('Form draft restore error:', e);
+                        }
+                    }
+
                     function openAuthModal() {
                         document.getElementById('authModal').style.display = 'block';
                         try{ const b = document.getElementById('authBtn'); if (b) b.setAttribute('aria-expanded','true'); }catch(e){}
+                        // Restore register form draft when reopening modal
+                        if (document.getElementById('register').classList.contains('active')) {
+                            restoreRegisterFormDraft();
+                        }
                     }
 
                     function closeAuthModal() {
                         document.getElementById('authModal').style.display = 'none';
                         try{ const b = document.getElementById('authBtn'); if (b) b.setAttribute('aria-expanded','false'); }catch(e){}
+                        // Save register form draft when closing modal
+                        if (document.getElementById('register')) {
+                            saveRegisterFormDraft();
+                        }
                     }
 
                     function switchTab(tab, el) {
@@ -2163,6 +2216,7 @@
                             if (!phone) setFieldError('registerPhone','Telefon zorunlu');
                             console.log('❌ Zorunlu alanlar eksik');
                             showErrorSummary('Lütfen tüm zorunlu alanları doldurunuz.', (!name && 'registerName') || (!email && 'registerEmail') || (!password && 'registerPassword') || 'registerPhone');
+                            saveRegisterFormDraft();
                             return;
                         }
                         // Basit telefon doğrulaması
@@ -2170,6 +2224,7 @@
                             console.log('❌ Telefon numarası geçersiz:', phone);
                             setFieldError('registerPhone','Telefon numarası formatı geçersiz');
                             showErrorSummary('Telefon numarası formatı geçersiz. Lütfen +90 530 000 00 00 gibi giriniz.', 'registerPhone');
+                            saveRegisterFormDraft();
                             return;
                         }
                         
@@ -2178,6 +2233,7 @@
                             if (!district) setFieldError('registerDistrict','İlçe zorunlu');
                             if (!addressDetail) setFieldError('registerAddressDetail','Adres detayı zorunlu');
                             showErrorSummary('Lütfen adres bilgilerini eksiksiz doldurunuz (İl, İlçe, Adres Detayı zorunludur).', (!city && 'registerCity') || (!district && 'registerDistrict') || 'registerAddressDetail');
+                            saveRegisterFormDraft();
                             return;
                         }
                         
@@ -2185,6 +2241,7 @@
                             setFieldError('registerPassword','Şifreler eşleşmiyor');
                             setFieldError('registerPassword2','Şifreler eşleşmiyor');
                             showErrorSummary('Şifreler eşleşmiyor.', 'registerPassword');
+                            saveRegisterFormDraft();
                             return;
                         }
 
@@ -2299,6 +2356,32 @@
                                 document.getElementById('registerNeighborhood').value = '';
                                 document.getElementById('registerAddressDetail').value = '';
                                 document.getElementById('registerPostalCode').value = '';
+                                
+                                // Tüm hata mesajlarını ve stillerini temizle
+                                ['registerName','registerEmail','registerPassword','registerPassword2','registerPhone','registerCity','registerDistrict','registerNeighborhood','registerAddressDetail','registerPostalCode'].forEach(id => {
+                                    const el = document.getElementById(id);
+                                    if (el) {
+                                        el.classList.remove('field-error');
+                                        el.removeAttribute('aria-invalid');
+                                    }
+                                    const errorMsg = document.getElementById(id + '-error');
+                                    if (errorMsg) errorMsg.remove();
+                                });
+                                
+                                // Hata özeti mesajını temizle
+                                const errorSummary = document.getElementById('registerErrorSummary');
+                                if (errorSummary) {
+                                    errorSummary.textContent = '';
+                                    errorSummary.classList.remove('visible');
+                                }
+                                
+                                // Clear form draft from sessionStorage on successful registration
+                                try {
+                                    sessionStorage.removeItem('registerFormDraft');
+                                    console.log('✓ Form draft cleared from sessionStorage after successful registration');
+                                } catch(e) {
+                                    console.error('Form draft clear error:', e);
+                                }
                                 
                                 // Kayıt başarılı - giriş yapabilir
                                 showToast('Kayıt başarıyla tamamlandı. Şimdi giriş yapabilirsiniz.', 'success', 5200);
