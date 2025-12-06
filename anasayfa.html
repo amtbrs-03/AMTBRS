@@ -2918,11 +2918,15 @@
                                         console.error('fetchUserFromRepo: Contents API içeriği çözümlenemedi', parseErr);
                                     }
                                 }
+                            } else if (res && res.status === 404) {
+                                // 404 = kullanıcı bulunamadı (normal, yeni e-posta)
+                                console.log('fetchUserFromRepo: 404 → kullanıcı bulunamadı (yeni email)');
                             } else {
-                                console.error('fetchUserFromRepo: Contents API başarısız', res ? res.status : '(yanıt yok)');
+                                // Diğer hatalar
+                                console.warn('fetchUserFromRepo: Contents API başarısız', res ? res.status : '(yanıt yok)');
                             }
 
-                            console.error('fetchUserFromRepo: tüm denemeler başarısız →', email);
+                            console.log('fetchUserFromRepo: e-posta mevcut değil →', email);
                             return null;
                         }catch(err){ 
                             console.error('fetchUserFromRepo: İSTİSNA', err);
