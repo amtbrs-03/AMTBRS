@@ -1181,11 +1181,21 @@
                             </div>
                         </div>
                     </div>
+                <header>
+                    <div class="logo-row">
+                        <span class="logo">
+                            <span class="logo-icon"> <!-- SVG veya img -->
+                                <svg viewBox="0 0 48 48" width="28" height="28" role="img" aria-label="ERN logo" xmlns="http://www.w3.org/2000/svg">
+                                    <!-- ...logo SVG içeriği... -->
+                                </svg>
+                            </span>
+                            <span class="logo-text">ERN Tropikal Çiçek</span>
+                        </span>
+                    </div>
+                    <nav>
+                        <ul class="nav-links"></ul>
+                    </nav>
                 </header>
-
-                <!-- Products section placed directly under the Ürünler button -->
-                
-
                 <!-- Contact dropdown panel (hidden by default) -->
                 <div id="contactPanel" class="contact-panel hidden" role="region" aria-hidden="true" aria-labelledby="contactBtn" style="position:fixed;left:0;top:0;transform:translate(-9999px,-9999px);background:rgba(255,255,255,0.98);border-radius:12px;box-shadow:0 20px 60px rgba(2,6,23,0.2);padding:0;z-index:1001;border:2px solid rgba(11,47,31,0.1);">
                     <div style="padding:0.8rem 1rem; max-width:360px;">
@@ -4605,6 +4615,23 @@ async function updateOrderStatus(orderId, newStatus){
     .auth-btn:hover {
         background: #10b981;
         color: #fff;
+    }
+    .logo-row {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding-top: 0.7rem;
+        padding-bottom: 0.3rem;
+        background: transparent;
+    }
+    header {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+    }
+    nav {
+        margin-top: 0.2rem;
     }
 }
 
