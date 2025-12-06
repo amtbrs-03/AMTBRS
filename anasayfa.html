@@ -310,6 +310,39 @@
             box-shadow: 0 0 0 3px rgba(107,70,193,0.1);
         }
 
+        /* Global toast bildirimleri */
+        .toast-container {
+            position: fixed;
+            z-index: 2000;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            max-width: min(360px, 90vw);
+        }
+        @media (max-width:700px){
+            .toast-container { top: auto; bottom: 1rem; right: 50%; transform: translateX(50%); align-items: center; }
+        }
+        .toast {
+            padding: 0.85rem 1rem;
+            border-radius: 12px;
+            color: #0b1220;
+            background: white;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+            border: 1px solid rgba(0,0,0,0.05);
+            display: flex;
+            gap: 0.6rem;
+            align-items: center;
+            animation: toastIn 0.25s ease;
+        }
+        .toast.success { border-color: #d1fae5; background: #ecfdf3; color: #065f46; }
+        .toast.error { border-color: #fee2e2; background: #fef2f2; color: #991b1b; }
+        .toast.info { border-color: #dbeafe; background: #eff6ff; color: #1e3a8a; }
+        .toast .toast-close { margin-left: auto; background:none; border:none; cursor:pointer; font-size:1.1rem; color:inherit; opacity:0.7; }
+        .toast .toast-close:hover { opacity:1; }
+        @keyframes toastIn { from { opacity:0; transform: translateY(-8px); } to { opacity:1; transform: translateY(0); } }
+
         /* Form hata bannerı */
         .form-error-banner {
             display: none;
@@ -2000,6 +2033,28 @@
                         return diff === 0;
                     }
 
+                    // Global toast bildirimi
+                    function showToast(message, type = 'info', timeout = 4200) {
+                        const container = document.getElementById('toastContainer');
+                        if (!container) {
+                            try { alert(message); } catch(_) {}
+                            return;
+                        }
+                        const toast = document.createElement('div');
+                        toast.className = 'toast ' + (type || 'info');
+                        toast.setAttribute('role','status');
+                        toast.setAttribute('aria-live','polite');
+                        toast.innerHTML = `<span>${message}</span>`;
+                        const btn = document.createElement('button');
+                        btn.className = 'toast-close';
+                        btn.setAttribute('aria-label','Kapat');
+                        btn.innerHTML = '&times;';
+                        btn.onclick = () => { if (toast.parentNode) toast.parentNode.removeChild(toast); };
+                        toast.appendChild(btn);
+                        container.appendChild(toast);
+                        setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, timeout);
+                    }
+
                     async function registerUser() {
                         const errorSummary = document.getElementById('registerErrorSummary');
 
@@ -2104,7 +2159,7 @@
                             const remoteUser = await fetchUserFromRepo(email);
                             if (remoteUser) {
                                 console.log('registerUser: User already exists in GitHub');
-                                alert('Bu email adresi ile zaten bir kayıt bulunmaktadır. Lütfen giriş yapın.');
+                                showToast('Bu email adresi ile zaten bir kayıt bulunmaktadır. Lütfen giriş yapın.', 'info');
                                 const loginTab1 = document.querySelector('[data-tab="login"]');
                                 switchTab('login', loginTab1);
                                 document.getElementById('loginEmail').value = email;
@@ -2119,7 +2174,7 @@
                             const existingUser = localStorage.getItem('user_' + email);
                             if (existingUser) {
                                 console.log('registerUser: User exists in localStorage');
-                                alert('Bu email adresi ile zaten bir kayıt bulunmaktadır. Lütfen giriş yapın.');
+                                showToast('Bu email adresi ile zaten bir kayıt bulunmaktadır. Lütfen giriş yapın.', 'info');
                                 const loginTab2 = document.querySelector('[data-tab="login"]');
                                 switchTab('login', loginTab2);
                                 document.getElementById('loginEmail').value = email;
@@ -2207,14 +2262,14 @@
                                 document.getElementById('registerPostalCode').value = '';
                                 
                                 // Kayıt başarılı - giriş yapabilir
-                                alert('✅ Kayıt başarıyla tamamlandı!\n\nBilgileriniz güvenli bir şekilde kaydedildi.\nŞimdi giriş yapabilirsiniz.');
+                                showToast('Kayıt başarıyla tamamlandı. Şimdi giriş yapabilirsiniz.', 'success', 5200);
                                 const loginTab = document.querySelector('[data-tab="login"]');
                                 switchTab('login', loginTab);
                                 document.getElementById('loginEmail').value = email;
                                 return;
                             } else {
                                 console.error('registerUser: GitHub kayıt başarısız oldu');
-                                alert('❌ Kayıt başarısız oldu!\n\nSunucuya bağlanılamadı veya kayıt işlemi tamamlanamadı.\n\nLütfen:\n- İnternet bağlantınızı kontrol edin\n- Birkaç dakika bekleyip tekrar deneyin\n- Sorun devam ederse destek ile iletişime geçin');
+                                showToast('Kayıt başarısız oldu. İnternet bağlantınızı kontrol edip tekrar deneyin.', 'error', 6500);
                                 return;
                             }
                         }catch(e){
@@ -2235,7 +2290,7 @@
                                 userFriendlyMsg += 'Teknik Hata: ' + errorMsg + '\n\nLütfen daha sonra tekrar deneyin veya destek ile iletişime geçin.';
                             }
                             
-                            alert(userFriendlyMsg);
+                            showToast(userFriendlyMsg, 'error', 7000);
                             return;
                         }
                     }
@@ -2245,7 +2300,7 @@
                         const password = document.getElementById('loginPassword').value;
 
                         if (!email || !password) {
-                            alert('Lütfen email ve şifre giriniz!');
+                            showToast('Lütfen email ve şifre giriniz.', 'info');
                             return;
                         }
 
@@ -2319,26 +2374,26 @@
                                     }
                                 } else {
                                     console.error('loginUser: ⚠️ User not found in remote repo');
-                                    alert('Kullanıcı bulunamadı! Lütfen önce kayıt olun.');
+                                    showToast('Kullanıcı bulunamadı. Lütfen önce kayıt olun.', 'error');
                                     return;
                                 }
                             }catch(e){
                                 console.error('loginUser: ⚠️ Remote fetch failed', e);
-                                alert('Kullanıcı bulunamadı! Lütfen önce kayıt olun veya internet bağlantınızı kontrol edin.');
+                                showToast('Kullanıcı bulunamadı. Lütfen kayıt olun veya internet bağlantınızı kontrol edin.', 'error');
                                 return;
                             }
                         }
                         
                         if (!userData) {
                             console.error('loginUser: ⚠️ No user data available');
-                            alert('Kullanıcı bulunamadı! Lütfen önce kayıt olun.');
+                            showToast('Kullanıcı bulunamadı. Lütfen önce kayıt olun.', 'error');
                             return;
                         }
 
                         if (!userData.pw || !userData.pw.salt || !userData.pw.hash) {
                             console.error('loginUser: ⚠️ Invalid user data structure - missing password fields');
                             console.log('loginUser: User data:', JSON.stringify(userData, null, 2));
-                            alert('Kullanıcı verisi hatalı! Lütfen tekrar kayıt olun veya destek ile iletişime geçin.');
+                            showToast('Kullanıcı verisi hatalı. Lütfen tekrar kayıt olun veya destek ile iletişime geçin.', 'error');
                             return;
                         }
 
@@ -2361,13 +2416,13 @@
                                 if (attempts >= 3) {
                                     // Reset attempts and open forced reset UI
                                     localStorage.removeItem(failKey);
-                                    alert('Parola 3 kez yanlış girildi. Parolanızı sıfırlamanız gerekiyor.');
+                                    showToast('Parola 3 kez yanlış girildi. Parolanızı sıfırlamanız gerekiyor.', 'error');
                                     // open auth modal and switch to reset UI
                                     openAuthModal();
                                     showForcedResetUI(email);
                                     return;
                                 } else {
-                                    alert('Şifre yanlış! (' + attempts + '/3)');
+                                    showToast('Şifre yanlış! (' + attempts + '/3)', 'error');
                                     return;
                                 }
                             } else {
@@ -2383,7 +2438,7 @@
                                 message: e.message,
                                 stack: e.stack
                             });
-                            alert('Giriş sırasında bir hata oluştu. Lütfen tekrar deneyin veya destek ile iletişime geçin.');
+                            showToast('Giriş sırasında bir hata oluştu. Lütfen tekrar deneyin veya destek ile iletişime geçin.', 'error');
                             return;
                         }
 
@@ -2414,7 +2469,7 @@
                         
                         if (!sessionSaved) {
                             console.error('loginUser: ⚠️ Could not save session to any storage');
-                            alert('Oturum kaydedilemedi. Tarayıcınızın gizli modu devre dışı mı?');
+                            showToast('Oturum kaydedilemedi. Tarayıcınızın gizli modu devre dışı mı?', 'error');
                         }
                         
                         // update lastLogin remotely (best-effort)
@@ -2452,7 +2507,7 @@
                             openAuthModal();
                             // Switch to a simple reset form
                             const authModal = document.getElementById('authModal');
-                            if (!authModal) return alert('Auth modal bulunamadı.');
+                            if (!authModal) { showToast('Auth modal bulunamadı.', 'error'); return; }
 
                             // Build reset form HTML (keeps it lightweight)
                             const resetHtml = `
@@ -2467,7 +2522,7 @@
 
                             // Put into authContent area
                             const authContent = document.getElementById('authContent');
-                            if (!authContent) return alert('Auth içeriği bulunamadı.');
+                            if (!authContent) { showToast('Auth içeriği bulunamadı.', 'error'); return; }
                             authContent.innerHTML = resetHtml;
 
                             document.getElementById('forceResetCancel').onclick = function(){
@@ -2491,7 +2546,7 @@
                                     let userData = userStr ? JSON.parse(userStr) : null;
                                     if (!userData) {
                                         userData = await fetchUserFromRepo(email);
-                                        if (!userData) { alert('Kullanıcı bulunamadı.'); if (btn) btn.disabled = false; return; }
+                                        if (!userData) { showToast('Kullanıcı bulunamadı.', 'error'); if (btn) btn.disabled = false; return; }
                                     }
 
                                     // generate new salt+hash
@@ -2514,7 +2569,7 @@
                                     if (msg) msg.textContent = 'Parola sıfırlama sırasında hata oluştu.';
                                 } finally { if (btn) btn.disabled = false; }
                             };
-                        } catch(e) { console.error('showForcedResetUI failed', e); alert('Sıfırlama UI gösterilemedi.'); }
+                        } catch(e) { console.error('showForcedResetUI failed', e); showToast('Sıfırlama ekranı gösterilemedi.', 'error'); }
                     }
 
                     function logout() {
@@ -2589,7 +2644,7 @@
                     function deleteAccount() {
                         const user = getCurrentUser();
                         if (!user || !user.email) {
-                            alert('Silinecek hesap bulunamadı.');
+                            showToast('Silinecek hesap bulunamadı.', 'error');
                             return;
                         }
 
@@ -2628,7 +2683,7 @@
                         try{ closeAuthModal(); }catch(e){}
                         try{ closeCart(); }catch(e){}
 
-                        alert('Hesabınız başarıyla silindi.');
+                        showToast('Hesabınız başarıyla silindi.', 'success');
                         
                         // Navigate to homepage
                         try{ scrollToSection && scrollToSection('home'); }catch(e){ window.location.href = 'anasayfa.html'; }
@@ -3091,7 +3146,7 @@
                         const isDefault = document.getElementById('newAddressDefault').checked;
                         
                         if (!title || !city || !district || !addressDetail) {
-                            alert('Lütfen zorunlu alanları doldurun (Başlık, İl, İlçe, Adres Detayı)');
+                            showToast('Lütfen zorunlu alanları doldurun (Başlık, İl, İlçe, Adres Detayı).', 'info');
                             return;
                         }
                         
@@ -3118,11 +3173,11 @@
                         
                         const success = await saveUserAddresses(addresses);
                         if (success) {
-                            alert('Adres başarıyla kaydedildi ve GitHub\'a senkronize edildi!');
+                            showToast('Adres başarıyla kaydedildi ve GitHub\'a senkronize edildi.', 'success');
                             cancelAddAddress();
                             await loadUserAddresses();
                         } else {
-                            alert('Adres kaydedilemedi!');
+                            showToast('Adres kaydedilemedi!', 'error');
                         }
                     }
                     
@@ -3134,7 +3189,7 @@
                         
                         const success = await saveUserAddresses(addresses);
                         if (success) {
-                            alert('Varsayılan adres güncellendi ve GitHub\'a senkronize edildi!');
+                            showToast('Varsayılan adres güncellendi ve GitHub\'a senkronize edildi.', 'success');
                             await loadUserAddresses();
                         }
                     }
@@ -3154,7 +3209,7 @@
                         
                         const success = await saveUserAddresses(addresses);
                         if (success) {
-                            alert('Adres silindi ve GitHub\'dan kaldırıldı!');
+                            showToast('Adres silindi ve GitHub\'dan kaldırıldı.', 'success');
                             await loadUserAddresses();
                         }
                     }
@@ -4517,4 +4572,5 @@ document.addEventListener('click', function(ev){
         }
     }
     </script>
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 </html>
