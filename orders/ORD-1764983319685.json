@@ -1,0 +1,19 @@
+{
+  "id": "ORD-1764983319685",
+  "date": 1764983319685,
+  "customerEmail": "amtbrs.03@gmail.com",
+  "customerName": "Ahmet BURSA",
+  "customerPhone": "+90 530 306 9081",
+  "address": "türkiye kayaşehir, laleli, Rize, Posta Kodu 34100",
+  "iban": "TR33 0006 1005 1978 6457 8413 26",
+  "status": "pending",
+  "items": [
+    {
+      "id": "IMG_1966.JPG",
+      "name": "PHİLODENDRON FELİX",
+      "price": 1200,
+      "qty": 1
+    }
+  ],
+  "total": "1200.00"
+}
