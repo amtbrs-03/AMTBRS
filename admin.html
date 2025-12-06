@@ -2236,22 +2236,7 @@ async function verifyGitHubPathExists(path){
   } catch(e){ console.warn('[admin] verifyGitHubPathExists error', e); return { exists:false, actualPath:null, sha:null }; }
 }
 
-        // Klasör açma butonu (ayrı talep)
-        if (openFolderBtn){
-          console.log('[admin] Binding openGhFolderBtn');
-          openFolderBtn.addEventListener('click', ()=>{
-            const targetUrl = 'https://github.com/amtbrs-03/AMTBRS/blob/site-release/images/products/';
-            const w = window.open(targetUrl, '_blank', 'noopener');
-            if(!w){
-              // Popup engellendiyse aynı sekmede yönlendir
-              window.location.href = targetUrl;
-            } else {
-              setMsg('GitHub klasör sekmesi açıldı.', true);
-            }
-          });
-        } else {
-          console.warn('[admin] openGhFolderBtn butonu bulunamadı');
-        }
+        // Klasör açma butonu kodu kaldırıldı: openGhFolderBtn kullanılmıyor
 
         // Kaydet butonu
         if (applyBtn){

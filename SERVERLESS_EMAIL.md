@@ -1,43 +1,23 @@
-Serverless e-posta endpoint (örnek)
 
-Bu proje için opsiyonel olarak mailto: yerine sunucu tarafından e-posta gönderecek bir serverless function örneği ekledim.
+## Sipariş Bildirimi için Cloudflare Worker + SendGrid
 
-1) Ne yapar
-- POST istek alır (JSON): { payerEmail, cart: [{id,name,price,qty}], iban }
-- SMTP bilgilerini kullanarak alıcıya (TO_EMAIL) bir e-posta gönderir.
+Bu projede sipariş bildirimi için Cloudflare Worker ve SendGrid API kullanılmaktadır.
 
-2) Nerede
-- Fonksiyon kodu: `functions/send-order/index.js` (Netlify/Vercel style)
-- Bağımlılık: nodemailer
+### Nasıl çalışır?
+- Sipariş POST isteği ile Worker'a iletilir.
+- Worker, siparişi GitHub'a kaydeder ve SendGrid API ile admin mailine bildirim gönderir.
 
-3) Ortam değişkenleri (deploy ortamına ekleyin)
-- SMTP_HOST (ör. smtp.mailprovider.com)
-- SMTP_PORT (ör. 587 veya 465)
-- SMTP_USER (SMTP kullanıcı adı)
-- SMTP_PASS (SMTP parola)
-- FROM_EMAIL (opsiyonel, gönderici adresi; yoksa SMTP_USER kullanılır)
-- TO_EMAIL (opsiyonel, alıcı adres; yoksa defaults to amtbrs@icloud.com)
+### Gerekli ortam değişkenleri (Cloudflare Worker Secrets):
+- `SENDGRID_API_KEY` (SendGrid hesabınızdan alınır)
+- `TO_EMAIL` (admin mail adresiniz)
+- `FROM_EMAIL` (gönderici adresi)
 
-4) Nasıl deploy edilir (Netlify örneği)
-- `functions/send-order/index.js` dosyasını projenize ekleyin.
-- Proje kökünde `package.json` oluşturup `nodemailer`'ı ekleyin veya Netlify UI'dan "Install" edin.
+### Ayar ve test:
+1. SendGrid hesabı açın, API anahtarı oluşturun.
+2. Cloudflare Worker ortamında yukarıdaki secret'ları tanımlayın.
+3. Sipariş verin, mailin gelip gelmediğini test edin.
 
-  package.json (örnek)
-
-  {
-    "name": "ern-cicek-netlify-func",
-    "version": "1.0.0",
-    "dependencies": {
-      "nodemailer": "^6.9.0"
-    }
-  }
-
-- Netlify'da site ayarlarından yukarıdaki environment variable'ları ekleyin.
-- Deploy edin.
-
-5) GitHub Pages ile birlikte kullanma (Önerilen)
-
-- Statik siteyi GitHub Pages'ta barındırabilir, yalnızca fonksiyonu Netlify/Vercel gibi bir yerde çalıştırabilirsiniz.
+Ekstra: Siparişler ayrıca GitHub repo'da `orders/` klasörüne JSON olarak kaydedilir.
 - Bunun için `site-settings.json` içine bir ayar eklendi: `orderEndpoint`.
   - Örnek: `"orderEndpoint": "https://<netlify-site-adınız>.netlify.app/.netlify/functions/send-order"`
   - `odeme.html` önce bu URL'yi dener; 2xx alırsa doğrudan sunucuya bildirim yapılır. Aksi halde mailto fallback devreye girer.

@@ -422,15 +422,10 @@
       console.log('Sipariş oluşturuldu:', order);
 
       try {
-        // Send via serverless function (Netlify/Vercel) instead of GitHub API
+        // Send via Cloudflare Worker (SendGrid) endpoint
         const endpointCandidates = [
-          '/.netlify/functions/send-order',
-          '/api/send-order',
-          '/functions/send-order'
+          'https://ern-site.amtbrs-03.workers.dev/send-order'
         ];
-        // Daima bilinen Worker uç noktasını en başa ekle (settings yüklenemese bile)
-        const defaultWorkerEndpoint = 'https://ern-site.amtbrs-03.workers.dev/send-order';
-        endpointCandidates.unshift(defaultWorkerEndpoint);
         try{
           const s = await loadSettings();
           if (s && s.orderEndpoint && typeof s.orderEndpoint === 'string') {

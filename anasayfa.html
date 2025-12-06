@@ -146,6 +146,32 @@
                     body.mobile-header-offset {
                         padding-top: var(--mobile-header-h, 72px);
                     }
+
+                    /* Mobilde menü başlıkları yatayda kaydırılabilir ve üst üste binmez */
+                    .nav-links {
+                        flex-wrap: nowrap;
+                        overflow-x: auto;
+                        white-space: nowrap;
+                        gap: 1rem;
+                        padding-bottom: 0.5rem;
+                        scrollbar-width: thin;
+                        scrollbar-color: #6b46c1 #f3f4f6;
+                    }
+                    .nav-links li {
+                        display: inline-block;
+                        min-width: 90px;
+                        max-width: 90px;
+                        padding: 0;
+                    }
+                    .nav-links a {
+                        font-size: 0.92rem;
+                        padding: 0.35rem 0.5rem;
+                        min-width: unset;
+                        max-width: 90px;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                    }
                 }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { height: 100%; }
@@ -4047,10 +4073,8 @@
                             status: 'pending'
                         };
 
-                        // Determine endpoint: prefer site-settings.json orderEndpoint, then common fallbacks
+                        // Sadece Cloudflare Worker endpointi kullanılır
                         let endpointCandidates = [
-                            '/.netlify/functions/send-order',
-                            '/functions/send-order',
                             'https://ern-site.amtbrs-03.workers.dev/send-order'
                         ];
                         try{
