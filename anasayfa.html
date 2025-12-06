@@ -2764,29 +2764,40 @@
                         }
                         console.log('fetchUserFromRepo: başlatıldı →', email);
                         try{
+                            // Mobil cihazı algıla
+                            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                            
                             // URL içinde güvenli kullanım için raw isteklerde encode edilmiş email kullan; Contents API için ham path kalsın
                             const rawPath = 'users/' + encodeURIComponent(email) + '_full.json';
                             const apiPath = 'users/' + email + '_full.json';
-                            // Önce raw ve CDN dene (en hızlı ve CORS sorunsuz)
-                            const urls = [
+                            
+                            // Mobil cihazlarda raw/CDN denemesini atla, direkt Contents API'ye git (daha güvenilir)
+                            const urls = isMobile ? [] : [
                                 `https://raw.githubusercontent.com/amtbrs-03/AMTBRS/site-release/${rawPath}?t=${Date.now()}`,
                                 `https://cdn.jsdelivr.net/gh/amtbrs-03/AMTBRS@site-release/${rawPath}`,
                             ];
 
+                            // Raw/CDN denemeleri (masaüstü veya eksik bulunursa)
                             for (let i = 0; i < urls.length; i++) {
                                 const url = urls[i];
                                 console.log(`fetchUserFromRepo: deneme ${i+1}/${urls.length} →`, url);
 
                                 try {
+                                    // 4s timeout — raw/CDN çok yavaş/bloke olursa atla
+                                    const controller = new AbortController();
+                                    const timeoutId = setTimeout(() => controller.abort(), 4000);
+                                    
                                     const res = await fetch(url, { 
                                         cache: 'no-store',
                                         mode: 'cors',
+                                        signal: controller.signal,
                                         headers: { 
                                             'Cache-Control': 'no-cache, no-store, must-revalidate',
                                             'Pragma': 'no-cache',
                                             'Expires': '0'
                                         } 
                                     });
+                                    clearTimeout(timeoutId);
 
                                     console.log(`fetchUserFromRepo: deneme ${i+1} yanıt durumu:`, res.status);
 
@@ -2809,17 +2820,25 @@
                                 }
                             }
 
-                            // Son çare: GitHub Contents API (base64 içerik)
-                            console.log('fetchUserFromRepo: raw/CDN başarısız → Contents API deneniyor');
+                            // Son çare: GitHub Contents API (base64 içerik) — mobil cihazlarda ilk seçenek
+                            console.log('fetchUserFromRepo: raw/CDN başarısız/atlandı → Contents API deneniyor');
                             const owner = 'amtbrs-03';
                             const repo = 'AMTBRS';
                             const branch = 'site-release';
                             const apiBase = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(apiPath)}?ref=${encodeURIComponent(branch)}`;
 
-                            // 1) Yetkisiz dene (public repo için yeterli)
+                            // Contents API'ye 5s timeout — masaüstünde daha uzun verilen zaman
+                            const contentTimeoutMs = isMobile ? 5000 : 8000;
                             let res = null;
                             try {
-                                res = await fetch(apiBase, { headers: { 'Accept': 'application/vnd.github.v3+json' }, cache: 'no-store' });
+                                const controller = new AbortController();
+                                const timeoutId = setTimeout(() => controller.abort(), contentTimeoutMs);
+                                res = await fetch(apiBase, { 
+                                    headers: { 'Accept': 'application/vnd.github.v3+json' }, 
+                                    cache: 'no-store',
+                                    signal: controller.signal
+                                });
+                                clearTimeout(timeoutId);
                             } catch(_) {}
 
                             // 2) Gerekirse yetkili dene
@@ -2830,7 +2849,14 @@
                                 }
                                 if (token) {
                                     try {
-                                        res = await fetch(apiBase, { headers: { 'Accept': 'application/vnd.github.v3+json', 'Authorization': `token ${token}` }, cache: 'no-store' });
+                                        const controller = new AbortController();
+                                        const timeoutId = setTimeout(() => controller.abort(), contentTimeoutMs);
+                                        res = await fetch(apiBase, { 
+                                            headers: { 'Accept': 'application/vnd.github.v3+json', 'Authorization': `token ${token}` }, 
+                                            cache: 'no-store',
+                                            signal: controller.signal
+                                        });
+                                        clearTimeout(timeoutId);
                                     } catch(_) {}
                                 }
                             }
