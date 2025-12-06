@@ -2112,6 +2112,18 @@
                             remoteSuccess = await commitFullUserToRepo(stored);
                             if (remoteSuccess) {
                                 console.log('registerUser: ✓ GitHub kaydı başarılı');
+                                // Form alanlarını temizle
+                                document.getElementById('registerName').value = '';
+                                document.getElementById('registerEmail').value = '';
+                                document.getElementById('registerPassword').value = '';
+                                document.getElementById('registerPassword2').value = '';
+                                document.getElementById('registerPhone').value = '';
+                                document.getElementById('registerCity').value = '';
+                                document.getElementById('registerDistrict').value = '';
+                                document.getElementById('registerNeighborhood').value = '';
+                                document.getElementById('registerAddressDetail').value = '';
+                                document.getElementById('registerPostalCode').value = '';
+                                
                                 // Kayıt başarılı - giriş yapabilir
                                 alert('✅ Kayıt başarıyla tamamlandı!\n\nBilgileriniz güvenli bir şekilde kaydedildi.\nŞimdi giriş yapabilirsiniz.');
                                 const loginTab = document.querySelector('[data-tab="login"]');
