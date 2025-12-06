@@ -188,7 +188,7 @@
         }
 
         header {
-            background: rgba(30, 143, 85, 0.6);
+            background: rgba(30, 143, 85, 0.38); /* daha şeffaf, arka plan resmi daha çok görünür */
             color: white;
             padding: 1rem 0;
             position: sticky;
@@ -228,19 +228,24 @@
         .logo:hover .logo-text{ transform: translateY(-4px) rotateX(6deg) scale(1.02); text-shadow: 0 20px 30px rgba(3,37,18,0.22); }
         .nav-links { list-style: none; display: flex; gap: 1.5rem; align-items: center; }
         .nav-links a {
-            color: rgba(255,255,255,0.9);
+            color: #fff;
             text-decoration: none;
             transition: 0.25s;
-            background: linear-gradient(90deg, #10b981 0%, #6b46c1 100%);
-            border-radius: 8px;
-            padding: 0.35rem 0.8rem;
-            font-weight: 600;
-            box-shadow: 0 2px 8px rgba(16,185,129,0.08);
+            background: linear-gradient(135deg, #10b981 0%, #6b46c1 100%);
+            border-radius: 10px;
+            padding: 0.55rem 1.1rem;
+            font-weight: 700;
+            font-size: 1.04rem;
+            box-shadow: 0 2px 12px rgba(16,185,129,0.10);
+            border: 2px solid #10b981;
+            margin: 0 0.1rem;
         }
         .nav-links a:hover {
-            color: #b8d4ff;
-            background: linear-gradient(90deg, #6b46c1 0%, #10b981 100%);
-            transform: translateY(-2px) scale(1.04);
+            color: #fff;
+            background: linear-gradient(135deg, #6b46c1 0%, #10b981 100%);
+            border-color: #6b46c1;
+            transform: translateY(-2px) scale(1.06);
+            box-shadow: 0 4px 18px rgba(107,70,193,0.18);
         }
         .auth-btn { background: #6b897f; padding: 0.6rem 1.2rem; border-radius: 8px; cursor: pointer; border: none; color: white; transition: 0.25s; }
         .auth-btn:hover { background: #a2444b; }
@@ -841,7 +846,10 @@
         .contact-btn:focus { outline: 3px solid rgba(16,185,129,0.18); outline-offset: 2px; }
         /* Mobile: header nav buttons in two columns */
         @media (max-width: 700px) {
-            header { position: fixed; top: 0; left: 0; right: 0; z-index: 1200; }
+                header { position: fixed; top: 0; left: 0; right: 0; z-index: 1200; }
+                .logo-row {
+                    margin-bottom: 1.2rem; /* Logo yüksekliğine göre menü başlıklarını aşağıya kaydırır */
+                }
             .nav-top ul.nav-links { 
                 display: grid !important;
                 /* Tek satırda 4 buton: Ana Sayfa, Sepet, İletişim, Hakkımızda */
@@ -3447,7 +3455,10 @@
                             try{ full = JSON.parse(localStorage.getItem('user_' + cu.email) || 'null'); }catch(_){ full = null; }
                             if (!full || typeof full !== 'object') full = { name: cu.name, email: cu.email };
                             full.phone = phone;
-                            try{ localStorage.setItem('user_' + cu.email, JSON.stringify(full)); }catch(_){}
+                            try{ 
+                                localStorage.setItem('user_' + cu.email, JSON.stringify(full));
+                                console.log('[saveUserPhone] Saved:', 'user_' + cu.email, JSON.stringify(full));
+                            }catch(_){}
                             // Sync to GitHub via Contents API
                             const ok = false; // client-side commit disabled
                             // Notify Worker /update-user (server-side commit)
@@ -4566,54 +4577,6 @@ async function updateOrderStatus(orderId, newStatus){
             localStorage.setItem(key, JSON.stringify(list));
         }
     }catch(e){ /* ignore */ }
-        color: #10b981;
-        border: 2px solid #10b981;
-        border-radius: 10px;
-        font-size: 1rem;
-        font-weight: 700;
-        padding: 0.5rem 1.1rem;
-        box-shadow: 0 2px 8px rgba(16,185,129,0.08);
-        transition: background 0.2s, color 0.2s, border 0.2s;
-        text-align: center;
-        min-width: 80px;
-        max-width: 120px;
-        margin: 0 0.1rem;
-    }
-    .nav-links a:hover {
-        background: #10b981;
-        color: #fff;
-        border-color: #6b46c1;
-    }
-    /* Giriş/Çıkış butonunu menüden ayır ve alt kısma sabitle */
-    .auth-btn {
-        position: fixed;
-        left: 50%;
-        bottom: 1.2rem;
-        transform: translateX(-50%);
-        z-index: 1200;
-        background: #6b46c1;
-        color: #fff;
-        border-radius: 12px;
-        font-size: 1rem;
-        font-weight: 700;
-        padding: 0.7rem 2.2rem;
-        box-shadow: 0 2px 12px rgba(107,70,193,0.12);
-    }
-    .auth-btn:hover {
-        background: #10b981;
-        color: #fff;
-    }
-    .logo-row {
-        width: 100%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding-top: 0.7rem;
-        padding-bottom: 0.3rem;
-        background: transparent;
-    }
-    header {
-        display: flex;
         flex-direction: column;
         align-items: stretch;
     }
