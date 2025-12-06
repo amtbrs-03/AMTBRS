@@ -1,4 +1,14 @@
 #!/usr/bin/env node
+// Node.js mock for localStorage (for CI)
+if (typeof localStorage === 'undefined') {
+  global.localStorage = {
+    _data: {},
+    setItem: function (key, value) { this._data[key] = value; },
+    getItem: function (key) { return this._data[key] || null; },
+    removeItem: function (key) { delete this._data[key]; },
+    clear: function () { this._data = {}; }
+  };
+}
 // Telefon kaydetme ve localStorage testi
 function testSaveUserPhone() {
   // Mock input
