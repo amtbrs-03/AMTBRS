@@ -1,0 +1,16 @@
+{
+  "email": "ci@example.com",
+  "name": "CI User",
+  "phone": "+90 530 000 00 00",
+  "addresses": [
+    {
+      "id": "default",
+      "title": "Varsayılan",
+      "city": "İstanbul",
+      "district": "Kadıköy",
+      "addressDetail": "CI Sk No:1",
+      "postalCode": "34000",
+      "isDefault": true
+    }
+  ]
+}
