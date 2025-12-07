@@ -1502,12 +1502,8 @@
                                     // Küçük ve optimize edilmiş görseller kullanılması önerilir (webp/png)
                                     img.innerHTML='';
                                     img.appendChild(imageEl);
-                                    // Tıklama ile lightbox aç
-                                    img.style.cursor = 'pointer';
-                                    img.onclick = function(e){
-                                        e.stopPropagation();
-                                        openProductLightbox(imagesArr, 0, p.name);
-                                    };
+                                    // Artık lightbox yok, tıklama olayı kaldırıldı
+                                    img.style.cursor = 'default';
                                 } else {
                                     img.textContent = '🛍️';
                                 }
