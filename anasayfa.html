@@ -4268,66 +4268,61 @@ document.addEventListener('click', function(ev){
             img.src = url;
             img.style.display = '';
             img.alt = 'Ürün görseli';
-        } else {
-            img.src = '';
-            img.style.display = 'none';
-            let emoji = el.textContent || '';
-            let emojiEl = document.createElement('div');
-            emojiEl.id = 'lightboxEmoji';
-            emojiEl.style.fontSize = '5rem';
-            emojiEl.style.textAlign = 'center';
-            emojiEl.style.width = '100%';
-            emojiEl.style.height = '70vh';
-            emojiEl.style.display = 'flex';
-            emojiEl.style.alignItems = 'center';
-            emojiEl.style.justifyContent = 'center';
-            emojiEl.textContent = emoji;
-            wrap.appendChild(emojiEl);
+        let productImages = [];
+        let currentIndex = 0;
+        function isMobile(){ return window.innerWidth <= 700; }
+        // Lightbox modalı herkes için erişilebilir, üye girişi gerektirmez
+        function openLightbox(idx){
+            const lb = document.getElementById('productLightbox');
+            const img = document.getElementById('productLightboxImg');
+            const nameEl = document.getElementById('lightboxName');
+            const priceEl = document.getElementById('lightboxPrice');
+            if(!productImages[idx]) return;
+            let el = productImages[idx];
+            let bg = el.style.backgroundImage;
+            if(bg && bg !== 'none') {
+                let url = bg.replace(/^url\(["']?|["']?\)$/g, '').replace(/url\(["']?|["']?\)/g, '').replace(/"/g, '').replace(/'/g, '');
+                img.src = url;
+                img.style.display = '';
+                img.alt = 'Ürün görseli';
+            } else {
+                img.src = '';
+                img.style.display = 'none';
+                let wrap = document.getElementById('lightboxImgWrap');
+                let emoji = el.textContent || '';
+                let emojiEl = document.getElementById('lightboxEmoji');
+                if(!emojiEl){
+                    emojiEl = document.createElement('div');
+                    emojiEl.id = 'lightboxEmoji';
+                    emojiEl.style.fontSize = '5rem';
+                    emojiEl.style.textAlign = 'center';
+                    emojiEl.style.width = '100%';
+                    emojiEl.style.height = '70vh';
+                    emojiEl.style.display = 'flex';
+                    emojiEl.style.alignItems = 'center';
+                    emojiEl.style.justifyContent = 'center';
+                    wrap.appendChild(emojiEl);
+                }
+                emojiEl.textContent = emoji;
+                emojiEl.style.display = 'flex';
+            }
+            let emojiEl = document.getElementById('lightboxEmoji');
+            if(emojiEl && bg && bg !== 'none') emojiEl.style.display = 'none';
+            let card = el.closest('.product-card');
+            let name = card ? card.querySelector('.product-name')?.textContent : '';
+            let price = card ? card.querySelector('.product-price')?.textContent : '';
+            nameEl.textContent = name || '';
+            priceEl.textContent = price || '';
+            lb.classList.remove('hidden');
+            lb.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            currentIndex = idx;
+            if(isMobile() && lb.requestFullscreen){
+                try { lb.requestFullscreen(); } catch(e){}
+            } else if(isMobile() && lb.webkitRequestFullscreen){
+                try { lb.webkitRequestFullscreen(); } catch(e){}
+            }
         }
-        let card = el.closest('.product-card');
-        let name = card ? card.querySelector('.product-name')?.textContent : '';
-        let price = card ? card.querySelector('.product-price')?.textContent : '';
-        nameEl.textContent = name || '';
-        priceEl.textContent = price || '';
-        lb.classList.remove('hidden');
-        lb.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-        currentIndex = idx;
-        // Mobilde tam ekran modunu dene
-        try {
-            if(isMobile() && lb.requestFullscreen){ lb.requestFullscreen(); }
-            else if(isMobile() && lb.webkitRequestFullscreen){ lb.webkitRequestFullscreen(); }
-        } catch(e){}
-    }
-    function closeLightbox(){
-        const lb = document.getElementById('productLightbox');
-        lb.classList.add('hidden');
-        lb.style.display = 'none';
-        document.body.style.overflow = '';
-        // Emoji/text'i de gizle
-        let wrap = document.getElementById('lightboxImgWrap');
-        let oldEmoji = document.getElementById('lightboxEmoji');
-        if(oldEmoji) wrap.removeChild(oldEmoji);
-        // Tam ekrandan çık
-        try {
-            if(document.fullscreenElement && document.exitFullscreen){ document.exitFullscreen(); }
-            else if(document.webkitFullscreenElement && document.webkitExitFullscreen){ document.webkitExitFullscreen(); }
-        } catch(e){}
-    }
-    // Burada fonksiyon bitiyor, aşağıdaki property ve catch blokları kaldırıldı. Kod derlenebilir.
-
-    // İl/İlçe/Mahalle dinamik yükleme sistemi
-    (function(){
-        // Türkiye illeri ve ilçeleri (kompakt veri - en çok kullanılan iller)
-        const cityData = {
-            "İstanbul": ["Adalar","Arnavutköy","Ataşehir","Avcılar","Bağcılar","Bahçelievler","Bakırköy","Başakşehir","Bayrampaşa","Beşiktaş","Beykoz","Beylikdüzü","Beyoğlu","Büyükçekmece","Çatalca","Çekmeköy","Esenler","Esenyurt","Eyüpsultan","Fatih","Gaziosmanpaşa","Güngören","Kadıköy","Kağıthane","Kartal","Küçükçekmece","Maltepe","Pendik","Sancaktepe","Sarıyer","Silivri","Sultanbeyli","Sultangazi","Şile","Şişli","Tuzla","Ümraniye","Üsküdar","Zeytinburnu"],
-            "Ankara": ["Akyurt","Altındağ","Ayaş","Balâ","Beypazarı","Çamlıdere","Çankaya","Çubuk","Elmadağ","Etimesgut","Evren","Gölbaşı","Güdül","Haymana","Kahramankazan","Kalecik","Keçiören","Kızılcahamam","Mamak","Nallıhan","Polatlı","Pursaklar","Sincan","Şereflikoçhisar","Yenimahalle"],
-            "İzmir": ["Aliağa","Balçova","Bayındır","Bayraklı","Bergama","Beydağ","Bornova","Buca","Çeşme","Çiğli","Dikili","Foça","Gaziemir","Güzelbahçe","Karabağlar","Karaburun","Karşıyaka","Kemalpaşa","Kınık","Kiraz","Konak","Menderes","Menemen","Narlıdere","Ödemiş","Seferihisar","Selçuk","Tire","Torbalı","Urla"],
-            "Adana": ["Aladağ","Ceyhan","Çukurova","Feke","İmamoğlu","Karaisalı","Karataş","Kozan","Pozantı","Saimbeyli","Sarıçam","Seyhan","Tufanbeyli","Yumurtalık","Yüreğir"],
-            "Bursa": ["Büyükorhan","Gemlik","Gürsu","Harmancık","İnegöl","İznik","Karacabey","Keles","Kestel","Mudanya","Mustafakemalpaşa","Nilüfer","Orhaneli","Orhangazi","Osmangazi","Yenişehir","Yıldırım"],
-            "Antalya": ["Akseki","Alanya","Aksu","Demre","Döşemealtı","Elmalı","Finike","Gazipaşa","Gündoğmuş","İbradı","Kaş","Kemer","Kepez","Konyaaltı","Korkuteli","Kumluca","Manavgat","Muratpaşa","Serik"]
-        };
-
         const districtSelect = document.getElementById('registerDistrict');
         const citySelect = document.getElementById('registerCity');
 
