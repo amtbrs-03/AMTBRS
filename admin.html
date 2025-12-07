@@ -1820,10 +1820,21 @@
                 sha: data.sha
               })
             });
-            if (!putRes.ok){ const t=await putRes.text().catch(()=> ''); throw new Error('GitHub kaydı başarısız: '+putRes.status+' '+t); }
+            if (!putRes.ok) {
+              if (putRes.status === 409) {
+                alert('Ürün zaten silindi');
+                renderAdminProducts();
+                return;
+              }
+              const t = await putRes.text().catch(()=> '');
+              throw new Error('GitHub kaydı başarısız: '+putRes.status+' '+t);
+            }
             alert('✅ Ürün silindi');
             renderAdminProducts();
-          } catch(e){ alert('Hata: '+ (e.message||e)); }
+          } catch(e){
+            const msg = String(e && e.message ? e.message : e);
+            alert('Hata: ' + msg);
+          }
         }
 
         window.renderAdminProducts = renderAdminProducts;
