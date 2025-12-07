@@ -3575,7 +3575,8 @@
                     /* --- Utilities --- */
                     // Basit HTML escape (güvenli string dönüşümü)
                     function escapeHtml(text) {
-                        const s = String(text === undefined || text === null ? '' : text);
+                        if (text === undefined || text === null) return '';
+                        const s = String(text);
                         return s.replace(/[&<>\"']/g, function(m) {
                             return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];
                         });
