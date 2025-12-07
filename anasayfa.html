@@ -3,6 +3,233 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ern Çiçek - Ana Sayfa</title>
+    <meta name="description" content="Ern Çiçek - Online çiçek siparişi, hızlı teslimat, güvenli alışveriş.">
+    <link rel="icon" href="/images/products/logo.png">
+    <style>
+    body { font-family: 'Inter', Arial, sans-serif; margin: 0; background: #f8fafc; color: #222; }
+    header { background: #10b981; color: #fff; padding: 1.2rem 0.5rem; display: flex; align-items: center; justify-content: space-between; }
+    .logo-row { display: flex; align-items: center; gap: 1rem; }
+    .logo-row img { height: 48px; border-radius: 12px; }
+    .nav-top ul { list-style: none; display: flex; gap: 1.2rem; margin: 0; padding: 0; }
+    .nav-top ul li { display: inline; }
+    .nav-top a, .contact-btn { color: #fff; text-decoration: none; font-weight: 600; padding: 0.6rem 1rem; border-radius: 8px; transition: background 0.2s; }
+    .nav-top a:hover, .contact-btn:hover { background: #059669; }
+    .contact-btn { background: linear-gradient(135deg,#10b981,#059669); border: none; cursor: pointer; }
+    main { max-width: 1200px; margin: 2rem auto; padding: 1rem; }
+    .product-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 2rem; }
+    .product-card { background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(16,185,129,0.08); padding: 1.2rem; display: flex; flex-direction: column; align-items: center; }
+    .product-image { width: 120px; height: 120px; object-fit: cover; border-radius: 12px; margin-bottom: 1rem; }
+    .product-name { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .product-price { color: #059669; font-size: 1rem; font-weight: 600; margin-bottom: 0.7rem; }
+    .add-cart-btn { background: #10b981; color: #fff; border: none; border-radius: 8px; padding: 0.5rem 1.2rem; cursor: pointer; font-weight: 600; transition: background 0.2s; }
+    .add-cart-btn:hover { background: #059669; }
+    #cartBtn { position: relative; }
+    #cartCount { position: absolute; top: -8px; right: -8px; background: #ef4444; color: #fff; border-radius: 50%; padding: 2px 7px; font-size: 0.9rem; font-weight: 700; }
+    .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.18); align-items: center; justify-content: center; }
+    .modal.active { display: flex; }
+    .modal-content { background: #fff; border-radius: 16px; padding: 2rem; min-width: 320px; max-width: 95vw; box-shadow: 0 8px 32px rgba(16,185,129,0.18); }
+    .form-content { display: flex; flex-direction: column; gap: 1rem; }
+    .form-content input, .form-content button { padding: 0.7rem; border-radius: 8px; border: 1px solid #e5e7eb; font-size: 1rem; }
+        .form-content button { background: #10b981; color: #fff; border: none; font-weight: 600; cursor: pointer; }
+        .form-content button:hover { background: #059669; }
+        @media (max-width: 700px) { main { padding: 0.5rem; } .product-list { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo-row">
+            <img src="/images/products/logo.png" alt="Ern Çiçek Logo">
+            <span style="font-size:1.3rem;font-weight:700;">Ern Çiçek</span>
+        </div>
+        <nav class="nav-top">
+            <ul class="nav-links">
+    <li><a href="#" onclick="scrollToTop()">Ana Sayfa</a></li>
+    <li><a href="#" id="cartBtn" onclick="openCart()">Sepet <span id="cartCount">0</span></a></li>
+    <li><a href="#" onclick="openContactModal()">İletişim</a></li>
+                <li><a href="#" onclick="openAboutModal()">Hakkımızda</a></li>
+            </ul>
+        </nav>
+        <button class="contact-btn" onclick="openContactModal()">Bize Ulaşın</button>
+    </header>
+    <main>
+        <section id="productsSection">
+            <h2>Çiçeklerimiz</h2>
+            <div class="product-list" id="productList"></div>
+        </section>
+    </main>
+    <!-- Sepet Modalı -->
+    <div class="modal" id="cartContainer">
+        <div class="modal-content">
+            <h3>Sepetiniz</h3>
+    <div id="cartItems"></div>
+    <button onclick="closeCart()">Kapat</button>
+    <button onclick="checkoutCart()">Siparişi Tamamla</button>
+        </div>
+    </div>
+    <!-- Kullanıcı Modalı -->
+    <div class="modal" id="authModal">
+        <div class="modal-content">
+            <div id="authContainer">
+                <h3>Giriş Yap</h3>
+                <div class="form-content">
+                    <input type="email" id="loginEmail" placeholder="E-posta">
+                    <input type="password" id="loginPassword" placeholder="Şifre">
+                    <button onclick="loginUser()">Giriş Yap</button>
+                </div>
+    <hr>
+    <h3>Kayıt Ol</h3>
+    <div class="form-content">
+          <input type="text" id="registerName" placeholder="Ad Soyad">
+          <input type="email" id="registerEmail" placeholder="E-posta">
+          <input type="password" id="registerPassword" placeholder="Şifre">
+                    <button onclick="registerUser()">Kayıt Ol</button>
+                </div>
+            </div>
+            <div id="userContainer" style="display:none;">
+                <h3>Hoşgeldiniz, <span id="userName"></span></h3>
+                <button onclick="logout()">Çıkış Yap</button>
+            </div>
+            <button onclick="closeAuthModal()">Kapat</button>
+        </div>
+    </div>
+    <!-- İletişim Modalı -->
+    <div class="modal" id="contactModal">
+        <div class="modal-content">
+            <h3>İletişim</h3>
+            <p>Telefon: <a href="tel:+905551234567">+90 555 123 45 67</a></p>
+            <p>E-posta: <a href="mailto:info@ern-cicek.com.tr">info@ern-cicek.com.tr</a></p>
+            <button onclick="closeContactModal()">Kapat</button>
+        </div>
+    </div>
+    <!-- Hakkımızda Modalı -->
+    <div class="modal" id="aboutModal">
+        <div class="modal-content">
+            <h3>Hakkımızda</h3>
+            <p>Ern Çiçek, taze ve kaliteli çiçekleri hızlı teslimat ile sunar. Güvenli alışveriş ve müşteri memnuniyeti önceliğimizdir.</p>
+            <button onclick="closeAboutModal()">Kapat</button>
+        </div>
+    </div>
+    <script>
+        // Ürünleri yükle
+        async function loadProducts() {
+            try {
+                const res = await fetch('products.json');
+                const products = await res.json();
+    const list = document.getElementById('productList');
+    list.innerHTML = '';
+    products.forEach(product => {
+          const card = document.createElement('div');
+          card.className = 'product-card';
+          card.innerHTML = `
+            <img src="${product.image}" class="product-image" alt="${product.name}">
+            <div class="product-name">${product.name}</div>
+            <div class="product-price">${product.price} TL</div>
+                        <button class="add-cart-btn" onclick="addToCart('${product.id}')">Sepete Ekle</button>
+                    `;
+                    list.appendChild(card);
+                });
+            } catch (e) {
+                document.getElementById('productList').innerHTML = '<p>Ürünler yüklenemedi.</p>';
+            }
+        }
+        // Sepet işlemleri
+        function getCart() {
+            return JSON.parse(localStorage.getItem('cart') || '[]');
+        }
+        function setCart(cart) {
+            localStorage.setItem('cart', JSON.stringify(cart));
+            updateCartCount();
+        }
+        function addToCart(id) {
+            const cart = getCart();
+    const idx = cart.findIndex(item => item.id === id);
+    if (idx > -1) cart[idx].qty += 1;
+    else cart.push({ id, qty: 1 });
+            setCart(cart);
+        }
+        function updateCartCount() {
+            const cart = getCart();
+            document.getElementById('cartCount').textContent = cart.reduce((sum, item) => sum + item.qty, 0);
+        }
+        function openCart() {
+            const cart = getCart();
+            const itemsDiv = document.getElementById('cartItems');
+            itemsDiv.innerHTML = '';
+            if (cart.length === 0) {
+                itemsDiv.innerHTML = '<p>Sepetiniz boş.</p>';
+            } else {
+                cart.forEach(item => {
+                    itemsDiv.innerHTML += `<div>${item.id} - Adet: ${item.qty}</div>`;
+                });
+            }
+            document.getElementById('cartContainer').classList.add('active');
+        }
+        function closeCart() {
+            document.getElementById('cartContainer').classList.remove('active');
+        }
+        function checkoutCart() {
+            alert('Siparişiniz alındı!');
+            setCart([]);
+            closeCart();
+        }
+    // Modal işlemleri
+    function openAuthModal() { document.getElementById('authModal').classList.add('active'); }
+    function closeAuthModal() { document.getElementById('authModal').classList.remove('active'); }
+    function openContactModal() { document.getElementById('contactModal').classList.add('active'); }
+    function closeContactModal() { document.getElementById('contactModal').classList.remove('active'); }
+    function openAboutModal() { document.getElementById('aboutModal').classList.add('active'); }
+    function closeAboutModal() { document.getElementById('aboutModal').classList.remove('active'); }
+    // Kullanıcı işlemleri
+    function loginUser() {
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    if (email && password) {
+    localStorage.setItem('user', JSON.stringify({ email }));
+    updateAuthUI();
+    closeAuthModal();
+            }
+        }
+        function registerUser() {
+    const name = document.getElementById('registerName').value;
+    const email = document.getElementById('registerEmail').value;
+    const password = document.getElementById('registerPassword').value;
+            if (name && email && password) {
+                localStorage.setItem('user', JSON.stringify({ name, email }));
+                updateAuthUI();
+                closeAuthModal();
+            }
+        }
+        function logout() {
+            localStorage.removeItem('user');
+            updateAuthUI();
+            closeAuthModal();
+        }
+        function updateAuthUI() {
+            const user = JSON.parse(localStorage.getItem('user') || 'null');
+            if (user) {
+                document.getElementById('authContainer').style.display = 'none';
+                document.getElementById('userContainer').style.display = 'block';
+                document.getElementById('userName').textContent = user.name || user.email;
+            } else {
+                document.getElementById('authContainer').style.display = 'block';
+                document.getElementById('userContainer').style.display = 'none';
+            }
+    }
+    function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    window.onload = function() {
+    loadProducts();
+    updateCartCount();
+    updateAuthUI();
+        };
+    </script>
+    </body>
+    </html>
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Çiçekçi - Ana Sayfa</title>
     <link rel="icon" href="/images/products/flower-icon.png">
     <style>
@@ -46,23 +273,6 @@
             margin-bottom: 1.5rem;
         }
         .form-tabs button {
-            try {
-                const draft = {
-                    registerName: document.getElementById('registerName')?.value || '',
-                    registerEmail: document.getElementById('registerEmail')?.value || '',
-                    registerPhone: document.getElementById('registerPhone')?.value || '',
-                    registerCity: document.getElementById('registerCity')?.value || '',
-                    registerDistrict: document.getElementById('registerDistrict')?.value || '',
-                    registerNeighborhood: document.getElementById('registerNeighborhood')?.value || '',
-                    registerAddressDetail: document.getElementById('registerAddressDetail')?.value || '',
-                    registerPostalCode: document.getElementById('registerPostalCode')?.value || '',
-                    savedAt: Date.now()
-                };
-                sessionStorage.setItem('registerFormDraft', JSON.stringify(draft));
-                console.log('✓ Form draft saved to sessionStorage');
-            } catch(e) {
-                console.error('Form draft save error:', e);
-            }
             padding: 0.7rem 1.2rem;
             border: none;
             background: #f3f4f6;
@@ -1738,5 +1948,25 @@
                     })();
                 <!-- JS kodları dosyanın sonunda tek bir script bloğunda olacak -->
     <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+    <script>
+    // JS kodları buraya taşındı
+try {
+    const draft = {
+        registerName: document.getElementById('registerName')?.value || '',
+        registerEmail: document.getElementById('registerEmail')?.value || '',
+        registerPhone: document.getElementById('registerPhone')?.value || '',
+        registerCity: document.getElementById('registerCity')?.value || '',
+        registerDistrict: document.getElementById('registerDistrict')?.value || '',
+        registerNeighborhood: document.getElementById('registerNeighborhood')?.value || '',
+        registerAddressDetail: document.getElementById('registerAddressDetail')?.value || '',
+        registerPostalCode: document.getElementById('registerPostalCode')?.value || '',
+        savedAt: Date.now()
+    };
+    sessionStorage.setItem('registerFormDraft', JSON.stringify(draft));
+    console.log('✓ Form draft saved to sessionStorage');
+} catch(e) {
+    console.error('Form draft save error:', e);
+}
+    </script>
 </body>
 </html>
