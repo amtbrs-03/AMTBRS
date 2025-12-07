@@ -13,7 +13,6 @@
     <meta name="theme-color" content="#0b2f1f" />
     
     <!-- Open Graph -->
-    <meta property="og:type" content="website" />
     <meta property="og:title" content="Çiçekçi - Online Çiçek Siparişi | Gül Buketi | ERN Çiçek" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Çiçekçi - Online Çiçek Siparişi | ERN Çiçek" />
@@ -117,7 +116,7 @@
           }
         ]
       }
-    }
+})();
     </script>
 
     <style>
@@ -4296,28 +4295,6 @@ document.addEventListener('click', function(ev){
             img.src = url;
             img.style.display = '';
             img.alt = 'Ürün görseli';
-        let productImages = [];
-        let currentIndex = 0;
-        function isMobile(){ return window.innerWidth <= 700; }
-        // Lightbox modalı herkes için erişilebilir, üye girişi gerektirmez
-        function openLightbox(idx){
-            const lb = document.getElementById('productLightbox');
-            const img = document.getElementById('productLightboxImg');
-            const nameEl = document.getElementById('lightboxName');
-            const priceEl = document.getElementById('lightboxPrice');
-            if(!productImages[idx]) return;
-            let el = productImages[idx];
-            let card = el.closest('.product-card');
-            let bg = el.style.backgroundImage;
-            // Modalı ürün kartının parent'ına ekle ve tam üstüne konumlandır
-            if(card){
-                const cardRect = card.getBoundingClientRect();
-                // Modalı önce body'den çıkar, sonra card'ın parent'ına ekle
-                if(lb.parentNode !== card.parentNode){
-                    lb.parentNode.removeChild(lb);
-                    card.parentNode.appendChild(lb);
-                }
-                lb.style.position = 'absolute';
                 lb.style.top = card.offsetTop + 'px';
                 lb.style.left = card.offsetLeft + 'px';
                 lb.style.width = card.offsetWidth + 'px';
@@ -4363,8 +4340,8 @@ document.addEventListener('click', function(ev){
         }
         const districtSelect = document.getElementById('registerDistrict');
         const citySelect = document.getElementById('registerCity');
-
-        if (!citySelect || !districtSelect) return;
+        // Wrap in IIFE for proper block closure
+        (function(){
 
         // İl seçildiğinde ilçeleri yükle
         citySelect.addEventListener('change', function(){
@@ -4386,39 +4363,40 @@ document.addEventListener('click', function(ev){
                 districtSelect.appendChild(opt);
             }
         });
-    })();
 
-    // Telefon numarasına otomatik +90 ön eki ekle
-    function formatPhoneInput(input) {
-        let value = input.value.replace(/\D/g, ''); // Sadece rakamları al
+        // Telefon numarasına otomatik +90 ön eki ekle
+        function formatPhoneInput(input) {
+            let value = input.value.replace(/\D/g, ''); // Sadece rakamları al
         
-        // Eğer boşsa, sıfırla
-        if (!value) {
-            input.value = '';
-            return;
-        }
-        
-        // Türk numarası kontrolü: 5XX veya 90 ile başlaması gerekir
-        if (value.startsWith('90')) {
-            value = value.substring(2); // 90 başındaysa, çıkar
-        } else if (value.startsWith('0')) {
-            value = value.substring(1); // 0 ile başlıyorsa, çıkar
-        }
-        
-        // +90 ön eki ekle ve formatla
-        if (value.length > 0) {
-            if (value.length >= 10) {
-                value = value.substring(0, 10); // Max 10 rakam
+            // Eğer boşsa, sıfırla
+            if (!value) {
+                input.value = '';
+                return;
             }
-            // Format: +90 5XX XXX XXXX
-            if (value.length <= 3) {
-                input.value = '+90 ' + value;
-            } else if (value.length <= 6) {
-                input.value = '+90 ' + value.substring(0, 3) + ' ' + value.substring(3);
-            } else {
-                input.value = '+90 ' + value.substring(0, 3) + ' ' + value.substring(3, 6) + ' ' + value.substring(6);
+        
+            // Türk numarası kontrolü: 5XX veya 90 ile başlaması gerekir
+            if (value.startsWith('90')) {
+                value = value.substring(2); // 90 başındaysa, çıkar
+            } else if (value.startsWith('0')) {
+                value = value.substring(1); // 0 ile başlıyorsa, çıkar
+            }
+        
+            // +90 ön eki ekle ve formatla
+            if (value.length > 0) {
+                if (value.length >= 10) {
+                    value = value.substring(0, 10); // Max 10 rakam
+                }
+                // Format: +90 5XX XXX XXXX
+                if (value.length <= 3) {
+                    input.value = '+90 ' + value;
+                } else if (value.length <= 6) {
+                    input.value = '+90 ' + value.substring(0, 3) + ' ' + value.substring(3);
+                } else {
+                    input.value = '+90 ' + value.substring(0, 3) + ' ' + value.substring(3, 6) + ' ' + value.substring(6);
+                }
             }
         }
     }
+})();
     </script>
 </html>
