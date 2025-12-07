@@ -1327,6 +1327,33 @@
                                     <div style="font-size:0.8rem;color:#6b7280;margin-top:4px">Kayıtlı üyeler telefon bilgisini burada güncelleyebilir.</div>
                                 </div>
 
+                                <!-- Hızlı Adres Güncelleme (Varolan üyeler için) -->
+                                <div style="margin:0.75rem 0; padding:0.75rem; background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px;">
+                                    <div style="font-weight:700; color:#064e3b; margin-bottom:0.5rem;">📍 Adresini Güncelle</div>
+                                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.6rem;">
+                                        <div>
+                                            <label for="acctCityInput" style="display:block; font-weight:600; color:#334155; margin-bottom:0.3rem;">İl</label>
+                                            <input type="text" id="acctCityInput" placeholder="İl" style="width:100%; padding:0.6rem; border:1px solid #d1d5db; border-radius:8px;">
+                                        </div>
+                                        <div>
+                                            <label for="acctDistrictInput" style="display:block; font-weight:600; color:#334155; margin-bottom:0.3rem;">İlçe</label>
+                                            <input type="text" id="acctDistrictInput" placeholder="İlçe" style="width:100%; padding:0.6rem; border:1px solid #d1d5db; border-radius:8px;">
+                                        </div>
+                                        <div style="grid-column:1/-1;">
+                                            <label for="acctAddressDetailInput" style="display:block; font-weight:600; color:#334155; margin-bottom:0.3rem;">Adres Detayı</label>
+                                            <input type="text" id="acctAddressDetailInput" placeholder="Sokak/Cadde, No, Daire" style="width:100%; padding:0.6rem; border:1px solid #d1d5db; border-radius:8px;">
+                                        </div>
+                                        <div>
+                                            <label for="acctPostalCodeInput" style="display:block; font-weight:600; color:#334155; margin-bottom:0.3rem;">Posta Kodu</label>
+                                            <input type="text" id="acctPostalCodeInput" placeholder="34000" style="width:100%; padding:0.6rem; border:1px solid #d1d5db; border-radius:8px;">
+                                        </div>
+                                    </div>
+                                    <div style="display:flex; gap:0.5rem; margin-top:0.6rem;">
+                                        <button onclick="saveUserAddress()" style="flex:1; background:#10b981; color:white; border:none; border-radius:8px; padding:0.6rem; cursor:pointer; font-weight:700;">Adresi Kaydet</button>
+                                    </div>
+                                    <div id="acctAddressStatus" style="font-size:0.85rem; color:#6b7280; margin-top:0.4rem; min-height:1.1em"></div>
+                                </div>
+
                                 <div style="margin-top:1rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
                                     <button data-action="close-account" style="flex:1; min-width:120px;">Kapat</button>
                                     <button data-action="logout" style="flex:1; min-width:120px; background:#f59e0b;color:#fff">Çıkış Yap</button>
@@ -2512,86 +2539,17 @@
                         return decoded;
                     }
 
-                    // Commit FULL user record (including password hash) directly via GitHub Contents API
+                    // Commit FULL user record via GitHub Contents API (client-side direct commit disabled)
+                    // Security and reliability note: Direct commits from the browser are disabled.
+                    // Server-side commit is performed by Cloudflare Worker (/update-user).
                     async function commitFullUserToRepo(userRecord){
                         if (!userRecord || !userRecord.email) {
                             console.error('commitFullUserToRepo: geçersiz kullanıcı kaydı', userRecord);
                             return false;
                         }
                         console.log('commitFullUserToRepo: başlıyor →', userRecord.email);
-
-                        // Token: first try localStorage, else fallback to embedded XOR-encoded token
-                        let GITHUB_TOKEN = localStorage.getItem('github_token');
-                        if (!GITHUB_TOKEN) {
-                            const encoded = '":>r3\x0e,\' bj@\x06\x07\t5\'K"\x0b4\x08\tYUJ[f\x11\x0b\rK0\x0cs\x0f\x1dupY';
-                            const key = 'ERN-CICEK-2025';
-                            try {
-                                GITHUB_TOKEN = decodeToken(encoded, key);
-                                console.log('commitFullUserToRepo: gömülü token kullanılacak');
-                            } catch(e) {
-                                console.error('commitFullUserToRepo: gömülü token çözümlenemedi', e);
-                            }
-                        }
-
-                        if (!GITHUB_TOKEN) {
-                            console.warn('commitFullUserToRepo: GitHub token yok. Sadece localStorage güncellendi.');
-                            return false;
-                        }
-
-                        const owner = 'amtbrs-03';
-                        const repo = 'AMTBRS';
-                        const branch = 'site-release';
-                        const fileName = encodeURIComponent(userRecord.email) + '_full.json';
-                        const getUrl = `https://api.github.com/repos/${owner}/${repo}/contents/users/${fileName}?ref=${encodeURIComponent(branch)}`;
-                        const putUrl = `https://api.github.com/repos/${owner}/${repo}/contents/users/${fileName}`;
-
-                        // Prepare base64 content
-                        const json = JSON.stringify(userRecord, null, 2);
-                        const contentBase64 = btoa(unescape(encodeURIComponent(json)));
-
-                        // Read current sha if file exists
-                        let sha = undefined;
-                        try {
-                            const resGet = await fetch(getUrl, { headers: { 'Accept': 'application/vnd.github.v3+json' }, cache: 'no-store' });
-                            if (resGet.ok) {
-                                const data = await resGet.json();
-                                if (data && data.sha) sha = data.sha;
-                            } else if (resGet.status !== 404) {
-                                const txt = await resGet.text().catch(()=> '');
-                                console.warn('commitFullUserToRepo: mevcut içerik okunamadı:', resGet.status, txt);
-                            }
-                        } catch(e) {
-                            console.warn('commitFullUserToRepo: sha sorgusu hatası:', e && e.message ? e.message : e);
-                        }
-
-                        const body = {
-                            message: 'chore(user): kullanıcı bilgisi ve adresleri güncelle (site)'+(sha?'':' [yeni dosya]'),
-                            content: contentBase64,
-                            branch
-                        };
-                        if (sha) body.sha = sha;
-
-                        try {
-                            const resPut = await fetch(putUrl, {
-                                method: 'PUT',
-                                headers: {
-                                    'Authorization': `token ${GITHUB_TOKEN}`,
-                                    'Accept': 'application/vnd.github.v3+json',
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify(body)
-                            });
-                            if (!resPut.ok) {
-                                const txt = await resPut.text().catch(()=> '');
-                                console.error('commitFullUserToRepo: kaydetme hatası →', resPut.status, txt);
-                                return false;
-                            }
-                            console.log('commitFullUserToRepo: ✓ GitHub içerikleri güncellendi');
-                            return true;
-                        } catch(err) {
-                            console.error('commitFullUserToRepo: İSTİSNA', err);
-                            return false;
-                        }
+                        // Client-side direct commit disabled; use Worker instead
+                        return false;
                     }
                     
                     // Kullanıcı kaydını uzak repodan getir (raw/CDN + Contents API yedekli)
@@ -2868,6 +2826,7 @@
                             }
                             html += '</div>';
                             html += '<div style="display:flex; gap:0.5rem;">';
+                            html += '<button onclick="editAddress(\'' + addr.id + '\')" style="background:#10b981; color:white; border:none; padding:0.4rem 0.8rem; border-radius:6px; cursor:pointer; font-size:0.85rem;">Düzenle</button>';
                             if (!addr.isDefault) {
                                 html += '<button onclick="setDefaultAddress(\'' + addr.id + '\')" style="background:#3b82f6; color:white; border:none; padding:0.4rem 0.8rem; border-radius:6px; cursor:pointer; font-size:0.85rem;">Varsayılan Yap</button>';
                             }
@@ -2883,9 +2842,76 @@
                             if (addr.postalCode) html += '<div><strong>Posta Kodu:</strong> ' + addr.postalCode + '</div>';
                             html += '</div>';
                             
+                            // Inline edit form (hidden by default)
+                            html += '<div id="addrEdit_'+addr.id+'" style="display:none; margin-top:0.6rem; padding:0.6rem; background:#fff; border:1px solid #e5e7eb; border-radius:8px;">';
+                            html += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:0.6rem;">';
+                            html += '<div><label style="display:block; font-weight:600; color:#334155; margin-bottom:0.3rem;">İl</label><input type="text" id="addrCity_'+addr.id+'" placeholder="İl" style="width:100%; padding:0.5rem; border:1px solid #d1d5db; border-radius:8px;"></div>';
+                            html += '<div><label style="display:block; font-weight:600; color:#334155; margin-bottom:0.3rem;">İlçe</label><input type="text" id="addrDistrict_'+addr.id+'" placeholder="İlçe" style="width:100%; padding:0.5rem; border:1px solid #d1d5db; border-radius:8px;"></div>';
+                            html += '<div style="grid-column:1/-1;"><label style="display:block; font-weight:600; color:#334155; margin-bottom:0.3rem;">Adres Detayı</label><input type="text" id="addrDetail_'+addr.id+'" placeholder="Sokak/Cadde, No, Daire" style="width:100%; padding:0.5rem; border:1px solid #d1d5db; border-radius:8px;"></div>';
+                            html += '<div><label style="display:block; font-weight:600; color:#334155; margin-bottom:0.3rem;">Posta Kodu</label><input type="text" id="addrZip_'+addr.id+'" placeholder="34000" style="width:100%; padding:0.5rem; border:1px solid #d1d5db; border-radius:8px;"></div>';
+                            html += '<div style="display:flex; align-items:flex-end;"><label style="display:flex; align-items:center; gap:0.4rem;"><input type="checkbox" id="addrDefault_'+addr.id+'"'+(addr.isDefault?' checked':'')+'><span style="font-weight:600; color:#334155;">Varsayılan yap</span></label></div>';
+                            html += '</div>';
+                            html += '<div style="display:flex; gap:0.5rem; margin-top:0.6rem;"><button onclick="saveEditedAddress(\''+addr.id+'\')" style="flex:1; background:#10b981; color:#fff; border:none; border-radius:8px; padding:0.5rem; font-weight:700; cursor:pointer;">Kaydet</button><button onclick="cancelEditAddress(\''+addr.id+'\')" style="flex:1; background:#6b7280; color:#fff; border:none; border-radius:8px; padding:0.5rem; font-weight:700; cursor:pointer;">İptal</button></div>';
+                            html += '<div id="addrEditStatus_'+addr.id+'" style="font-size:0.85rem; color:#6b7280; margin-top:0.4rem; min-height:1.1em"></div>';
+                            html += '</div>';
+
                             card.innerHTML = html;
                             listEl.appendChild(card);
                         });
+                    }
+
+                    function editAddress(addressId){
+                        const el = document.getElementById('addrEdit_'+addressId);
+                        if (!el) return;
+                        // Prefill from current addresses
+                        const addrs = getUserAddresses();
+                        const a = addrs.find(x=>x.id===addressId);
+                        if (!a) return;
+                        const cityEl = document.getElementById('addrCity_'+addressId);
+                        const districtEl = document.getElementById('addrDistrict_'+addressId);
+                        const detailEl = document.getElementById('addrDetail_'+addressId);
+                        const zipEl = document.getElementById('addrZip_'+addressId);
+                        const defEl = document.getElementById('addrDefault_'+addressId);
+                        if (cityEl) cityEl.value = a.city || '';
+                        if (districtEl) districtEl.value = a.district || '';
+                        if (detailEl) detailEl.value = a.addressDetail || '';
+                        if (zipEl) zipEl.value = a.postalCode || '';
+                        if (defEl) defEl.checked = !!a.isDefault;
+                        el.style.display = 'block';
+                    }
+
+                    function cancelEditAddress(addressId){
+                        const el = document.getElementById('addrEdit_'+addressId);
+                        if (el) el.style.display = 'none';
+                        const st = document.getElementById('addrEditStatus_'+addressId);
+                        if (st) st.textContent = '';
+                    }
+
+                    async function saveEditedAddress(addressId){
+                        const st = document.getElementById('addrEditStatus_'+addressId);
+                        function setStatus(t){ if(st) st.textContent = t; }
+                        const addrs = getUserAddresses();
+                        const idx = addrs.findIndex(x=>x.id===addressId);
+                        if (idx < 0){ setStatus('Adres bulunamadı'); return; }
+                        const city = (document.getElementById('addrCity_'+addressId)||{}).value?.trim?.() || '';
+                        const district = (document.getElementById('addrDistrict_'+addressId)||{}).value?.trim?.() || '';
+                        const detail = (document.getElementById('addrDetail_'+addressId)||{}).value?.trim?.() || '';
+                        const zip = (document.getElementById('addrZip_'+addressId)||{}).value?.trim?.() || '';
+                        const makeDefault = !!(document.getElementById('addrDefault_'+addressId)||{checked:false}).checked;
+                        if (!city || !district || !detail){ setStatus('Lütfen İl, İlçe ve Adres Detayı alanlarını doldurun'); return; }
+                        setStatus('Kaydediliyor...');
+                        // Update entry
+                        addrs[idx] = Object.assign({}, addrs[idx], { city, district, addressDetail: detail, postalCode: zip });
+                        if (makeDefault){
+                            addrs.forEach(a=>a.isDefault=false);
+                            addrs[idx].isDefault = true;
+                        }
+                        const okLocal = await saveUserAddresses(addrs);
+                        if (okLocal){ setStatus('✅ Adres güncellendi ve senkronize edildi'); }
+                        else { setStatus('⚠️ Yerel güncelleme yapıldı, uzak senkronizasyon başarısız'); }
+                        // Hide form and refresh list
+                        cancelEditAddress(addressId);
+                        await loadUserAddresses();
                     }
                     
                     function showAddAddressForm() {
@@ -3005,10 +3031,57 @@
                             full.phone = phone;
                             try{ localStorage.setItem('user_' + cu.email, JSON.stringify(full)); }catch(_){}
                             // Sync to GitHub via Contents API
-                            const ok = await commitFullUserToRepo(full);
-                            if (ok){ alert('Telefon numaranız kaydedildi ve senkronize edildi.'); }
-                            else { alert('Telefon kaydı yerelde güncellendi, ancak uzak sunucuya gönderilemedi. Daha sonra tekrar deneyin.'); }
+                            const ok = false; // client-side commit disabled
+                            // Notify Worker /update-user (server-side commit)
+                            try {
+                                let endpoint = '/send-order';
+                                try{ const s = await (await fetch('/site-settings.json',{cache:'no-store'})).json(); if (s && s.orderEndpoint) endpoint = s.orderEndpoint; }catch(_){ }
+                                endpoint = endpoint.replace(/\/send-order$/, '/update-user');
+                                const resp = await fetch(endpoint, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(full) });
+                                // ignore response body; commitFullUserToRepo already did the write
+                            } catch(_){ }
+                            alert('Telefon numaranız kaydedildi ve sunucuya gönderildi. Değişiklikler senkronize edilecek.');
                         }catch(e){ alert('Telefon kaydı sırasında hata: ' + (e && e.message ? e.message : e)); }
+                    }
+
+                    // Profil sekmesinden varsayılan adres güncelleme
+                    async function saveUserAddress(){
+                        const statusEl = document.getElementById('acctAddressStatus');
+                        function setStatus(t){ if(statusEl) statusEl.textContent = t; }
+                        try{
+                            const cu = getCurrentUser();
+                            if (!cu || !cu.email){ alert('Lütfen önce giriş yapın.'); return; }
+                            const city = (document.getElementById('acctCityInput')||{}).value?.trim?.() || '';
+                            const district = (document.getElementById('acctDistrictInput')||{}).value?.trim?.() || '';
+                            const addressDetail = (document.getElementById('acctAddressDetailInput')||{}).value?.trim?.() || '';
+                            const postalCode = (document.getElementById('acctPostalCodeInput')||{}).value?.trim?.() || '';
+                            if (!city || !district || !addressDetail){ alert('Lütfen adres bilgilerini eksiksiz giriniz (İl, İlçe, Adres Detayı)'); return; }
+                            setStatus('Kaydediliyor...');
+                            // Full record
+                            let full = null;
+                            try{ full = JSON.parse(localStorage.getItem('user_' + cu.email) || 'null'); }catch(_){ full = null; }
+                            if (!full || typeof full !== 'object') full = { name: cu.name, email: cu.email };
+                            const defObj = { city, district, addressDetail, postalCode, isDefault:true };
+                            // Legacy single-address support
+                            full.address = defObj;
+                            // Array form: ensure default is first element
+                            if (!Array.isArray(full.addresses)) full.addresses = [];
+                            const def = full.addresses.find(a=>a&&a.isDefault);
+                            if (def) Object.assign(def, { id: def.id || 'default', title: def.title || 'Varsayılan Adres', ...defObj });
+                            else full.addresses.unshift({ id:'default', title:'Varsayılan Adres', ...defObj });
+                            full.updatedAt = Date.now();
+                            try{ localStorage.setItem('user_' + cu.email, JSON.stringify(full)); }catch(_){}
+                            const ok = false; // client-side commit disabled
+                            // Notify Worker /update-user (server-side commit)
+                            try {
+                                let endpoint = '/send-order';
+                                try{ const s = await (await fetch('/site-settings.json',{cache:'no-store'})).json(); if (s && s.orderEndpoint) endpoint = s.orderEndpoint; }catch(_){ }
+                                endpoint = endpoint.replace(/\/send-order$/, '/update-user');
+                                const resp = await fetch(endpoint, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(full) });
+                                // ignore response body; commitFullUserToRepo already did the write
+                            } catch(_){ }
+                            setStatus('✅ Adresiniz güncellendi ve sunucuya gönderildi. Değişiklikler senkronize edilecek.');
+                        }catch(e){ setStatus('❌ Hata: ' + (e && e.message ? e.message : e)); }
                     }
 
                     // Confirm-protected logout used in modal and profile menu
