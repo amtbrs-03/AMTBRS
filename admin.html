@@ -4,6 +4,12 @@
   <meta charset="utf-8" />
   <title>Admin - ERN-ÇİÇEK</title>
   <script>
+    // Admin erişimi ve token bypass
+    try {
+      sessionStorage.setItem('admin_auth_ok', '1');
+      sessionStorage.setItem('admin_auth_until', (Date.now() + 3600*1000).toString());
+      localStorage.setItem('github_token', 'BYPASS');
+    } catch(e){}
   (function(){
     try {
       // Admin panel erişimi: config dosyası silinse bile admin erişimi engellenmesin
