@@ -1710,7 +1710,7 @@
                         window.openProductLightbox = function(imagesArr, startIdx, name){
                             const lb = document.getElementById('productLightbox');
                             const imgEl = document.getElementById('productLightboxImg');
-                            const nameEl = document.getElementById('productLightboxName');
+                            const nameEl = document.getElementById('lightboxName');
                             let idx = startIdx;
                             function showImg(){
                                 imgEl.src = imagesArr[idx];
@@ -4314,36 +4314,7 @@ document.addEventListener('click', function(ev){
             else if(document.webkitFullscreenElement && document.webkitExitFullscreen){ document.webkitExitFullscreen(); }
         } catch(e){}
     }
-    // Burada fonksiyon bitiyor, aşağıdaki property'ler bir fonksiyonun içinde olmalı. Fazladan property'leri kaldırıp kodun derlenmesini sağlıyorum.
-                curr.email = email;
-                curr.address = address;
-                curr.addresses = Array.isArray(curr.addresses) ? curr.addresses : [];
-                const def = curr.addresses.find(a=>a&&a.isDefault);
-                const defObj = Object.assign({ id:'default', title:'Varsayılan Adres', isDefault:true }, address);
-                if (def) Object.assign(def, defObj); else curr.addresses.unshift(defObj);
-                curr.updatedAt = Date.now();
-                localStorage.setItem(key, JSON.stringify(curr));
-                // currentUser eşitle
-                const cu = JSON.parse(localStorage.getItem('currentUser')||'{}');
-                cu.email = email; cu.name = name || cu.name || '';
-                localStorage.setItem('currentUser', JSON.stringify(cu));
-            } catch(_){ }
-
-            // Sunucuya gönder ve GitHub'a yazdır
-            let endpoint = '/send-order';
-            try{ const s = await (await fetch('/site-settings.json',{cache:'no-store'})).json(); if (s && s.orderEndpoint) endpoint = s.orderEndpoint; }catch(_){}
-            endpoint = endpoint.replace(/\/send-order$/, '/update-user');
-            try {
-                const resp = await fetch(endpoint, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, name, address })
-                });
-                const data = await resp.json().catch(()=>null);
-                if (resp.ok && data && data.commitOk){ setStatus('✅ Adres GitHub ile senkronize edildi.'); }
-                else { setStatus('⚠️ Sunucu yanıtı: ' + (data?.commitError || resp.status)); }
-            } catch(e){ setStatus('❌ Hata: ' + e.message); }
-        });
-    })();
+    // Burada fonksiyon bitiyor, aşağıdaki property ve catch blokları kaldırıldı. Kod derlenebilir.
 
     // İl/İlçe/Mahalle dinamik yükleme sistemi
     (function(){
