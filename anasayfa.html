@@ -815,7 +815,7 @@
   <body>
                                 
                         <!-- Ürün görseli lightbox/modal (mobil uyumlu, header/nav üstte kalır) -->
-                        <div id="productLightbox" class="hidden" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(10,12,30,0.92);z-index:9999;display:none;align-items:center;justify-content:center;transition:opacity 0.3s;">
+                        <div id="productLightbox" class="hidden" style="position:absolute;top:0;left:0;width:100%;background:rgba(10,12,30,0.92);z-index:9999;display:none;align-items:center;justify-content:center;transition:opacity 0.3s;">
                             <button id="lightboxClose" style="position:absolute;top:18px;right:18px;background:#fff;color:#222;border-radius:50%;width:44px;height:44px;font-size:2rem;border:none;box-shadow:0 2px 12px rgba(0,0,0,0.18);z-index:10001;cursor:pointer;">✖</button>
                             <button id="lightboxPrev" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);background:#fff;color:#222;border-radius:50%;width:44px;height:44px;font-size:2rem;border:none;box-shadow:0 2px 12px rgba(0,0,0,0.18);z-index:10001;cursor:pointer;">◀</button>
                             <button id="lightboxNext" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:#fff;color:#222;border-radius:50%;width:44px;height:44px;font-size:2rem;border:none;box-shadow:0 2px 12px rgba(0,0,0,0.18);z-index:10001;cursor:pointer;">▶</button>
@@ -4279,7 +4279,18 @@ document.addEventListener('click', function(ev){
             const priceEl = document.getElementById('lightboxPrice');
             if(!productImages[idx]) return;
             let el = productImages[idx];
+            let card = el.closest('.product-card');
             let bg = el.style.backgroundImage;
+            // Modalı ürün kartının üstüne ve genişliğine konumlandır
+            if(card){
+                const cardRect = card.getBoundingClientRect();
+                lb.style.position = 'absolute';
+                lb.style.top = (window.scrollY + cardRect.top) + 'px';
+                lb.style.left = (window.scrollX + cardRect.left) + 'px';
+                lb.style.width = cardRect.width + 'px';
+                lb.style.height = cardRect.height + 'px';
+                lb.style.borderRadius = window.getComputedStyle(card).borderRadius;
+            }
             if(bg && bg !== 'none') {
                 let url = bg.replace(/^url\(["']?|["']?\)$/g, '').replace(/url\(["']?|["']?\)/g, '').replace(/"/g, '').replace(/'/g, '');
                 img.src = url;
@@ -4297,7 +4308,7 @@ document.addEventListener('click', function(ev){
                     emojiEl.style.fontSize = '5rem';
                     emojiEl.style.textAlign = 'center';
                     emojiEl.style.width = '100%';
-                    emojiEl.style.height = '70vh';
+                    emojiEl.style.height = '100%';
                     emojiEl.style.display = 'flex';
                     emojiEl.style.alignItems = 'center';
                     emojiEl.style.justifyContent = 'center';
@@ -4308,20 +4319,14 @@ document.addEventListener('click', function(ev){
             }
             let emojiEl = document.getElementById('lightboxEmoji');
             if(emojiEl && bg && bg !== 'none') emojiEl.style.display = 'none';
-            let card = el.closest('.product-card');
             let name = card ? card.querySelector('.product-name')?.textContent : '';
             let price = card ? card.querySelector('.product-price')?.textContent : '';
             nameEl.textContent = name || '';
             priceEl.textContent = price || '';
             lb.classList.remove('hidden');
             lb.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
+            document.body.style.overflow = '';
             currentIndex = idx;
-            if(isMobile() && lb.requestFullscreen){
-                try { lb.requestFullscreen(); } catch(e){}
-            } else if(isMobile() && lb.webkitRequestFullscreen){
-                try { lb.webkitRequestFullscreen(); } catch(e){}
-            }
         }
         const districtSelect = document.getElementById('registerDistrict');
         const citySelect = document.getElementById('registerCity');
