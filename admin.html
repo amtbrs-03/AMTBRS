@@ -1021,8 +1021,12 @@
       try { sessionStorage.removeItem('admin_auth_ok'); } catch(_){}
       try { localStorage.removeItem('admin_logged_in'); } catch(_){}
       try { localStorage.removeItem('admin_passkey'); } catch(_){}
-      // Token artık çıkışta silinmiyor
+      try { localStorage.removeItem('github_token'); } catch(_){}
       try { localStorage.removeItem('pending_user_edits'); } catch(_){}
+      // Tarayıcı geçmişini temizle (mümkün olan en iyi yöntem)
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState(null, '', window.location.pathname);
+      }
       closeLogoutConfirmModal();
       location.reload();
     } catch(e){ alert('Çıkış sırasında hata: ' + (e.message||e)); }
