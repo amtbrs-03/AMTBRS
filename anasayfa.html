@@ -813,6 +813,18 @@
     </style>
   </head>
   <body>
+                                    <!-- Ürün görseli lightbox/modal (her zaman DOM'da) -->
+                                    <div id="productLightbox" style="display:none;position:fixed;z-index:99999;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;">
+                                        <div id="productLightboxContent" style="position:relative;max-width:480px;width:90vw;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.28);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px;">
+                                            <span id="productLightboxClose" style="position:absolute;top:8px;right:12px;font-size:2rem;cursor:pointer;">&times;</span>
+                                            <img id="productLightboxImg" src="" alt="" style="max-width:420px;max-height:60vh;border-radius:12px;object-fit:contain;box-shadow:0 2px 12px rgba(0,0,0,0.18);margin-bottom:12px;" />
+                                            <div id="productLightboxName" style="font-weight:600;font-size:1.1rem;margin-bottom:8px;"></div>
+                                            <div style="display:flex;justify-content:space-between;width:100%;">
+                                                <button id="productLightboxPrev" style="font-size:1.5rem;padding:6px 18px;">&#8592;</button>
+                                                <button id="productLightboxNext" style="font-size:1.5rem;padding:6px 18px;">&#8594;</button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 <script>
                                 // Mobilde scroll ile header ve başlıkları bulanıklaştır
                                 (function(){
@@ -1682,49 +1694,6 @@
                                 } else {
                                     img.textContent = '🛍️';
                                 }
-                                                    // Lightbox modalı ekle (sayfa sonunda bir defa)
-                                                    if(!document.getElementById('productLightbox')){
-                                                        const lb = document.createElement('div');
-                                                        lb.id = 'productLightbox';
-                                                        lb.style = 'display:none;position:fixed;z-index:99999;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;';
-                                                        lb.innerHTML = `
-                                                            <div id="productLightboxContent" style="position:relative;max-width:480px;width:90vw;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.28);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px;">
-                                                                <span id="productLightboxClose" style="position:absolute;top:8px;right:12px;font-size:2rem;cursor:pointer;">&times;</span>
-                                                                <img id="productLightboxImg" src="" alt="" style="max-width:420px;max-height:60vh;border-radius:12px;object-fit:contain;box-shadow:0 2px 12px rgba(0,0,0,0.18);margin-bottom:12px;" />
-                                                                <div id="productLightboxName" style="font-weight:600;font-size:1.1rem;margin-bottom:8px;"></div>
-                                                                <div style="display:flex;justify-content:space-between;width:100%;">
-                                                                    <button id="productLightboxPrev" style="font-size:1.5rem;padding:6px 18px;">&#8592;</button>
-                                                                    <button id="productLightboxNext" style="font-size:1.5rem;padding:6px 18px;">&#8594;</button>
-                                                                </div>
-                                                            </div>
-                                                        `;
-                                                        document.body.appendChild(lb);
-                                                        document.getElementById('productLightboxClose').onclick = function(){
-                                                            lb.style.display = 'none';
-                                                        };
-                                                    }
-                                                    // Lightbox açma fonksiyonu
-                                                    window.openProductLightbox = function(imagesArr, startIdx, name){
-                                                        const lb = document.getElementById('productLightbox');
-                                                        const imgEl = document.getElementById('productLightboxImg');
-                                                        const nameEl = document.getElementById('productLightboxName');
-                                                        let idx = startIdx;
-                                                        function showImg(){
-                                                            imgEl.src = imagesArr[idx];
-                                                            imgEl.alt = name || '';
-                                                            nameEl.textContent = name || '';
-                                                        }
-                                                        showImg();
-                                                        lb.style.display = 'flex';
-                                                        document.getElementById('productLightboxPrev').onclick = function(){
-                                                            idx = (idx - 1 + imagesArr.length) % imagesArr.length;
-                                                            showImg();
-                                                        };
-                                                        document.getElementById('productLightboxNext').onclick = function(){
-                                                            idx = (idx + 1) % imagesArr.length;
-                                                            showImg();
-                                                        };
-                                                    };
                                 const info = document.createElement('div');
                                 info.className = 'product-info';
                                 const nameEl = document.createElement('div');
@@ -1748,6 +1717,27 @@
                         }catch(e){ console.error('Ürün yükleme hatası', e); }
                     }
                     document.addEventListener('DOMContentLoaded', function(){
+                        window.openProductLightbox = function(imagesArr, startIdx, name){
+                            const lb = document.getElementById('productLightbox');
+                            const imgEl = document.getElementById('productLightboxImg');
+                            const nameEl = document.getElementById('productLightboxName');
+                            let idx = startIdx;
+                            function showImg(){
+                                imgEl.src = imagesArr[idx];
+                                imgEl.alt = name || '';
+                                nameEl.textContent = name || '';
+                            }
+                            showImg();
+                            lb.style.display = 'flex';
+                            document.getElementById('productLightboxPrev').onclick = function(){
+                                idx = (idx - 1 + imagesArr.length) % imagesArr.length;
+                                showImg();
+                            };
+                            document.getElementById('productLightboxNext').onclick = function(){
+                                idx = (idx + 1) % imagesArr.length;
+                                showImg();
+                            };
+                        };
                         loadProducts();
                     });
 
