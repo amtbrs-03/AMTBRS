@@ -823,16 +823,11 @@
                                 
                         <!-- Ürün görseli lightbox/modal (mobil uyumlu, header/nav üstte kalır) -->
                         <div id="productLightbox" class="hidden" style="position:absolute;top:0;left:0;width:100%;background:rgba(10,12,30,0.92);z-index:9999;display:none;align-items:center;justify-content:center;transition:opacity 0.3s;">
-                            <button id="lightboxClose" style="position:absolute;top:18px;right:18px;background:#fff;color:#222;border-radius:50%;width:44px;height:44px;font-size:2rem;border:none;box-shadow:0 2px 12px rgba(0,0,0,0.18);z-index:10001;cursor:pointer;">✖</button>
+                            <div id="lightboxCardMeta"></div>
+                            <button id="lightboxClose" aria-label="Kapat" style="position:absolute;top:18px;right:18px;background:linear-gradient(135deg,#f3f4f6,#e0e7ef);color:#16a34a;border-radius:12px;width:48px;height:48px;font-size:2.2rem;border:none;box-shadow:0 4px 16px rgba(16,185,129,0.12);z-index:10001;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s,box-shadow 0.2s;"><span style="font-size:2.2rem;display:inline-block;">&#10005;</span></button>
                             <button id="lightboxPrev" class="lightbox-nav-btn" aria-label="Önceki görsel" style="position:absolute;left:18px;top:50%;transform:translateY(-50%);background:linear-gradient(135deg,#f3f4f6,#e0e7ef);color:#16a34a;border-radius:12px;width:48px;height:48px;font-size:2.2rem;border:none;box-shadow:0 4px 16px rgba(16,185,129,0.12);z-index:10001;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s,box-shadow 0.2s;"><span style="font-size:2.2rem;display:inline-block;">&#10094;</span></button>
                             <button id="lightboxNext" class="lightbox-nav-btn" aria-label="Sonraki görsel" style="position:absolute;right:18px;top:50%;transform:translateY(-50%);background:linear-gradient(135deg,#f3f4f6,#e0e7ef);color:#16a34a;border-radius:12px;width:48px;height:48px;font-size:2.2rem;border:none;box-shadow:0 4px 16px rgba(16,185,129,0.12);z-index:10001;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s,box-shadow 0.2s;"><span style="font-size:2.2rem;display:inline-block;">&#10095;</span></button>
-                            <div id="lightboxImgWrap" style="max-width:96vw;max-height:70vh;display:flex;align-items:center;justify-content:center;">
-                                <img id="productLightboxImg" src="" alt="Ürün görseli" style="max-width:96vw;max-height:70vh;border-radius:18px;box-shadow:0 8px 32px rgba(0,0,0,0.28);background:#fff;object-fit:contain;" />
-                            </div>
-                            <div id="lightboxMeta" style="width:100%;text-align:center;margin-top:1.2rem;color:#fff;">
-                                <div id="lightboxName" style="font-size:1.15rem;font-weight:700;"></div>
-                                <div id="lightboxPrice" style="font-size:1.05rem;font-weight:600;opacity:0.85;"></div>
-                            </div>
+                            <div id="lightboxImgWrap"></div>
                         </div>
                         <script>
                         // Ürün görseli lightbox/modal fonksiyonu (mobilde tam ekran FullScreen API ile)
@@ -885,49 +880,70 @@
                                 }
                                 let name = card ? card.querySelector('.product-name')?.textContent : '';
                                 let price = card ? card.querySelector('.product-price')?.textContent : '';
-                                nameEl.textContent = name || '';
-                                priceEl.textContent = price || '';
-                                // --- Kart boyutunu lightbox'a sadece masaüstünde uygula ---
+                                // Responsive lightbox meta ve görsel
+                                let metaDiv = document.getElementById('lightboxCardMeta');
+                                let imgWrap = document.getElementById('lightboxImgWrap');
+                                let imgEl = document.getElementById('productLightboxImg');
                                 if (!isMobile()) {
-                                    if (card) {
-                                        let cardRect = card.getBoundingClientRect();
-                                        let maxW = Math.min(cardRect.width, window.innerWidth * 0.96);
-                                        let maxH = Math.min(cardRect.height, window.innerHeight * 0.7);
-                                        lb.style.maxWidth = maxW + 'px';
-                                        lb.style.maxHeight = maxH + 'px';
-                                        lb.style.position = 'absolute';
-                                        lb.style.top = cardRect.top + window.scrollY + 'px';
-                                        lb.style.left = cardRect.left + window.scrollX + 'px';
-                                        let imgEl = document.getElementById('productLightboxImg');
-                                        if (imgEl) {
-                                            imgEl.style.maxWidth = maxW + 'px';
-                                            imgEl.style.maxHeight = maxH + 'px';
-                                        }
-                                    } else {
-                                        lb.style.maxWidth = '96vw';
-                                        lb.style.maxHeight = '70vh';
-                                        lb.style.position = 'absolute';
-                                        lb.style.top = '50%';
-                                        lb.style.left = '50%';
-                                        lb.style.transform = 'translate(-50%, -50%)';
-                                        let imgEl = document.getElementById('productLightboxImg');
-                                        if (imgEl) {
-                                            imgEl.style.maxWidth = '96vw';
-                                            imgEl.style.maxHeight = '70vh';
-                                        }
-                                    }
+                                    // Masaüstü: kredi kartı oranı ve konumu
+                                    metaDiv.innerHTML = `<div id='lightboxName' style='font-size:1.18rem;font-weight:700;color:#222;flex:1;text-align:left;'>${name}</div><div id='lightboxPrice' style='font-size:1.08rem;font-weight:600;color:#16a34a;opacity:0.95;text-align:right;'>${price}</div>`;
+                                    metaDiv.style.position = 'absolute';
+                                    metaDiv.style.top = '0';
+                                    metaDiv.style.left = '50%';
+                                    metaDiv.style.transform = 'translateX(-50%)';
+                                    metaDiv.style.width = '340px';
+                                    metaDiv.style.maxWidth = '96vw';
+                                    metaDiv.style.height = '70px';
+                                    metaDiv.style.background = 'rgba(255,255,255,0.97)';
+                                    metaDiv.style.borderRadius = '18px 18px 0 0';
+                                    metaDiv.style.boxShadow = '0 4px 24px rgba(0,0,0,0.10)';
+                                    metaDiv.style.display = 'flex';
+                                    metaDiv.style.alignItems = 'center';
+                                    metaDiv.style.justifyContent = 'flex-start';
+                                    metaDiv.style.zIndex = '10002';
+                                    metaDiv.style.padding = '0 24px';
+                                    imgWrap.style.maxWidth = '340px';
+                                    imgWrap.style.maxHeight = '210px';
+                                    imgWrap.style.display = 'flex';
+                                    imgWrap.style.alignItems = 'center';
+                                    imgWrap.style.justifyContent = 'center';
+                                    imgWrap.style.marginTop = '70px';
+                                    imgEl.style.width = '340px';
+                                    imgEl.style.height = '210px';
+                                    imgEl.style.borderRadius = '0 0 18px 18px';
+                                    imgEl.style.boxShadow = '0 8px 32px rgba(0,0,0,0.18)';
+                                    imgEl.style.background = '#fff';
+                                    imgEl.style.objectFit = 'cover';
                                 } else {
-                                    lb.style.maxWidth = '96vw';
-                                    lb.style.maxHeight = '70vh';
-                                    lb.style.position = 'absolute';
-                                    lb.style.top = '0';
-                                    lb.style.left = '0';
-                                    lb.style.transform = '';
-                                    let imgEl = document.getElementById('productLightboxImg');
-                                    if (imgEl) {
-                                        imgEl.style.maxWidth = '96vw';
-                                        imgEl.style.maxHeight = '70vh';
-                                    }
+                                    // Mobil: tam ekran ve eski görünüm
+                                    metaDiv.innerHTML = `<div id='lightboxName' style='font-size:1.15rem;font-weight:700;color:#fff;text-align:center;width:100%;margin-top:1.2rem;'>${name}</div><div id='lightboxPrice' style='font-size:1.05rem;font-weight:600;opacity:0.85;color:#fff;text-align:center;width:100%;'>${price}</div>`;
+                                    metaDiv.style.position = '';
+                                    metaDiv.style.top = '';
+                                    metaDiv.style.left = '';
+                                    metaDiv.style.transform = '';
+                                    metaDiv.style.width = '100%';
+                                    metaDiv.style.maxWidth = '';
+                                    metaDiv.style.height = '';
+                                    metaDiv.style.background = 'none';
+                                    metaDiv.style.borderRadius = '';
+                                    metaDiv.style.boxShadow = '';
+                                    metaDiv.style.display = '';
+                                    metaDiv.style.alignItems = '';
+                                    metaDiv.style.justifyContent = '';
+                                    metaDiv.style.zIndex = '';
+                                    metaDiv.style.padding = '';
+                                    imgWrap.style.maxWidth = '96vw';
+                                    imgWrap.style.maxHeight = '70vh';
+                                    imgWrap.style.display = 'flex';
+                                    imgWrap.style.alignItems = 'center';
+                                    imgWrap.style.justifyContent = 'center';
+                                    imgWrap.style.marginTop = '';
+                                    imgEl.style.width = '96vw';
+                                    imgEl.style.height = '70vh';
+                                    imgEl.style.borderRadius = '18px';
+                                    imgEl.style.boxShadow = '0 8px 32px rgba(0,0,0,0.28)';
+                                    imgEl.style.background = '#fff';
+                                    imgEl.style.objectFit = 'contain';
                                 }
                                 lb.classList.remove('hidden');
                                 lb.style.display = 'flex';
