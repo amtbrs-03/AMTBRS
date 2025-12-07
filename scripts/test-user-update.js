@@ -7,14 +7,14 @@ try {
 
   // localStorage polyfill
   if (typeof window.localStorage === 'undefined') {
-    const store = {};
-    window.localStorage = {
-      setItem: (k, v) => { store[k] = v; },
-      getItem: (k) => store.hasOwnProperty(k) ? store[k] : null,
-      removeItem: (k) => { delete store[k]; },
-      clear: () => { Object.keys(store).forEach(k => delete store[k]); }
-    };
-    global.localStorage = window.localStorage;
+      const store = {};
+      window.localStorage = {
+        setItem: (k, v) => { store[k] = v; },
+        getItem: (k) => store.hasOwnProperty(k) ? store[k] : null,
+        removeItem: (k) => { delete store[k]; },
+        clear: () => { Object.keys(store).forEach(k => delete store[k]); }
+      };
+      global.localStorage = window.localStorage;
   }
 
   // fetch polyfill (node-fetch veya basit mock)
@@ -35,6 +35,21 @@ try {
   if (typeof global.alert !== 'function') {
     global.alert = window.alert;
   }
+  
+    // Polyfill for fetch in Node.js (jsdom)
+    if (typeof window !== 'undefined' && typeof window.fetch === 'undefined') {
+        window.fetch = require('node-fetch');
+    }
+  
+    // Polyfill for alert in Node.js (jsdom)
+    if (typeof window !== 'undefined' && typeof window.alert === 'undefined') {
+        window.alert = function(msg) { console.log('[alert]', msg); };
+    }
+  
+    // Ensure saveUserPhone is accessible on window
+    if (typeof window !== 'undefined' && typeof window.saveUserPhone === 'undefined') {
+        window.saveUserPhone = global.saveUserPhone || (() => { console.log('saveUserPhone not loaded'); });
+    }
 } catch (e) {
   // Polyfill hatası olursa testler devam etsin
   console.error('Polyfill yüklenemedi:', e);
