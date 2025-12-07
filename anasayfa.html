@@ -854,6 +854,7 @@
                                 if (imagesArr.length === 0) {
                                     // Hiç görsel yoksa emoji/text göster
                                     let wrap = document.getElementById('lightboxImgWrap');
+                                    if (!wrap) return;
                                     let oldEmoji = document.getElementById('lightboxEmoji');
                                     if (oldEmoji && wrap.contains(oldEmoji)) wrap.removeChild(oldEmoji);
                                     let emoji = el.textContent || '';
@@ -868,7 +869,7 @@
                                     emojiEl.style.justifyContent = 'center';
                                     emojiEl.textContent = emoji;
                                     wrap.appendChild(emojiEl);
-                                    img.style.display = 'none';
+                                    if (img) img.style.display = 'none';
                                 } else {
                                     // Görselleri göster
                                     let wrap = document.getElementById('lightboxImgWrap');
@@ -4331,7 +4332,7 @@ async function updateOrderStatus(orderId, newStatus){
             list[idx].status = newStatus;
             localStorage.setItem(key, JSON.stringify(list));
         }
-    }catch(e){ /* ignore */ }
+    } catch(e) { /* ignore */ }
 }
 
 document.addEventListener('click', function(ev){
@@ -4493,4 +4494,5 @@ document.addEventListener('click', function(ev){
         }
     }
         </script>
+    <!-- Dosya sonu: eksik kapanan script ve html etiketleri düzeltildi -->
     </html>
