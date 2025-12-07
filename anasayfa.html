@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="tr">
   <head>
+    <!-- Kritik CSS'i inline bırak, JS'yi body sonuna taşı -->
     <meta charset="utf-8" />
     <title>ERN-ÇİÇEK</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -41,19 +42,9 @@
         })();
         </script>
 
-    <script defer>
-      // Eğer kullanıcı www ile geldiyse, kök domaine (non-www) yönlendir
-      (function(){
-        try{
-          if (location.hostname && location.hostname.indexOf('www.') === 0) {
-            var target = location.protocol + '//' + location.hostname.replace(/^www\./,'') + location.pathname + location.search + location.hash;
-            location.replace(target);
-          }
-        }catch(e){ /* ignore */ }
-      })();
-    </script>
+        <!-- www yönlendirme JS'si body sonunda -->
 
-    <script type="application/ld+json" defer>
+    <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "Florist",
@@ -149,6 +140,7 @@
         html, body { height: 100%; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-display: swap;
             line-height: 1.6;
             color: #0b2f1f;
             background: url('images/gallery/floral-bg.jpg') no-repeat center center fixed;
@@ -821,370 +813,8 @@
   </head>
   <body>
                                 
-                        <!-- Ürün görseli lightbox/modal (mobil uyumlu, header/nav üstte kalır) -->
-                        <div id="productLightbox" class="hidden" style="position:absolute;top:0;left:0;width:100%;background:rgba(10,12,30,0.92);z-index:9999;display:none;align-items:center;justify-content:center;transition:opacity 0.3s;">
-                            <div id="lightboxCardMeta"></div>
-                            <button id="lightboxClose" aria-label="Kapat" style="position:absolute;top:18px;right:18px;background:linear-gradient(135deg,#e0fbe0,#d1fae5);color:#16a34a;border-radius:14px;width:48px;height:48px;font-size:2.4rem;border:none;box-shadow:0 4px 16px rgba(16,185,129,0.16);z-index:10001;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s,box-shadow 0.2s;"><span style="font-size:2.4rem;display:inline-block;font-weight:700;line-height:1;color:#16a34a;">&#10006;</span></button>
-                            <button id="lightboxPrev" class="lightbox-nav-btn" aria-label="Önceki görsel" style="position:absolute;left:18px;top:50%;transform:translateY(-50%);background:linear-gradient(135deg,#f3f4f6,#e0e7ef);color:#16a34a;border-radius:12px;width:48px;height:48px;font-size:2.2rem;border:none;box-shadow:0 4px 16px rgba(16,185,129,0.12);z-index:10001;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s,box-shadow 0.2s;"><span style="font-size:2.2rem;display:inline-block;">&#10094;</span></button>
-                            <button id="lightboxNext" class="lightbox-nav-btn" aria-label="Sonraki görsel" style="position:absolute;right:18px;top:50%;transform:translateY(-50%);background:linear-gradient(135deg,#f3f4f6,#e0e7ef);color:#16a34a;border-radius:12px;width:48px;height:48px;font-size:2.2rem;border:none;box-shadow:0 4px 16px rgba(16,185,129,0.12);z-index:10001;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s,box-shadow 0.2s;"><span style="font-size:2.2rem;display:inline-block;">&#10095;</span></button>
-                            <div id="lightboxImgWrap" style="display:flex;flex-direction:column;align-items:center;justify-content:center;">
-                                <img id="productLightboxImg" src="" alt="Ürün görseli" style="width:340px;height:210px;border-radius:18px;box-shadow:0 8px 32px rgba(0,0,0,0.18);background:#fff;object-fit:cover;" />
-                                <div id="lightboxThumbs" style="display:flex;gap:8px;margin-top:18px;justify-content:center;"></div>
-                            </div>
-                        </div>
-                        <script>
-                        // Ürün görseli lightbox/modal fonksiyonu (mobilde tam ekran FullScreen API ile)
-                        (function(){
-                            let productImages = [];
-                            let currentIndex = 0;
-                            function isMobile(){ return window.innerWidth <= 700; }
-                            function openLightbox(idx){
-                                        // Lightbox açıldığında kapatma çarpısı eventini garantiye al
-                                        setTimeout(function(){
-                                            const closeBtn = document.getElementById('lightboxClose');
-                                            if (closeBtn) {
-                                                closeBtn.onclick = closeLightbox;
-                                                closeBtn.style.display = 'flex';
-                                            } else {
-                                                console.warn('[Lightbox] Kapatma çarpısı (lightboxClose) bulunamadı');
-                                            }
-                                        }, 10);
-                                const lb = document.getElementById('productLightbox');
-                                const img = document.getElementById('productLightboxImg');
-                                const nameEl = document.getElementById('lightboxName');
-                                const priceEl = document.getElementById('lightboxPrice');
-                                // Debug log: elementlerin durumu
-                                if (!lb) { console.warn('[Lightbox] productLightbox bulunamadı'); return; }
-                                if (!img) { console.warn('[Lightbox] productLightboxImg bulunamadı'); return; }
-                                if (!nameEl) { console.warn('[Lightbox] lightboxName bulunamadı'); return; }
-                                if (!priceEl) { console.warn('[Lightbox] lightboxPrice bulunamadı'); return; }
-                                let el = productImages[idx];
-                                if (!el) { console.warn('[Lightbox] productImages['+idx+'] bulunamadı'); return; }
-                                let card = el.closest('.product-card');
-                                let imagesArr = [];
-                                if (card && card.dataset.images) {
-                                    try {
-                                        imagesArr = JSON.parse(card.dataset.images);
-                                        console.log('[Lightbox] card.dataset.images:', imagesArr);
-                                    } catch(e) {
-                                        imagesArr = [];
-                                        console.error('[Lightbox] Görsel JSON parse hatası:', e);
-                                    }
-                                } else if (card && card.querySelector('img')) {
-                                    imagesArr = [card.querySelector('img').src];
-                                    console.log('[Lightbox] card.querySelector img:', imagesArr);
-                                }
-                                // Thumbnail galeri oluştur
-                                let thumbs = document.getElementById('lightboxThumbs');
-                                if (thumbs) {
-                                    thumbs.innerHTML = '';
-                                    imagesArr.forEach(function(src, i){
-                                        let thumb = document.createElement('img');
-                                        thumb.src = src;
-                                        thumb.alt = 'Thumbnail ' + (i+1);
-                                        thumb.style.width = '54px';
-                                        thumb.style.height = '54px';
-                                        thumb.style.objectFit = 'cover';
-                                        thumb.style.borderRadius = '8px';
-                                        thumb.style.cursor = 'pointer';
-                                        thumb.style.border = i === 0 ? '2px solid #10b981' : '2px solid transparent';
-                                        thumb.addEventListener('click', function(){
-                                            if (img) img.src = src;
-                                            Array.from(thumbs.children).forEach(t => t.style.border = '2px solid transparent');
-                                            thumb.style.border = '2px solid #10b981';
-                                        });
-                                        thumbs.appendChild(thumb);
-                                    });
-                                }
-                                if (imagesArr.length === 0) {
-                                    // Hiç görsel yoksa emoji/text göster
-                                    let wrap = document.getElementById('lightboxImgWrap');
-                                    if (!wrap) { console.warn('[Lightbox] lightboxImgWrap bulunamadı'); return; }
-                                    let oldEmoji = document.getElementById('lightboxEmoji');
-                                    if (oldEmoji && wrap.contains(oldEmoji)) { wrap.removeChild(oldEmoji); console.log('[Lightbox] Eski emoji kaldırıldı'); }
-                                    let emoji = el.textContent || '';
-                                    let emojiEl = document.createElement('div');
-                                    emojiEl.id = 'lightboxEmoji';
-                                    emojiEl.style.fontSize = '5rem';
-                                    emojiEl.style.textAlign = 'center';
-                                    emojiEl.style.width = '100%';
-                                    emojiEl.style.height = '70vh';
-                                    emojiEl.style.display = 'flex';
-                                    emojiEl.style.alignItems = 'center';
-                                    emojiEl.style.justifyContent = 'center';
-                                    emojiEl.textContent = emoji;
-                                    wrap.appendChild(emojiEl);
-                                    console.log('[Lightbox] Emoji gösterildi:', emoji);
-                                    if (img) {
-                                        img.style.display = 'none';
-                                    }
-                                } else {
-                                    // Görselleri göster
-                                    let wrap = document.getElementById('lightboxImgWrap');
-                                    let oldEmoji = document.getElementById('lightboxEmoji');
-                                    if (oldEmoji && wrap && wrap.contains(oldEmoji)) { wrap.removeChild(oldEmoji); console.log('[Lightbox] Eski emoji kaldırıldı'); }
-                                    if (img && wrap) {
-                                        img.style.display = '';
-                                        img.src = imagesArr[0];
-                                        img.alt = 'Ürün görseli';
-                                        console.log('[Lightbox] Görsel gösterildi:', imagesArr[0]);
-                                    } else {
-                                        if (!img) console.warn('[Lightbox] img (productLightboxImg) null, style erişilemedi');
-                                        if (!wrap) console.warn('[Lightbox] wrap (lightboxImgWrap) null, style erişilemedi');
-                                    }
-                                }
-                                let name = card ? card.querySelector('.product-name')?.textContent : '';
-                                let price = card ? card.querySelector('.product-price')?.textContent : '';
-                                // Responsive lightbox meta ve görsel
-                                let metaDiv = document.getElementById('lightboxCardMeta');
-                                let imgWrap = document.getElementById('lightboxImgWrap');
-                                let imgEl = document.getElementById('productLightboxImg');
-                                if (!imgWrap) {
-                                    console.error('[Lightbox] imgWrap (lightboxImgWrap) null, fonksiyon sonlandırıldı');
-                                    return;
-                                }
-                                if (!imgEl) {
-                                    console.error('[Lightbox] imgEl (productLightboxImg) null, fonksiyon sonlandırıldı');
-                                    return;
-                                }
-                                if (!isMobile()) {
-                                    // Masaüstü: kredi kartı oranı ve konumu
-                                    if (metaDiv) {
-                                        metaDiv.innerHTML = `<div id='lightboxName' style='font-size:1.18rem;font-weight:700;color:#222;flex:1;text-align:left;'>${name}</div><div id='lightboxPrice' style='font-size:1.08rem;font-weight:600;color:#16a34a;opacity:0.95;text-align:right;'>${price}</div>`;
-                                        metaDiv.style.position = 'absolute';
-                                        metaDiv.style.top = '0';
-                                        metaDiv.style.left = '50%';
-                                        metaDiv.style.transform = 'translateX(-50%)';
-                                        metaDiv.style.width = '340px';
-                                        metaDiv.style.maxWidth = '96vw';
-                                        metaDiv.style.height = '70px';
-                                        metaDiv.style.background = 'rgba(255,255,255,0.97)';
-                                        metaDiv.style.borderRadius = '18px 18px 0 0';
-                                        metaDiv.style.boxShadow = '0 4px 24px rgba(0,0,0,0.10)';
-                                        metaDiv.style.display = 'flex';
-                                        metaDiv.style.alignItems = 'center';
-                                        metaDiv.style.justifyContent = 'flex-start';
-                                        metaDiv.style.zIndex = '10002';
-                                        metaDiv.style.padding = '0 24px';
-                                    } else {
-                                        console.warn('[Lightbox] metaDiv (lightboxCardMeta) null, style erişilemedi');
-                                    }
-                                    if (imgWrap) {
-                                        imgWrap.style.maxWidth = '340px';
-                                        imgWrap.style.maxHeight = '210px';
-                                        imgWrap.style.display = 'flex';
-                                        imgWrap.style.alignItems = 'center';
-                                        imgWrap.style.justifyContent = 'center';
-                                        imgWrap.style.marginTop = '70px';
-                                    } else {
-                                        console.warn('[Lightbox] imgWrap (lightboxImgWrap) null, style erişilemedi');
-                                    }
-                                    if (imgEl) {
-                                        imgEl.style.width = '340px';
-                                        imgEl.style.height = '210px';
-                                        imgEl.style.borderRadius = '0 0 18px 18px';
-                                        imgEl.style.boxShadow = '0 8px 32px rgba(0,0,0,0.18)';
-                                        imgEl.style.background = '#fff';
-                                        imgEl.style.objectFit = 'cover';
-                                    } else {
-                                        console.warn('[Lightbox] imgEl (productLightboxImg) null, style erişilemedi');
-                                    }
-                                } else {
-                                    // Mobil: masaüstü ile uyumlu lightbox görünümü
-                                    if (metaDiv) {
-                                        metaDiv.innerHTML = `<div id='lightboxName' style='font-size:1.18rem;font-weight:700;color:#222;flex:1;text-align:left;'>${name}</div><div id='lightboxPrice' style='font-size:1.08rem;font-weight:600;color:#16a34a;opacity:0.95;text-align:right;'>${price}</div>`;
-                                        metaDiv.style.position = 'absolute';
-                                        metaDiv.style.top = '0';
-                                        metaDiv.style.left = '50%';
-                                        metaDiv.style.transform = 'translateX(-50%)';
-                                        metaDiv.style.width = '340px';
-                                        metaDiv.style.maxWidth = '96vw';
-                                        metaDiv.style.height = '70px';
-                                        metaDiv.style.background = 'rgba(255,255,255,0.97)';
-                                        metaDiv.style.borderRadius = '18px 18px 0 0';
-                                        metaDiv.style.boxShadow = '0 4px 24px rgba(0,0,0,0.10)';
-                                        metaDiv.style.display = 'flex';
-                                        metaDiv.style.alignItems = 'center';
-                                        metaDiv.style.justifyContent = 'flex-start';
-                                        metaDiv.style.zIndex = '10002';
-                                        metaDiv.style.padding = '0 24px';
-                                    }
-                                    if (imgWrap) {
-                                        imgWrap.style.maxWidth = '340px';
-                                        imgWrap.style.maxHeight = '210px';
-                                        imgWrap.style.display = 'flex';
-                                        imgWrap.style.alignItems = 'center';
-                                        imgWrap.style.justifyContent = 'center';
-                                        imgWrap.style.marginTop = '70px';
-                                    } else {
-                                        console.warn('[Lightbox] imgWrap (lightboxImgWrap) null, style erişilemedi [mobil]');
-                                    }
-                                    if (imgEl) {
-                                        imgEl.style.width = '340px';
-                                        imgEl.style.height = '210px';
-                                        imgEl.style.borderRadius = '0 0 18px 18px';
-                                        imgEl.style.boxShadow = '0 8px 32px rgba(0,0,0,0.18)';
-                                        imgEl.style.background = '#fff';
-                                        imgEl.style.objectFit = 'cover';
-                                        // Mobil ek stiller
-                                        imgEl.style.width = '96vw';
-                                        imgEl.style.height = '70vh';
-                                        imgEl.style.borderRadius = '18px';
-                                        imgEl.style.boxShadow = '0 8px 32px rgba(0,0,0,0.28)';
-                                        imgEl.style.background = '#fff';
-                                        imgEl.style.objectFit = 'contain';
-                                    } else {
-                                        console.warn('[Lightbox] imgEl (productLightboxImg) null, style erişilemedi [mobil]');
-                                    }
-                                }
-                                lb.classList.remove('hidden');
-                                lb.style.display = 'flex';
-                                document.body.style.overflow = 'hidden';
-                                currentIndex = idx;
-                                // Mobilde tam ekran modunu dene
-                                if(isMobile() && lb.requestFullscreen){
-                                    try { lb.requestFullscreen(); } catch(e){}
-                                } else if(isMobile() && lb.webkitRequestFullscreen){
-                                    try { lb.webkitRequestFullscreen(); } catch(e){}
-                                }
-                            }
-                            function closeLightbox(){
-                                const lb = document.getElementById('productLightbox');
-                                // Emoji/text elemanını temizle
-                                let wrap = document.getElementById('lightboxImgWrap');
-                                let oldEmoji = document.getElementById('lightboxEmoji');
-                                if (oldEmoji && wrap.contains(oldEmoji)) wrap.removeChild(oldEmoji);
-                                lb.classList.add('hidden');
-                                lb.style.display = 'none';
-                                document.body.style.overflow = '';
-                                // Tam ekrandan çık
-                                if(document.fullscreenElement || document.webkitFullscreenElement){
-                                    if(document.exitFullscreen){
-                                        try { document.exitFullscreen(); } catch(e){}
-                                    } else if(document.webkitExitFullscreen){
-                                        try { document.webkitExitFullscreen(); } catch(e){}
-                                    }
-                                }
-                            }
-                            function showPrev(){
-                                if(currentIndex > 0) openLightbox(currentIndex-1);
-                                else openLightbox(productImages.length-1);
-                            }
-                            function showNext(){
-                                if(currentIndex < productImages.length-1) openLightbox(currentIndex+1);
-                                else openLightbox(0);
-                            }
-                            function attachLightboxEvents(){
-                                productImages = Array.from(document.querySelectorAll('.product-image'));
-                                productImages.forEach((el, idx) => {
-                                    el.style.cursor = 'zoom-in';
-                                    // Önce eski eventleri kaldır
-                                    if (el.__lightboxHandler) {
-                                        el.removeEventListener('click', el.__lightboxHandler);
-                                    }
-                                    // Yeni event handler oluştur
-                                    const handler = function(){
-                                        // Tüm lightbox elementlerinde null kontrolü
-                                        if (typeof openLightbox === 'function') {
-                                            openLightbox(idx);
-                                        }
-                                    };
-                                    el.addEventListener('click', handler);
-                                    el.__lightboxHandler = handler;
-                                });
-                            }
-                            // Hem DOMContentLoaded hem de script sonunda tetiklenir
-                            if(document.readyState==='loading') {
-                                document.addEventListener('DOMContentLoaded', attachLightboxEvents);
-                            } else {
-                                attachLightboxEvents();
-                            }
-                            // DOM değişimlerini izleyerek yeni ürünler eklenirse lightbox eventlerini tekrar bağla
-                            const observer = new MutationObserver(() => {
-                                attachLightboxEvents();
-                            });
-                            observer.observe(document.body, { childList: true, subtree: true });
-                                }
-                                attachLightboxEvents();
-
-                                // Yeni ürün kartı eklendiğinde otomatik event ekle
-                                const productsContainer = document.querySelector('.products');
-                                if (productsContainer && window.MutationObserver) {
-                                    const observer = new MutationObserver(function(mutations){
-                                        let needsUpdate = false;
-                                        mutations.forEach(mutation => {
-                                            if (mutation.addedNodes && mutation.addedNodes.length > 0) {
-                                                mutation.addedNodes.forEach(node => {
-                                                    if (node.nodeType === 1 && node.classList.contains('product-card')) {
-                                                        needsUpdate = true;
-                                                    }
-                                                });
-                                            }
-                                        });
-                                        if (needsUpdate) attachLightboxEvents();
-                                    });
-                                    observer.observe(productsContainer, { childList: true, subtree: true });
-                                }
-                                function bindLightboxButtons() {
-                                    const closeBtn = document.getElementById('lightboxClose');
-                                    const prevBtn = document.getElementById('lightboxPrev');
-                                    const nextBtn = document.getElementById('lightboxNext');
-                                    if (closeBtn) closeBtn.onclick = closeLightbox;
-                                    if (prevBtn) prevBtn.onclick = showPrev;
-                                    if (nextBtn) nextBtn.onclick = showNext;
-                                }
-                                bindLightboxButtons();
-                                // DOM değişimlerinde tekrar bağla
-                                const lbObserver = new MutationObserver(bindLightboxButtons);
-                                lbObserver.observe(document.getElementById('productLightbox'), { childList: true, subtree: true });
-                                // Klavye ile gezinme
-                                document.addEventListener('keydown', function(e){
-                                    const lb = document.getElementById('productLightbox');
-                                    if(lb.classList.contains('hidden') || lb.style.display === 'none') return;
-                                    if(e.key === 'Escape') closeLightbox();
-                                    if(e.key === 'ArrowLeft') showPrev();
-                                    if(e.key === 'ArrowRight') showNext();
-                                });
-                                // Mobil swipe desteği
-                                let touchStartX = null;
-                                let touchStartY = null;
-                                document.getElementById('productLightbox').addEventListener('touchstart', function(e){
-                                    if(e.touches.length === 1) {
-                                        touchStartX = e.touches[0].clientX;
-                                        touchStartY = e.touches[0].clientY;
-                                    }
-                                });
-                                document.getElementById('productLightbox').addEventListener('touchend', function(e){
-                                    if(touchStartX === null || touchStartY === null) return;
-                                    const touchEndX = e.changedTouches[0].clientX;
-                                    const touchEndY = e.changedTouches[0].clientY;
-                                    if(Math.abs(touchEndX - touchStartX) > Math.abs(touchEndY - touchStartY)) {
-                                        if(touchEndX - touchStartX > 60) showPrev();
-                                        else if(touchStartX - touchEndX > 60) showNext();
-                                    }
-                                    touchStartX = null;
-                                    touchStartY = null;
-                                });
-                                // FullScreen'den çıkınca modalı tekrar göster
-                                document.addEventListener('fullscreenchange', function(){
-                                    const lb = document.getElementById('productLightbox');
-                                    if(!document.fullscreenElement && lb.style.display === 'none'){
-                                        lb.classList.remove('hidden');
-                                        lb.style.display = 'flex';
-                                        document.body.style.overflow = 'hidden';
-                                    }
-                                });
-                                document.addEventListener('webkitfullscreenchange', function(){
-                                    const lb = document.getElementById('productLightbox');
-                                    if(!document.webkitFullscreenElement && lb.style.display === 'none'){
-                                        lb.classList.remove('hidden');
-                                        lb.style.display = 'flex';
-                                        document.body.style.overflow = 'hidden';
-                                    }
-                                });
-                            });
-                        })();
-                        </script>
+                <!-- Decorative floral SVG background (purely visual) -->
+                <!-- decorative floral background removed -->
                 <!-- Decorative floral SVG background (purely visual) -->
                 <!-- decorative floral background removed -->
                 
@@ -1325,175 +955,154 @@
 
                         <!-- Giriş Formu -->
                         <div id="login" class="form-content active">
-                            <div class="form-group">
-                                <label>Email</label>
-                                <input type="email" id="loginEmail" placeholder="Email adresiniz">
-                            </div>
-                            <div class="form-group">
-                                <label>Şifre</label>
-                                <input type="password" id="loginPassword" placeholder="Şifreniz">
-                                    <script>
-                                        document.addEventListener('DOMContentLoaded', function() {
-                                            var pwInput = document.getElementById('loginPassword');
-                                            var loginBtn = document.querySelector('[data-action="login"]');
-                                            if (pwInput && loginBtn) {
-                                                pwInput.addEventListener('keydown', function(e) {
-                                                    if (e.key === 'Enter') {
-                                                        loginBtn.click();
-                                                    }
-                                                });
-                                            }
-                                            // Kayıt formunda da Enter ile kayıt olabilsin
-                                            var regPwInput = document.getElementById('registerPassword2');
-                                            var regBtn = document.querySelector('[data-action="register"]');
-                                            if (regPwInput && regBtn) {
-                                                regPwInput.addEventListener('keydown', function(e) {
-                                                    if (e.key === 'Enter') {
-                                                        regBtn.click();
-                                                    }
-                                                });
-                                            }
-                                        });
-                                    </script>
-                            </div>
-                            <button data-action="login" style="width: 100%; margin-top: 1rem;">Giriş Yap</button>
+                            <form id="loginForm" autocomplete="on" style="margin:0;">
+                                <div class="form-group">
+                                    <label>Email</label>
+                                    <input type="email" id="loginEmail" placeholder="Email adresiniz">
+                                </div>
+                                <div class="form-group">
+                                    <label>Şifre</label>
+                                    <input type="password" id="loginPassword" placeholder="Şifreniz">
+                                </div>
+                                <button data-action="login" type="submit" style="width: 100%; margin-top: 1rem;">Giriş Yap</button>
+                            </form>
                         </div>
 
                         <!-- Kayıt Formu -->
                         <div id="register" class="form-content">
-                            <div class="form-group">
-                                <label>Ad Soyad</label>
-                                <input type="text" id="registerName" placeholder="Ad Soyadınız">
-                            </div>
-                            <div class="form-group">
-                                <label>Email</label>
-                                <input type="email" id="registerEmail" placeholder="Email adresiniz">
-                            </div>
-                            <div class="form-group">
-                                <label>Telefon Numarası</label>
-                                <input type="tel" id="registerPhone" placeholder="Telefon numaranız" pattern="^\+?\d[\d\s()-]{7,}$" aria-describedby="registerPhoneHint" oninput="formatPhoneInput(this)">
-                                <div id="registerPhoneHint" style="font-size:0.8rem;color:#6b7280;margin-top:4px">Örnek: +90 530 000 00 00</div>
-                            </div>
-                            <div class="form-group">
-                                <label>Şifre</label>
-                                <input type="password" id="registerPassword" placeholder="Şifreniz">
-                            </div>
-                            <div class="form-group">
-                                <label>Şifre Tekrar</label>
-                                <input type="password" id="registerPassword2" placeholder="Şifreniz tekrar" style="width:100%; padding:0.8rem; border:1px solid rgba(10,12,30,0.1); border-radius:8px; font-size:1rem; transition:0.25s;">
-                            </div>
-                            
-                            <!-- Adres Bilgileri -->
-                            <div style="margin-top:1.5rem; padding-top:1rem; border-top:2px solid rgba(10,12,30,0.1);">
-                                <h3 style="font-size:1.1rem; margin-bottom:1rem; color:#0b1220;">📍 Adres Bilgileri</h3>
+                            <form id="registerForm" autocomplete="on" style="margin:0;">
                                 <div class="form-group">
-                                    <label>İl</label>
-                                    <select id="registerCity" style="width:100%; padding:0.8rem; border:1px solid rgba(10,12,30,0.1); border-radius:8px; font-size:1rem; background:white; cursor:pointer;">
-                                        <option value="">İl Seçiniz</option>
-                                        <option value="Adana">Adana</option>
-                                        <option value="Adıyaman">Adıyaman</option>
-                                        <option value="Afyonkarahisar">Afyonkarahisar</option>
-                                        <option value="Ağrı">Ağrı</option>
-                                        <option value="Amasya">Amasya</option>
-                                        <option value="Ankara">Ankara</option>
-                                        <option value="Antalya">Antalya</option>
-                                        <option value="Artvin">Artvin</option>
-                                        <option value="Aydın">Aydın</option>
-                                        <option value="Balıkesir">Balıkesir</option>
-                                        <option value="Bilecik">Bilecik</option>
-                                        <option value="Bingöl">Bingöl</option>
-                                        <option value="Bitlis">Bitlis</option>
-                                        <option value="Bolu">Bolu</option>
-                                        <option value="Burdur">Burdur</option>
-                                        <option value="Bursa">Bursa</option>
-                                        <option value="Çanakkale">Çanakkale</option>
-                                        <option value="Çankırı">Çankırı</option>
-                                        <option value="Çorum">Çorum</option>
-                                        <option value="Denizli">Denizli</option>
-                                        <option value="Diyarbakır">Diyarbakır</option>
-                                        <option value="Edirne">Edirne</option>
-                                        <option value="Elazığ">Elazığ</option>
-                                        <option value="Erzincan">Erzincan</option>
-                                        <option value="Erzurum">Erzurum</option>
-                                        <option value="Eskişehir">Eskişehir</option>
-                                        <option value="Gaziantep">Gaziantep</option>
-                                        <option value="Giresun">Giresun</option>
-                                        <option value="Gümüşhane">Gümüşhane</option>
-                                        <option value="Hakkari">Hakkari</option>
-                                        <option value="Hatay">Hatay</option>
-                                        <option value="Isparta">Isparta</option>
-                                        <option value="Mersin">Mersin</option>
-                                        <option value="İstanbul">İstanbul</option>
-                                        <option value="İzmir">İzmir</option>
-                                        <option value="Kars">Kars</option>
-                                        <option value="Kastamonu">Kastamonu</option>
-                                        <option value="Kayseri">Kayseri</option>
-                                        <option value="Kırklareli">Kırklareli</option>
-                                        <option value="Kırşehir">Kırşehir</option>
-                                        <option value="Kocaeli">Kocaeli</option>
-                                        <option value="Konya">Konya</option>
-                                        <option value="Kütahya">Kütahya</option>
-                                        <option value="Malatya">Malatya</option>
-                                        <option value="Manisa">Manisa</option>
-                                        <option value="Kahramanmaraş">Kahramanmaraş</option>
-                                        <option value="Mardin">Mardin</option>
-                                        <option value="Muğla">Muğla</option>
-                                        <option value="Muş">Muş</option>
-                                        <option value="Nevşehir">Nevşehir</option>
-                                        <option value="Niğde">Niğde</option>
-                                        <option value="Ordu">Ordu</option>
-                                        <option value="Rize">Rize</option>
-                                        <option value="Sakarya">Sakarya</option>
-                                        <option value="Samsun">Samsun</option>
-                                        <option value="Siirt">Siirt</option>
-                                        <option value="Sinop">Sinop</option>
-                                        <option value="Sivas">Sivas</option>
-                                        <option value="Tekirdağ">Tekirdağ</option>
-                                        <option value="Tokat">Tokat</option>
-                                        <option value="Trabzon">Trabzon</option>
-                                        <option value="Tunceli">Tunceli</option>
-                                        <option value="Şanlıurfa">Şanlıurfa</option>
-                                        <option value="Uşak">Uşak</option>
-                                        <option value="Van">Van</option>
-                                        <option value="Yozgat">Yozgat</option>
-                                        <option value="Zonguldak">Zonguldak</option>
-                                        <option value="Aksaray">Aksaray</option>
-                                        <option value="Bayburt">Bayburt</option>
-                                        <option value="Karaman">Karaman</option>
-                                        <option value="Kırıkkale">Kırıkkale</option>
-                                        <option value="Batman">Batman</option>
-                                        <option value="Şırnak">Şırnak</option>
-                                        <option value="Bartın">Bartın</option>
-                                        <option value="Ardahan">Ardahan</option>
-                                        <option value="Iğdır">Iğdır</option>
-                                        <option value="Yalova">Yalova</option>
-                                        <option value="Karabük">Karabük</option>
-                                        <option value="Kilis">Kilis</option>
-                                        <option value="Osmaniye">Osmaniye</option>
-                                        <option value="Düzce">Düzce</option>
-                                    </select>
+                                    <label>Ad Soyad</label>
+                                    <input type="text" id="registerName" placeholder="Ad Soyadınız">
                                 </div>
                                 <div class="form-group">
-                                    <label>İlçe</label>
-                                    <select id="registerDistrict" style="width:100%; padding:0.8rem; border:1px solid rgba(10,12,30,0.1); border-radius:8px; font-size:1rem; background:white; cursor:pointer;">
-                                        <option value="">Önce il seçiniz</option>
-                                    </select>
+                                    <label>Email</label>
+                                    <input type="email" id="registerEmail" placeholder="Email adresiniz">
                                 </div>
                                 <div class="form-group">
-                                    <label>Mahalle</label>
-                                    <input type="text" id="registerNeighborhood" placeholder="Mahalle adı giriniz" style="width:100%; padding:0.8rem; border:1px solid rgba(10,12,30,0.1); border-radius:8px; font-size:1rem;">
+                                    <label>Telefon Numarası</label>
+                                    <input type="tel" id="registerPhone" placeholder="Telefon numaranız" pattern="^\+?\d[\d\s()-]{7,}$" aria-describedby="registerPhoneHint" oninput="formatPhoneInput(this)">
+                                    <div id="registerPhoneHint" style="font-size:0.8rem;color:#6b7280;margin-top:4px">Örnek: +90 530 000 00 00</div>
                                 </div>
                                 <div class="form-group">
-                                    <label>Adres Detayı</label>
-                                    <textarea id="registerAddressDetail" placeholder="Sokak, cadde, bina no, daire no vb." rows="3" style="width:100%; padding:0.8rem; border:1px solid rgba(10,12,30,0.1); border-radius:8px; font-size:1rem; resize:vertical;"></textarea>
+                                    <label>Şifre</label>
+                                    <input type="password" id="registerPassword" placeholder="Şifreniz">
                                 </div>
                                 <div class="form-group">
-                                    <label>Posta Kodu (Opsiyonel)</label>
-                                    <input type="text" id="registerPostalCode" placeholder="Posta Kodu" style="width:100%; padding:0.8rem; border:1px solid rgba(10,12,30,0.1); border-radius:8px; font-size:1rem;">
+                                    <label>Şifre Tekrar</label>
+                                    <input type="password" id="registerPassword2" placeholder="Şifreniz tekrar" style="width:100%; padding:0.8rem; border:1px solid rgba(10,12,30,0.1); border-radius:8px; font-size:1rem; transition:0.25s;">
                                 </div>
-                            </div>
-                            
-                            <button data-action="register" style="width: 100%; margin-top: 1rem;">Kayıt Ol</button>
+                                <!-- Adres Bilgileri -->
+                                <div style="margin-top:1.5rem; padding-top:1rem; border-top:2px solid rgba(10,12,30,0.1);">
+                                    <h3 style="font-size:1.1rem; margin-bottom:1rem; color:#0b1220;">📍 Adres Bilgileri</h3>
+                                    <div class="form-group">
+                                        <label>İl</label>
+                                        <select id="registerCity" style="width:100%; padding:0.8rem; border:1px solid rgba(10,12,30,0.1); border-radius:8px; font-size:1rem; background:white; cursor:pointer;">
+                                            <option value="">İl Seçiniz</option>
+                                            <option value="Adana">Adana</option>
+                                            <option value="Adıyaman">Adıyaman</option>
+                                            <option value="Afyonkarahisar">Afyonkarahisar</option>
+                                            <option value="Ağrı">Ağrı</option>
+                                            <option value="Amasya">Amasya</option>
+                                            <option value="Ankara">Ankara</option>
+                                            <option value="Antalya">Antalya</option>
+                                            <option value="Artvin">Artvin</option>
+                                            <option value="Aydın">Aydın</option>
+                                            <option value="Balıkesir">Balıkesir</option>
+                                            <option value="Bilecik">Bilecik</option>
+                                            <option value="Bingöl">Bingöl</option>
+                                            <option value="Bitlis">Bitlis</option>
+                                            <option value="Bolu">Bolu</option>
+                                            <option value="Burdur">Burdur</option>
+                                            <option value="Bursa">Bursa</option>
+                                            <option value="Çanakkale">Çanakkale</option>
+                                            <option value="Çankırı">Çankırı</option>
+                                            <option value="Çorum">Çorum</option>
+                                            <option value="Denizli">Denizli</option>
+                                            <option value="Diyarbakır">Diyarbakır</option>
+                                            <option value="Edirne">Edirne</option>
+                                            <option value="Elazığ">Elazığ</option>
+                                            <option value="Erzincan">Erzincan</option>
+                                            <option value="Erzurum">Erzurum</option>
+                                            <option value="Eskişehir">Eskişehir</option>
+                                            <option value="Gaziantep">Gaziantep</option>
+                                            <option value="Giresun">Giresun</option>
+                                            <option value="Gümüşhane">Gümüşhane</option>
+                                            <option value="Hakkari">Hakkari</option>
+                                            <option value="Hatay">Hatay</option>
+                                            <option value="Isparta">Isparta</option>
+                                            <option value="Mersin">Mersin</option>
+                                            <option value="İstanbul">İstanbul</option>
+                                            <option value="İzmir">İzmir</option>
+                                            <option value="Kars">Kars</option>
+                                            <option value="Kastamonu">Kastamonu</option>
+                                            <option value="Kayseri">Kayseri</option>
+                                            <option value="Kırklareli">Kırklareli</option>
+                                            <option value="Kırşehir">Kırşehir</option>
+                                            <option value="Kocaeli">Kocaeli</option>
+                                            <option value="Konya">Konya</option>
+                                            <option value="Kütahya">Kütahya</option>
+                                            <option value="Malatya">Malatya</option>
+                                            <option value="Manisa">Manisa</option>
+                                            <option value="Kahramanmaraş">Kahramanmaraş</option>
+                                            <option value="Mardin">Mardin</option>
+                                            <option value="Muğla">Muğla</option>
+                                            <option value="Muş">Muş</option>
+                                            <option value="Nevşehir">Nevşehir</option>
+                                            <option value="Niğde">Niğde</option>
+                                            <option value="Ordu">Ordu</option>
+                                            <option value="Rize">Rize</option>
+                                            <option value="Sakarya">Sakarya</option>
+                                            <option value="Samsun">Samsun</option>
+                                            <option value="Siirt">Siirt</option>
+                                            <option value="Sinop">Sinop</option>
+                                            <option value="Sivas">Sivas</option>
+                                            <option value="Tekirdağ">Tekirdağ</option>
+                                            <option value="Tokat">Tokat</option>
+                                            <option value="Trabzon">Trabzon</option>
+                                            <option value="Tunceli">Tunceli</option>
+                                            <option value="Şanlıurfa">Şanlıurfa</option>
+                                            <option value="Uşak">Uşak</option>
+                                            <option value="Van">Van</option>
+                                            <option value="Yozgat">Yozgat</option>
+                                            <option value="Zonguldak">Zonguldak</option>
+                                            <option value="Aksaray">Aksaray</option>
+                                            <option value="Bayburt">Bayburt</option>
+                                            <option value="Karaman">Karaman</option>
+                                            <option value="Kırıkkale">Kırıkkale</option>
+                                            <option value="Batman">Batman</option>
+                                            <option value="Şırnak">Şırnak</option>
+                                            <option value="Bartın">Bartın</option>
+                                            <option value="Ardahan">Ardahan</option>
+                                            <option value="Iğdır">Iğdır</option>
+                                            <option value="Yalova">Yalova</option>
+                                            <option value="Karabük">Karabük</option>
+                                            <option value="Kilis">Kilis</option>
+                                            <option value="Osmaniye">Osmaniye</option>
+                                            <option value="Düzce">Düzce</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>İlçe</label>
+                                        <select id="registerDistrict" style="width:100%; padding:0.8rem; border:1px solid rgba(10,12,30,0.1); border-radius:8px; font-size:1rem; background:white; cursor:pointer;">
+                                            <option value="">Önce il seçiniz</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Mahalle</label>
+                                        <input type="text" id="registerNeighborhood" placeholder="Mahalle adı giriniz" style="width:100%; padding:0.8rem; border:1px solid rgba(10,12,30,0.1); border-radius:8px; font-size:1rem;">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Adres Detayı</label>
+                                        <textarea id="registerAddressDetail" placeholder="Sokak, cadde, bina no, daire no vb." rows="3" style="width:100%; padding:0.8rem; border:1px solid rgba(10,12,30,0.1); border-radius:8px; font-size:1rem; resize:vertical;"></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Posta Kodu (Opsiyonel)</label>
+                                        <input type="text" id="registerPostalCode" placeholder="Posta Kodu" style="width:100%; padding:0.8rem; border:1px solid rgba(10,12,30,0.1); border-radius:8px; font-size:1rem;">
+                                    </div>
+                                </div>
+                                <button data-action="register" type="submit" style="width: 100%; margin-top: 1rem;">Kayıt Ol</button>
+                            </form>
                         </div>
 
                         <!-- Hesap / Adres Düzenleme -->
@@ -1886,9 +1495,11 @@
                                     imageEl.src = imagesArr[0];
                                     imageEl.alt = p.name || 'Ürün görseli';
                                     imageEl.loading = 'lazy';
+                                    imageEl.decoding = 'async';
                                     imageEl.style.width='100%';
                                     imageEl.style.height='100%';
                                     imageEl.style.objectFit='cover';
+                                    // Küçük ve optimize edilmiş görseller kullanılması önerilir (webp/png)
                                     img.innerHTML='';
                                     img.appendChild(imageEl);
                                     // Tıklama ile lightbox aç
@@ -1923,69 +1534,7 @@
                         }catch(e){ console.error('Ürün yükleme hatası', e); }
                     }
                     document.addEventListener('DOMContentLoaded', function(){
-                        window.openProductLightbox = function(imagesArr, startIdx, name){
-                            const lb = document.getElementById('productLightbox');
-                            const imgWrap = document.getElementById('lightboxImgWrap');
-                            const nameEl = document.getElementById('lightboxName');
-                            let currentIdx = startIdx;
-                            // Lightbox'ı sayfa ortasına ve kredi kartı oranında konumlandır
-                            lb.style.display = 'flex';
-                            lb.style.position = 'fixed';
-                            lb.style.top = '50%';
-                            lb.style.left = '50%';
-                            lb.style.transform = 'translate(-50%, -50%)';
-                            lb.style.maxWidth = '340px';
-                            lb.style.maxHeight = '280px';
-                            lb.style.width = '340px';
-                            lb.style.height = '280px';
-                            lb.style.alignItems = 'flex-start';
-                            lb.style.justifyContent = 'center';
-                            lb.style.zIndex = '9999';
-                            document.body.style.overflow = 'hidden';
-                            // Görsel ve meta kutusu
-                            imgWrap.style.maxWidth = '340px';
-                            imgWrap.style.maxHeight = '210px';
-                            imgWrap.style.width = '340px';
-                            imgWrap.style.height = '210px';
-                            imgWrap.style.marginTop = '70px';
-                            // Resim ve meta güncelleme fonksiyonu
-                            function showImg(){
-                                let imgElLocal = document.getElementById('productLightboxImg');
-                                if (!imgElLocal) {
-                                    // Eksikse otomatik ekle
-                                    const wrap = document.getElementById('lightboxImgWrap');
-                                    imgElLocal = document.createElement('img');
-                                    imgElLocal.id = 'productLightboxImg';
-                                    imgElLocal.alt = 'Ürün görseli';
-                                    imgElLocal.style.width = '340px';
-                                    imgElLocal.style.height = '210px';
-                                    imgElLocal.style.borderRadius = '0 0 18px 18px';
-                                    imgElLocal.style.boxShadow = '0 8px 32px rgba(0,0,0,0.18)';
-                                    imgElLocal.style.background = '#fff';
-                                    imgElLocal.style.objectFit = 'cover';
-                                    wrap.appendChild(imgElLocal);
-                                }
-                                if (imgElLocal && imagesArr[currentIdx]) {
-                                    imgElLocal.src = imagesArr[currentIdx];
-                                    imgElLocal.alt = name || '';
-                                }
-                                if (nameEl) nameEl.textContent = name || '';
-                            }
-                            showImg();
-                            // Tuşlar ile resim geçişi
-                            document.getElementById('lightboxPrev').onclick = function(){
-                                if(imagesArr.length > 1){
-                                    currentIdx = (currentIdx - 1 + imagesArr.length) % imagesArr.length;
-                                    showImg();
-                                }
-                            };
-                            document.getElementById('lightboxNext').onclick = function(){
-                                if(imagesArr.length > 1){
-                                    currentIdx = (currentIdx + 1) % imagesArr.length;
-                                    showImg();
-                                }
-                            };
-                        };
+                        // Lightbox code removed as requested
                         loadProducts();
                     });
 
@@ -4506,104 +4055,7 @@ document.addEventListener('click', function(ev){
     let suppressUntil = 0;
 
     let productImages = [];
-    let currentIndex = 0;
-    function isMobile(){ return window.innerWidth <= 700; }
-    function openLightbox(idx){
-        // Her açılışta productImages dizisini güncelle
-        productImages = Array.from(document.querySelectorAll('.product-image'));
-        const lb = document.getElementById('productLightbox');
-        const img = document.getElementById('lightboxImg');
-        const nameEl = document.getElementById('lightboxName');
-        const priceEl = document.getElementById('lightboxPrice');
-        if(!productImages[idx]) return;
-        if(!img) {
-            console.error('[Lightbox] img (lightboxImg) null, fonksiyon sonlandırıldı');
-            return;
-        }
-        if(!lb) {
-            console.error('[Lightbox] lb (lightbox) null, fonksiyon sonlandırıldı');
-            return;
-        }
-        if(!nameEl) {
-            console.error('[Lightbox] nameEl (lightboxName) null, fonksiyon sonlandırıldı');
-            return;
-        }
-        if(!priceEl) {
-            console.error('[Lightbox] priceEl (lightboxPrice) null, fonksiyon sonlandırıldı');
-            return;
-        }
-        // Önce eski emoji/text'i temizle
-        let wrap = document.getElementById('lightboxImgWrap');
-        let oldEmoji = document.getElementById('lightboxEmoji');
-        if(oldEmoji && wrap) wrap.removeChild(oldEmoji);
-        // Görseli göster: arka plan görseli varsa onu, emoji/text ise onu göster
-        let el = productImages[idx];
-        let bg = el.style.backgroundImage;
-        if(bg && bg !== 'none') {
-            let url = bg.replace(/^url\(["']?|["']?\)$/g, '').replace(/url\(["']?|["']?\)/g, '').replace(/"/g, '').replace(/'/g, '');
-            img.src = url;
-            img.style.display = '';
-            img.alt = 'Ürün görseli';
-        }
-        let imgTag = el.querySelector && el.querySelector('img');
-        if (imgTag && imgTag.src) {
-            img.src = imgTag.src;
-            img.style.display = '';
-            img.alt = 'Ürün görseli';
-        } else if(bg && bg !== 'none') {
-            let url = bg.replace(/^url\(["']?|["']?\)$/g, '').replace(/url\(["']?|["']?\)/g, '').replace(/"/g, '').replace(/'/g, '');
-            img.src = url;
-            img.style.display = '';
-            img.alt = 'Ürün görseli';
-        } else {
-            img.src = '';
-            img.style.display = 'none';
-            let wrap = document.getElementById('lightboxImgWrap');
-            let emoji = el.textContent || '';
-            let emojiEl = document.getElementById('lightboxEmoji');
-            if(!emojiEl && wrap){
-                emojiEl = document.createElement('div');
-                emojiEl.id = 'lightboxEmoji';
-                emojiEl.style.fontSize = '5rem';
-                emojiEl.style.textAlign = 'center';
-                emojiEl.style.width = '100%';
-                emojiEl.style.height = '100%';
-                emojiEl.style.display = 'flex';
-                emojiEl.style.alignItems = 'center';
-                emojiEl.style.justifyContent = 'center';
-                wrap.appendChild(emojiEl);
-            }
-            if(emojiEl){
-                emojiEl.textContent = emoji;
-                emojiEl.style.display = 'flex';
-            }
-        }
-        let emojiEl = document.getElementById('lightboxEmoji');
-        if(emojiEl && bg && bg !== 'none') {
-            emojiEl.style.display = 'none';
-        }
-        // imgEl.style erişimi öncesi null kontrolü
-        if (!imgEl) {
-            console.error('[Lightbox] imgEl (productLightboxImg) null, style erişimi iptal edildi');
-        }
-        let name = card ? card.querySelector('.product-name')?.textContent : '';
-        let price = card ? card.querySelector('.product-price')?.textContent : '';
-        nameEl.textContent = name || '';
-        priceEl.textContent = price || '';
-        if (lb) {
-            lb.classList.remove('hidden');
-            lb.style.display = 'flex';
-        }
-        document.body.style.overflow = '';
-        currentIndex = idx;
-        const districtSelect = document.getElementById('registerDistrict');
-        const citySelect = document.getElementById('registerCity');
-        // Wrap in IIFE for proper block closure
-        (function(){
-            // İl seçildiğinde ilçeleri yükle
-            citySelect.addEventListener('change', function(){
-                const city = this.value;
-                districtSelect.innerHTML = '<option value="">İlçe Seçiniz</option>';
+    // Lightbox legacy code removed
                 if (city && cityData[city]) {
                     cityData[city].forEach(district => {
                         const opt = document.createElement('option');
@@ -4648,8 +4100,35 @@ document.addEventListener('click', function(ev){
                     }
                 }
             }
-        })();
-    }
+    // Lightbox code and stray closure removed
     // Kod sonu: script ve html düzgün kapatıldı
     </script>
+<!-- Non-kritik JS: www yönlendirme, fetch polyfill, saveUserPhone fonksiyonu -->
+<script>
+// Node ortamı için fetch polyfill
+if (typeof window === 'undefined' && typeof fetch === 'undefined') {
+    global.fetch = require('node-fetch');
+}
+function saveUserPhone() {
+    const input = document.getElementById('acctPhoneInput');
+    if (!input) return;
+    const phone = input.value.trim();
+    if (!phone) {
+        alert('Telefon numarası giriniz!');
+        return;
+    }
+    // localStorage veya sunucuya kaydetme işlemi
+    localStorage.setItem('userPhone', phone);
+    alert('Telefon numarası kaydedildi: ' + phone);
+}
+// Eğer kullanıcı www ile geldiyse, kök domaine (non-www) yönlendir
+(function(){
+    try{
+        if (location.hostname && location.hostname.indexOf('www.') === 0) {
+            var target = location.protocol + '//' + location.hostname.replace(/^www\./,'') + location.pathname + location.search + location.hash;
+            location.replace(target);
+        }
+    }catch(e){ /* ignore */ }
+})();
+</script>
 </html>
