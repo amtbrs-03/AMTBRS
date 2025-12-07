@@ -1623,44 +1623,46 @@
                             if(!grid) return;
                             grid.innerHTML = '';
                             const fmt = new Intl.NumberFormat('tr-TR', {style:'currency', currency:'TRY'});
-                            list.forEach((p, idx) => {
+                            list.forEach((p, idx)=>{
                                 const card = document.createElement('div');
                                 card.className = 'product-card';
-                                card.setAttribute('data-id', p.id || ('P' + idx));
+                                card.setAttribute('data-id', p.id || ('P'+idx));
                                 card.setAttribute('data-name', p.name || 'Ürün');
                                 card.setAttribute('data-price', p.price || 0);
                                 const badge = document.createElement('span');
                                 badge.className = 'badge badge-green';
                                 badge.textContent = p.badge || 'Yeni';
-                                badge.setAttribute('aria-label', 'Durum');
-
+                                badge.setAttribute('aria-label','Durum');
                                 // Görsel veya emoji container
                                 let images = Array.isArray(p.images) ? p.images : (p.image ? [p.image] : []);
                                 if (images.length === 0 && p.galleryImage) {
-                                    const gi = String(p.galleryImage).replace(/^\//, '');
+                                    const gi = String(p.galleryImage).replace(/^\//,'');
                                     images = [gi.startsWith('images/') ? gi : ('images/gallery/' + gi)];
                                 }
                                 if (images.length === 0 && (p.slug || p.id)) {
                                     const base = String(p.slug || p.id);
                                     images = ['images/products/' + base + '.jpg'];
                                 }
-                                let imgContainer = document.createElement('div');
-                                imgContainer.className = 'product-image';
                                 if (images.length === 0) {
-                                    // Hiç görsel yoksa emoji
-                                    imgContainer.textContent = '🛍️';
+                                    const img = document.createElement('div');
+                                    img.className = 'product-image';
+                                    img.textContent = '🛍️';
+                                    card.appendChild(img);
                                 } else {
-                                    // Sadece ilk görseli göster (veya istenirse döngüyle çoğaltılabilir)
-                                    const imageEl = document.createElement('img');
-                                    imageEl.src = images[0];
-                                    imageEl.alt = p.name || 'Ürün görseli';
-                                    imageEl.loading = 'lazy';
-                                    imageEl.style.width = '100%';
-                                    imageEl.style.height = '100%';
-                                    imageEl.style.objectFit = 'cover';
-                                    imgContainer.appendChild(imageEl);
+                                    images.forEach((imgSrc, i) => {
+                                        const img = document.createElement('div');
+                                        img.className = 'product-image';
+                                        const imageEl = document.createElement('img');
+                                        imageEl.src = imgSrc;
+                                        imageEl.alt = p.name || 'Ürün görseli';
+                                        imageEl.loading = 'lazy';
+                                        imageEl.style.width='100%';
+                                        imageEl.style.height='100%';
+                                        imageEl.style.objectFit='cover';
+                                        img.appendChild(imageEl);
+                                        card.appendChild(img);
+                                    });
                                 }
-
                                 const info = document.createElement('div');
                                 info.className = 'product-info';
                                 const nameEl = document.createElement('div');
@@ -1670,14 +1672,13 @@
                                 priceEl.className = 'product-price';
                                 priceEl.textContent = fmt.format(p.price || 0);
                                 const btn = document.createElement('button');
-                                btn.setAttribute('data-action', 'add-to-cart');
-                                btn.setAttribute('data-product-id', p.id || ('P' + idx));
+                                btn.setAttribute('data-action','add-to-cart');
+                                btn.setAttribute('data-product-id', p.id || ('P'+idx));
                                 btn.textContent = 'Sepete Ekle';
                                 info.appendChild(nameEl);
                                 info.appendChild(priceEl);
                                 info.appendChild(btn);
                                 card.appendChild(badge);
-                                card.appendChild(imgContainer);
                                 card.appendChild(info);
                                 grid.appendChild(card);
                             });
@@ -1739,33 +1740,27 @@
                             modal.style.display = 'block';
                             if (modal.classList.contains('hidden')) modal.classList.remove('hidden');
                         }
-                        try { const b = document.getElementById('authBtn'); if (b) b.setAttribute('aria-expanded', 'true'); } catch (e) {}
+                        try{ const b = document.getElementById('authBtn'); if (b) b.setAttribute('aria-expanded','true'); }catch(e){}
                         // Restore register form draft when reopening modal
                         var reg = document.getElementById('register');
-                        if (reg && reg.classList.contains('active')) {
-                            restoreRegisterFormDraft();
-                        }
                         if (reg && reg.classList.contains('active')) {
                             restoreRegisterFormDraft();
                         }
                     }
 
                     function closeAuthModal() {
-                        const modal = document.getElementById('authModal');
-                        if (modal) modal.style.display = 'none';
-                        try { const b = document.getElementById('authBtn'); if (b) b.setAttribute('aria-expanded', 'false'); } catch (e) {}
+                        document.getElementById('authModal').style.display = 'none';
+                        try{ const b = document.getElementById('authBtn'); if (b) b.setAttribute('aria-expanded','false'); }catch(e){}
                         // Save register form draft when closing modal
-                        const reg = document.getElementById('register');
-                        if (reg) {
+                        if (document.getElementById('register')) {
                             saveRegisterFormDraft();
                         }
                     }
 
                     function switchTab(tab, el) {
-                        document.querySelectorAll('.form-content').forEach(c => { if (c) c.classList.remove('active'); });
-                        document.querySelectorAll('.form-tab').forEach(t => { if (t) t.classList.remove('active'); });
-                        const tabEl = document.getElementById(tab);
-                        if (tabEl) tabEl.classList.add('active');
+                        document.querySelectorAll('.form-content').forEach(c => c.classList.remove('active'));
+                        document.querySelectorAll('.form-tab').forEach(t => t.classList.remove('active'));
+                        document.getElementById(tab).classList.add('active');
                         if (el) el.classList.add('active');
                     }
 
@@ -1819,13 +1814,13 @@
                     function closeContact() {
                         const btn = document.getElementById('contactBtn');
                         const panel = document.getElementById('contactPanel');
-                        if (!panel || !btn) return;
+                        if (!panel) return;
                         panel.classList.add('hidden');
                         panel.setAttribute('aria-hidden', 'true');
                         panel.style.display = 'none';
                         // Reset offscreen transform so next open positions fresh
                         panel.style.transform = 'translate(-9999px,-9999px)';
-                        btn.setAttribute('aria-expanded', 'false');
+                        if (btn) btn.setAttribute('aria-expanded', 'false');
                     }
 
                     /* --- About panel toggle --- */
@@ -1853,11 +1848,11 @@
                     function closeAbout() {
                         const btn = document.getElementById('aboutBtn');
                         const panel = document.getElementById('aboutPanel');
-                        if (!panel || !btn) return;
+                        if (!panel) return;
                         panel.classList.add('hidden');
                         panel.setAttribute('aria-hidden', 'true');
                         panel.style.display = 'none';
-                        btn.setAttribute('aria-expanded', 'false');
+                        if (btn) btn.setAttribute('aria-expanded', 'false');
                     }
 
                     // Scroll helper used by nav buttons; mimics toggle behavior briefly for aria
