@@ -1,26 +1,43 @@
 #!/usr/bin/env node
-// Node.js mock for localStorage (for CI)
-if (typeof localStorage === 'undefined') {
-  global.localStorage = {
-    _data: {},
-    setItem: function (key, value) { this._data[key] = value; },
-    getItem: function (key) { return this._data[key] || null; },
-    removeItem: function (key) { delete this._data[key]; },
-    clear: function () { this._data = {}; }
-  };
-}
-// Polyfill fetch and alert for test environment
-if (typeof global.fetch === 'undefined') {
-  global.fetch = function(url, opts) {
-    return Promise.reject(new Error('fetch is not implemented in test'));
-  };
-}
-if (typeof global.window === 'undefined') global.window = {};
-if (typeof global.window.alert === 'undefined') {
-  global.window.alert = function(msg) { console.log('[alert]', msg); };
-}
-if (typeof global.alert === 'undefined') {
-  global.alert = function(msg) { console.log('[alert]', msg); };
+// Node ortamı için fetch, alert ve localStorage polyfill
+try {
+  // window/global erişimi
+  if (typeof global.window === 'undefined') global.window = {};
+  if (typeof window === 'undefined') global.window = window = {};
+
+  // localStorage polyfill
+  if (typeof window.localStorage === 'undefined') {
+    const store = {};
+    window.localStorage = {
+      setItem: (k, v) => { store[k] = v; },
+      getItem: (k) => store.hasOwnProperty(k) ? store[k] : null,
+      removeItem: (k) => { delete store[k]; },
+      clear: () => { Object.keys(store).forEach(k => delete store[k]); }
+    };
+    global.localStorage = window.localStorage;
+  }
+
+  // fetch polyfill (node-fetch veya basit mock)
+  if (typeof window.fetch === 'undefined') {
+    try {
+      window.fetch = global.fetch = require('node-fetch');
+    } catch (e) {
+      window.fetch = global.fetch = function(url, opts) {
+        return Promise.reject(new Error('fetch is not implemented in test'));
+      };
+    }
+  }
+
+  // alert polyfill
+  if (typeof window.alert !== 'function') {
+    window.alert = function(msg) { console.log('[alert]', msg); };
+  }
+  if (typeof global.alert !== 'function') {
+    global.alert = window.alert;
+  }
+} catch (e) {
+  // Polyfill hatası olursa testler devam etsin
+  console.error('Polyfill yüklenemedi:', e);
 }
 
 // Telefon kaydetme ve localStorage testi
