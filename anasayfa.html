@@ -40,27 +40,23 @@
             margin-bottom: 1.5rem;
         }
         .form-tabs button {
-            flex: 1;
-            padding: 0.8rem;
-            border: 2px solid #ddd;
-            background: white;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: 0.25s;
-            color: #0b1220;
-            font-weight: 600;
-        }
-        .form-tabs button.active {
-            background: #6b46c1;
-            color: white;
-            border-color: #6b46c1;
-        }
-
-        .form-content { display: none; }
-        .form-content.active { display: block; }
-        
-        /* Account Tab Styles */
-        .account-tab {
+            try {
+                const draft = {
+                    registerName: document.getElementById('registerName')?.value || '',
+                    registerEmail: document.getElementById('registerEmail')?.value || '',
+                    registerPhone: document.getElementById('registerPhone')?.value || '',
+                    registerCity: document.getElementById('registerCity')?.value || '',
+                    registerDistrict: document.getElementById('registerDistrict')?.value || '',
+                    registerNeighborhood: document.getElementById('registerNeighborhood')?.value || '',
+                    registerAddressDetail: document.getElementById('registerAddressDetail')?.value || '',
+                    registerPostalCode: document.getElementById('registerPostalCode')?.value || '',
+                    savedAt: Date.now()
+                };
+                sessionStorage.setItem('registerFormDraft', JSON.stringify(draft));
+                console.log('✓ Form draft saved to sessionStorage');
+            } catch(e) {
+                console.error('Form draft save error:', e);
+            }
             padding: 0.7rem 1.2rem;
             border: none;
             background: #f3f4f6;
@@ -753,6 +749,14 @@
                                 <!-- Hızlı Adres Güncelleme (Varolan üyeler için) -->
                                 <div style="margin:0.75rem 0; padding:0.75rem; background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px;">
                                     <div style="font-weight:700; color:#064e3b; margin-bottom:0.5rem;">📍 Adresini Güncelle</div>
+                                </div>
+                            </div>
+                            <!-- Orders Tab -->
+                            <div id="ordersTab" class="account-tab-content" style="display:none;">
+                                <h3 style="margin-top:0; color:#064e3b;">Siparişlerim</h3>
+                                <div id="ordersList" style="margin-top:0.5rem;"></div>
+                                <div id="orderDetail" style="margin-top:1.5rem; display:none; background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; padding:1rem;"></div>
+                            </div>
 
 
 
