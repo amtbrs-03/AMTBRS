@@ -115,9 +115,8 @@
             }
           }
         ]
-      }
-})();
-    </script>
+  }
+</script>
 
     <style>
                 /* Mobilde scroll ile bulanıklaşan başlık/menü */
@@ -1739,11 +1738,26 @@
                             const imgEl = document.getElementById('productLightboxImg');
                             const nameEl = document.getElementById('lightboxName');
                             let idx = startIdx;
-                            function showImg(){
-                                imgEl.src = imagesArr[idx];
-                                imgEl.alt = name || '';
-                                nameEl.textContent = name || '';
-                            }
+                                function showImg(){
+                                    let imgElLocal = document.getElementById('productLightboxImg');
+                                    if (!imgElLocal) {
+                                        // Eksikse otomatik ekle
+                                        const wrap = document.getElementById('lightboxImgWrap');
+                                        imgElLocal = document.createElement('img');
+                                        imgElLocal.id = 'productLightboxImg';
+                                        imgElLocal.alt = 'Ürün görseli';
+                                        imgElLocal.style.maxWidth = '96vw';
+                                        imgElLocal.style.maxHeight = '70vh';
+                                        imgElLocal.style.borderRadius = '18px';
+                                        imgElLocal.style.boxShadow = '0 8px 32px rgba(0,0,0,0.28)';
+                                        imgElLocal.style.background = '#fff';
+                                        imgElLocal.style.objectFit = 'contain';
+                                        wrap.appendChild(imgElLocal);
+                                    }
+                                    imgElLocal.src = imagesArr[idx];
+                                    imgElLocal.alt = name || '';
+                                    nameEl.textContent = name || '';
+                                }
                             showImg();
                             lb.style.display = 'flex';
                             document.getElementById('lightboxPrev').onclick = function(){
@@ -4403,5 +4417,5 @@ document.addEventListener('click', function(ev){
         }
     }
 })();
-    </script>
-</html>
+        </script>
+    </html>
