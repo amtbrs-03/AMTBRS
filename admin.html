@@ -552,6 +552,43 @@
 
 </head>
 <body>
+    <!-- Token Giriş Modalı -->
+    <div id="tokenGate" class="modal" style="display:flex;align-items:center;justify-content:center;position:fixed;z-index:9999;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.18);">
+      <div class="modal-content" style="max-width:420px;">
+        <div class="section-header">🔑 GitHub Token Girişi</div>
+        <div class="small" style="color:#64748b;margin-bottom:0.75rem">Admin işlemleri için kişisel erişim token'ınızı girin. Token girilmezse sadece uyarı gösterilir, sayfa yine açılır.</div>
+        <div class="controls-row" style="gap:0.5rem;">
+          <input id="tokenInput" type="password" placeholder="ghp_..." style="flex:1;min-width:220px" />
+          <button id="tokenSubmit" class="btn" type="button">Giriş</button>
+        </div>
+        <div id="tokenMsg" class="small" style="margin-top:0.5rem;color:#64748b"></div>
+        <div class="small" style="margin-top:0.75rem;color:#6b7280">Not: Token girilmezse admin işlemleri kısıtlı olur, sadece uyarı gösterilir.</div>
+      </div>
+    </div>
+    <script>
+      // Token giriş modalı kontrolü
+      document.addEventListener('DOMContentLoaded', function() {
+        var gate = document.getElementById('tokenGate');
+        var input = document.getElementById('tokenInput');
+        var submit = document.getElementById('tokenSubmit');
+        var msg = document.getElementById('tokenMsg');
+        if (gate && input && submit) {
+          gate.style.display = 'flex';
+          submit.onclick = function() {
+            var val = input.value.trim();
+            if (val.length > 10) {
+              localStorage.setItem('github_token', val);
+              msg.textContent = 'Token kaydedildi, tam erişim sağlandı.';
+              setTimeout(function(){ gate.style.display='none'; location.reload(); }, 800);
+            } else {
+              localStorage.setItem('github_token', 'BYPASS');
+              msg.textContent = 'Token girilmedi, admin işlemleri kısıtlı. Sayfa açılıyor.';
+              setTimeout(function(){ gate.style.display='none'; }, 800);
+            }
+          };
+        }
+      });
+    </script>
   <!-- Token Modal -->
   <div id="authModal" class="modal">
     <div class="modal-content small-modal">
