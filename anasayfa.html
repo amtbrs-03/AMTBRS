@@ -4281,14 +4281,19 @@ document.addEventListener('click', function(ev){
             let el = productImages[idx];
             let card = el.closest('.product-card');
             let bg = el.style.backgroundImage;
-            // Modalı ürün kartının üstüne ve genişliğine konumlandır
+            // Modalı ürün kartının parent'ına ekle ve tam üstüne konumlandır
             if(card){
                 const cardRect = card.getBoundingClientRect();
+                // Modalı önce body'den çıkar, sonra card'ın parent'ına ekle
+                if(lb.parentNode !== card.parentNode){
+                    lb.parentNode.removeChild(lb);
+                    card.parentNode.appendChild(lb);
+                }
                 lb.style.position = 'absolute';
-                lb.style.top = (window.scrollY + cardRect.top) + 'px';
-                lb.style.left = (window.scrollX + cardRect.left) + 'px';
-                lb.style.width = cardRect.width + 'px';
-                lb.style.height = cardRect.height + 'px';
+                lb.style.top = card.offsetTop + 'px';
+                lb.style.left = card.offsetLeft + 'px';
+                lb.style.width = card.offsetWidth + 'px';
+                lb.style.height = card.offsetHeight + 'px';
                 lb.style.borderRadius = window.getComputedStyle(card).borderRadius;
             }
             if(bg && bg !== 'none') {
