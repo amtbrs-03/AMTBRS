@@ -15,17 +15,12 @@
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Çiçekçi - Online Çiçek Siparişi | Gül Buketi | ERN Çiçek" />
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        // kapalı bir SPA olduğundan, kök path'e yönlendiriyoruz
-                                        try { window.location.assign('/'); } catch(_){ window.location.href = '/'; }
-                                    }, { capture: true });
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Çiçekçi - Online Çiçek Siparişi | ERN Çiçek" />
     <meta name="twitter:description" content="Gül, lilyum, orkide ve tüm çiçek çeşitleri. Aynı gün teslimat." />
     <meta name="twitter:image" content="https://ern-cicek.com.tr/og-image.jpg" />
     
-    <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="/favicon.ico" />
 
         <!-- Erken mojibake düzeltme: ilk boyama öncesi bozuk karakterleri gizle ve düzelt -->
         <style>html.__fixing{visibility:hidden !important}</style>
@@ -128,16 +123,28 @@
     <style>
                 /* Mobilde scroll ile bulanıklaşan başlık/menü */
                 @media (max-width:700px) {
+                    /* Header'ı sabitle ve gerçek yüksekliğini üst boşluğa uygula (JS ile ayarlanacak) */
+                    header {
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        z-index: 1000; /* mobilde sabit başlık en üstte kalsın */
+                    }
                     header.blurred, .products-header.blurred {
-                        background: rgba(30,143,85,0.55);
-                        backdrop-filter: blur(8px);
-                        -webkit-backdrop-filter: blur(8px);
+                        background: rgba(30,143,85,0.55) !important;
+                        backdrop-filter: blur(8px) !important;
+                        -webkit-backdrop-filter: blur(8px) !important;
                         transition: background 0.3s, backdrop-filter 0.3s;
                     }
                     .products-header.blurred {
-                        background: rgba(255,255,255,0.65);
-                        backdrop-filter: blur(8px);
-                        -webkit-backdrop-filter: blur(8px);
+                        background: rgba(255,255,255,0.65) !important;
+                        backdrop-filter: blur(8px) !important;
+                        -webkit-backdrop-filter: blur(8px) !important;
+                    }
+                    /* İçerik, başlık tarafından örtülmesin; JS header yüksekliğini body padding-top'a yazar */
+                    body.mobile-header-offset {
+                        padding-top: var(--mobile-header-h, 72px);
                     }
                 }
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -495,40 +502,68 @@
 
         @media (max-width:700px) {
             header nav { padding: 0 0.3rem; }
+            /* Premium mobile typography refinements */
+            body { 
+                -webkit-font-smoothing: antialiased; 
+                -moz-osx-font-smoothing: grayscale; 
+            }
+            /* Mobile: place top action buttons in two columns */
             .nav-links {
-                gap:0.5rem;
-                flex-direction:column;
-                flex-wrap:nowrap;
-                align-items:stretch;
-                padding-bottom:0.5rem;
-                width:100%;
+                display: grid !important; /* override inline flex */
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0.5rem;
+                align-items: stretch;
+                padding-bottom: 0.5rem;
+                width: 100%;
             }
             .nav-links li {
-                margin-bottom: 0.5rem;
-                width:100%;
+                margin: 0; /* gaps handle spacing */
+                width: auto;
             }
             .contact-btn, .cart-btn, .auth-btn {
                 display:block;
                 width:100%;
                 box-sizing:border-box;
-                padding: 1.1rem 0.5rem;
-                font-size: 1.12rem;
+                padding: 1rem 0.6rem;
+                font-size: 1.06rem;
+                font-weight: 700;
+                letter-spacing: 0.2px;
                 border-radius: 16px;
                 text-align:center;
                 margin:0 auto;
                 min-width:unset;
                 max-width:100%;
-                white-space:normal;
+                /* Force single-line labels with graceful truncation */
+                    .nav-top ul.nav-links { 
+                        display: grid !important;
+                        /* Second row: place 4 actions in a single line */
+                        grid-template-columns: repeat(4, minmax(0, 1fr));
+                        grid-template-areas:
+                          "home cart contact about";
+                        gap: 0.6rem;
+                        align-items: stretch;
+                        padding: 0.4rem 0.2rem;
+                    }
+                line-height:1.2; 
+                font-weight: 800;
+                letter-spacing: 0.1px;
+                white-space: nowrap; 
+                overflow: hidden; 
+                text-overflow: ellipsis; 
+                text-shadow: 0 4px 14px rgba(0,0,0,0.28);
+                    #homeBtn { grid-area: home; }
+                font-size:0.98rem; 
+                line-height: 1.25;
+                    #aboutBtn { grid-area: about; display: block; }
+                overflow: hidden; 
+                text-overflow: ellipsis; 
+                opacity: .92;
             }
-            .nav-bottom { margin-top: 0.5rem; }
-
-            .hero { padding: 1.5rem 0.3rem 2rem; }
-            .hero h1 { font-size:1.1rem; line-height:1.15; }
-            .hero p { font-size:0.95rem; }
             .products-wrapper { padding: 0 0.3rem 0.8rem; }
             .products { gap:0.4rem; grid-template-columns: 1fr; }
-            .product-image { aspect-ratio: 1 / 1; font-size:1.3rem; height:90px; }
-            .product-card { padding:.4rem; border-radius:7px }
+            .product-card { padding:.45rem; border-radius:8px }
+            .product-name { font-size:0.98rem; font-weight:700; letter-spacing:0.1px; }
+            .product-price { font-size:1.08rem; font-weight:800; letter-spacing:0.1px; }
 
             .modal-content { width:99%; max-width:99%; margin:2% auto; padding:0.7rem; border-radius:18px; }
             #paymentWidget { right: 0.2rem; left: 0.2rem; width: auto; bottom: 0.5rem; }
@@ -548,8 +583,8 @@
         @media (max-width:480px) {
             /* Tighten for narrow phones */
             .hero { padding: 2rem 0.8rem 3rem; }
-            .hero h1 { font-size:1.35rem; }
-            .hero p { font-size:0.95rem; }
+            .hero h1 { font-size:1.28rem; }
+            .hero p { font-size:0.93rem; }
 
             .products { grid-template-columns: 1fr; gap:0.7rem; }
             .product-image { aspect-ratio: 1 / 1; font-size:1.8rem; }
@@ -567,6 +602,28 @@
 
             /* Disable fancy hover transforms on small devices for stability */
             .product-card { transform: none; box-shadow: none; }
+        }
+
+        /* Ultra-narrow screens ≤360px: micro-tweaks for premium readability */
+        @media (max-width:360px) {
+            .hero { padding: 1.6rem 0.6rem 2.2rem; }
+            .hero h1 {
+                font-size: 1.12rem;
+                letter-spacing: 0.08px;
+                line-height: 1.18;
+            }
+            .hero p {
+                font-size: 0.9rem;
+                letter-spacing: 0.08px;
+                line-height: 1.22;
+            }
+            .contact-btn, .cart-btn, .auth-btn {
+                font-size: 0.98rem;
+                letter-spacing: 0.15px;
+                padding: 0.9rem 0.55rem;
+            }
+            .product-name { font-size: 0.95rem; letter-spacing: 0.08px; }
+            .product-price { font-size: 1.02rem; letter-spacing: 0.08px; }
         }
 
         /* Mobile auth compact layout: move auth row to left and use icon-only */
@@ -649,26 +706,75 @@
 
         /* contact button styles */
         .contact-btn {
-            background: linear-gradient(90deg,#10b981,#059669);
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 10px;
+            background: linear-gradient(135deg,#10b981,#059669);
+            color: #fff;
+            padding: 0.8rem 1.1rem;
+            border-radius: 14px;
             border: none;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
             cursor: pointer;
-            font-weight:700;
-            font-size: 1rem;
+            font-weight: 700;
+            font-size: 0.98rem;
             justify-content: center;
-            box-shadow: 0 8px 22px rgba(16,185,129,0.18);
+            box-shadow: 0 10px 24px rgba(16,185,129,0.20);
+            transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
         }
         .contact-btn.active {
-            box-shadow: 0 10px 30px rgba(16,185,129,0.28);
+            box-shadow: 0 18px 36px rgba(16,185,129,0.28);
             transform: translateY(-1px);
             border: 1px solid rgba(16,185,129,0.12);
         }
-        .contact-btn:focus { outline: 3px solid rgba(16,185,129,0.18); }
+        .contact-btn:hover { transform: translateY(-2px); box-shadow: 0 18px 36px rgba(16,185,129,0.3); }
+        .contact-btn:active { transform: translateY(0); box-shadow: 0 8px 18px rgba(16,185,129,0.22); }
+        .contact-btn:focus { outline: 3px solid rgba(16,185,129,0.18); outline-offset: 2px; }
+        /* Mobile: header nav buttons in two columns */
+        @media (max-width: 700px) {
+            header { position: fixed; top: 0; left: 0; right: 0; z-index: 1200; }
+            .nav-top ul.nav-links { 
+                display: grid !important;
+                /* Tek satırda 4 buton: Ana Sayfa, Sepet, İletişim, Hakkımızda */
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                grid-template-areas: "home cart contact about";
+                gap: 0.7rem; /* dar ekranlarda butonlar arası boşluğu artır ve tümünü genişlet */
+                align-items: stretch;
+                padding: 0.7rem 0.4rem; /* tıklanabilir alanı büyüt */
+            }
+            .nav-top ul.nav-links > li { width: 100%; }
+            .nav-top ul.nav-links > li > .contact-btn,
+            .nav-top ul.nav-links > li > a.contact-btn {
+                width: 100%;
+                min-height: 48px; /* daha büyük dokunma hedefi */
+                padding: 0.85rem 0.65rem; /* yatay ve dikey alanı genişlet */
+                font-size: 1.02rem; /* görünürlüğü artır */
+                white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            }
+            /* place items explicitly into two rows */
+            #homeBtn { grid-area: home; }
+            #cartContainer { grid-area: cart; }
+            #contactBtn { grid-area: contact; }
+            /* show About and place it in the fourth column */
+            #aboutBtn { grid-area: about; display: block; }
+            /* make auth/login occupy full-width on a third row under nav */
+            .nav-bottom { display: block; padding: 0.4rem 0.2rem; }
+            #authContainer, #userContainer { width: 100%; }
+            #authBtn, #profileToggle { width: 100%; min-height: 44px; }
+            /* distinct styles per action for visual variety */
+            #homeBtn.contact-btn { background: linear-gradient(135deg,#22c55e,#16a34a); }
+            #cartBtn.contact-btn { background: linear-gradient(135deg,#f59e0b,#d97706); }
+            #contactBtn.contact-btn, #aboutBtn.contact-btn { background: linear-gradient(135deg,#14b8a6,#0ea5e9); }
+            /* cart pill counter contrast tweak on mobile */
+            #cartBtn .cart-count { background:#fff; color:#0b1220; border:1px solid rgba(10,12,30,0.1); }
+
+            /* Ensure logo text remains single-line with ellipsis on mobile */
+            .logo-text {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 60vw; /* dar ekranda logo metni için biraz daha alan */
+            }
+        }
         /* Mini cart dropdown */
         .mini-cart {
             position: absolute;
@@ -711,17 +817,46 @@
                                 // Mobilde scroll ile header ve başlıkları bulanıklaştır
                                 (function(){
                                     function isMobile(){ return window.innerWidth <= 700; }
+                                    // Başlık yüksekliğini ölç ve body'ye üst boşluk uygula
+                                    function applyMobileHeaderOffset(){
+                                        var body = document.body;
+                                        var header = document.querySelector('header');
+                                        if(!isMobile()){
+                                            body.classList.remove('mobile-header-offset');
+                                            body.style.setProperty('--mobile-header-h','');
+                                            return;
+                                        }
+                                        if(!header){ return; }
+                                        // Reflow sonrası gerçek yükseklik
+                                        var h = header.offsetHeight || 72;
+                                        body.style.setProperty('--mobile-header-h', h + 'px');
+                                        body.classList.add('mobile-header-offset');
+                                    }
+
                                     function onScroll(){
-                                        if(!isMobile()) return;
                                         var header = document.querySelector('header');
                                         var productsHeader = document.querySelector('.products-header');
-                                        var scrolled = window.scrollY > 24;
-                                        if(header) header.classList.toggle('blurred', scrolled);
-                                        if(productsHeader) productsHeader.classList.toggle('blurred', scrolled);
+                                        if(isMobile()){
+                                            var scrolled = (window.scrollY||0) > 24;
+                                            if(header) header.classList.toggle('blurred', scrolled);
+                                            if(productsHeader) productsHeader.classList.toggle('blurred', scrolled);
+                                        } else {
+                                            if(header) header.classList.remove('blurred');
+                                            if(productsHeader) productsHeader.classList.remove('blurred');
+                                        }
                                     }
-                                    window.addEventListener('scroll', onScroll);
-                                    window.addEventListener('resize', onScroll);
-                                    document.addEventListener('DOMContentLoaded', onScroll);
+
+                                    function onResize(){
+                                        applyMobileHeaderOffset();
+                                        onScroll();
+                                    }
+
+                                    window.addEventListener('scroll', onScroll, { passive: true });
+                                    window.addEventListener('resize', onResize);
+                                    document.addEventListener('DOMContentLoaded', function(){
+                                        applyMobileHeaderOffset();
+                                        onScroll();
+                                    });
                                 })();
                                 </script>
                         <!-- Ürün görseli lightbox/modal (mobil uyumlu, header/nav üstte kalır) -->
@@ -834,6 +969,7 @@
                         </script>
                 <!-- Decorative floral SVG background (purely visual) -->
                 <!-- decorative floral background removed -->
+                
                 <header>
                     <nav>
                         <div class="logo"><a href="/" style="color:inherit;text-decoration:none"><span class="logo-icon" aria-hidden="true">
@@ -862,7 +998,7 @@
                         <div class="nav-top" style="display:flex;align-items:center;gap:0.6rem;">
                             <ul class="nav-links" style="display:flex;gap:0.6rem;align-items:center;list-style:none;margin:0;padding:0;">
                                 <li><button id="homeBtn" class="contact-btn" aria-expanded="false" data-action="go-home">Ana Sayfa</button></li>
-                                    <li><a id="productsBtn" class="contact-btn" href="urunler.html" target="_blank" aria-controls="products" aria-expanded="false">Ürünler</a></li>
+                                    <!-- Ürünler butonu kaldırıldı: tüm ürünler ana sayfada sergilenir -->
                                 <li id="cartContainer"><button id="cartBtn" class="cart-btn contact-btn" aria-controls="cartModal" aria-expanded="false" data-action="open-cart">Sepet <span id="cartCount" class="cart-count hidden">0</span></button></li>
                                 <li><button id="contactBtn" class="contact-btn" aria-expanded="false" aria-controls="contactPanel" data-action="toggle-contact"><span style="display:inline-block;margin-right:6px;line-height:1">📞</span><span>İletişim</span><span style="margin-left:8px;opacity:0.9">▾</span></button></li>
                                 <li style="position:relative;">
@@ -1014,6 +1150,8 @@
                             <div class="form-group">
                                 <label>Email</label>
                                 <input type="email" id="registerEmail" placeholder="Email adresiniz">
+                                <input type="tel" id="registerPhone" placeholder="Telefon numaranız" pattern="^\+?\d[\d\s()-]{7,}$" aria-describedby="registerPhoneHint">
+                                <div id="registerPhoneHint" style="font-size:0.8rem;color:#6b7280;margin-top:4px">Örnek: +90 530 000 00 00</div>
                             </div>
                             <div class="form-group">
                                 <label>Şifre</label>
@@ -1134,6 +1272,28 @@
                             
                             <button data-action="register" style="width: 100%; margin-top: 1rem;">Kayıt Ol</button>
                         </div>
+
+                        <!-- Hesap / Adres Düzenleme -->
+                        <div id="account" class="form-content">
+                            <div class="form-group">
+                                <label for="accountName">Ad Soyad</label>
+                                <input type="text" id="accountName" placeholder="Ad Soyadınız">
+                            </div>
+                            <div class="form-group">
+                                <label for="accountEmail">Email (değiştirilemez)</label>
+                                <input type="email" id="accountEmail" placeholder="Email" disabled>
+                            </div>
+                            <div style="margin-top:1rem; padding-top:1rem; border-top:2px solid rgba(10,12,30,0.1);">
+                                <h3 style="font-size:1.1rem; margin-bottom:1rem; color:#0b1220;">📍 Kayıtlı Adresi Düzenle</h3>
+                                <div class="form-group"><label for="accountCity">İl</label><input type="text" id="accountCity" placeholder="İl"></div>
+                                <div class="form-group"><label for="accountDistrict">İlçe</label><input type="text" id="accountDistrict" placeholder="İlçe"></div>
+                                <div class="form-group"><label for="accountNeighborhood">Mahalle</label><input type="text" id="accountNeighborhood" placeholder="Mahalle"></div>
+                                <div class="form-group"><label for="accountAddressDetail">Adres Detayı</label><input type="text" id="accountAddressDetail" placeholder="Sokak/Cadde, No"></div>
+                                <div class="form-group"><label for="accountPostalCode">Posta Kodu</label><input type="text" id="accountPostalCode" placeholder="34000"></div>
+                                <button id="accountSaveBtn" style="width:100%; margin-top:0.5rem;">Kaydet ve Senkronize Et</button>
+                                <div id="accountStatus" class="muted" style="margin-top:0.5rem; min-height:1.2em"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -1156,6 +1316,15 @@
                                 <div style="margin-bottom:0.6rem;">
                                     <strong id="acctName">İsim</strong>
                                     <div id="acctEmail" style="font-size:0.95rem;color:#334155"></div>
+                                </div>
+
+                                <div style="margin:0.75rem 0; padding:0.75rem; background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px;">
+                                    <label for="acctPhoneInput" style="display:block; font-weight:600; color:#334155; margin-bottom:0.4rem;">Telefon Numarası</label>
+                                    <div style="display:flex; gap:0.5rem;">
+                                        <input type="tel" id="acctPhoneInput" placeholder="Örnek: +90 530 000 00 00" pattern="^\+?\d[\d\s()-]{7,}$" style="flex:1; padding:0.6rem; border:1px solid #d1d5db; border-radius:8px;">
+                                        <button onclick="saveUserPhone()" style="min-width:140px; background:#10b981; color:white; border:none; border-radius:8px; padding:0.6rem; cursor:pointer; font-weight:600;">Telefonu Kaydet</button>
+                                    </div>
+                                    <div style="font-size:0.8rem;color:#6b7280;margin-top:4px">Kayıtlı üyeler telefon bilgisini burada güncelleyebilir.</div>
                                 </div>
 
                                 <div style="margin-top:1rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
@@ -1412,35 +1581,7 @@
                 <div class="products-wrapper">
                     <!-- products-header removed per request -->
                     <section class="products" id="products">
-                        <div class="product-card" data-id="1" data-name="Ürün 1" data-price="99.99">
-                            <span class="badge badge-green" aria-label="Yeni ürün">Yeni</span>
-                            <div class="product-image">🛍️</div>
-                            <div class="product-info">
-                                <div class="product-name">Ürün 1</div>
-                                <div class="product-price">₺99.99</div>
-                                <button data-action="add-to-cart" data-product-id="1">Sepete Ekle</button>
-                            </div>
-                        </div>
-
-                        <div class="product-card" data-id="2" data-name="Ürün 2" data-price="199.99">
-                            <span class="badge badge-amber" aria-label="İndirim">İndirim</span>
-                            <div class="product-image">📱</div>
-                            <div class="product-info">
-                                <div class="product-name">Ürün 2</div>
-                                <div class="product-price">₺199.99</div>
-                                <button data-action="add-to-cart" data-product-id="2">Sepete Ekle</button>
-                            </div>
-                        </div>
-
-                        <div class="product-card" data-id="3" data-name="Ürün 3" data-price="149.99">
-                            <span class="badge" aria-label="Popüler">Popüler</span>
-                            <div class="product-image">⌚</div>
-                            <div class="product-info">
-                                <div class="product-name">Ürün 3</div>
-                                <div class="product-price">₺149.99</div>
-                                <button data-action="add-to-cart" data-product-id="3">Sepete Ekle</button>
-                            </div>
-                        </div>
+                        <!-- Ürünler products.json'dan dinamik olarak yüklenecek -->
                     </section>
                 </div>
 
@@ -1465,6 +1606,81 @@
                 <!-- Contact info has been moved into the header contact panel -->
 
                 <script defer>
+                    /* --- Dinamik Ürün Yükleme --- */
+                    async function loadProducts(){
+                        try{
+                            const res = await fetch('products.json', {cache:'no-store'});
+                            if(!res.ok) throw new Error('products.json yüklenemedi');
+                            const listRaw = await res.json();
+                            const list = Array.isArray(listRaw) ? listRaw : (Array.isArray(listRaw.items) ? listRaw.items : []);
+                            const grid = document.getElementById('products');
+                            if(!grid) return;
+                            grid.innerHTML = '';
+                            const fmt = new Intl.NumberFormat('tr-TR', {style:'currency', currency:'TRY'});
+                            list.forEach((p, idx)=>{
+                                const card = document.createElement('div');
+                                card.className = 'product-card';
+                                card.setAttribute('data-id', p.id || ('P'+idx));
+                                card.setAttribute('data-name', p.name || 'Ürün');
+                                card.setAttribute('data-price', p.price || 0);
+                                const badge = document.createElement('span');
+                                badge.className = 'badge badge-green';
+                                badge.textContent = p.badge || 'Yeni';
+                                badge.setAttribute('aria-label','Durum');
+                                const img = document.createElement('div');
+                                img.className = 'product-image';
+                                // Resolve product image path: prefer explicit p.image; fallback to gallery or products folder
+                                let imgSrc = null;
+                                if (p.image) {
+                                    imgSrc = p.image; // full or relative path already provided
+                                } else if (p.galleryImage) {
+                                    // admin uploads often go to images/gallery; accept filename or subpath
+                                    const gi = String(p.galleryImage).replace(/^\//,'');
+                                    imgSrc = gi.startsWith('images/') ? gi : ('images/gallery/' + gi);
+                                } else if (p.slug || p.id) {
+                                    // fallback convention: images/products/<slug-or-id>.jpg
+                                    const base = String(p.slug || p.id);
+                                    imgSrc = 'images/products/' + base + '.jpg';
+                                }
+                                if(imgSrc){
+                                    const imageEl = document.createElement('img');
+                                    imageEl.src = imgSrc;
+                                    imageEl.alt = p.name || 'Ürün görseli';
+                                    imageEl.loading = 'lazy';
+                                    imageEl.style.width='100%';
+                                    imageEl.style.height='100%';
+                                    imageEl.style.objectFit='cover';
+                                    img.innerHTML='';
+                                    img.appendChild(imageEl);
+                                } else {
+                                    img.textContent = '🛍️';
+                                }
+                                const info = document.createElement('div');
+                                info.className = 'product-info';
+                                const nameEl = document.createElement('div');
+                                nameEl.className = 'product-name';
+                                nameEl.textContent = p.name || '';
+                                const priceEl = document.createElement('div');
+                                priceEl.className = 'product-price';
+                                priceEl.textContent = fmt.format(p.price || 0);
+                                const btn = document.createElement('button');
+                                btn.setAttribute('data-action','add-to-cart');
+                                btn.setAttribute('data-product-id', p.id || ('P'+idx));
+                                btn.textContent = 'Sepete Ekle';
+                                info.appendChild(nameEl);
+                                info.appendChild(priceEl);
+                                info.appendChild(btn);
+                                card.appendChild(badge);
+                                card.appendChild(img);
+                                card.appendChild(info);
+                                grid.appendChild(card);
+                            });
+                        }catch(e){ console.error('Ürün yükleme hatası', e); }
+                    }
+                    document.addEventListener('DOMContentLoaded', function(){
+                        loadProducts();
+                    });
+
                     /* --- Auth modal and tabs --- */
                     function openAuthModal() {
                         document.getElementById('authModal').style.display = 'block';
@@ -1617,7 +1833,10 @@
                                 address: 'Adresiniz Caddesi 1, Şehir, TR',
                                 hours: 'Pzt-Cum 09:00-19:00',
                                 iban: 'TR33 0006 1005 1978 6457 8413 26',
-                                contactBtnText: 'İletişim'
+                                contactBtnText: 'İletişim',
+                                homepageTitle: '',
+                                homepageSubtitle: '',
+                                homepageBackground: ''
                             };
                             const cfg = Object.assign({}, defaults, s || {});
                             // contact panel
@@ -1641,6 +1860,38 @@
                                 const span = contactBtn.querySelector('span:nth-child(2)');
                                 if (span) span.textContent = cfg.contactBtnText;
                             }
+                            // homepage visuals and document titles (if elements exist)
+                            try {
+                                if (cfg.homepageBackground) {
+                                    document.body.style.backgroundImage = "url('" + cfg.homepageBackground.replace(/^\//,'') + "')";
+                                    document.body.style.backgroundSize = 'cover';
+                                    document.body.style.backgroundRepeat = 'no-repeat';
+                                    document.body.style.backgroundAttachment = 'fixed';
+                                    document.body.style.backgroundPosition = 'center center';
+                                }
+                                const heroTitle = document.querySelector('.hero h1');
+                                const heroSub = document.querySelector('.hero p');
+                                if (heroTitle && cfg.homepageTitle) heroTitle.textContent = cfg.homepageTitle;
+                                if (heroSub && cfg.homepageSubtitle) heroSub.textContent = cfg.homepageSubtitle;
+
+                                // Update document <title> and social meta titles from settings
+                                (function updateDocTitles(){
+                                    var baseTitle = 'ERN-ÇİÇEK';
+                                    var titleText = (cfg.homepageTitle && cfg.homepageTitle.trim()) ? cfg.homepageTitle.trim() : baseTitle;
+                                    var subText = (cfg.homepageSubtitle && cfg.homepageSubtitle.trim()) ? cfg.homepageSubtitle.trim() : '';
+                                    // Compose a concise title for tab text
+                                    var composed = subText ? (titleText + ' — ' + subText) : titleText;
+                                    try { document.title = composed; } catch(_){}
+                                    // Open Graph and Twitter titles
+                                    var ogTitle = document.querySelector('meta[property="og:title"]');
+                                    if (ogTitle) ogTitle.setAttribute('content', composed);
+                                    var twTitle = document.querySelector('meta[name="twitter:title"]');
+                                    if (twTitle) twTitle.setAttribute('content', composed);
+                                    // Optionally update description from subtitle if present
+                                    var desc = document.querySelector('meta[name="description"]');
+                                    if (desc && subText) desc.setAttribute('content', subText);
+                                })();
+                            } catch(_) { /* ignore */ }
                             // store locally for admin and other clients
                             try{ localStorage.setItem(SETTINGS_KEY, JSON.stringify(cfg)); }catch(e){}
                         }
@@ -1695,6 +1946,7 @@
                         const email = document.getElementById('registerEmail').value.trim().toLowerCase();
                         const password = document.getElementById('registerPassword').value;
                         const password2 = document.getElementById('registerPassword2').value;
+                        const phone = (document.getElementById('registerPhone')||{value:''}).value.trim();
                         
                         // Address fields
                         const city = document.getElementById('registerCity').value.trim();
@@ -1703,8 +1955,13 @@
                         const addressDetail = document.getElementById('registerAddressDetail').value.trim();
                         const postalCode = document.getElementById('registerPostalCode').value.trim();
 
-                        if (!name || !email || !password || !password2) {
+                        if (!name || !email || !password || !password2 || !phone) {
                             alert('Lütfen tüm zorunlu alanları doldurunuz!');
+                            return;
+                        }
+                        // Basit telefon doğrulaması
+                        if (!/^\+?\d[\d\s()-]{7,}$/.test(phone)) {
+                            alert('Telefon numarası formatı geçersiz. Lütfen +90 530 000 00 00 gibi giriniz.');
                             return;
                         }
                         
@@ -1769,6 +2026,7 @@
                                 addressDetail,
                                 postalCode
                             },
+                            phone,
                             createdAt: Date.now()
                         };
 
@@ -2730,6 +2988,29 @@
                     document.addEventListener('click', function(ev){ try{ const wrap = document.getElementById('profileWrap'); const menu = document.getElementById('profileMenu'); const toggle = document.getElementById('profileToggle'); if (!wrap || !menu) return; const target = ev.target; if (wrap.contains(target)) return; if (!menu.classList.contains('hidden')) closeProfileMenu(); }catch(e){} });
                     document.getElementById && document.getElementById('profileToggle') && document.getElementById('profileToggle').addEventListener('click', function(e){ e.stopPropagation(); const menu = document.getElementById('profileMenu'); if (!menu) return; if (menu.classList.contains('hidden')) openProfileMenu(); else closeProfileMenu(); });
 
+                    async function saveUserPhone(){
+                        try{
+                            const cu = getCurrentUser();
+                            if (!cu || !cu.email){ alert('Lütfen önce giriş yapın.'); return; }
+                            const input = document.getElementById('acctPhoneInput');
+                            if (!input){ alert('Telefon alanı bulunamadı.'); return; }
+                            const phone = input.value.trim();
+                            if (!phone){ alert('Telefon numarası boş olamaz.'); return; }
+                            const re = /^\+?\d[\d\s()-]{7,}$/;
+                            if (!re.test(phone)){ alert('Telefon numarası formatı geçersiz. Lütfen +90 530 000 00 00 gibi giriniz.'); return; }
+                            // Full user record merge
+                            let full = null;
+                            try{ full = JSON.parse(localStorage.getItem('user_' + cu.email) || 'null'); }catch(_){ full = null; }
+                            if (!full || typeof full !== 'object') full = { name: cu.name, email: cu.email };
+                            full.phone = phone;
+                            try{ localStorage.setItem('user_' + cu.email, JSON.stringify(full)); }catch(_){}
+                            // Sync to GitHub via Contents API
+                            const ok = await commitFullUserToRepo(full);
+                            if (ok){ alert('Telefon numaranız kaydedildi ve senkronize edildi.'); }
+                            else { alert('Telefon kaydı yerelde güncellendi, ancak uzak sunucuya gönderilemedi. Daha sonra tekrar deneyin.'); }
+                        }catch(e){ alert('Telefon kaydı sırasında hata: ' + (e && e.message ? e.message : e)); }
+                    }
+
                     // Confirm-protected logout used in modal and profile menu
                     function logoutConfirm(){ 
                         if (confirm('Çıkış yapmak istediğinizden emin misiniz?')) {
@@ -2856,8 +3137,65 @@
                         try { persistCartSnapshot(cart, user); } catch(e) { /* sessiz */ }
                     }
 
-                    // showToast is suppressed (no-op) to avoid UI notifications
-                    function showToast(msg){ /* suppressed */ }
+                    // Basit toast bildirimi (erişilebilir, otomatik kaybolur)
+                    function showToast(msg, opts){
+                        try {
+                            opts = opts || {};
+                            const id = 'toastContainer';
+                            let wrap = document.getElementById(id);
+                            if (!wrap) {
+                                wrap = document.createElement('div');
+                                wrap.id = id;
+                                wrap.setAttribute('aria-live','polite');
+                                wrap.style.position = 'fixed';
+                                wrap.style.top = '70px';
+                                wrap.style.right = '12px';
+                                wrap.style.display = 'flex';
+                                wrap.style.flexDirection = 'column';
+                                wrap.style.gap = '10px';
+                                wrap.style.zIndex = '99999';
+                                document.body.appendChild(wrap);
+                            }
+                            const t = document.createElement('div');
+                            t.textContent = msg;
+                            t.style.background = opts.type==='warn'? 'linear-gradient(135deg,#f59e0b,#d97706)' : 'linear-gradient(135deg,#10b981,#059669)';
+                            t.style.color = '#fff';
+                            t.style.padding = '0.75rem 1rem';
+                            t.style.borderRadius = '12px';
+                            t.style.fontSize = '.9rem';
+                            t.style.fontWeight = '600';
+                            t.style.boxShadow = '0 12px 32px rgba(0,0,0,0.25)';
+                            t.style.position = 'relative';
+                            t.style.maxWidth = '260px';
+                            t.style.wordBreak = 'break-word';
+                            const btn = document.createElement('button');
+                            btn.textContent = '✕';
+                            btn.style.position = 'absolute';
+                            btn.style.top = '4px'; btn.style.right = '6px';
+                            btn.style.background = 'rgba(255,255,255,0.25)';
+                            btn.style.border = 'none';
+                            btn.style.color = '#fff';
+                            btn.style.cursor = 'pointer';
+                            btn.style.fontSize = '.85rem';
+                            btn.style.borderRadius = '6px';
+                            btn.addEventListener('click', ()=>{ t.remove(); });
+                            t.appendChild(btn);
+                            wrap.appendChild(t);
+                            setTimeout(()=>{ try { t.style.opacity='0'; t.style.transition='opacity .4s'; setTimeout(()=>t.remove(),450); } catch(_){} }, opts.ttl || 4200);
+                        } catch(e) { /* ignore */ }
+                    }
+
+                    function showAvailabilityNoticeIfNeeded(cart){
+                        try {
+                            const flagKey = 'availability_notice_shown';
+                            if (sessionStorage.getItem(flagKey)) return; // zaten gösterildi
+                            const distinct = cart.length; // her ürün yalnız 1 adet olacak
+                            if (distinct > 1) {
+                                showToast('Ürün durumunu satıcıya sor', { type:'warn', ttl: 6000 });
+                                sessionStorage.setItem(flagKey, '1');
+                            }
+                        } catch(e){ /* sessiz */ }
+                    }
 
                     function addToCartFromBtn(btn) {
                         const card = btn.closest('.product-card');
@@ -2878,16 +3216,19 @@
                         }
                         const cart = loadCart();
                         const existing = cart.find(i => i.id === item.id);
+                        // Tek adet kuralı: aynı üründen ikinci kez eklenmesin
                         if (existing) {
-                            existing.qty = (existing.qty || 1) + 1;
-                        } else {
-                            cart.push({ id: item.id, name: item.name, price: item.price, qty: 1 });
+                            showToast('Bu üründen sepete yalnızca 1 adet ekleyebilirsiniz.', { type:'warn', ttl: 5000 });
+                            return; // değişiklik yok
                         }
+                        cart.push({ id: item.id, name: item.name, price: item.price, qty: 1 });
                         saveCart(cart);
                         updateCartCount();
-                        // Küçük bilgilendirme (non-blocking)
-                        const count = cart.reduce((s,i)=>s+i.qty,0);
-                        try{ showToast(item.name + ' sepete eklendi. (Toplam: ' + count + ')'); }catch(e){}
+                        // Küçük bilgilendirme
+                        const count = cart.length; // her ürün 1 adet
+                        try { showToast(item.name + ' sepete eklendi. (Ürün sayısı: ' + count + ')'); } catch(e){}
+                        // Birden fazla farklı ürün olduğunda satıcıya sor bildirimi
+                        showAvailabilityNoticeIfNeeded(cart);
                     }
 
                     function updateCartCount() {
@@ -3006,14 +3347,22 @@
                             // Dosya yolu: email'i encode etme; GitHub '@' karakterini destekler.
                             const filePath = `carts/${user.email}.json`;
                             const payload = { files: [{ path: filePath, contentBase64 }], message: `chore: cart snapshot ${user.email}` };
-                            const endpoints = ['/.netlify/functions/commit-file','/api/commit-file','/functions/commit-file'];
+                            // Sunucu commit uç noktası: site-settings.json içinde 'commitEndpoint' varsa onu kullan; yoksa yerel/Netlify yollarına deneme yapma.
                             let committed = false;
-                            for (const ep of endpoints) {
-                                try {
-                                    const res = await fetch(ep, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
-                                    if (res.ok) { committed = true; break; }
-                                } catch(e) { /* ignore */ }
-                            }
+                            try {
+                                const sres = await fetch('/site-settings.json', { cache:'no-store' });
+                                if (sres.ok) {
+                                    const s = await sres.json();
+                                    const commitEp = s && s.commitEndpoint ? String(s.commitEndpoint) : '';
+                                    if (commitEp) {
+                                        try {
+                                            const res = await fetch(commitEp, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload), mode:'cors' });
+                                            committed = res.ok;
+                                        } catch(_) { /* sessiz */ }
+                                    }
+                                }
+                            } catch(_) { /* sessiz */ }
+                            // Eski yerel/Netlify fallback'ları kaldırıldı; 405 üretmemesi için yalnızca yapılandırılmış commitEndpoint kullanılır.
                             // GitHub token varsa doğrudan API üzerinden fallback commit dene (ör: serverless çalışmıyorsa)
                             if(!committed){
                                 try {
@@ -3244,50 +3593,95 @@
 
                     function sendBankNotificationFromWidget(){ sendBankNotification(); }
 
-                    function sendBankNotification(){
-                        // Try serverless endpoint first
+                    async function sendBankNotification(){
                         const payerEmail = (document.getElementById('payerEmail')||{}).value || '';
                         const cart = loadCart();
                         const total = cart.reduce((s,i)=>s + (i.price||0)*(i.qty||0),0).toFixed(2);
-        const user = getCurrentUser();
-        const body = {
-            email: payerEmail || (user||{}).email || '',
-            total: total,
-            items: cart
-        };
+                        const user = getCurrentUser();
+                        const body = {
+                            email: payerEmail || (user||{}).email || '',
+                            total: total,
+                            items: cart
+                        };
 
-        // create order object to persist for user
-        const order = { 
-            id: 'ORD' + Date.now().toString(36), 
-            date: Date.now(), 
-            customerName: (user||{}).name || 'Misafir',
-            customerEmail: payerEmail || (user||{}).email || '',
-            items: cart, 
-            total: Number(total),
-            address: (user && user.address) ? `${user.address.city || ''}, ${user.address.district || ''}, ${user.address.neighborhood || ''}, ${user.address.addressDetail || ''}`.trim() : 'Adres bilgisi yok',
-            status: 'pending'
-        };                        // POST to functions/send-order if available (netlify functions)
-                        fetch('/.netlify/functions/send-order', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) })
-                        .then(r=>{ if (!r.ok) throw new Error('send failed'); return r.text(); })
-                        .then(()=>{
+                        const order = {
+                            id: 'ORD' + Date.now().toString(36),
+                            date: Date.now(),
+                            customerName: (user||{}).name || 'Misafir',
+                            customerEmail: payerEmail || (user||{}).email || '',
+                            items: cart,
+                            total: Number(total),
+                            address: (user && user.address) ? `${user.address.city || ''}, ${user.address.district || ''}, ${user.address.neighborhood || ''}, ${user.address.addressDetail || ''}`.trim() : 'Adres bilgisi yok',
+                            status: 'pending'
+                        };
+
+                        // Determine endpoint: prefer site-settings.json orderEndpoint, then common fallbacks
+                        let endpointCandidates = [
+                            '/.netlify/functions/send-order',
+                            '/functions/send-order',
+                            'https://ern-site.amtbrs-03.workers.dev/send-order'
+                        ];
+                        try{
+                            const sres = await fetch('/site-settings.json', { cache:'no-store' });
+                            if (sres.ok){
+                                const s = await sres.json();
+                                if (s && s.orderEndpoint && typeof s.orderEndpoint === 'string'){
+                                    endpointCandidates.unshift(s.orderEndpoint);
+                                    console.log('Siparişi Bildir: site-settings orderEndpoint kullanılacak:', s.orderEndpoint);
+                                }
+                            }
+                        }catch(_){ /* ignore */ }
+
+                        let sent = false; let lastError = null;
+                        for (const ep of endpointCandidates){
+                            try{
+                                const isAbsolute = /^https?:\/\//i.test(ep);
+                                const origin = isAbsolute ? (new URL(ep)).origin : location.origin;
+                                const crossSite = origin !== location.origin;
+                                const payload = JSON.stringify({ order, body });
+                                // Use text/plain for cross-site to avoid CORS preflight; fallback to JSON if needed
+                                let headers = crossSite ? { 'Content-Type': 'text/plain;charset=UTF-8' } : { 'Content-Type': 'application/json' };
+                                let resp = await fetch(ep, { method:'POST', headers, body: payload, mode:'cors' });
+                                if (!resp.ok && !crossSite) {
+                                    // keep as-is for same-origin
+                                } else if (!resp.ok && crossSite) {
+                                    // Retry with JSON content-type in case server expects it
+                                    try {
+                                        headers = { 'Content-Type': 'application/json' };
+                                        resp = await fetch(ep, { method:'POST', headers, body: payload, mode:'cors' });
+                                    } catch(_){ /* ignore */ }
+                                }
+                                if (resp.ok){
+                                    let ok = true;
+                                    try{
+                                        const data = await resp.json();
+                                        ok = !!(data && (data.commitOk || data.ok));
+                                        if (data && data.orderId) order.id = data.orderId;
+                                    }catch(_){ /* non-JSON ok */ }
+                                    if (ok){ sent = true; break; }
+                                } else {
+                                    lastError = new Error('HTTP '+resp.status);
+                                }
+                            }catch(e){ lastError = e; }
+                        }
+
+                        if (sent){
                             console.log('Sipariş bildirimi gönderildi.');
-                            // persist order for logged-in user (or for provided payer email)
-                            const user = getCurrentUser();
-                            if (user && user.email) saveOrderForUser(user.email, order);
+                            const u = getCurrentUser();
+                            if (u && u.email) saveOrderForUser(u.email, order);
                             else if (body.email) saveOrderForUser(body.email, order);
-                            // clear cart
-                            if (user) localStorage.removeItem(cartKeyForUser(user.email));
+                            if (u) localStorage.removeItem(cartKeyForUser(u.email));
                             renderCart(); updateCartCount(); closeBank();
-                        })
-                        .catch(()=>{
-                            // Fallback: persist order if possible then open mailto
-                            const user = getCurrentUser();
-                            if (user && user.email) saveOrderForUser(user.email, order);
-                            else if (body.email) saveOrderForUser(body.email, order);
-                            const subject = encodeURIComponent('Yeni Sipariş - ' + (body.email||'misafir'));
-                            const bodyText = encodeURIComponent('Yeni sipariş:\nToplam: ' + total + '\n\n' + JSON.stringify(cart, null, 2));
-                            window.location.href = 'mailto:amtbrs@icloud.com?subject='+subject+'&body='+bodyText;
-                        });
+                            return;
+                        }
+
+                        console.warn('Sunucuya doğrudan bildirim yapılamıyor:', lastError && lastError.message ? lastError.message : lastError);
+                        const u = getCurrentUser();
+                        if (u && u.email) saveOrderForUser(u.email, order);
+                        else if (body.email) saveOrderForUser(body.email, order);
+                        const subject = encodeURIComponent('Yeni Sipariş - ' + (body.email||'misafir'));
+                        const bodyText = encodeURIComponent('Yeni sipariş:\nToplam: ' + total + '\n\n' + JSON.stringify(cart, null, 2));
+                        window.location.href = 'mailto:amtbrs@icloud.com?subject='+subject+'&body='+bodyText;
                     }
 
                     function openBank(){ document.getElementById('bankModal').style.display = 'block'; }
@@ -3411,6 +3805,21 @@
 
                     // Diagnostic: check buttons with inline onclick and report missing handlers
                     function checkAllButtons() {
+                        try {
+                            // Scan for buttons that rely on inline onclick handlers and warn if missing
+                            const btns = document.querySelectorAll('button[onclick]');
+                            btns.forEach(btn => {
+                                const code = String(btn.getAttribute('onclick') || '').trim();
+                                // Very basic check: if onclick contains a reference to a global function that does not exist, log it
+                                const m = code.match(/([a-zA-Z_$][\w$]*)\s*\(/);
+                                if (m && m[1] && typeof window[m[1]] !== 'function') {
+                                    console.warn('Eksik global handler:', m[1], '→', code);
+                                }
+                            });
+                        } catch (e) {
+                            console.warn('checkAllButtons çalıştırılamadı:', e);
+                        }
+                    }
 
                     // --- Ürün verisi utils ---
                     function exportCurrentProducts(){
@@ -3518,35 +3927,7 @@
                         }
                         return true;
                     }
-                        const els = Array.from(document.querySelectorAll('[onclick]'));
-                        const report = { total: els.length, checked: 0, missing: [] };
-                        els.forEach(el => {
-                            const src = el.getAttribute('onclick') || '';
-                            // try to extract first identifier (function name) before '(' or whitespace
-                            const m = src.match(/\s*([\w$]+)\s*\(/);
-                            if (m && m[1]) {
-                                report.checked++;
-                                const fn = m[1];
-                                if (typeof window[fn] !== 'function') {
-                                    report.missing.push({ el: describeElement(el), handler: fn, src });
-                                }
-                            } else {
-                                // couldn't parse a single function name; still count
-                                report.checked++;
-                                // don't attempt to run complex inline handlers here
-                            }
-                        });
-                        console.info('Button diagnostic:', report);
-                        return report;
-                    }
-
-                    function describeElement(el){
-                        const parts = [el.tagName.toLowerCase()];
-                        if (el.id) parts.push('#'+el.id);
-                        if (el.className) parts.push('.'+String(el.className).split(' ').join('.'));
-                        if (el.getAttribute && el.getAttribute('aria-controls')) parts.push('[aria-controls="'+el.getAttribute('aria-controls')+'"]');
-                        return parts.join('');
-                    }
+                    
 
                     // Run diagnostics shortly after init so functions defined by script are present
                     setTimeout(function(){ try{ checkAllButtons(); }catch(e){ console.error('checkAllButtons error', e); } }, 400);
@@ -3761,4 +4142,86 @@ document.addEventListener('click', function(ev){
 })();
 </script>
 </body>
+    <script>
+    // Hesap panelini aç ve alanları doldur
+    (function(){
+        const tabs = document.querySelectorAll('.form-tabs .form-tab');
+        function switchTab(to){
+            document.querySelectorAll('.form-content').forEach(el=>el.classList.remove('active'));
+            const target = document.getElementById(to);
+            if (target) target.classList.add('active');
+            tabs.forEach(b=>b.classList.toggle('active', b.getAttribute('data-tab')===to));
+        }
+        document.querySelector('[data-action="open-account"]').addEventListener('click', function(){
+            const modal = document.getElementById('authModal');
+            modal.style.display = 'block';
+            switchTab('account');
+            // doldur
+            let cu = null; try{ cu = JSON.parse(localStorage.getItem('currentUser')||'null'); }catch(_){}
+            const email = cu?.email || '';
+            const name = cu?.name || '';
+            const fullStr = email ? localStorage.getItem('user_'+email) : null;
+            let full = null; try { full = fullStr ? JSON.parse(fullStr) : null; } catch(_){}
+            document.getElementById('accountEmail').value = email;
+            document.getElementById('accountName').value = name || full?.name || '';
+            const addr = (full?.addresses && full.addresses[0]) || full?.address || {};
+            document.getElementById('accountCity').value = addr.city || addr.il || '';
+            document.getElementById('accountDistrict').value = addr.district || addr.ilce || '';
+            document.getElementById('accountNeighborhood').value = addr.neighborhood || addr.mahalle || '';
+            document.getElementById('accountAddressDetail').value = addr.addressDetail || addr.street || '';
+            document.getElementById('accountPostalCode').value = addr.postalCode || addr.zip || '';
+        });
+
+        // Kaydet ve GitHub ile senkronize et
+        document.getElementById('accountSaveBtn').addEventListener('click', async function(){
+            const statusEl = document.getElementById('accountStatus');
+            function setStatus(t){ statusEl.textContent = t; }
+            const email = document.getElementById('accountEmail').value.trim();
+            const name = document.getElementById('accountName').value.trim();
+            const address = {
+                city: document.getElementById('accountCity').value.trim(),
+                district: document.getElementById('accountDistrict').value.trim(),
+                neighborhood: document.getElementById('accountNeighborhood').value.trim(),
+                addressDetail: document.getElementById('accountAddressDetail').value.trim(),
+                postalCode: document.getElementById('accountPostalCode').value.trim(),
+                isDefault: true
+            };
+            if (!email){ setStatus('Email bulunamadı. Lütfen giriş yapınız.'); return; }
+            setStatus('Kaydediliyor...');
+
+            // localStorage güncelle
+            try {
+                const key = 'user_'+email;
+                const curr = JSON.parse(localStorage.getItem(key)||'{}');
+                curr.name = name || curr.name || '';
+                curr.email = email;
+                curr.address = address;
+                curr.addresses = Array.isArray(curr.addresses) ? curr.addresses : [];
+                const def = curr.addresses.find(a=>a&&a.isDefault);
+                const defObj = Object.assign({ id:'default', title:'Varsayılan Adres', isDefault:true }, address);
+                if (def) Object.assign(def, defObj); else curr.addresses.unshift(defObj);
+                curr.updatedAt = Date.now();
+                localStorage.setItem(key, JSON.stringify(curr));
+                // currentUser eşitle
+                const cu = JSON.parse(localStorage.getItem('currentUser')||'{}');
+                cu.email = email; cu.name = name || cu.name || '';
+                localStorage.setItem('currentUser', JSON.stringify(cu));
+            } catch(_){ }
+
+            // Sunucuya gönder ve GitHub'a yazdır
+            let endpoint = '/send-order';
+            try{ const s = await (await fetch('/site-settings.json',{cache:'no-store'})).json(); if (s && s.orderEndpoint) endpoint = s.orderEndpoint; }catch(_){}
+            endpoint = endpoint.replace(/\/send-order$/, '/update-user');
+            try {
+                const resp = await fetch(endpoint, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, name, address })
+                });
+                const data = await resp.json().catch(()=>null);
+                if (resp.ok && data && data.commitOk){ setStatus('✅ Adres GitHub ile senkronize edildi.'); }
+                else { setStatus('⚠️ Sunucu yanıtı: ' + (data?.commitError || resp.status)); }
+            } catch(e){ setStatus('❌ Hata: ' + e.message); }
+        });
+    })();
+    </script>
 </html>
