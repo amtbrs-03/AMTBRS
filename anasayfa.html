@@ -1719,11 +1719,11 @@
                             }
                             showImg();
                             lb.style.display = 'flex';
-                            document.getElementById('productLightboxPrev').onclick = function(){
+                            document.getElementById('lightboxPrev').onclick = function(){
                                 idx = (idx - 1 + imagesArr.length) % imagesArr.length;
                                 showImg();
                             };
-                            document.getElementById('productLightboxNext').onclick = function(){
+                            document.getElementById('lightboxNext').onclick = function(){
                                 idx = (idx + 1) % imagesArr.length;
                                 showImg();
                             };
