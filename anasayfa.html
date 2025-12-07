@@ -839,8 +839,42 @@
                                 const nameEl = document.getElementById('lightboxName');
                                 const priceEl = document.getElementById('lightboxPrice');
                                 if(!productImages[idx]) return;
-                                img.src = productImages[idx].src;
-                                let card = productImages[idx].closest('.product-card');
+                                // Görseli göster: arka plan görseli varsa onu, emoji/text ise onu göster
+                                let el = productImages[idx];
+                                let bg = el.style.backgroundImage;
+                                if(bg && bg !== 'none') {
+                                    // Arka plan görseli varsa
+                                    let url = bg.replace(/^url\(["']?|["']?\)$/g, '').replace(/url\(["']?|["']?\)/g, '').replace(/"/g, '').replace(/'/g, '');
+                                    img.src = url;
+                                    img.style.display = '';
+                                    img.alt = 'Ürün görseli';
+                                } else {
+                                    // Emoji/text ise
+                                    img.src = '';
+                                    img.style.display = 'none';
+                                    // LightboxImgWrap içine emoji/text ekle
+                                    let wrap = document.getElementById('lightboxImgWrap');
+                                    let emoji = el.textContent || '';
+                                    let emojiEl = document.getElementById('lightboxEmoji');
+                                    if(!emojiEl){
+                                        emojiEl = document.createElement('div');
+                                        emojiEl.id = 'lightboxEmoji';
+                                        emojiEl.style.fontSize = '5rem';
+                                        emojiEl.style.textAlign = 'center';
+                                        emojiEl.style.width = '100%';
+                                        emojiEl.style.height = '70vh';
+                                        emojiEl.style.display = 'flex';
+                                        emojiEl.style.alignItems = 'center';
+                                        emojiEl.style.justifyContent = 'center';
+                                        wrap.appendChild(emojiEl);
+                                    }
+                                    emojiEl.textContent = emoji;
+                                    emojiEl.style.display = 'flex';
+                                }
+                                // Diğer durumda emoji/text gizle
+                                let emojiEl = document.getElementById('lightboxEmoji');
+                                if(emojiEl && bg && bg !== 'none') emojiEl.style.display = 'none';
+                                let card = el.closest('.product-card');
                                 let name = card ? card.querySelector('.product-name')?.textContent : '';
                                 let price = card ? card.querySelector('.product-price')?.textContent : '';
                                 nameEl.textContent = name || '';
