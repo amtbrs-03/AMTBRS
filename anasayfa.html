@@ -869,15 +869,19 @@
                                     emojiEl.style.justifyContent = 'center';
                                     emojiEl.textContent = emoji;
                                     wrap.appendChild(emojiEl);
-                                    if (img) img.style.display = 'none';
+                                    if (img) {
+                                        img.style.display = 'none';
+                                    }
                                 } else {
                                     // Görselleri göster
                                     let wrap = document.getElementById('lightboxImgWrap');
                                     let oldEmoji = document.getElementById('lightboxEmoji');
-                                    if (oldEmoji && wrap.contains(oldEmoji)) wrap.removeChild(oldEmoji);
-                                    img.style.display = '';
-                                    img.src = imagesArr[0];
-                                    img.alt = 'Ürün görseli';
+                                    if (oldEmoji && wrap && wrap.contains(oldEmoji)) wrap.removeChild(oldEmoji);
+                                    if (img && wrap) {
+                                        img.style.display = '';
+                                        img.src = imagesArr[0];
+                                        img.alt = 'Ürün görseli';
+                                    }
                                 }
                                 let name = card ? card.querySelector('.product-name')?.textContent : '';
                                 let price = card ? card.querySelector('.product-price')?.textContent : '';
@@ -4396,11 +4400,11 @@ document.addEventListener('click', function(ev){
         const img = document.getElementById('lightboxImg');
         const nameEl = document.getElementById('lightboxName');
         const priceEl = document.getElementById('lightboxPrice');
-        if(!productImages[idx]) return;
+        if(!productImages[idx] || !img || !lb || !nameEl || !priceEl) return;
         // Önce eski emoji/text'i temizle
         let wrap = document.getElementById('lightboxImgWrap');
         let oldEmoji = document.getElementById('lightboxEmoji');
-        if(oldEmoji) wrap.removeChild(oldEmoji);
+        if(oldEmoji && wrap) wrap.removeChild(oldEmoji);
         // Görseli göster: arka plan görseli varsa onu, emoji/text ise onu göster
         let el = productImages[idx];
         let bg = el.style.backgroundImage;
@@ -4409,113 +4413,103 @@ document.addEventListener('click', function(ev){
             img.src = url;
             img.style.display = '';
             img.alt = 'Ürün görseli';
-                lb.style.top = card.offsetTop + 'px';
-                lb.style.left = card.offsetLeft + 'px';
-                lb.style.width = card.offsetWidth + 'px';
-                lb.style.height = card.offsetHeight + 'px';
-                lb.style.borderRadius = window.getComputedStyle(card).borderRadius;
+        }
+        let imgTag = el.querySelector && el.querySelector('img');
+        if (imgTag && imgTag.src) {
+            img.src = imgTag.src;
+            img.style.display = '';
+            img.alt = 'Ürün görseli';
+        } else if(bg && bg !== 'none') {
+            let url = bg.replace(/^url\(["']?|["']?\)$/g, '').replace(/url\(["']?|["']?\)/g, '').replace(/"/g, '').replace(/'/g, '');
+            img.src = url;
+            img.style.display = '';
+            img.alt = 'Ürün görseli';
+        } else {
+            img.src = '';
+            img.style.display = 'none';
+            let wrap = document.getElementById('lightboxImgWrap');
+            let emoji = el.textContent || '';
+            let emojiEl = document.getElementById('lightboxEmoji');
+            if(!emojiEl && wrap){
+                emojiEl = document.createElement('div');
+                emojiEl.id = 'lightboxEmoji';
+                emojiEl.style.fontSize = '5rem';
+                emojiEl.style.textAlign = 'center';
+                emojiEl.style.width = '100%';
+                emojiEl.style.height = '100%';
+                emojiEl.style.display = 'flex';
+                emojiEl.style.alignItems = 'center';
+                emojiEl.style.justifyContent = 'center';
+                wrap.appendChild(emojiEl);
             }
-            let imgTag = el.querySelector && el.querySelector('img');
-            if (imgTag && imgTag.src) {
-                img.src = imgTag.src;
-                img.style.display = '';
-                img.alt = 'Ürün görseli';
-            } else if(bg && bg !== 'none') {
-                let url = bg.replace(/^url\(["']?|["']?\)$/g, '').replace(/url\(["']?|["']?\)/g, '').replace(/"/g, '').replace(/'/g, '');
-                img.src = url;
-                img.style.display = '';
-                img.alt = 'Ürün görseli';
-            } else {
-                img.src = '';
-                img.style.display = 'none';
-                let wrap = document.getElementById('lightboxImgWrap');
-                let emoji = el.textContent || '';
-                let emojiEl = document.getElementById('lightboxEmoji');
-                if(!emojiEl){
-                    emojiEl = document.createElement('div');
-                    emojiEl.id = 'lightboxEmoji';
-                    emojiEl.style.fontSize = '5rem';
-                    emojiEl.style.textAlign = 'center';
-                    emojiEl.style.width = '100%';
-                    emojiEl.style.height = '100%';
-                    emojiEl.style.display = 'flex';
-                    emojiEl.style.alignItems = 'center';
-                    emojiEl.style.justifyContent = 'center';
-                    wrap.appendChild(emojiEl);
-                }
+            if(emojiEl){
                 emojiEl.textContent = emoji;
                 emojiEl.style.display = 'flex';
             }
-            let emojiEl = document.getElementById('lightboxEmoji');
-            if(emojiEl && bg && bg !== 'none') emojiEl.style.display = 'none';
-            let name = card ? card.querySelector('.product-name')?.textContent : '';
-            let price = card ? card.querySelector('.product-price')?.textContent : '';
-            nameEl.textContent = name || '';
-            priceEl.textContent = price || '';
-            lb.classList.remove('hidden');
-            lb.style.display = 'flex';
-            document.body.style.overflow = '';
-            currentIndex = idx;
         }
+        let emojiEl = document.getElementById('lightboxEmoji');
+        if(emojiEl && bg && bg !== 'none') emojiEl.style.display = 'none';
+        let name = card ? card.querySelector('.product-name')?.textContent : '';
+        let price = card ? card.querySelector('.product-price')?.textContent : '';
+        nameEl.textContent = name || '';
+        priceEl.textContent = price || '';
+        lb.classList.remove('hidden');
+        lb.style.display = 'flex';
+        document.body.style.overflow = '';
+        currentIndex = idx;
         const districtSelect = document.getElementById('registerDistrict');
         const citySelect = document.getElementById('registerCity');
         // Wrap in IIFE for proper block closure
         (function(){
-
-        // İl seçildiğinde ilçeleri yükle
-        citySelect.addEventListener('change', function(){
-            const city = this.value;
-            districtSelect.innerHTML = '<option value="">İlçe Seçiniz</option>';
-            
-            if (city && cityData[city]) {
-                cityData[city].forEach(district => {
+            // İl seçildiğinde ilçeleri yükle
+            citySelect.addEventListener('change', function(){
+                const city = this.value;
+                districtSelect.innerHTML = '<option value="">İlçe Seçiniz</option>';
+                if (city && cityData[city]) {
+                    cityData[city].forEach(district => {
+                        const opt = document.createElement('option');
+                        opt.value = district;
+                        opt.textContent = district;
+                        districtSelect.appendChild(opt);
+                    });
+                } else if (city) {
+                    // Listede olmayan iller için manuel giriş opsiyonu
                     const opt = document.createElement('option');
-                    opt.value = district;
-                    opt.textContent = district;
+                    opt.value = "";
+                    opt.textContent = "İlçe adını manuel yazınız";
                     districtSelect.appendChild(opt);
-                });
-            } else if (city) {
-                // Listede olmayan iller için manuel giriş opsiyonu
-                const opt = document.createElement('option');
-                opt.value = "";
-                opt.textContent = "İlçe adını manuel yazınız";
-                districtSelect.appendChild(opt);
-            }
-        });
-
-        // Telefon numarasına otomatik +90 ön eki ekle
-        function formatPhoneInput(input) {
-            let value = input.value.replace(/\D/g, ''); // Sadece rakamları al
-        
-            // Eğer boşsa, sıfırla
-            if (!value) {
-                input.value = '';
-                return;
-            }
-        
-            // Türk numarası kontrolü: 5XX veya 90 ile başlaması gerekir
-            if (value.startsWith('90')) {
-                value = value.substring(2); // 90 başındaysa, çıkar
-            } else if (value.startsWith('0')) {
-                value = value.substring(1); // 0 ile başlıyorsa, çıkar
-            }
-        
-            // +90 ön eki ekle ve formatla
-            if (value.length > 0) {
-                if (value.length >= 10) {
-                    value = value.substring(0, 10); // Max 10 rakam
                 }
-                // Format: +90 5XX XXX XXXX
-                if (value.length <= 3) {
-                    input.value = '+90 ' + value;
-                } else if (value.length <= 6) {
-                    input.value = '+90 ' + value.substring(0, 3) + ' ' + value.substring(3);
-                } else {
-                    input.value = '+90 ' + value.substring(0, 3) + ' ' + value.substring(3, 6) + ' ' + value.substring(6);
+            });
+            // Telefon numarasına otomatik +90 ön eki ekle
+            function formatPhoneInput(input) {
+                let value = input.value.replace(/\D/g, ''); // Sadece rakamları al
+                // Eğer boşsa, sıfırla
+                if (!value) {
+                    input.value = '';
+                    return;
+                }
+                // Türk numarası kontrolü: 5XX veya 90 ile başlaması gerekir
+                if (value.startsWith('90')) {
+                    value = value.substring(2); // 90 başındaysa, çıkar
+                } else if (value.startsWith('0')) {
+                    value = value.substring(1); // 0 ile başlıyorsa, çıkar
+                }
+                // +90 ön eki ekle ve formatla
+                if (value.length > 0) {
+                    if (value.length >= 10) {
+                        value = value.substring(0, 10); // Max 10 rakam
+                    }
+                    // Format: +90 5XX XXX XXXX
+                    if (value.length <= 3) {
+                        input.value = '+90 ' + value;
+                    } else if (value.length <= 6) {
+                        input.value = '+90 ' + value.substring(0, 3) + ' ' + value.substring(3);
+                    } else {
+                        input.value = '+90 ' + value.substring(0, 3) + ' ' + value.substring(3, 6) + ' ' + value.substring(6);
+                    }
                 }
             }
-        }
-    }
-        </script>
-    <!-- Dosya sonu: eksik kapanan script ve html etiketleri düzeltildi -->
-    </html>
+        })();
+    // Kod sonu: script ve html düzgün kapatıldı
+    </script>
+</html>
