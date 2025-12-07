@@ -813,64 +813,7 @@
     </style>
   </head>
   <body>
-                                    <!-- Ürün görseli lightbox/modal (her zaman DOM'da) -->
-                                    <div id="productLightbox" style="display:none;position:fixed;z-index:99999;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;">
-                                        <div id="productLightboxContent" style="position:relative;max-width:480px;width:90vw;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.28);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px;">
-                                            <span id="productLightboxClose" style="position:absolute;top:8px;right:12px;font-size:2rem;cursor:pointer;">&times;</span>
-                                            <img id="productLightboxImg" src="" alt="" style="max-width:420px;max-height:60vh;border-radius:12px;object-fit:contain;box-shadow:0 2px 12px rgba(0,0,0,0.18);margin-bottom:12px;" />
-                                            <div id="productLightboxName" style="font-weight:600;font-size:1.1rem;margin-bottom:8px;"></div>
-                                            <div style="display:flex;justify-content:space-between;width:100%;">
-                                                <button id="productLightboxPrev" style="font-size:1.5rem;padding:6px 18px;">&#8592;</button>
-                                                <button id="productLightboxNext" style="font-size:1.5rem;padding:6px 18px;">&#8594;</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                <script>
-                                // Mobilde scroll ile header ve başlıkları bulanıklaştır
-                                (function(){
-                                    function isMobile(){ return window.innerWidth <= 700; }
-                                    // Başlık yüksekliğini ölç ve body'ye üst boşluk uygula
-                                    function applyMobileHeaderOffset(){
-                                        var body = document.body;
-                                        var header = document.querySelector('header');
-                                        if(!isMobile()){
-                                            body.classList.remove('mobile-header-offset');
-                                            body.style.setProperty('--mobile-header-h','');
-                                            return;
-                                        }
-                                        if(!header){ return; }
-                                        // Reflow sonrası gerçek yükseklik
-                                        var h = header.offsetHeight || 72;
-                                        body.style.setProperty('--mobile-header-h', h + 'px');
-                                        body.classList.add('mobile-header-offset');
-                                    }
-
-                                    function onScroll(){
-                                        var header = document.querySelector('header');
-                                        var productsHeader = document.querySelector('.products-header');
-                                        if(isMobile()){
-                                            var scrolled = (window.scrollY||0) > 24;
-                                            if(header) header.classList.toggle('blurred', scrolled);
-                                            if(productsHeader) productsHeader.classList.toggle('blurred', scrolled);
-                                        } else {
-                                            if(header) header.classList.remove('blurred');
-                                            if(productsHeader) productsHeader.classList.remove('blurred');
-                                        }
-                                    }
-
-                                    function onResize(){
-                                        applyMobileHeaderOffset();
-                                        onScroll();
-                                    }
-
-                                    window.addEventListener('scroll', onScroll, { passive: true });
-                                    window.addEventListener('resize', onResize);
-                                    document.addEventListener('DOMContentLoaded', function(){
-                                        applyMobileHeaderOffset();
-                                        onScroll();
-                                    });
-                                })();
-                                </script>
+                                // ...existing code...
                         <!-- Ürün görseli lightbox/modal (mobil uyumlu, header/nav üstte kalır) -->
                         <div id="productLightbox" class="hidden" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(10,12,30,0.92);z-index:9999;display:none;align-items:center;justify-content:center;transition:opacity 0.3s;">
                             <button id="lightboxClose" style="position:absolute;top:18px;right:18px;background:#fff;color:#222;border-radius:50%;width:44px;height:44px;font-size:2rem;border:none;box-shadow:0 2px 12px rgba(0,0,0,0.18);z-index:10001;cursor:pointer;">✖</button>
