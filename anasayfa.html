@@ -840,7 +840,6 @@
                                 const priceEl = document.getElementById('lightboxPrice');
                                 if(!productImages[idx]) return;
                                 img.src = productImages[idx].src;
-                                // Ürün adı ve fiyatı
                                 let card = productImages[idx].closest('.product-card');
                                 let name = card ? card.querySelector('.product-name')?.textContent : '';
                                 let price = card ? card.querySelector('.product-price')?.textContent : '';
@@ -848,7 +847,6 @@
                                 priceEl.textContent = price || '';
                                 lb.classList.remove('hidden');
                                 lb.style.display = 'flex';
-                                lb.style.opacity = '1';
                                 document.body.style.overflow = 'hidden';
                                 currentIndex = idx;
                                 // Mobilde tam ekran modunu dene
@@ -861,7 +859,6 @@
                             function closeLightbox(){
                                 const lb = document.getElementById('productLightbox');
                                 lb.classList.add('hidden');
-                                lb.style.opacity = '0';
                                 lb.style.display = 'none';
                                 document.body.style.overflow = '';
                                 // Tam ekrandan çık
@@ -911,13 +908,29 @@
                                     if(touchStartX === null || touchStartY === null) return;
                                     const touchEndX = e.changedTouches[0].clientX;
                                     const touchEndY = e.changedTouches[0].clientY;
-                                    // Yatay swipe ise (dikey scroll ile karışmasın)
                                     if(Math.abs(touchEndX - touchStartX) > Math.abs(touchEndY - touchStartY)) {
                                         if(touchEndX - touchStartX > 60) showPrev();
                                         else if(touchStartX - touchEndX > 60) showNext();
                                     }
                                     touchStartX = null;
                                     touchStartY = null;
+                                });
+                                // FullScreen'den çıkınca modalı tekrar göster
+                                document.addEventListener('fullscreenchange', function(){
+                                    const lb = document.getElementById('productLightbox');
+                                    if(!document.fullscreenElement && lb.style.display === 'none'){
+                                        lb.classList.remove('hidden');
+                                        lb.style.display = 'flex';
+                                        document.body.style.overflow = 'hidden';
+                                    }
+                                });
+                                document.addEventListener('webkitfullscreenchange', function(){
+                                    const lb = document.getElementById('productLightbox');
+                                    if(!document.webkitFullscreenElement && lb.style.display === 'none'){
+                                        lb.classList.remove('hidden');
+                                        lb.style.display = 'flex';
+                                        document.body.style.overflow = 'hidden';
+                                    }
                                 });
                             });
                         })();
