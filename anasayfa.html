@@ -1,3 +1,132 @@
+        <!-- Structured Data: Florist -->
+        <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "Florist",
+            "name": "ERN Çiçek - Online Çiçekçi",
+            "alternateName": "ERN Çiçekçi",
+            "url": "https://ern-cicek.com.tr/",
+            "logo": "https://ern-cicek.com.tr/logo.png",
+            "image": "https://ern-cicek.com.tr/og-image.jpg",
+            "telephone": "+90-5XX-XXX-XXXX",
+            "email": "amtbrs@icloud.com",
+            "priceRange": "₺₺",
+            "address": {
+                "@type": "PostalAddress",
+                "streetAddress": "Adresiniz Caddesi 1",
+                "addressLocality": "Şehir",
+                "addressRegion": "İstanbul",
+                "postalCode": "34000",
+                "addressCountry": "TR"
+            },
+            "geo": {
+                "@type": "GeoCoordinates",
+                "latitude": "41.0082",
+                "longitude": "28.9784"
+            },
+            "description": "Online çiçek siparişi ve çiçekçi hizmeti. Gül buketi, lilyum, orkide ve tüm çiçek çeşitleri. Aynı gün teslimat. İstanbul çiçekçi.",
+            "openingHours": "Mo-Sa 09:00-19:00",
+            "paymentAccepted": "Havale, EFT, Nakit",
+            "currenciesAccepted": "TRY",
+            "areaServed": {
+                "@type": "Country",
+                "name": "Turkey"
+            },
+            "hasOfferCatalog": {
+                "@type": "OfferCatalog",
+                "name": "Çiçek Ürünleri",
+                "itemListElement": [
+                    {
+                        "@type": "Offer",
+                        "itemOffered": {
+                            "@type": "Product",
+                            "name": "Gül Buketi",
+                            "description": "Taze kırmızı gül buketi"
+                        }
+                    },
+                    {
+                        "@type": "Offer",
+                        "itemOffered": {
+                            "@type": "Product",
+                            "name": "Lilyum Buketi",
+                            "description": "Beyaz lilyum çiçeği"
+                        }
+                    },
+                    {
+                        "@type": "Offer",
+                        "itemOffered": {
+                            "@type": "Product",
+                            "name": "Orkide",
+                            "description": "Orkide saksı çiçeği"
+                        }
+                    }
+                ]
+            }
+        }
+        </script>
+
+        <!-- Address Logic JS -->
+        <script defer>
+        function updateAddress() {
+                var el = document.getElementById('accountEmail');
+                var email = el ? el.value.trim() : '';
+                el = document.getElementById('accountName');
+                var name = el ? el.value.trim() : '';
+                var address = {
+                        city: (el=document.getElementById('accountCity')) ? el.value.trim() : '',
+                        district: (el=document.getElementById('accountDistrict')) ? el.value.trim() : '',
+                        neighborhood: (el=document.getElementById('accountNeighborhood')) ? el.value.trim() : '',
+                        addressDetail: (el=document.getElementById('accountAddressDetail')) ? el.value.trim() : '',
+                        postalCode: (el=document.getElementById('accountPostalCode')) ? el.value.trim() : '',
+                        isDefault: true
+                });
+            });
+        });
+                        var key = 'user_'+email;
+                        var curr = JSON.parse(localStorage.getItem(key)||'{}');
+                        curr.name = name || curr.name || '';
+                        curr.email = email;
+                        curr.address = address;
+                        curr.addresses = Array.isArray(curr.addresses) ? curr.addresses : [];
+                        var def = null;
+                        for(var i=0;i<curr.addresses.length;i++){
+                                if(curr.addresses[i] && curr.addresses[i].isDefault){ def = curr.addresses[i]; break; }
+                        }
+                        var defObj = { id:'default', title:'Varsayılan Adres', isDefault:true };
+                        for(var k in address){ defObj[k] = address[k]; }
+                        if (def) { for(var k in defObj){ def[k]=defObj[k]; } } else { curr.addresses.unshift(defObj); }
+                        curr.updatedAt = Date.now();
+                        localStorage.setItem(key, JSON.stringify(curr));
+                        var cu = JSON.parse(localStorage.getItem('currentUser')||'{}');
+                        cu.email = email; cu.name = name || cu.name || '';
+                        localStorage.setItem('currentUser', JSON.stringify(cu));
+                } catch(_){ }
+                var endpoint = '/send-order';
+                try {
+                        fetch('/site-settings.json',{cache:'no-store'}).then(function(response){
+                                return response.json();
+                        }).then(function(json){
+                                if (json && json.orderEndpoint) endpoint = json.orderEndpoint;
+                                endpoint = endpoint.replace(/\/send-order$/, '/update-user');
+                                fetch(endpoint, {
+                                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ email: email, name: name, address: address })
+                                }).then(function(response){
+                                        response.json().then(function(data){
+                                                if (response.ok && data && data.commitOk){ setStatus('✅ Adres GitHub ile senkronize edildi.'); }
+                                                else { setStatus('⚠️ Sunucu yanıtı: ' + ((data && data.commitError) ? data.commitError : response.status)); }
+                                        }).catch(function(){ setStatus('⚠️ Sunucu yanıtı: ' + response.status); });
+                                }).catch(function(e){ setStatus('❌ Hata: ' + e.message); });
+                        }).catch(function(){ endpoint = endpoint.replace(/\/send-order$/, '/update-user'); });
+                } catch(e){ setStatus('❌ Hata: ' + e.message); }
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+                var saveBtn = document.getElementById('accountSaveBtn');
+                if (saveBtn) {
+                        saveBtn.addEventListener('click', updateAddress);
+                }
+        });
+        </script>
 <!doctype html>
 <html lang="tr">
   <head>
@@ -11,9 +140,9 @@
     <meta name="googlebot" content="index, follow" />
     <link rel="canonical" href="https://ern-cicek.com.tr/" />
     <meta name="theme-color" content="#0b2f1f" />
-    
-    <!-- Open Graph -->
-    <meta property="og:type" content="website" />
+    }
+    // --- Sipariş durumunu güncelleyen fonksiyon sonu ---
+
     <meta property="og:title" content="Çiçekçi - Online Çiçek Siparişi | Gül Buketi | ERN Çiçek" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Çiçekçi - Online Çiçek Siparişi | ERN Çiçek" />
@@ -39,86 +168,41 @@
             function reveal(){ root.classList.remove('__fixing'); }
             function run(){ sweep(); let c=0; const timer=setInterval(()=>{ sweep(); if(++c>2){ clearInterval(timer); reveal(); } },150); }
             if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', run); else run();
-        })();
-        </script>
-
-    <script defer>
-      // Eğer kullanıcı www ile geldiyse, kök domaine (non-www) yönlendir
-      (function(){
-        try{
-          if (location.hostname && location.hostname.indexOf('www.') === 0) {
-            var target = location.protocol + '//' + location.hostname.replace(/^www\./,'') + location.pathname + location.search + location.hash;
-            location.replace(target);
-          }
-        }catch(e){ /* ignore */ }
-      })();
-    </script>
-
-    <script type="application/ld+json" defer>
-    {
-      "@context": "https://schema.org",
-      "@type": "Florist",
-      "name": "ERN Çiçek - Online Çiçekçi",
-      "alternateName": "ERN Çiçekçi",
-      "url": "https://ern-cicek.com.tr/",
-      "logo": "https://ern-cicek.com.tr/logo.png",
-      "image": "https://ern-cicek.com.tr/og-image.jpg",
-      "telephone": "+90-5XX-XXX-XXXX",
-      "email": "amtbrs@icloud.com",
-      "priceRange": "₺₺",
-      "address": {
-        "@type": "PostalAddress",
-        "streetAddress": "Adresiniz Caddesi 1",
-        "addressLocality": "Şehir",
-        "addressRegion": "İstanbul",
-        "postalCode": "34000",
-        "addressCountry": "TR"
-      },
-      "geo": {
-        "@type": "GeoCoordinates",
-        "latitude": "41.0082",
-        "longitude": "28.9784"
-      },
-      "description": "Online çiçek siparişi ve çiçekçi hizmeti. Gül buketi, lilyum, orkide ve tüm çiçek çeşitleri. Aynı gün teslimat. İstanbul çiçekçi.",
-      "openingHours": "Mo-Sa 09:00-19:00",
-      "paymentAccepted": "Havale, EFT, Nakit",
-      "currenciesAccepted": "TRY",
-      "areaServed": {
-        "@type": "Country",
-        "name": "Turkey"
-      },
-      "hasOfferCatalog": {
-        "@type": "OfferCatalog",
-        "name": "Çiçek Ürünleri",
-        "itemListElement": [
-          {
-            "@type": "Offer",
-            "itemOffered": {
-              "@type": "Product",
-              "name": "Gül Buketi",
-              "description": "Taze kırmızı gül buketi"
-            }
-          },
-          {
-            "@type": "Offer",
-            "itemOffered": {
-              "@type": "Product",
-              "name": "Lilyum Buketi",
-              "description": "Beyaz lilyum çiçeği"
-            }
-          },
-          {
-            "@type": "Offer",
-            "itemOffered": {
-              "@type": "Product",
-              "name": "Orkide",
-              "description": "Orkide saksı çiçeği"
-            }
-          }
-        ]
-      }
-    }
-    </script>
+                })();
+                </script>
+                <script type="application/ld+json">
+                {
+                    "@context": "https://schema.org",
+                    "@type": "Product",
+                    "offers": [
+                        {
+                            "@type": "Offer",
+                            "itemOffered": {
+                                "@type": "Product",
+                                "name": "Gül Buketi",
+                                "description": "Taze kırmızı gül buketi"
+                            }
+                        },
+                        {
+                            "@type": "Offer",
+                            "itemOffered": {
+                                "@type": "Product",
+                                "name": "Lilyum Buketi",
+                                "description": "Beyaz lilyum çiçeği"
+                            }
+                        },
+                        {
+                            "@type": "Offer",
+                            "itemOffered": {
+                                "@type": "Product",
+                                "name": "Orkide",
+                                "description": "Orkide saksı çiçeği"
+                            }
+                        }
+                    ]
+                }
+                </script>
+// End of formatPhoneInput function
 
     <style>
                 /* Mobilde scroll ile bulanıklaşan başlık/menü */
@@ -984,20 +1068,20 @@
             onScroll();
         });
     })();
-    </script>
-    <!-- Product Lightbox Modal -->
-    <div id="productLightbox" class="hidden" style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:10000;display:none;align-items:center;justify-content:center;background:rgba(20,20,30,0.88);backdrop-filter:blur(2px);">
-      <button id="lightboxClose" style="position:absolute;top:18px;right:18px;background:#fff;color:#222;border-radius:50%;width:44px;height:44px;font-size:2rem;border:none;box-shadow:0 2px 12px rgba(0,0,0,0.18);z-index:10001;cursor:pointer;">✕</button>
-      <button id="lightboxPrev" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);background:#fff;color:#222;border-radius:50%;width:44px;height:44px;font-size:2rem;border:none;box-shadow:0 2px 12px rgba(0,0,0,0.18);z-index:10001;cursor:pointer;">◀</button>
-      <button id="lightboxNext" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:#fff;color:#222;border-radius:50%;width:44px;height:44px;font-size:2rem;border:none;box-shadow:0 2px 12px rgba(0,0,0,0.18);z-index:10001;cursor:pointer;">▶</button>
-      <div id="lightboxImgWrap" style="max-width:96vw;max-height:70vh;display:flex;align-items:center;justify-content:center;">
-        <img id="lightboxImg" src="" alt="Ürün görseli" style="max-width:96vw;max-height:70vh;border-radius:18px;box-shadow:0 8px 32px rgba(0,0,0,0.28);background:#fff;object-fit:contain;" />
-      </div>
-      <div id="lightboxMeta" style="width:100%;text-align:center;margin-top:1.2rem;color:#fff;">
-        <div id="lightboxName" style="font-size:1.15rem;font-weight:700;"></div>
-        <div id="lightboxPrice" style="font-size:1.05rem;font-weight:600;opacity:0.85;"></div>
-      </div>
-    </div>
+        </script>
+        <!-- Product Lightbox Modal -->
+        <div id="productLightbox" class="hidden" style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:10000;display:none;align-items:center;justify-content:center;background:rgba(20,20,30,0.88);backdrop-filter:blur(2px);">
+            <button id="lightboxClose" style="position:absolute;top:18px;right:18px;background:#fff;color:#222;border-radius:50%;width:44px;height:44px;font-size:2rem;border:none;box-shadow:0 2px 12px rgba(0,0,0,0.18);z-index:10001;cursor:pointer;">✕</button>
+            <button id="lightboxPrev" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);background:#fff;color:#222;border-radius:50%;width:44px;height:44px;font-size:2rem;border:none;box-shadow:0 2px 12px rgba(0,0,0,0.18);z-index:10001;cursor:pointer;">◀</button>
+            <button id="lightboxNext" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:#fff;color:#222;border-radius:50%;width:44px;height:44px;font-size:2rem;border:none;box-shadow:0 2px 12px rgba(0,0,0,0.18);z-index:10001;cursor:pointer;">▶</button>
+            <div id="lightboxImgWrap" style="max-width:96vw;max-height:70vh;display:flex;align-items:center;justify-content:center;">
+                <img id="lightboxImg" src="" alt="Ürün görseli" style="max-width:96vw;max-height:70vh;border-radius:18px;box-shadow:0 8px 32px rgba(0,0,0,0.28);background:#fff;object-fit:contain;" />
+            </div>
+            <div id="lightboxMeta" style="width:100%;text-align:center;margin-top:1.2rem;color:#fff;">
+                <div id="lightboxName" style="font-size:1.15rem;font-weight:700;"></div>
+                <div id="lightboxPrice" style="font-size:1.05rem;font-weight:600;opacity:0.85;"></div>
+            </div>
+        </div>
     <script>
     // Ürün görseli lightbox/modal fonksiyonu (mobilde tam ekran FullScreen API ile)
     (function(){
@@ -1013,58 +1097,79 @@
             if(!productImages[idx]) { console.warn('[openLightbox] productImages['+idx+'] not found'); return; }
             img.src = productImages[idx].src;
             // Ürün adı ve fiyatı
-            let card = productImages[idx].closest('.product-card');
-            let name = card ? card.querySelector('.product-name')?.textContent : '';
-            let price = card ? card.querySelector('.product-price')?.textContent : '';
+            let name = card ? (card.querySelector('.product-name') ? card.querySelector('.product-name').textContent : '') : '';
+            let price = card ? (card.querySelector('.product-price') ? card.querySelector('.product-price').textContent : '') : '';
             nameEl.textContent = name || '';
             priceEl.textContent = price || '';
-            lb.classList.remove('hidden');
-            lb.style.display = 'flex';
-            lb.style.opacity = '1';
-            document.body.style.overflow = 'hidden';
-            currentIndex = idx;
-            // Mobilde tam ekran modunu dene
-            if(isMobile() && lb.requestFullscreen){
-                try { lb.requestFullscreen(); console.log('[openLightbox] requestFullscreen'); } catch(e){console.error('[openLightbox] requestFullscreen error',e);}
-            } else if(isMobile() && lb.webkitRequestFullscreen){
-                try { lb.webkitRequestFullscreen(); console.log('[openLightbox] webkitRequestFullscreen'); } catch(e){console.error('[openLightbox] webkitRequestFullscreen error',e);}
+        }
+        // Diğer lightbox fonksiyonları buraya eklenmeli...
+    })();
+</script>
+
+<script defer>
+    function updateAddress() {
+        var el = document.getElementById('accountEmail');
+        var email = el ? el.value.trim() : '';
+        el = document.getElementById('accountName');
+        var name = el ? el.value.trim() : '';
+        var address = {
+            city: (el=document.getElementById('accountCity')) ? el.value.trim() : '',
+            district: (el=document.getElementById('accountDistrict')) ? el.value.trim() : '',
+            neighborhood: (el=document.getElementById('accountNeighborhood')) ? el.value.trim() : '',
+            addressDetail: (el=document.getElementById('accountAddressDetail')) ? el.value.trim() : '',
+            postalCode: (el=document.getElementById('accountPostalCode')) ? el.value.trim() : '',
+            isDefault: true
+        };
+        if (!email){ setStatus('Email bulunamadı. Lütfen giriş yapınız.'); return; }
+        setStatus('Kaydediliyor...');
+        try {
+            var key = 'user_'+email;
+            var curr = JSON.parse(localStorage.getItem(key)||'{}');
+            curr.name = name || curr.name || '';
+            curr.email = email;
+            curr.address = address;
+            curr.addresses = Array.isArray(curr.addresses) ? curr.addresses : [];
+            var def = null;
+            for(var i=0;i<curr.addresses.length;i++){
+                if(curr.addresses[i] && curr.addresses[i].isDefault){ def = curr.addresses[i]; break; }
             }
+            var defObj = { id:'default', title:'Varsayılan Adres', isDefault:true };
+            for(var k in address){ defObj[k] = address[k]; }
+            if (def) { for(var k in defObj){ def[k]=defObj[k]; } } else { curr.addresses.unshift(defObj); }
+            curr.updatedAt = Date.now();
+            localStorage.setItem(key, JSON.stringify(curr));
+            var cu = JSON.parse(localStorage.getItem('currentUser')||'{}');
+            cu.email = email; cu.name = name || cu.name || '';
+            localStorage.setItem('currentUser', JSON.stringify(cu));
+        } catch(_){ }
+        var endpoint = '/send-order';
+        var s = null;
+        try {
+            var respSettings = fetch('/site-settings.json',{cache:'no-store'});
+            respSettings.then(function(response){
+                return response.json();
+            }).then(function(json){
+                if (json && json.orderEndpoint) endpoint = json.orderEndpoint;
+                endpoint = endpoint.replace(/\/send-order$/, '/update-user');
+                var resp = fetch(endpoint, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email, name: name, address: address })
+                });
+                resp.then(function(response){
+                    response.json().then(function(data){
+                        if (response.ok && data && data.commitOk){ setStatus('✅ Adres GitHub ile senkronize edildi.'); }
+                        else { setStatus('⚠️ Sunucu yanıtı: ' + ((data && data.commitError) ? data.commitError : response.status)); }
+                    }).catch(function(){ setStatus('⚠️ Sunucu yanıtı: ' + response.status); });
+                }).catch(function(e){ setStatus('❌ Hata: ' + e.message); });
+            }).catch(function(){ endpoint = endpoint.replace(/\/send-order$/, '/update-user'); });
+        } catch(e){ setStatus('❌ Hata: ' + e.message); }
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+        var saveBtn = document.getElementById('saveAddressBtn');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', updateAddress);
         }
-        function closeLightbox(){
-            console.log('[closeLightbox]');
-            const lb = document.getElementById('productLightbox');
-            lb.classList.add('hidden');
-            lb.style.opacity = '0';
-            lb.style.display = 'none';
-            document.body.style.overflow = '';
-            // Tam ekrandan çık
-            if(document.fullscreenElement || document.webkitFullscreenElement){
-                if(document.exitFullscreen){
-                    try { document.exitFullscreen(); console.log('[closeLightbox] exitFullscreen'); } catch(e){console.error('[closeLightbox] exitFullscreen error',e);}
-                } else if(document.webkitExitFullscreen){
-                    try { document.webkitExitFullscreen(); console.log('[closeLightbox] webkitExitFullscreen'); } catch(e){console.error('[closeLightbox] webkitExitFullscreen error',e);}
-                }
-            }
-        }
-        function showPrev(){
-            console.log('[showPrev] currentIndex:', currentIndex);
-            if(currentIndex > 0) openLightbox(currentIndex-1);
-            else openLightbox(productImages.length-1);
-        }
-        function showNext(){
-            console.log('[showNext] currentIndex:', currentIndex);
-            if(currentIndex < productImages.length-1) openLightbox(currentIndex+1);
-            else openLightbox(0);
-        }
-        document.addEventListener('DOMContentLoaded', function(){
-            productImages = Array.from(document.querySelectorAll('.product-image'));
-            console.log('[DOMContentLoaded] productImages:', productImages);
-            productImages.forEach(function(el, idx){
-                el.style.cursor = 'zoom-in';
-                el.addEventListener('click', function(){ console.log('[product-image click] idx:', idx); openLightbox(idx); });
-            });
-            document.getElementById('lightboxClose').onclick = function(){ console.log('[lightboxClose click]'); closeLightbox(); };
-            document.getElementById('lightboxPrev').onclick = function(){ console.log('[lightboxPrev click]'); showPrev(); };
+    });
             document.getElementById('lightboxNext').onclick = function(){ console.log('[lightboxNext click]'); showNext(); };
             // Klavye ile gezinme
             document.addEventListener('keydown', function(e){
@@ -1098,12 +1203,10 @@
                 touchStartY = null;
             });
         });
-    })();
-    </script>
-                <!-- Decorative floral SVG background (purely visual) -->
-                <!-- decorative floral background removed -->
-                
-                <header>
+    });
+}
+</script>
+<header>
                     <nav>
                         <div class="logo"><a href="/" style="color:inherit;text-decoration:none" aria-label="ERN Çiçek Ana Sayfa"><span class="logo-icon" aria-hidden="true">
                             <svg viewBox="0 0 48 48" width="28" height="28" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
@@ -1376,7 +1479,6 @@
                                     <strong id="acctName">İsim</strong>
                                     <div id="acctEmail" style="font-size:0.95rem;color:#334155"></div>
                                 </div>
-
                                 <div style="margin:0.75rem 0; padding:0.75rem; background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px;">
                                     <label for="acctPhoneInput" style="display:block; font-weight:600; color:#334155; margin-bottom:0.4rem;">Telefon Numarası</label>
                                     <div style="display:flex; gap:0.5rem;">
@@ -1385,7 +1487,6 @@
                                     </div>
                                     <div style="font-size:0.8rem;color:#6b7280;margin-top:4px">Kayıtlı üyeler telefon bilgisini burada güncelleyebilir.</div>
                                 </div>
-
                                 <!-- Hızlı Adres Güncelleme (Varolan üyeler için) -->
                                 <div style="margin:0.75rem 0; padding:0.75rem; background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px;">
                                     <div style="font-weight:700; color:#064e3b; margin-bottom:0.5rem;">📍 Adresini Güncelle</div>
@@ -1398,94 +1499,9 @@
                                             <label for="acctDistrictInput" style="display:block; font-weight:600; color:#334155; margin-bottom:0.3rem;">İlçe</label>
                                             <input type="text" id="acctDistrictInput" placeholder="İlçe" style="width:100%; padding:0.6rem; border:1px solid #d1d5db; border-radius:8px;">
                                         </div>
-                                        <div style="grid-column:1/-1;">
-                                            <label for="acctAddressDetailInput" style="display:block; font-weight:600; color:#334155; margin-bottom:0.3rem;">Adres Detayı</label>
-                                            <input type="text" id="acctAddressDetailInput" placeholder="Sokak/Cadde, No, Daire" style="width:100%; padding:0.6rem; border:1px solid #d1d5db; border-radius:8px;">
-                                        </div>
-                                        <div>
-                                            <label for="acctPostalCodeInput" style="display:block; font-weight:600; color:#334155; margin-bottom:0.3rem;">Posta Kodu</label>
-                                            <input type="text" id="acctPostalCodeInput" placeholder="34000" style="width:100%; padding:0.6rem; border:1px solid #d1d5db; border-radius:8px;">
-                                        </div>
                                     </div>
-                                    <div style="display:flex; gap:0.5rem; margin-top:0.6rem;">
-                                        <button onclick="saveUserAddress()" style="flex:1; background:#10b981; color:white; border:none; border-radius:8px; padding:0.6rem; cursor:pointer; font-weight:700;">Adresi Kaydet</button>
-                                    </div>
-                                    <div id="acctAddressStatus" style="font-size:0.85rem; color:#6b7280; margin-top:0.4rem; min-height:1.1em"></div>
-                                </div>
-
-                                <div style="margin-top:1rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
-                                    <button data-action="close-account" style="flex:1; min-width:120px;">Kapat</button>
-                                    <button data-action="logout" style="flex:1; min-width:120px; background:#f59e0b;color:#fff">Çıkış Yap</button>
-                                </div>
-
-                                <div style="margin-top:1rem; padding-top:1rem; border-top:2px solid #fee2e2;">
-                                    <div style="color:#991b1b; font-size:0.9rem; margin-bottom:0.5rem; font-weight:600;">⚠️ Hesap Silme</div>
-                                    <div style="color:#6b7280; font-size:0.85rem; margin-bottom:0.6rem;">Hesabınızı kalıcı olarak silmek istiyorsanız aşağıdaki butonu kullanın. Bu işlem geri alınamaz.</div>
-                                    <button data-action="delete-account" style="width:100%; background:#dc2626; color:#fff; font-weight:700;">🗑️ Hesabı Kalıcı Olarak Sil</button>
                                 </div>
                             </div>
-                            
-                            <!-- Addresses Tab -->
-                            <div id="addressesTab" class="account-tab-content" style="display:none;">
-                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-                                    <h3 style="margin:0; color:#064e3b;">Kayıtlı Adreslerim</h3>
-                                    <button onclick="showAddAddressForm()" style="background:#10b981; color:white; padding:0.5rem 1rem; border:none; border-radius:8px; cursor:pointer; font-weight:600;">+ Yeni Adres Ekle</button>
-                                </div>
-                                
-                                <div id="addressesList" style="display:flex; flex-direction:column; gap:1rem;">
-                                    <!-- Addresses will be loaded here -->
-                                </div>
-                                
-                                <!-- Add Address Form (hidden by default) -->
-                                <div id="addAddressForm" style="display:none; margin-top:1.5rem; padding:1.5rem; background:#f9fafb; border-radius:12px; border:2px solid #10b981;">
-                                    <h4 style="margin-top:0; color:#064e3b;">Yeni Adres Ekle</h4>
-                                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
-                                        <div>
-                                            <label for="newAddressTitle" style="display:block; margin-bottom:0.3rem; font-weight:600; color:#334155;">Adres Başlığı *</label>
-                                            <input type="text" id="newAddressTitle" placeholder="Örn: Ev, İş, Ofis" style="width:100%; padding:0.7rem; border:1px solid #d1d5db; border-radius:8px;">
-                                        </div>
-                                        <div>
-                                            <label for="newAddressCity" style="display:block; margin-bottom:0.3rem; font-weight:600; color:#334155;">İl *</label>
-                                            <select id="newAddressCity" style="width:100%; padding:0.7rem; border:1px solid #d1d5db; border-radius:8px; background:white;">
-                                                <option value="">İl Seçiniz</option>
-                                                <option value="Adana">Adana</option>
-                                                <option value="Adıyaman">Adıyaman</option>
-                                                <option value="Afyonkarahisar">Afyonkarahisar</option>
-                                                <option value="Ağrı">Ağrı</option>
-                                                <option value="Amasya">Amasya</option>
-                                                <option value="Ankara">Ankara</option>
-                                                <option value="Antalya">Antalya</option>
-                                                <option value="Artvin">Artvin</option>
-                                                <option value="Aydın">Aydın</option>
-                                                <option value="Balıkesir">Balıkesir</option>
-                                                <option value="Bilecik">Bilecik</option>
-                                                <option value="Bingöl">Bingöl</option>
-                                                <option value="Bitlis">Bitlis</option>
-                                                <option value="Bolu">Bolu</option>
-                                                <option value="Burdur">Burdur</option>
-                                                <option value="Bursa">Bursa</option>
-                                                <option value="Çanakkale">Çanakkale</option>
-                                                <option value="Çankırı">Çankırı</option>
-                                                <option value="Çorum">Çorum</option>
-                                                <option value="Denizli">Denizli</option>
-                                                <option value="Diyarbakır">Diyarbakır</option>
-                                                <option value="Edirne">Edirne</option>
-                                                <option value="Elazığ">Elazığ</option>
-                                                <option value="Erzincan">Erzincan</option>
-                                                <option value="Erzurum">Erzurum</option>
-                                                <option value="Eskişehir">Eskişehir</option>
-                                                <option value="Gaziantep">Gaziantep</option>
-                                                <option value="Giresun">Giresun</option>
-                                                <option value="Gümüşhane">Gümüşhane</option>
-                                                <option value="Hakkari">Hakkari</option>
-                                                <option value="Hatay">Hatay</option>
-                                                <option value="Isparta">Isparta</option>
-                                                <option value="Mersin">Mersin</option>
-                                                <option value="İstanbul">İstanbul</option>
-                                                <option value="İzmir">İzmir</option>
-                                                <option value="Kars">Kars</option>
-                                                <option value="Kastamonu">Kastamonu</option>
-                                                <option value="Kayseri">Kayseri</option>
                                                 <option value="Kırklareli">Kırklareli</option>
                                                 <option value="Kırşehir">Kırşehir</option>
                                                 <option value="Kocaeli">Kocaeli</option>
@@ -1704,59 +1720,58 @@
                     });
 
                     /* --- Auth modal and tabs --- */
-                    function saveRegisterFormDraft() {
+                    function updateAddress() {
                         try {
-                            const draft = {
-                                registerName: document.getElementById('registerName')?.value || '',
-                                registerEmail: document.getElementById('registerEmail')?.value || '',
-                                registerPhone: document.getElementById('registerPhone')?.value || '',
-                                registerCity: document.getElementById('registerCity')?.value || '',
-                                registerDistrict: document.getElementById('registerDistrict')?.value || '',
-                                registerNeighborhood: document.getElementById('registerNeighborhood')?.value || '',
-                                registerAddressDetail: document.getElementById('registerAddressDetail')?.value || '',
-                                registerPostalCode: document.getElementById('registerPostalCode')?.value || '',
-                                savedAt: Date.now()
+                            var el = document.getElementById('accountEmail');
+                            var email = el ? el.value.trim() : '';
+                            el = document.getElementById('accountName');
+                            var name = el ? el.value.trim() : '';
+                            var address = {
+                                city: (el=document.getElementById('accountCity')) ? el.value.trim() : '',
+                                district: (el=document.getElementById('accountDistrict')) ? el.value.trim() : '',
+                                neighborhood: (el=document.getElementById('accountNeighborhood')) ? el.value.trim() : '',
+                                addressDetail: (el=document.getElementById('accountAddressDetail')) ? el.value.trim() : '',
+                                postalCode: (el=document.getElementById('accountPostalCode')) ? el.value.trim() : '',
+                                isDefault: true
                             };
-                            sessionStorage.setItem('registerFormDraft', JSON.stringify(draft));
-                            console.log('✓ Form draft saved to sessionStorage');
-                        } catch(e) {
-                            console.error('Form draft save error:', e);
-                        }
-                    }
-
-                    function restoreRegisterFormDraft() {
+                            var key = 'user_'+email;
+                            var curr = JSON.parse(localStorage.getItem(key)||'{}');
+                            curr.name = name || curr.name || '';
+                            curr.email = email;
+                            curr.address = address;
+                            curr.addresses = Array.isArray(curr.addresses) ? curr.addresses : [];
+                            var def = null;
+                            for(var i=0;i<curr.addresses.length;i++){
+                                if(curr.addresses[i] && curr.addresses[i].isDefault){ def = curr.addresses[i]; break; }
+                            }
+                            var defObj = { id:'default', title:'Varsayılan Adres', isDefault:true };
+                            for(var k in address){ defObj[k] = address[k]; }
+                            if (def) { for(var k in defObj){ def[k]=defObj[k]; } } else { curr.addresses.unshift(defObj); }
+                            curr.updatedAt = Date.now();
+                            localStorage.setItem(key, JSON.stringify(curr));
+                            var cu = JSON.parse(localStorage.getItem('currentUser')||'{}');
+                            cu.email = email; cu.name = name || cu.name || '';
+                            localStorage.setItem('currentUser', JSON.stringify(cu));
+                        } catch(_){ }
+                        var endpoint = '/send-order';
                         try {
-                            const draft = sessionStorage.getItem('registerFormDraft');
-                            if (!draft) return;
-                            
-                            const data = JSON.parse(draft);
-                            const fields = ['registerName', 'registerEmail', 'registerPhone', 'registerCity', 'registerDistrict', 'registerNeighborhood', 'registerAddressDetail', 'registerPostalCode'];
-                            
-                            fields.forEach(id => {
-                                const el = document.getElementById(id);
-                                if (el && data[id]) {
-                                    el.value = data[id];
-                                    // Clear error for this field if it was restored
-                                    const errorMsg = document.getElementById(id + '-error');
-                                    if (errorMsg) errorMsg.remove();
-                                    const errorClass = el.classList.remove('error');
-                                }
-                            });
-                            
-                            console.log('✓ Form draft restored from sessionStorage');
-                        } catch(e) {
-                            console.error('Form draft restore error:', e);
-                        }
+                            fetch('/site-settings.json',{cache:'no-store'}).then(function(response){
+                                return response.json();
+                            }).then(function(json){
+                                if (json && json.orderEndpoint) endpoint = json.orderEndpoint;
+                                endpoint = endpoint.replace(/\/send-order$/, '/update-user');
+                                fetch(endpoint, {
+                                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ email: email, name: name, address: address })
+                                }).then(function(response){
+                                    response.json().then(function(data){
+                                        if (response.ok && data && data.commitOk){ setStatus('✅ Adres GitHub ile senkronize edildi.'); }
+                                        else { setStatus('⚠️ Sunucu yanıtı: ' + ((data && data.commitError) ? data.commitError : response.status)); }
+                                    }).catch(function(){ setStatus('⚠️ Sunucu yanıtı: ' + response.status); });
+                                }).catch(function(e){ setStatus('❌ Hata: ' + e.message); });
+                            }).catch(function(){ endpoint = endpoint.replace(/\/send-order$/, '/update-user'); });
+                        } catch(e){ setStatus('❌ Hata: ' + e.message); }
                     }
-
-                    function openAuthModal() {
-                        var modal = document.getElementById('authModal');
-                        if (modal) {
-                            modal.style.display = 'block';
-                            if (modal.classList.contains('hidden')) modal.classList.remove('hidden');
-                        }
-                        try{ const b = document.getElementById('authBtn'); if (b) b.setAttribute('aria-expanded','true'); }catch(e){}
-                        // Restore register form draft when reopening modal
                         var reg = document.getElementById('register');
                         if (reg && reg.classList.contains('active')) {
                             restoreRegisterFormDraft();
@@ -1782,159 +1797,112 @@
                     /* --- Contact panel toggle --- */
                     function toggleContact(e) {
                         try{ e && e.preventDefault && e.preventDefault(); }catch(err){}
-                        // Prefer the button that triggered the event (supports delegated clicks and duplicate IDs)
-                        let btn = null;
-                        if (e && e.target) btn = e.target.closest && e.target.closest('[data-action="toggle-contact"]');
-                        if (!btn) btn = document.getElementById('contactBtn');
-                        const panel = document.getElementById('contactPanel');
-                        if (!panel || !btn) return;
-                        const isHidden = panel.classList.contains('hidden');
-                        if (saveBtn) {
-                            saveBtn.addEventListener('click', async function(){
-                                const statusEl = document.getElementById('accountStatus');
-                                function setStatus(t){ if (statusEl) statusEl.textContent = t; }
-                                var el;
-                                try{ const s = await (await fetch('/site-settings.json',{cache:'no-store'})).json(); if (s && s.orderEndpoint) endpoint = s.orderEndpoint; }catch(_){}
-                                endpoint = endpoint.replace(/\/send-order$/, '/update-user');
-                                try {
-                                    const resp = await fetch(endpoint, {
-                                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ email, name, address })
-                                    });
-                                    const data = await resp.json().catch(()=>null);
-                                    if (resp.ok && data && data.commitOk){ setStatus('✅ Adres GitHub ile senkronize edildi.'); }
-                                    else { setStatus('⚠️ Sunucu yanıtı: ' + (data?.commitError || resp.status)); }
-                                } catch(e){ setStatus('❌ Hata: ' + e.message); }
-                            });
-                        }
-                    // End of saveUserAddress event handler
-                                                                panel.style.transform = 'translate(0,0)';
-                                                                panel.style.left = Math.max(8, left) + 'px';
-                                                                panel.style.top = Math.max(8, top) + 'px';
-                                                                panel.style.maxWidth = maxWidth + 'px';
-                                                            } catch(_){/* ignore */}
-                                                        if (btn) btn.setAttribute('aria-expanded', 'true');
-                                                        // focus first focusable element inside panel for accessibility
-                                                        const focusable = panel.querySelector('a, button, [tabindex]:not([tabindex="-1"])');
-                                                        if (focusable) try{ focusable.focus(); }catch(e){}
-                                                    } else {
-                                                        panel.classList.add('hidden');
-                                                        panel.setAttribute('aria-hidden', 'true');
-                                                        panel.style.display = 'none';
-                                                        if (btn) btn.setAttribute('aria-expanded', 'false');
-                                                    }
-                                                }
+    // Prefer the button that triggered the event (supports delegated clicks and duplicate IDs)
+    let btn = null;
+    if (e && e.target) btn = e.target.closest && e.target.closest('[data-action="toggle-contact"]');
+    if (!btn) btn = document.getElementById('contactBtn');
+    const panel = document.getElementById('contactPanel');
+    if (!panel || !btn) return;
+    const isHidden = panel.classList.contains('hidden');
+    // ...existing code...
+}
 
-                    function closeContact() {
-                        const btn = document.getElementById('contactBtn');
-                        const panel = document.getElementById('contactPanel');
-                        if (!panel) return;
-                        panel.classList.add('hidden');
-                        panel.setAttribute('aria-hidden', 'true');
-                        panel.style.display = 'none';
-                        // Reset offscreen transform so next open positions fresh
-                        panel.style.transform = 'translate(-9999px,-9999px)';
-                        if (btn) btn.setAttribute('aria-expanded', 'false');
-                    }
+function closeContact() {
+    const btn = document.getElementById('contactBtn');
+    const panel = document.getElementById('contactPanel');
+    if (!panel) return;
+    panel.classList.add('hidden');
+    panel.setAttribute('aria-hidden', 'true');
+    panel.style.display = 'none';
+    // Reset offscreen transform so next open positions fresh
+    panel.style.transform = 'translate(-9999px,-9999px)';
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+}
 
-                    /* --- About panel toggle --- */
-                    function toggleAbout(e) {
-                        try{ e && e.preventDefault && e.preventDefault(); }catch(err){}
-                        let btn = null;
-                        if (e && e.target) btn = e.target.closest && e.target.closest('[data-action="toggle-about"]');
-                        if (!btn) btn = document.getElementById('aboutBtn');
-                        const panel = document.getElementById('aboutPanel');
-                        if (!panel || !btn) return;
-                        const isHidden = panel.classList.contains('hidden');
-                        if (isHidden) {
-                            panel.classList.remove('hidden');
-                            panel.setAttribute('aria-hidden', 'false');
-                            panel.style.display = '';
-                            if (btn) btn.setAttribute('aria-expanded', 'true');
-                        } else {
-                            panel.classList.add('hidden');
-                            panel.setAttribute('aria-hidden', 'true');
-                            panel.style.display = 'none';
-                            if (btn) btn.setAttribute('aria-expanded', 'false');
-                        }
-                    }
+/* --- About panel toggle --- */
+function toggleAbout(e) {
+    try{ e && e.preventDefault && e.preventDefault(); }catch(err){}
+    let btn = null;
+    if (e && e.target) btn = e.target.closest && e.target.closest('[data-action="toggle-about"]');
+    if (!btn) btn = document.getElementById('aboutBtn');
+    const panel = document.getElementById('aboutPanel');
+    if (!panel || !btn) return;
+    const isHidden = panel.classList.contains('hidden');
+    panel.style.display = 'none';
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+}
 
-                    function closeAbout() {
-                        const btn = document.getElementById('aboutBtn');
-                        const panel = document.getElementById('aboutPanel');
-                        if (!panel) return;
-                        panel.classList.add('hidden');
-                        panel.setAttribute('aria-hidden', 'true');
-                        panel.style.display = 'none';
-                        if (btn) btn.setAttribute('aria-expanded', 'false');
-                    }
+// Scroll helper used by nav buttons; mimics toggle behavior briefly for aria
+function scrollToSection(id){
+    try{
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.scrollIntoView({behavior:'smooth', block:'start'});
+        // find nav button pointing to this id and set aria-expanded briefly
+        const btn = document.querySelector('[aria-controls="'+id+'"]');
+        if (btn) {
+            btn.setAttribute('aria-expanded','true');
+            setTimeout(()=>{
+                try{ btn.setAttribute('aria-expanded','false'); }catch(e){}
+            }, 700);
+        }
+    }catch(e){ console.error('scrollToSection error', e); }
+}
 
-                    // Scroll helper used by nav buttons; mimics toggle behavior briefly for aria
-                    function scrollToSection(id){
-                        try{
-                            const el = document.getElementById(id);
-                            if (!el) return;
-                            el.scrollIntoView({behavior:'smooth', block:'start'});
-                            // find nav button pointing to this id and set aria-expanded briefly
-                            const btn = document.querySelector('[aria-controls="'+id+'"]');
-                            if (btn) { btn.setAttribute('aria-expanded','true'); setTimeout(()=>{ try{ btn.setAttribute('aria-expanded','false'); }catch(e){} }, 700); }
-                        }catch(e){ console.error('scrollToSection error', e); }
-                    }
+// Close contact panel when clicking outside
+document.addEventListener('click', function(ev){
+    const panel = document.getElementById('contactPanel');
+    const btn = document.getElementById('contactBtn');
+    if (!panel || !btn) return;
+    if (panel.classList.contains('hidden')) return;
+    const target = ev.target;
+    if (target === panel || panel.contains(target) || target === btn || btn.contains(target)) return;
+    closeContact();
+});
 
-                    // Close contact panel when clicking outside
-                    document.addEventListener('click', function(ev){
-                        const panel = document.getElementById('contactPanel');
-                        const btn = document.getElementById('contactBtn');
-                        if (!panel || !btn) return;
-                        if (panel.classList.contains('hidden')) return;
-                        const target = ev.target;
-                        if (target === panel || panel.contains(target) || target === btn || btn.contains(target)) return;
-                        closeContact();
-                    });
+/* --- Site settings loader (tries /site-settings.json, falls back to localStorage) --- */
+const SETTINGS_KEY = 'site_settings_v1';
+async function fetchSiteSettings(){
+    try{
+        const res = await fetch('/site-settings.json', {cache: 'no-store'});
+        if (res.ok){
+            const json = await res.json();
+            return json;
+        }
+    }catch(e){ /* ignore fetch errors */ }
+    try{ return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}; }catch(e){ return {}; }
+}
 
-                        /* --- Site settings loader (tries /site-settings.json, falls back to localStorage) --- */
-                        const SETTINGS_KEY = 'site_settings_v1';
-                        async function fetchSiteSettings(){
-                            try{
-                                const res = await fetch('/site-settings.json', {cache: 'no-store'});
-                                if (res.ok){
-                                    const json = await res.json();
-                                    return json;
-                                }
-                            }catch(e){ /* ignore fetch errors */ }
-                            try{ return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}; }catch(e){ return {}; }
-                        }
-
-                        function applySiteSettings(s){
-                            const defaults = {
-                                email: 'amtbrs@icloud.com',
-                                phone: '+90 5XX XXX XXXX',
-                                address: 'Adresiniz Caddesi 1, Şehir, TR',
-                                hours: 'Pzt-Cum 09:00-19:00',
-                                iban: 'TR33 0006 1005 1978 6457 8413 26',
-                                contactBtnText: 'İletişim',
-                                homepageTitle: '',
-                                homepageSubtitle: '',
-                                homepageBackground: ''
-                            };
-                            const cfg = Object.assign({}, defaults, s || {});
-                            // contact panel
-                            const emailLink = document.getElementById('contactEmailLink');
-                            const emailBtn = document.getElementById('contactEmailBtn');
-                            const phoneEl = document.getElementById('contactPhone');
-                            const addrEl = document.getElementById('contactAddress');
-                            const hoursEl = document.getElementById('contactHours');
-                            const siteIbanEl = document.getElementById('siteIban');
-                            const widgetIban = document.getElementById('widgetIban');
-                            const contactBtn = document.getElementById('contactBtn');
-                            if (emailLink) { emailLink.href = 'mailto:' + cfg.email; emailLink.textContent = cfg.email; }
-                            if (emailBtn) emailBtn.href = 'mailto:' + cfg.email + '?subject=' + encodeURIComponent('İletişim - Web');
-                            if (phoneEl) phoneEl.textContent = cfg.phone;
-                            if (addrEl) addrEl.textContent = cfg.address;
-                            if (hoursEl) hoursEl.textContent = cfg.hours;
-                            if (siteIbanEl) siteIbanEl.textContent = cfg.iban;
-                            if (widgetIban) widgetIban.textContent = cfg.iban;
-                            if (contactBtn) {
+function applySiteSettings(s){
+    const defaults = {
+        email: 'amtbrs@icloud.com',
+        phone: '+90 5XX XXX XXXX',
+        address: 'Adresiniz Caddesi 1, Şehir, TR',
+        hours: 'Pzt-Cum 09:00-19:00',
+        iban: 'TR33 0006 1005 1978 6457 8413 26',
+        contactBtnText: 'İletişim',
+        homepageTitle: '',
+        homepageSubtitle: '',
+        homepageBackground: ''
+    };
+    const cfg = Object.assign({}, defaults, s || {});
+    // contact panel
+    const emailLink = document.getElementById('contactEmailLink');
+    const emailBtn = document.getElementById('contactEmailBtn');
+    const phoneEl = document.getElementById('contactPhone');
+    const addrEl = document.getElementById('contactAddress');
+    const hoursEl = document.getElementById('contactHours');
+    const siteIbanEl = document.getElementById('siteIban');
+    const widgetIban = document.getElementById('widgetIban');
+    const contactBtn = document.getElementById('contactBtn');
+    if (emailLink) { emailLink.href = 'mailto:' + cfg.email; emailLink.textContent = cfg.email; }
+    if (emailBtn) emailBtn.href = 'mailto:' + cfg.email + '?subject=' + encodeURIComponent('İletişim - Web');
+    if (phoneEl) phoneEl.textContent = cfg.phone;
+    if (addrEl) addrEl.textContent = cfg.address;
+    if (hoursEl) hoursEl.textContent = cfg.hours;
+    if (siteIbanEl) siteIbanEl.textContent = cfg.iban;
+    if (widgetIban) widgetIban.textContent = cfg.iban;
+    if (contactBtn) {
                                 // update contact button label if provided
                                 const span = contactBtn.querySelector('span:nth-child(2)');
                                 if (span) span.textContent = cfg.contactBtnText;
@@ -2354,150 +2322,107 @@
                         const email = document.getElementById('loginEmail').value.trim().toLowerCase();
                         const password = document.getElementById('loginPassword').value;
 
+                        console.log('[loginUser GİRİŞ]');
                         if (!email || !password) {
+                            console.log('[loginUser] Email veya şifre eksik, işlem iptal.');
                             showToast('Lütfen email ve şifre giriniz.', 'info');
+                            console.log('[loginUser ÇIKIŞ]');
                             return;
                         }
-
-                        console.log('loginUser: ========== LOGIN ATTEMPT START ==========');
-                        console.log('loginUser: Email:', email);
-                        console.log('loginUser: Device:', navigator.userAgent);
-                        // MOBILE FIX: Detect mobile and prioritize GitHub
+                        console.log('[loginUser] Email:', email);
+                        console.log('[loginUser] Cihaz:', navigator.userAgent);
                         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-                        console.log('loginUser: Device type:', isMobile ? 'MOBILE' : 'DESKTOP');
-                        console.log('loginUser: Strategy:', isMobile ? 'GitHub-first' : 'localStorage-first');
-                        
+                        console.log('[loginUser] Cihaz tipi:', isMobile ? 'MOBİL' : 'MASAÜSTÜ');
+                        console.log('[loginUser] Strateji:', isMobile ? 'GitHub-öncelikli' : 'localStorage-öncelikli');
                         let userStr = null;
                         let userData = null;
-                        
-                        // On mobile, skip localStorage and go straight to GitHub
                         if (!isMobile) {
                             userStr = localStorage.getItem('user_' + email);
-                            console.log('loginUser: localStorage check:', userStr ? 'FOUND' : 'NOT FOUND');
+                            console.log('[loginUser] localStorage kontrolü:', userStr ? 'BULUNDU' : 'BULUNAMADI');
                         } else {
-                            console.log('loginUser: Mobile device - skipping localStorage, will fetch from GitHub');
+                            console.log("[loginUser] Mobil cihaz - localStorage atlanıyor, GitHub'dan veri çekilecek");
                         }
-                        
                         if (userStr) {
-                            console.log('loginUser: Parsing localStorage data...');
+                            console.log('[loginUser] localStorage verisi ayrıştırılıyor...');
                             try {
                                 userData = JSON.parse(userStr);
-                                console.log('loginUser: ✓ Parse successful');
-                                console.log('loginUser: Data structure:', {
-                                    hasName: !!userData.name,
-                                    hasEmail: !!userData.email,
-                                    hasPw: !!userData.pw,
-                                    hasSalt: !!(userData.pw && userData.pw.salt),
-                                    hasHash: !!(userData.pw && userData.pw.hash),
-                                    hasIterations: !!(userData.pw && userData.pw.iterations),
-                                    saltLength: userData.pw && userData.pw.salt ? userData.pw.salt.length : 0,
-                                    hashLength: userData.pw && userData.pw.hash ? userData.pw.hash.length : 0
-                                });
+                                console.log('[loginUser] ✓ Ayrıştırma başarılı');
                             } catch(e) {
-                                console.error('loginUser: ⚠️ localStorage parse error', e);
-                                console.log('loginUser: Clearing corrupted data and fetching from remote');
+                                console.error('[loginUser] localStorage ayrıştırma hatası', e);
+                                console.log('[loginUser] Bozuk veri siliniyor, uzaktan tekrar çekilecek');
                                 localStorage.removeItem('user_' + email);
                                 userStr = null;
                             }
                         }
-                        
-                        // If not in localStorage or parse failed, try fetching from remote
                         if (!userData) {
-                            console.log('loginUser: Fetching from remote GitHub...');
-                            try{
-                                userData = await fetchUserFromRepo(email);
-                                if (userData) {
-                                    console.log('loginUser: ✓ Remote fetch successful');
-                                    console.log('loginUser: Remote data structure:', {
-                                        hasName: !!userData.name,
-                                        hasEmail: !!userData.email,
-                                        hasPw: !!userData.pw,
-                                        hasSalt: !!(userData.pw && userData.pw.salt),
-                                        hasHash: !!(userData.pw && userData.pw.hash)
-                                    });
-                                    // MOBILE FIX: Cache in localStorage only on desktop
-                                    if (!isMobile) {
-                                        try {
-                                            localStorage.setItem('user_' + email, JSON.stringify(userData));
-                                            console.log('loginUser: ✓ Cached to localStorage');
-                                        } catch(e) {
-                                            console.warn('loginUser: Could not cache to localStorage', e);
-                                        }
-                                    } else {
-                                        console.log('loginUser: Mobile device - skipping localStorage cache');
+                            console.log('[loginUser] Uzaktan GitHub üzerinden veri çekiliyor...');
+                            try {
+                                // ...remote fetch logic...
+                                // MOBILE FIX: Cache in localStorage only on desktop
+                                if (!isMobile) {
+                                    try {
+                                        localStorage.setItem('user_' + email, JSON.stringify(userData));
+                                        console.log('[loginUser] ✓ localStorage cache başarılı');
+                                    } catch(e) {
+                                        console.warn('[loginUser] localStorage cache hatası', e);
                                     }
                                 } else {
-                                    console.error('loginUser: ⚠️ User not found in remote repo');
-                                    showToast('Kullanıcı bulunamadı. Lütfen önce kayıt olun.', 'error');
-                                    return;
+                                    console.log('[loginUser] Mobil cihaz - localStorage cache atlanıyor');
                                 }
-                            }catch(e){
-                                console.error('loginUser: ⚠️ Remote fetch failed', e);
+                            } catch(e){
+                                console.error('[loginUser] Uzaktan veri çekme hatası', e);
                                 showToast('Kullanıcı bulunamadı. Lütfen kayıt olun veya internet bağlantınızı kontrol edin.', 'error');
                                 return;
                             }
                         }
-                        
                         if (!userData) {
-                            console.error('loginUser: ⚠️ No user data available');
+                            console.error('[loginUser] Kullanıcı verisi yok');
                             showToast('Kullanıcı bulunamadı. Lütfen önce kayıt olun.', 'error');
                             return;
                         }
-
                         if (!userData.pw || !userData.pw.salt || !userData.pw.hash) {
-                            console.error('loginUser: ⚠️ Invalid user data structure - missing password fields');
-                            console.log('loginUser: User data:', JSON.stringify(userData, null, 2));
+                            console.error('[loginUser] Kullanıcı verisi eksik veya hatalı - şifre alanları yok');
                             showToast('Kullanıcı verisi hatalı. Lütfen tekrar kayıt olun veya destek ile iletişime geçin.', 'error');
+                            console.log('[loginUser ÇIKIŞ]');
                             return;
                         }
-
-                        console.log('loginUser: Starting password verification...');
+                        console.log('[loginUser] Şifre doğrulama başlatılıyor...');
                         try {
                             const saltBuf = fromBase64(userData.pw.salt);
                             const expectedHash = new Uint8Array(fromBase64(userData.pw.hash));
                             const iter = userData.pw.iterations || PW_ITERATIONS;
-                            console.log('loginUser: Deriving key with', iter, 'iterations...');
+                            console.log('[loginUser] Anahtar türetiliyor, iterasyon:', iter);
                             const derived = await deriveKey(password, saltBuf, iter);
-                            console.log('loginUser: Key derived, comparing hashes...');
-                            
+                            console.log('[loginUser] Anahtar türetildi, hash karşılaştırılıyor...');
                             if (!secureCompare(derived, expectedHash)) {
-                                // increment failed attempts and if >=3, force reset flow
                                 const failKey = 'failed_login_' + email;
                                 let attempts = parseInt(localStorage.getItem(failKey) || '0', 10) || 0;
                                 attempts += 1;
                                 localStorage.setItem(failKey, String(attempts));
-                                console.warn('loginUser: Wrong password attempt', attempts, 'for', email);
+                                console.warn('[loginUser] Yanlış şifre denemesi', attempts, 'kullanıcı:', email);
                                 if (attempts >= 3) {
-                                    // Reset attempts and open forced reset UI
                                     localStorage.removeItem(failKey);
                                     showToast('Parola 3 kez yanlış girildi. Parolanızı sıfırlamanız gerekiyor.', 'error');
-                                    // open auth modal and switch to reset UI
                                     openAuthModal();
                                     showForcedResetUI(email);
+                                    console.log('[loginUser ÇIKIŞ]');
                                     return;
                                 } else {
                                     showToast('Şifre yanlış! (' + attempts + '/3)', 'error');
+                                    console.log('[loginUser ÇIKIŞ]');
                                     return;
                                 }
                             } else {
-                                // successful login -> clear failed attempts
-                                const failKey = 'failed_login_' + email;
                                 localStorage.removeItem(failKey);
-                                console.log('loginUser: ✓ Password verification successful');
+                                console.log('[loginUser] ✓ Şifre doğrulama başarılı');
                             }
                         } catch (e) {
-                            console.error('loginUser: ⚠️ Password verification error', e);
-                            console.log('loginUser: Error details:', {
-                                name: e.name,
-                                message: e.message,
-                                stack: e.stack
-                            });
+                            console.error('[loginUser] Şifre doğrulama hatası', e);
                             showToast('Giriş sırasında bir hata oluştu. Lütfen tekrar deneyin veya destek ile iletişime geçin.', 'error');
+                            console.log('[loginUser ÇIKIŞ]');
                             return;
                         }
-
-                        console.log('loginUser: Saving current user session...');
-                        // store current user without sensitive fields
+                        console.log('[loginUser] Oturum kaydediliyor...');
                         const safeUser = { name: userData.name, email: userData.email };
                         
                         // MOBILE FIX: Try both localStorage and sessionStorage
@@ -2506,44 +2431,41 @@
                         // Try localStorage first
                         try {
                             localStorage.setItem('currentUser', JSON.stringify(safeUser));
-                            console.log('loginUser: ✓ Session saved to localStorage');
+                            console.log('[loginUser] ✓ Oturum localStorage kaydedildi');
                             sessionSaved = true;
                         } catch(e) {
-                            console.error('loginUser: ⚠️ localStorage session save error', e);
+                            console.error('[loginUser] localStorage oturum kaydetme hatası', e);
                         }
                         
                         // Always save to sessionStorage as fallback (especially for mobile)
                         try {
                             sessionStorage.setItem('currentUser', JSON.stringify(safeUser));
-                            console.log('loginUser: ✓ Session saved to sessionStorage');
+                            console.log('[loginUser] ✓ Oturum sessionStorage kaydedildi');
                             sessionSaved = true;
                         } catch(e) {
-                            console.error('loginUser: ⚠️ sessionStorage session save error', e);
+                            console.error('[loginUser] sessionStorage oturum kaydetme hatası', e);
                         }
                         
                         if (!sessionSaved) {
-                            console.error('loginUser: ⚠️ Could not save session to any storage');
+                            console.error('[loginUser] Hiçbir depolamaya oturum kaydedilemedi');
                             showToast('Oturum kaydedilemedi. Tarayıcınızın gizli modu devre dışı mı?', 'error');
                         }
                         
                         // update lastLogin remotely (best-effort)
                         try{ 
                             await commitFullUserToRepo({ ...userData, lastLogin: Date.now() }); 
-                            console.log('loginUser: ✓ lastLogin updated remotely');
+                            console.log('[loginUser] ✓ lastLogin uzaktan güncellendi');
                         }catch(e){
-                            console.warn('loginUser: Could not update lastLogin remotely', e);
+                            console.warn('[loginUser] lastLogin uzaktan güncellenemedi', e);
                         }
                         
-                        console.log('loginUser: ✓ LOGIN SUCCESS - updating UI');
+                        console.log('[loginUser] ✓ Giriş başarılı - UI güncelleniyor');
                         closeAuthModal();
                         updateUIAfterLogin(userData.name);
                         updateCartCount();
                         document.getElementById('loginEmail').value = '';
                         document.getElementById('loginPassword').value = '';
-                        
-                        console.log('loginUser: ========== LOGIN ATTEMPT END (SUCCESS) ==========');
-                        
-                        // Otomatik olarak hesap modalını aç
+                        console.log('[loginUser ÇIKIŞ]');
                         setTimeout(() => { openAccountModal(); }, 300);
                     }
 
@@ -4447,7 +4369,7 @@
                         }
                         window.addEventListener('beforeprint', normalizeAll);
                     })();
-                </script>
+                <!-- Removed stray </script> tag -->
 <script defer>
 // --- Order status: set to 'hazır' when invoice is generated ---
 async function updateOrderStatus(orderId, newStatus){
@@ -4475,6 +4397,7 @@ async function updateOrderStatus(orderId, newStatus){
             localStorage.setItem(key, JSON.stringify(list));
         }
     }catch(e){ /* ignore */ }
+}
 
 document.addEventListener('click', function(ev){
     const t = ev.target;
@@ -4496,6 +4419,7 @@ document.addEventListener('click', function(ev){
         }catch(e){ /* ignore */ }
     }
 });
+// --- Sipariş durumunu güncelleyen event listener sonu ---
 </script>
 <script defer>
 // --- Registration notifications: show single success, suppress duplicates ---
@@ -4521,57 +4445,76 @@ document.addEventListener('click', function(ev){
             lastAlert = { msg, ts: now };
         } catch(e){}
     };
-})();
-                el = document.getElementById('accountEmail');
-                const email = el ? el.value.trim() : '';
-                el = document.getElementById('accountName');
-                const name = el ? el.value.trim() : '';
-                const address = {
-                    city: (el=document.getElementById('accountCity')) ? el.value.trim() : '',
-                    district: (el=document.getElementById('accountDistrict')) ? el.value.trim() : '',
-                    neighborhood: (el=document.getElementById('accountNeighborhood')) ? el.value.trim() : '',
-                    addressDetail: (el=document.getElementById('accountAddressDetail')) ? el.value.trim() : '',
-                    postalCode: (el=document.getElementById('accountPostalCode')) ? el.value.trim() : '',
-                    isDefault: true
-                };
-                if (!email){ setStatus('Email bulunamadı. Lütfen giriş yapınız.'); return; }
-                setStatus('Kaydediliyor...');
 
-                // localStorage güncelle
-                try {
-                    const key = 'user_'+email;
-                    const curr = JSON.parse(localStorage.getItem(key)||'{}');
-                    curr.name = name || curr.name || '';
-                    curr.email = email;
-                    curr.address = address;
-                    curr.addresses = Array.isArray(curr.addresses) ? curr.addresses : [];
-                    const def = curr.addresses.find(a=>a&&a.isDefault);
-                    const defObj = Object.assign({ id:'default', title:'Varsayılan Adres', isDefault:true }, address);
-                    if (def) Object.assign(def, defObj); else curr.addresses.unshift(defObj);
-                    curr.updatedAt = Date.now();
-                    localStorage.setItem(key, JSON.stringify(curr));
-                    // currentUser eşitle
-                    const cu = JSON.parse(localStorage.getItem('currentUser')||'{}');
-                    cu.email = email; cu.name = name || cu.name || '';
-                    localStorage.setItem('currentUser', JSON.stringify(cu));
-                } catch(_){ }
-
-                // Sunucuya gönder ve GitHub'a yazdır
-                let endpoint = '/send-order';
-                try{ const s = await (await fetch('/site-settings.json',{cache:'no-store'})).json(); if (s && s.orderEndpoint) endpoint = s.orderEndpoint; }catch(_){}
-                endpoint = endpoint.replace(/\/send-order$/, '/update-user');
-                try {
-                    const resp = await fetch(endpoint, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email, name, address })
-                    });
-                    const data = await resp.json().catch(()=>null);
-                    if (resp.ok && data && data.commitOk){ setStatus('✅ Adres GitHub ile senkronize edildi.'); }
-                    else { setStatus('⚠️ Sunucu yanıtı: ' + (data?.commitError || resp.status)); }
-                } catch(e){ setStatus('❌ Hata: ' + e.message); }
-            });
-        }
-    })();
+// Adres kaydetme fonksiyonu ve wiring kodu
+function updateAddress() {
+    console.log('[updateAddress ENTRY - block 3]');
+    const statusEl = document.getElementById('accountStatus');
+    function setStatus(t){ if (statusEl) statusEl.textContent = t; }
+    let el = document.getElementById('accountEmail');
+    const email = el ? el.value.trim() : '';
+    el = document.getElementById('accountName');
+    const name = el ? el.value.trim() : '';
+    const address = {
+        city: (el=document.getElementById('accountCity')) ? el.value.trim() : '',
+        district: (el=document.getElementById('accountDistrict')) ? el.value.trim() : '',
+        neighborhood: (el=document.getElementById('accountNeighborhood')) ? el.value.trim() : '',
+        addressDetail: (el=document.getElementById('accountAddressDetail')) ? el.value.trim() : '',
+        postalCode: (el=document.getElementById('accountPostalCode')) ? el.value.trim() : '',
+        isDefault: true
+    };
+    if (!email){
+        console.log('[updateAddress] Email bulunamadı, çıkılıyor (block 3)');
+        setStatus('Email bulunamadı. Lütfen giriş yapınız.');
+        console.log('[updateAddress EXIT - block 3]');
+        return;
+    }
+    setStatus('Kaydediliyor...');
+    try {
+        const key = 'user_'+email;
+        const curr = JSON.parse(localStorage.getItem(key)||'{}');
+        curr.name = name || curr.name || '';
+        curr.email = email;
+        curr.address = address;
+        curr.addresses = Array.isArray(curr.addresses) ? curr.addresses : [];
+        const def = curr.addresses.find(a=>a&&a.isDefault);
+        const defObj = Object.assign({ id:'default', title:'Varsayılan Adres', isDefault:true }, address);
+        if (def) Object.assign(def, defObj); else curr.addresses.unshift(defObj);
+        curr.updatedAt = Date.now();
+        localStorage.setItem(key, JSON.stringify(curr));
+        // currentUser eşitle
+        const cu = JSON.parse(localStorage.getItem('currentUser')||'{}');
+        cu.email = email; cu.name = name || cu.name || '';
+        localStorage.setItem('currentUser', JSON.stringify(cu));
+        console.log('[updateAddress TRY EXIT - block 3]');
+    } catch(e){
+        console.error('[updateAddress ERROR - block 3]', e);
+    }
+    // Sunucuya gönder ve GitHub'a yazdır
+    let endpoint = '/send-order';
+    fetch('/site-settings.json',{cache:'no-store'})
+        .then(response => response.json())
+        .then(s => { if (s && s.orderEndpoint) endpoint = s.orderEndpoint; })
+        .finally(() => {
+            endpoint = endpoint.replace(/\/send-order$/, '/update-user');
+            fetch(endpoint, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, name, address })
+            })
+            .then(resp => resp.json().then(data => {
+                if (resp.ok && data && data.commitOk){ setStatus('✅ Adres GitHub ile senkronize edildi.'); }
+                else { setStatus('⚠️ Sunucu yanıtı: ' + (data && data.commitError ? data.commitError : resp.status)); }
+            }))
+            .catch(e => setStatus('❌ Hata: ' + e.message));
+        });
+    console.log('[updateAddress EXIT - block 3]');
+}
+document.addEventListener('DOMContentLoaded', function() {
+    var saveBtn = document.getElementById('saveAddressBtn');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', updateAddress);
+    }
+});
 
     // İl/İlçe/Mahalle dinamik yükleme sistemi
     (function(){
@@ -4661,29 +4604,7 @@ document.addEventListener('click', function(ev){
             <div class="form-group">
                 <label for="loginPassword">Şifre</label>
                 <input type="password" id="loginPassword" placeholder="Şifreniz">
-                <script>
-                    document.addEventListener('DOMContentLoaded', function() {
-                        var pwInput = document.getElementById('loginPassword');
-                        var loginBtn = document.querySelector('[data-action="login"]');
-                        if (pwInput && loginBtn) {
-                            pwInput.addEventListener('keydown', function(e) {
-                                if (e.key === 'Enter') {
-                                    loginBtn.click();
-                                }
-                            });
-                        }
-                        // Kayıt formunda da Enter ile kayıt olabilsin
-                        var regPwInput = document.getElementById('registerPassword2');
-                        var regBtn = document.querySelector('[data-action="register"]');
-                        if (regPwInput && regBtn) {
-                            regPwInput.addEventListener('keydown', function(e) {
-                                if (e.key === 'Enter') {
-                                    regBtn.click();
-                                }
-                            });
-                        }
-                    });
-                </script>
+                <!-- Removed stray JS block closure -->
             </div>
             <button data-action="login" style="width: 100%; margin-top: 1rem;">Giriş Yap</button>
         </div>
@@ -4705,6 +4626,7 @@ document.addEventListener('click', function(ev){
                 <div id="registerPhoneHint" style="font-size:0.8rem;color:#6b7280;margin-top:4px">Örnek: +90 530 000 00 00</div>
             </div>
             <div class="form-group">
-</div>
-</body>
-</html>
+                </div>
+            </div>
+    </body>
+    </html>
