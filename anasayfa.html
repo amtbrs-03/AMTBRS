@@ -836,24 +836,22 @@
                                 const img = document.getElementById('productLightboxImg');
                                 const nameEl = document.getElementById('lightboxName');
                                 const priceEl = document.getElementById('lightboxPrice');
-                                if(!productImages[idx]) return;
-                                // Görseli göster: arka plan görseli varsa onu, emoji/text ise onu göster
+                                // Sadece tıklanan ürün kartındaki görselleri göster
                                 let el = productImages[idx];
-                                let bg = el.style.backgroundImage;
-                                // Önce eski emoji/text elemanını temizle
-                                let wrap = document.getElementById('lightboxImgWrap');
-                                let oldEmoji = document.getElementById('lightboxEmoji');
-                                if (oldEmoji && wrap.contains(oldEmoji)) wrap.removeChild(oldEmoji);
-                                if(bg && bg !== 'none') {
-                                    // Arka plan görseli varsa
-                                    let url = bg.replace(/^url\(["']?|["']?\)$/g, '').replace(/url\(["']?|["']?\)/g, '').replace(/"/g, '').replace(/'/g, '');
-                                    img.src = url;
-                                    img.style.display = '';
-                                    img.alt = 'Ürün görseli';
-                                } else {
-                                    // Emoji/text ise
-                                    img.src = '';
-                                    img.style.display = 'none';
+                                let card = el.closest('.product-card');
+                                let imagesArr = [];
+                                if (card && card.dataset.images) {
+                                    try {
+                                        imagesArr = JSON.parse(card.dataset.images);
+                                    } catch(e) { imagesArr = []; }
+                                } else if (card && card.querySelector('img')) {
+                                    imagesArr = [card.querySelector('img').src];
+                                }
+                                if (imagesArr.length === 0) {
+                                    // Hiç görsel yoksa emoji/text göster
+                                    let wrap = document.getElementById('lightboxImgWrap');
+                                    let oldEmoji = document.getElementById('lightboxEmoji');
+                                    if (oldEmoji && wrap.contains(oldEmoji)) wrap.removeChild(oldEmoji);
                                     let emoji = el.textContent || '';
                                     let emojiEl = document.createElement('div');
                                     emojiEl.id = 'lightboxEmoji';
@@ -866,11 +864,16 @@
                                     emojiEl.style.justifyContent = 'center';
                                     emojiEl.textContent = emoji;
                                     wrap.appendChild(emojiEl);
+                                    img.style.display = 'none';
+                                } else {
+                                    // Görselleri göster
+                                    let wrap = document.getElementById('lightboxImgWrap');
+                                    let oldEmoji = document.getElementById('lightboxEmoji');
+                                    if (oldEmoji && wrap.contains(oldEmoji)) wrap.removeChild(oldEmoji);
+                                    img.style.display = '';
+                                    img.src = imagesArr[0];
+                                    img.alt = 'Ürün görseli';
                                 }
-                                // Diğer durumda emoji/text gizle
-                                let emojiEl = document.getElementById('lightboxEmoji');
-                                if(emojiEl && bg && bg !== 'none') emojiEl.style.display = 'none';
-                                let card = el.closest('.product-card');
                                 let name = card ? card.querySelector('.product-name')?.textContent : '';
                                 let price = card ? card.querySelector('.product-price')?.textContent : '';
                                 nameEl.textContent = name || '';
@@ -883,6 +886,9 @@
                                         let maxH = Math.min(cardRect.height, window.innerHeight * 0.7);
                                         lb.style.maxWidth = maxW + 'px';
                                         lb.style.maxHeight = maxH + 'px';
+                                        lb.style.position = 'absolute';
+                                        lb.style.top = cardRect.top + window.scrollY + 'px';
+                                        lb.style.left = cardRect.left + window.scrollX + 'px';
                                         let imgEl = document.getElementById('productLightboxImg');
                                         if (imgEl) {
                                             imgEl.style.maxWidth = maxW + 'px';
@@ -891,6 +897,10 @@
                                     } else {
                                         lb.style.maxWidth = '96vw';
                                         lb.style.maxHeight = '70vh';
+                                        lb.style.position = 'absolute';
+                                        lb.style.top = '50%';
+                                        lb.style.left = '50%';
+                                        lb.style.transform = 'translate(-50%, -50%)';
                                         let imgEl = document.getElementById('productLightboxImg');
                                         if (imgEl) {
                                             imgEl.style.maxWidth = '96vw';
@@ -900,6 +910,10 @@
                                 } else {
                                     lb.style.maxWidth = '96vw';
                                     lb.style.maxHeight = '70vh';
+                                    lb.style.position = 'absolute';
+                                    lb.style.top = '0';
+                                    lb.style.left = '0';
+                                    lb.style.transform = '';
                                     let imgEl = document.getElementById('productLightboxImg');
                                     if (imgEl) {
                                         imgEl.style.maxWidth = '96vw';
