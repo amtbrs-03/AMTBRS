@@ -1150,7 +1150,10 @@
                             <div class="form-group">
                                 <label>Email</label>
                                 <input type="email" id="registerEmail" placeholder="Email adresiniz">
-                                <input type="tel" id="registerPhone" placeholder="Telefon numaranız" pattern="^\+?\d[\d\s()-]{7,}$" aria-describedby="registerPhoneHint">
+                            </div>
+                            <div class="form-group">
+                                <label>Telefon Numarası</label>
+                                <input type="tel" id="registerPhone" placeholder="Telefon numaranız" pattern="^\+?\d[\d\s()-]{7,}$" aria-describedby="registerPhoneHint" oninput="formatPhoneInput(this)">
                                 <div id="registerPhoneHint" style="font-size:0.8rem;color:#6b7280;margin-top:4px">Örnek: +90 530 000 00 00</div>
                             </div>
                             <div class="form-group">
@@ -1254,11 +1257,13 @@
                                 </div>
                                 <div class="form-group">
                                     <label>İlçe</label>
-                                    <input type="text" id="registerDistrict" placeholder="İlçe" style="width:100%; padding:0.8rem; border:1px solid rgba(10,12,30,0.1); border-radius:8px; font-size:1rem;">
+                                    <select id="registerDistrict" style="width:100%; padding:0.8rem; border:1px solid rgba(10,12,30,0.1); border-radius:8px; font-size:1rem; background:white; cursor:pointer;">
+                                        <option value="">Önce il seçiniz</option>
+                                    </select>
                                 </div>
                                 <div class="form-group">
                                     <label>Mahalle</label>
-                                    <input type="text" id="registerNeighborhood" placeholder="Mahalle" style="width:100%; padding:0.8rem; border:1px solid rgba(10,12,30,0.1); border-radius:8px; font-size:1rem;">
+                                    <input type="text" id="registerNeighborhood" placeholder="Mahalle adı giriniz" style="width:100%; padding:0.8rem; border:1px solid rgba(10,12,30,0.1); border-radius:8px; font-size:1rem;">
                                 </div>
                                 <div class="form-group">
                                     <label>Adres Detayı</label>
@@ -2095,33 +2100,42 @@
                         
                         // GitHub'a tam kullanıcı verisiyle kaydet (Contents API) - ZORUNLU
                         console.log('registerUser: GitHub içeriklerine kaydediliyor...');
+                        let remoteSuccess = false;
                         try{
-                            const remoteSuccess = await commitFullUserToRepo(stored);
+                            remoteSuccess = await commitFullUserToRepo(stored);
                             if (remoteSuccess) {
                                 console.log('registerUser: ✓ GitHub kaydı başarılı');
+                                // Kayıt başarılı - giriş yapabilir
+                                alert('✅ Kayıt başarıyla tamamlandı!\n\nBilgileriniz güvenli bir şekilde kaydedildi.\nŞimdi giriş yapabilirsiniz.');
+                                switchTab('login', document.querySelector('.form-tab'));
+                                document.getElementById('loginEmail').value = email;
+                                return;
                             } else {
                                 console.error('registerUser: GitHub kayıt başarısız oldu');
-                                alert('Kayıt sırasında bir hata oluştu. Lütfen internet bağlantınızı kontrol edip tekrar deneyin.');
+                                alert('❌ Kayıt başarısız oldu!\n\nSunucuya bağlanılamadı veya kayıt işlemi tamamlanamadı.\n\nLütfen:\n- İnternet bağlantınızı kontrol edin\n- Birkaç dakika bekleyip tekrar deneyin\n- Sorun devam ederse destek ile iletişime geçin');
                                 return;
                             }
                         }catch(e){
                             console.error('registerUser: GitHub kayıt hatası', e);
-                            alert('Kayıt sırasında bir hata oluştu: ' + (e.message || 'Bilinmeyen hata') + '. Lütfen internet bağlantınızı kontrol edip tekrar deneyin.');
+                            const errorMsg = e.message || 'Bilinmeyen hata';
+                            let userFriendlyMsg = '❌ Kayıt sırasında hata oluştu!\n\n';
+                            
+                            // Hata tipine göre özelleştirilmiş mesajlar
+                            if (errorMsg.includes('network') || errorMsg.includes('fetch')) {
+                                userFriendlyMsg += 'Ağ bağlantısı hatası tespit edildi.\n\nLütfen internet bağlantınızı kontrol edin ve tekrar deneyin.';
+                            } else if (errorMsg.includes('401') || errorMsg.includes('403')) {
+                                userFriendlyMsg += 'Yetkilendirme hatası.\n\nSistem geçici olarak kullanılamıyor olabilir.\nLütfen daha sonra tekrar deneyin.';
+                            } else if (errorMsg.includes('422') || errorMsg.includes('409')) {
+                                userFriendlyMsg += 'Bu email adresi zaten kayıtlı olabilir.\n\nLütfen giriş yapmayı deneyin veya farklı bir email kullanın.';
+                            } else if (errorMsg.includes('500') || errorMsg.includes('503')) {
+                                userFriendlyMsg += 'Sunucu geçici olarak hizmet veremiyor.\n\nLütfen birkaç dakika bekleyip tekrar deneyin.';
+                            } else {
+                                userFriendlyMsg += 'Teknik Hata: ' + errorMsg + '\n\nLütfen daha sonra tekrar deneyin veya destek ile iletişime geçin.';
+                            }
+                            
+                            alert(userFriendlyMsg);
                             return;
                         }
-                        
-                        // Tek bildirim göster
-                        alert('Kayıt başarılı! Şimdi giriş yapabilirsiniz.');
-                        switchTab('login', document.querySelector('.form-tab'));
-                        document.getElementById('registerName').value = '';
-                        document.getElementById('registerEmail').value = '';
-                        document.getElementById('registerPassword').value = '';
-                        document.getElementById('registerPassword2').value = '';
-                        document.getElementById('registerCity').value = '';
-                        document.getElementById('registerDistrict').value = '';
-                        document.getElementById('registerNeighborhood').value = '';
-                        document.getElementById('registerAddressDetail').value = '';
-                        document.getElementById('registerPostalCode').value = '';
                     }
 
                     async function loginUser() {
@@ -2548,8 +2562,41 @@
                             return false;
                         }
                         console.log('commitFullUserToRepo: başlıyor →', userRecord.email);
-                        // Client-side direct commit disabled; use Worker instead
-                        return false;
+                        
+                        // Worker endpoint'ine kullanıcı kaydını gönder
+                        try {
+                            const workerUrl = 'https://ern-site.amtbrs-03.workers.dev/update-user';
+                            console.log('commitFullUserToRepo: Worker endpoint çağrılıyor:', workerUrl);
+                            
+                            const response = await fetch(workerUrl, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(userRecord)
+                            });
+                            
+                            console.log('commitFullUserToRepo: Worker yanıtı:', response.status);
+                            
+                            if (response.ok) {
+                                const result = await response.json();
+                                console.log('commitFullUserToRepo: Worker sonucu:', result);
+                                
+                                if (result.commitOk) {
+                                    console.log('commitFullUserToRepo: ✓ GitHub kaydı başarılı');
+                                    return true;
+                                } else {
+                                    console.error('commitFullUserToRepo: Worker commitOk=false:', result.commitError);
+                                    return false;
+                                }
+                            } else {
+                                console.error('commitFullUserToRepo: Worker HTTP hatası:', response.status);
+                                return false;
+                            }
+                        } catch (error) {
+                            console.error('commitFullUserToRepo: Worker çağrı hatası:', error);
+                            return false;
+                        }
                     }
                     
                     // Kullanıcı kaydını uzak repodan getir (raw/CDN + Contents API yedekli)
@@ -4297,5 +4344,77 @@ document.addEventListener('click', function(ev){
             } catch(e){ setStatus('❌ Hata: ' + e.message); }
         });
     })();
+
+    // İl/İlçe/Mahalle dinamik yükleme sistemi
+    (function(){
+        // Türkiye illeri ve ilçeleri (kompakt veri - en çok kullanılan iller)
+        const cityData = {
+            "İstanbul": ["Adalar","Arnavutköy","Ataşehir","Avcılar","Bağcılar","Bahçelievler","Bakırköy","Başakşehir","Bayrampaşa","Beşiktaş","Beykoz","Beylikdüzü","Beyoğlu","Büyükçekmece","Çatalca","Çekmeköy","Esenler","Esenyurt","Eyüpsultan","Fatih","Gaziosmanpaşa","Güngören","Kadıköy","Kağıthane","Kartal","Küçükçekmece","Maltepe","Pendik","Sancaktepe","Sarıyer","Silivri","Sultanbeyli","Sultangazi","Şile","Şişli","Tuzla","Ümraniye","Üsküdar","Zeytinburnu"],
+            "Ankara": ["Akyurt","Altındağ","Ayaş","Balâ","Beypazarı","Çamlıdere","Çankaya","Çubuk","Elmadağ","Etimesgut","Evren","Gölbaşı","Güdül","Haymana","Kahramankazan","Kalecik","Keçiören","Kızılcahamam","Mamak","Nallıhan","Polatlı","Pursaklar","Sincan","Şereflikoçhisar","Yenimahalle"],
+            "İzmir": ["Aliağa","Balçova","Bayındır","Bayraklı","Bergama","Beydağ","Bornova","Buca","Çeşme","Çiğli","Dikili","Foça","Gaziemir","Güzelbahçe","Karabağlar","Karaburun","Karşıyaka","Kemalpaşa","Kınık","Kiraz","Konak","Menderes","Menemen","Narlıdere","Ödemiş","Seferihisar","Selçuk","Tire","Torbalı","Urla"],
+            "Adana": ["Aladağ","Ceyhan","Çukurova","Feke","İmamoğlu","Karaisalı","Karataş","Kozan","Pozantı","Saimbeyli","Sarıçam","Seyhan","Tufanbeyli","Yumurtalık","Yüreğir"],
+            "Bursa": ["Büyükorhan","Gemlik","Gürsu","Harmancık","İnegöl","İznik","Karacabey","Keles","Kestel","Mudanya","Mustafakemalpaşa","Nilüfer","Orhaneli","Orhangazi","Osmangazi","Yenişehir","Yıldırım"],
+            "Antalya": ["Akseki","Alanya","Aksu","Demre","Döşemealtı","Elmalı","Finike","Gazipaşa","Gündoğmuş","İbradı","Kaş","Kemer","Kepez","Konyaaltı","Korkuteli","Kumluca","Manavgat","Muratpaşa","Serik"]
+        };
+
+        const districtSelect = document.getElementById('registerDistrict');
+        const citySelect = document.getElementById('registerCity');
+
+        if (!citySelect || !districtSelect) return;
+
+        // İl seçildiğinde ilçeleri yükle
+        citySelect.addEventListener('change', function(){
+            const city = this.value;
+            districtSelect.innerHTML = '<option value="">İlçe Seçiniz</option>';
+            
+            if (city && cityData[city]) {
+                cityData[city].forEach(district => {
+                    const opt = document.createElement('option');
+                    opt.value = district;
+                    opt.textContent = district;
+                    districtSelect.appendChild(opt);
+                });
+            } else if (city) {
+                // Listede olmayan iller için manuel giriş opsiyonu
+                const opt = document.createElement('option');
+                opt.value = "";
+                opt.textContent = "İlçe adını manuel yazınız";
+                districtSelect.appendChild(opt);
+            }
+        });
+    })();
+
+    // Telefon numarasına otomatik +90 ön eki ekle
+    function formatPhoneInput(input) {
+        let value = input.value.replace(/\D/g, ''); // Sadece rakamları al
+        
+        // Eğer boşsa, sıfırla
+        if (!value) {
+            input.value = '';
+            return;
+        }
+        
+        // Türk numarası kontrolü: 5XX veya 90 ile başlaması gerekir
+        if (value.startsWith('90')) {
+            value = value.substring(2); // 90 başındaysa, çıkar
+        } else if (value.startsWith('0')) {
+            value = value.substring(1); // 0 ile başlıyorsa, çıkar
+        }
+        
+        // +90 ön eki ekle ve formatla
+        if (value.length > 0) {
+            if (value.length >= 10) {
+                value = value.substring(0, 10); // Max 10 rakam
+            }
+            // Format: +90 5XX XXX XXXX
+            if (value.length <= 3) {
+                input.value = '+90 ' + value;
+            } else if (value.length <= 6) {
+                input.value = '+90 ' + value.substring(0, 3) + ' ' + value.substring(3);
+            } else {
+                input.value = '+90 ' + value.substring(0, 3) + ' ' + value.substring(3, 6) + ' ' + value.substring(6);
+            }
+        }
+    }
     </script>
 </html>
