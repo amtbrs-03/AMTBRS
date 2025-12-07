@@ -4245,80 +4245,75 @@ document.addEventListener('click', function(ev){
     let lastAlert = { msg: null, ts: 0 };
     let suppressUntil = 0;
 
-    window.alert = function(msg){
-        try{
-            const now = Date.now();
-            // If we recently showed success, suppress other alerts for 5s
-            if (now < suppressUntil){
-                if (String(msg).toLowerCase().includes('kayıt başarılı')){
-                    // allow one success within window if not duplicate
-                    if (lastAlert.msg === msg && (now - lastAlert.ts) < 3000) return;
-                } else {
-                    return; // suppress non-success alerts
-                }
-            }
-            // Deduplicate identical alerts within 3s
-            if (lastAlert.msg === msg && (now - lastAlert.ts) < 3000) return;
-            lastAlert = { msg, ts: now };
-            originalAlert(msg);
-        }catch(e){ originalAlert(msg); }
-    };
-
-    // Intercept register action to set suppression window and ensure one success
-    document.addEventListener('click', function(ev){
-        const t = ev.target;
-        if (!t) return;
-        const action = t.getAttribute && t.getAttribute('data-action');
-        if (action === 'register'){
-            // start a short suppression window to avoid multiple alerts
-            suppressUntil = Date.now() + 5000;
-            // close auth modal after brief delay to avoid overlapping UI alerts
-            setTimeout(function(){
-                try{ document.getElementById('authModal').style.display = 'none'; }catch(e){}
-            }, 300);
+    let productImages = [];
+    let currentIndex = 0;
+    function isMobile(){ return window.innerWidth <= 700; }
+    function openLightbox(idx){
+        // Her açılışta productImages dizisini güncelle
+        productImages = Array.from(document.querySelectorAll('.product-image'));
+        const lb = document.getElementById('productLightbox');
+        const img = document.getElementById('lightboxImg');
+        const nameEl = document.getElementById('lightboxName');
+        const priceEl = document.getElementById('lightboxPrice');
+        if(!productImages[idx]) return;
+        // Önce eski emoji/text'i temizle
+        let wrap = document.getElementById('lightboxImgWrap');
+        let oldEmoji = document.getElementById('lightboxEmoji');
+        if(oldEmoji) wrap.removeChild(oldEmoji);
+        // Görseli göster: arka plan görseli varsa onu, emoji/text ise onu göster
+        let el = productImages[idx];
+        let bg = el.style.backgroundImage;
+        if(bg && bg !== 'none') {
+            let url = bg.replace(/^url\(["']?|["']?\)$/g, '').replace(/url\(["']?|["']?\)/g, '').replace(/"/g, '').replace(/'/g, '');
+            img.src = url;
+            img.style.display = '';
+            img.alt = 'Ürün görseli';
+        } else {
+            img.src = '';
+            img.style.display = 'none';
+            let emoji = el.textContent || '';
+            let emojiEl = document.createElement('div');
+            emojiEl.id = 'lightboxEmoji';
+            emojiEl.style.fontSize = '5rem';
+            emojiEl.style.textAlign = 'center';
+            emojiEl.style.width = '100%';
+            emojiEl.style.height = '70vh';
+            emojiEl.style.display = 'flex';
+            emojiEl.style.alignItems = 'center';
+            emojiEl.style.justifyContent = 'center';
+            emojiEl.textContent = emoji;
+            wrap.appendChild(emojiEl);
         }
-    });
-})();
-</script>
-</body>
-    <script>
-    // Hesap panelini aç ve alanları doldur
-    (function(){
-        const tabs = document.querySelectorAll('.form-tabs .form-tab');
-        function switchTab(to){
-            document.querySelectorAll('.form-content').forEach(el=>el.classList.remove('active'));
-            const target = document.getElementById(to);
-            if (target) target.classList.add('active');
-            tabs.forEach(b=>b.classList.toggle('active', b.getAttribute('data-tab')===to));
-        }
-        document.querySelector('[data-action="open-account"]').addEventListener('click', function(){
-            const modal = document.getElementById('authModal');
-            modal.style.display = 'block';
-            switchTab('account');
-            // doldur
-            let cu = null; try{ cu = JSON.parse(localStorage.getItem('currentUser')||'null'); }catch(_){}
-            const email = cu?.email || '';
-            const name = cu?.name || '';
-            const fullStr = email ? localStorage.getItem('user_'+email) : null;
-            let full = null; try { full = fullStr ? JSON.parse(fullStr) : null; } catch(_){}
-            document.getElementById('accountEmail').value = email;
-            document.getElementById('accountName').value = name || full?.name || '';
-            const addr = (full?.addresses && full.addresses[0]) || full?.address || {};
-            document.getElementById('accountCity').value = addr.city || addr.il || '';
-            document.getElementById('accountDistrict').value = addr.district || addr.ilce || '';
-            document.getElementById('accountNeighborhood').value = addr.neighborhood || addr.mahalle || '';
-            document.getElementById('accountAddressDetail').value = addr.addressDetail || addr.street || '';
-            document.getElementById('accountPostalCode').value = addr.postalCode || addr.zip || '';
-        });
-
-        // Kaydet ve GitHub ile senkronize et
-        document.getElementById('accountSaveBtn').addEventListener('click', async function(){
-            const statusEl = document.getElementById('accountStatus');
-            function setStatus(t){ statusEl.textContent = t; }
-            const email = document.getElementById('accountEmail').value.trim();
-            const name = document.getElementById('accountName').value.trim();
-            const address = {
-                city: document.getElementById('accountCity').value.trim(),
+        let card = el.closest('.product-card');
+        let name = card ? card.querySelector('.product-name')?.textContent : '';
+        let price = card ? card.querySelector('.product-price')?.textContent : '';
+        nameEl.textContent = name || '';
+        priceEl.textContent = price || '';
+        lb.classList.remove('hidden');
+        lb.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        currentIndex = idx;
+        // Mobilde tam ekran modunu dene
+        try {
+            if(isMobile() && lb.requestFullscreen){ lb.requestFullscreen(); }
+            else if(isMobile() && lb.webkitRequestFullscreen){ lb.webkitRequestFullscreen(); }
+        } catch(e){}
+    }
+    function closeLightbox(){
+        const lb = document.getElementById('productLightbox');
+        lb.classList.add('hidden');
+        lb.style.display = 'none';
+        document.body.style.overflow = '';
+        // Emoji/text'i de gizle
+        let wrap = document.getElementById('lightboxImgWrap');
+        let oldEmoji = document.getElementById('lightboxEmoji');
+        if(oldEmoji) wrap.removeChild(oldEmoji);
+        // Tam ekrandan çık
+        try {
+            if(document.fullscreenElement && document.exitFullscreen){ document.exitFullscreen(); }
+            else if(document.webkitFullscreenElement && document.webkitExitFullscreen){ document.webkitExitFullscreen(); }
+        } catch(e){}
+    }
                 district: document.getElementById('accountDistrict').value.trim(),
                 neighborhood: document.getElementById('accountNeighborhood').value.trim(),
                 addressDetail: document.getElementById('accountAddressDetail').value.trim(),
