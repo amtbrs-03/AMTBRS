@@ -49,15 +49,6 @@ function testSaveUserPhone() {
   }
 }
 testSaveUserPhone();
-    return Promise.resolve({
-      ok: true,
-      json: () => Promise.resolve({ success: true, url, opts })
-    });
-  };
-}
-if (typeof window === 'undefined') {
-  global.window = {};
-}
 
 if (typeof window.alert !== 'function') {
   window.alert = function(msg) {
