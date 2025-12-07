@@ -216,14 +216,14 @@
             position: relative;
             transform-style: preserve-3d;
                         align-items: center;
-                        min-width: 0;
+                        
             perspective: 800px;
             background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
         }
         .logo-icon { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; }
         .logo-icon svg{ display:block; width:28px; height:28px; filter: drop-shadow(0 6px 10px rgba(3,37,18,0.06)); transform: translateZ(6px); animation: floatLogo 6s ease-in-out infinite; }
         @keyframes floatLogo { 0% { transform: translateZ(6px) translateY(0) rotateZ(0deg); } 50% { transform: translateZ(8px) translateY(-4px) rotateZ(-2deg); } 100% { transform: translateZ(6px) translateY(0) rotateZ(0deg); } }
-                        min-width: 0;
+                        
         .logo-text { font-size: 1.05rem; font-weight: 800; letter-spacing: 0.4px; display:inline-block; line-height:1; background-image: linear-gradient(90deg, #ffffff 0%, #d4fff0 45%, #b8f4c9 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 10px 18px rgba(3,37,18,0.18), 0 2px 6px rgba(0,0,0,0.08); transition: transform 220ms cubic-bezier(.2,.9,.2,1), text-shadow 220ms; transform: translateZ(0); }
         .logo:hover .logo-text{ transform: translateY(-4px) rotateX(6deg) scale(1.02); text-shadow: 0 20px 30px rgba(3,37,18,0.22); }
         .nav-links { list-style: none; display: flex; gap: 1.5rem; align-items: center; }
@@ -251,7 +251,7 @@
         .auth-btn:hover { background: #a2444b; }
         .user-info { color: rgba(255,255,255,0.9); }
 
-                        display: inline-block;
+                        
         .cart-btn {
                     .cart-btn, .auth-btn {
                         font-size: 0.8rem;
@@ -931,160 +931,175 @@
     </style>
   </head>
   <body>
-                                <script>
-                                // Mobilde scroll ile header ve başlıkları bulanıklaştır
-                                (function(){
-                                    function isMobile(){ return window.innerWidth <= 700; }
-                                    // Başlık yüksekliğini ölç ve body'ye üst boşluk uygula
-                                    function applyMobileHeaderOffset(){
-                                        var body = document.body;
-                                        var header = document.querySelector('header');
-                                        if(!isMobile()){
-                                            body.classList.remove('mobile-header-offset');
-                                            body.style.setProperty('--mobile-header-h','');
-                                            return;
-                                        }
-                                        if(!header){ return; }
-                                        // Reflow sonrası gerçek yükseklik
-                                        var h = header.offsetHeight || 72;
-                                        body.style.setProperty('--mobile-header-h', h + 'px');
-                                        body.classList.add('mobile-header-offset');
-                                    }
+    <script>
+    // Mobilde scroll ile header ve başlıkları bulanıklaştır
+    (function(){
+        function isMobile(){ return window.innerWidth <= 700; }
+        // Başlık yüksekliğini ölç ve body'ye üst boşluk uygula
+        function applyMobileHeaderOffset(){
+            var body = document.body;
+            var header = document.querySelector('header');
+            console.log('[applyMobileHeaderOffset] header:', header);
+            if(!isMobile()){
+                body.classList.remove('mobile-header-offset');
+                body.style.setProperty('--mobile-header-h','');
+                return;
+            }
+            if(!header){ console.warn('[applyMobileHeaderOffset] header not found'); return; }
+            // Reflow sonrası gerçek yükseklik
+            var h = header.offsetHeight || 72;
+            body.style.setProperty('--mobile-header-h', h + 'px');
+            body.classList.add('mobile-header-offset');
+            console.log('[applyMobileHeaderOffset] applied height:', h);
+        }
 
-                                    function onScroll(){
-                                        var header = document.querySelector('header');
-                                        var productsHeader = document.querySelector('.products-header');
-                                        if(isMobile()){
-                                            var scrolled = (window.scrollY||0) > 24;
-                                            if(header) header.classList.toggle('blurred', scrolled);
-                                            if(productsHeader) productsHeader.classList.toggle('blurred', scrolled);
-                                        } else {
-                                            if(header) header.classList.remove('blurred');
-                                            if(productsHeader) productsHeader.classList.remove('blurred');
-                                        }
-                                    }
+        function onScroll(){
+            var header = document.querySelector('header');
+            var productsHeader = document.querySelector('.products-header');
+            if(isMobile()){
+                var scrolled = (window.scrollY||0) > 24;
+                if(header) header.classList.toggle('blurred', scrolled);
+                if(productsHeader) productsHeader.classList.toggle('blurred', scrolled);
+                console.log('[onScroll] mobile, scrolled:', scrolled);
+            } else {
+                if(header) header.classList.remove('blurred');
+                if(productsHeader) productsHeader.classList.remove('blurred');
+                console.log('[onScroll] desktop, no blur');
+            }
+        }
 
-                                    function onResize(){
-                                        applyMobileHeaderOffset();
-                                        onScroll();
-                                    }
+        function onResize(){
+            console.log('[onResize]');
+            applyMobileHeaderOffset();
+            onScroll();
+        }
 
-                                    window.addEventListener('scroll', onScroll, { passive: true });
-                                    window.addEventListener('resize', onResize);
-                                    document.addEventListener('DOMContentLoaded', function(){
-                                        applyMobileHeaderOffset();
-                                        onScroll();
-                                    });
-                                })();
-                                </script>
-                        <!-- Ürün görseli lightbox/modal (mobil uyumlu, header/nav üstte kalır) -->
-                        <div id="productLightbox" class="hidden" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(10,12,30,0.92);z-index:9999;display:none;align-items:center;justify-content:center;transition:opacity 0.3s;">
-                            <button id="lightboxClose" style="position:absolute;top:18px;right:18px;background:#fff;color:#222;border-radius:50%;width:44px;height:44px;font-size:2rem;border:none;box-shadow:0 2px 12px rgba(0,0,0,0.18);z-index:10001;cursor:pointer;">✖</button>
-                            <button id="lightboxPrev" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);background:#fff;color:#222;border-radius:50%;width:44px;height:44px;font-size:2rem;border:none;box-shadow:0 2px 12px rgba(0,0,0,0.18);z-index:10001;cursor:pointer;">◀</button>
-                            <button id="lightboxNext" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:#fff;color:#222;border-radius:50%;width:44px;height:44px;font-size:2rem;border:none;box-shadow:0 2px 12px rgba(0,0,0,0.18);z-index:10001;cursor:pointer;">▶</button>
-                            <div id="lightboxImgWrap" style="max-width:96vw;max-height:70vh;display:flex;align-items:center;justify-content:center;">
-                                <img id="lightboxImg" src="" alt="Ürün görseli" style="max-width:96vw;max-height:70vh;border-radius:18px;box-shadow:0 8px 32px rgba(0,0,0,0.28);background:#fff;object-fit:contain;" />
-                            </div>
-                            <div id="lightboxMeta" style="width:100%;text-align:center;margin-top:1.2rem;color:#fff;">
-                                <div id="lightboxName" style="font-size:1.15rem;font-weight:700;"></div>
-                                <div id="lightboxPrice" style="font-size:1.05rem;font-weight:600;opacity:0.85;"></div>
-                            </div>
-                        </div>
-                        <script>
-                        // Ürün görseli lightbox/modal fonksiyonu (mobilde tam ekran FullScreen API ile)
-                        (function(){
-                            let productImages = [];
-                            let currentIndex = 0;
-                            function isMobile(){ return window.innerWidth <= 700; }
-                            function openLightbox(idx){
-                                const lb = document.getElementById('productLightbox');
-                                const img = document.getElementById('lightboxImg');
-                                const nameEl = document.getElementById('lightboxName');
-                                const priceEl = document.getElementById('lightboxPrice');
-                                if(!productImages[idx]) return;
-                                img.src = productImages[idx].src;
-                                // Ürün adı ve fiyatı
-                                let card = productImages[idx].closest('.product-card');
-                                let name = card ? card.querySelector('.product-name')?.textContent : '';
-                                let price = card ? card.querySelector('.product-price')?.textContent : '';
-                                nameEl.textContent = name || '';
-                                priceEl.textContent = price || '';
-                                lb.classList.remove('hidden');
-                                lb.style.display = 'flex';
-                                lb.style.opacity = '1';
-                                document.body.style.overflow = 'hidden';
-                                currentIndex = idx;
-                                // Mobilde tam ekran modunu dene
-                                if(isMobile() && lb.requestFullscreen){
-                                    try { lb.requestFullscreen(); } catch(e){}
-                                } else if(isMobile() && lb.webkitRequestFullscreen){
-                                    try { lb.webkitRequestFullscreen(); } catch(e){}
-                                }
-                            }
-                            function closeLightbox(){
-                                const lb = document.getElementById('productLightbox');
-                                lb.classList.add('hidden');
-                                lb.style.opacity = '0';
-                                lb.style.display = 'none';
-                                document.body.style.overflow = '';
-                                // Tam ekrandan çık
-                                if(document.fullscreenElement || document.webkitFullscreenElement){
-                                    if(document.exitFullscreen){
-                                        try { document.exitFullscreen(); } catch(e){}
-                                    } else if(document.webkitExitFullscreen){
-                                        try { document.webkitExitFullscreen(); } catch(e){}
-                                    }
-                                }
-                            }
-                            function showPrev(){
-                                if(currentIndex > 0) openLightbox(currentIndex-1);
-                                else openLightbox(productImages.length-1);
-                            }
-                            function showNext(){
-                                if(currentIndex < productImages.length-1) openLightbox(currentIndex+1);
-                                else openLightbox(0);
-                            }
-                            document.addEventListener('DOMContentLoaded', function(){
-                                productImages = Array.from(document.querySelectorAll('.product-image'));
-                                productImages.forEach((el, idx) => {
-                                    el.style.cursor = 'zoom-in';
-                                    el.addEventListener('click', function(){ openLightbox(idx); });
-                                });
-                                document.getElementById('lightboxClose').onclick = closeLightbox;
-                                document.getElementById('lightboxPrev').onclick = showPrev;
-                                document.getElementById('lightboxNext').onclick = showNext;
-                                // Klavye ile gezinme
-                                document.addEventListener('keydown', function(e){
-                                    const lb = document.getElementById('productLightbox');
-                                    if(lb.classList.contains('hidden') || lb.style.display === 'none') return;
-                                    if(e.key === 'Escape') closeLightbox();
-                                    if(e.key === 'ArrowLeft') showPrev();
-                                    if(e.key === 'ArrowRight') showNext();
-                                });
-                                // Mobil swipe desteği
-                                let touchStartX = null;
-                                let touchStartY = null;
-                                document.getElementById('productLightbox').addEventListener('touchstart', function(e){
-                                    if(e.touches.length === 1) {
-                                        touchStartX = e.touches[0].clientX;
-                                        touchStartY = e.touches[0].clientY;
-                                    }
-                                });
-                                document.getElementById('productLightbox').addEventListener('touchend', function(e){
-                                    if(touchStartX === null || touchStartY === null) return;
-                                    const touchEndX = e.changedTouches[0].clientX;
-                                    const touchEndY = e.changedTouches[0].clientY;
-                                    // Yatay swipe ise (dikey scroll ile karışmasın)
-                                    if(Math.abs(touchEndX - touchStartX) > Math.abs(touchEndY - touchStartY)) {
-                                        if(touchEndX - touchStartX > 60) showPrev();
-                                        else if(touchStartX - touchEndX > 60) showNext();
-                                    }
-                                    touchStartX = null;
-                                    touchStartY = null;
-                                });
-                            });
-                        })();
-                        </script>
+        window.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('touchstart', function(){}, { passive: true });
+        window.addEventListener('wheel', function(){}, { passive: true });
+        window.addEventListener('resize', onResize);
+        document.addEventListener('DOMContentLoaded', function(){
+            console.log('[DOMContentLoaded]');
+            applyMobileHeaderOffset();
+            onScroll();
+        });
+    })();
+    </script>
+    <!-- Product Lightbox Modal -->
+    <div id="productLightbox" class="hidden" style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:10000;display:none;align-items:center;justify-content:center;background:rgba(20,20,30,0.88);backdrop-filter:blur(2px);">
+      <button id="lightboxClose" style="position:absolute;top:18px;right:18px;background:#fff;color:#222;border-radius:50%;width:44px;height:44px;font-size:2rem;border:none;box-shadow:0 2px 12px rgba(0,0,0,0.18);z-index:10001;cursor:pointer;">✕</button>
+      <button id="lightboxPrev" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);background:#fff;color:#222;border-radius:50%;width:44px;height:44px;font-size:2rem;border:none;box-shadow:0 2px 12px rgba(0,0,0,0.18);z-index:10001;cursor:pointer;">◀</button>
+      <button id="lightboxNext" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:#fff;color:#222;border-radius:50%;width:44px;height:44px;font-size:2rem;border:none;box-shadow:0 2px 12px rgba(0,0,0,0.18);z-index:10001;cursor:pointer;">▶</button>
+      <div id="lightboxImgWrap" style="max-width:96vw;max-height:70vh;display:flex;align-items:center;justify-content:center;">
+        <img id="lightboxImg" src="" alt="Ürün görseli" style="max-width:96vw;max-height:70vh;border-radius:18px;box-shadow:0 8px 32px rgba(0,0,0,0.28);background:#fff;object-fit:contain;" />
+      </div>
+      <div id="lightboxMeta" style="width:100%;text-align:center;margin-top:1.2rem;color:#fff;">
+        <div id="lightboxName" style="font-size:1.15rem;font-weight:700;"></div>
+        <div id="lightboxPrice" style="font-size:1.05rem;font-weight:600;opacity:0.85;"></div>
+      </div>
+    </div>
+    <script>
+    // Ürün görseli lightbox/modal fonksiyonu (mobilde tam ekran FullScreen API ile)
+    (function(){
+        let productImages = [];
+        let currentIndex = 0;
+        function isMobile(){ return window.innerWidth <= 700; }
+        function openLightbox(idx){
+            console.log('[openLightbox] idx:', idx);
+            const lb = document.getElementById('productLightbox');
+            const img = document.getElementById('lightboxImg');
+            const nameEl = document.getElementById('lightboxName');
+            const priceEl = document.getElementById('lightboxPrice');
+            if(!productImages[idx]) { console.warn('[openLightbox] productImages['+idx+'] not found'); return; }
+            img.src = productImages[idx].src;
+            // Ürün adı ve fiyatı
+            let card = productImages[idx].closest('.product-card');
+            let name = card ? card.querySelector('.product-name')?.textContent : '';
+            let price = card ? card.querySelector('.product-price')?.textContent : '';
+            nameEl.textContent = name || '';
+            priceEl.textContent = price || '';
+            lb.classList.remove('hidden');
+            lb.style.display = 'flex';
+            lb.style.opacity = '1';
+            document.body.style.overflow = 'hidden';
+            currentIndex = idx;
+            // Mobilde tam ekran modunu dene
+            if(isMobile() && lb.requestFullscreen){
+                try { lb.requestFullscreen(); console.log('[openLightbox] requestFullscreen'); } catch(e){console.error('[openLightbox] requestFullscreen error',e);}
+            } else if(isMobile() && lb.webkitRequestFullscreen){
+                try { lb.webkitRequestFullscreen(); console.log('[openLightbox] webkitRequestFullscreen'); } catch(e){console.error('[openLightbox] webkitRequestFullscreen error',e);}
+            }
+        }
+        function closeLightbox(){
+            console.log('[closeLightbox]');
+            const lb = document.getElementById('productLightbox');
+            lb.classList.add('hidden');
+            lb.style.opacity = '0';
+            lb.style.display = 'none';
+            document.body.style.overflow = '';
+            // Tam ekrandan çık
+            if(document.fullscreenElement || document.webkitFullscreenElement){
+                if(document.exitFullscreen){
+                    try { document.exitFullscreen(); console.log('[closeLightbox] exitFullscreen'); } catch(e){console.error('[closeLightbox] exitFullscreen error',e);}
+                } else if(document.webkitExitFullscreen){
+                    try { document.webkitExitFullscreen(); console.log('[closeLightbox] webkitExitFullscreen'); } catch(e){console.error('[closeLightbox] webkitExitFullscreen error',e);}
+                }
+            }
+        }
+        function showPrev(){
+            console.log('[showPrev] currentIndex:', currentIndex);
+            if(currentIndex > 0) openLightbox(currentIndex-1);
+            else openLightbox(productImages.length-1);
+        }
+        function showNext(){
+            console.log('[showNext] currentIndex:', currentIndex);
+            if(currentIndex < productImages.length-1) openLightbox(currentIndex+1);
+            else openLightbox(0);
+        }
+        document.addEventListener('DOMContentLoaded', function(){
+            productImages = Array.from(document.querySelectorAll('.product-image'));
+            console.log('[DOMContentLoaded] productImages:', productImages);
+            productImages.forEach(function(el, idx){
+                el.style.cursor = 'zoom-in';
+                el.addEventListener('click', function(){ console.log('[product-image click] idx:', idx); openLightbox(idx); });
+            });
+            document.getElementById('lightboxClose').onclick = function(){ console.log('[lightboxClose click]'); closeLightbox(); };
+            document.getElementById('lightboxPrev').onclick = function(){ console.log('[lightboxPrev click]'); showPrev(); };
+            document.getElementById('lightboxNext').onclick = function(){ console.log('[lightboxNext click]'); showNext(); };
+            // Klavye ile gezinme
+            document.addEventListener('keydown', function(e){
+                const lb = document.getElementById('productLightbox');
+                if(lb.classList.contains('hidden') || lb.style.display === 'none') return;
+                if(e.key === 'Escape') { console.log('[keydown Escape]'); closeLightbox(); }
+                if(e.key === 'ArrowLeft') { console.log('[keydown ArrowLeft]'); showPrev(); }
+                if(e.key === 'ArrowRight') { console.log('[keydown ArrowRight]'); showNext(); }
+            });
+            // Mobil swipe desteği
+            let touchStartX = null;
+            let touchStartY = null;
+            document.getElementById('productLightbox').addEventListener('touchstart', function(e){
+                if(e.touches.length === 1) {
+                    touchStartX = e.touches[0].clientX;
+                    touchStartY = e.touches[0].clientY;
+                    console.log('[touchstart] X:', touchStartX, 'Y:', touchStartY);
+                }
+            });
+            document.getElementById('productLightbox').addEventListener('touchend', function(e){
+                if(touchStartX === null || touchStartY === null) return;
+                const touchEndX = e.changedTouches[0].clientX;
+                const touchEndY = e.changedTouches[0].clientY;
+                console.log('[touchend] X:', touchEndX, 'Y:', touchEndY);
+                // Yatay swipe ise (dikey scroll ile karışmasın)
+                if(Math.abs(touchEndX - touchStartX) > Math.abs(touchEndY - touchStartY)) {
+                    if(touchEndX - touchStartX > 60) { console.log('[swipe right]'); showPrev(); }
+                    else if(touchStartX - touchEndX > 60) { console.log('[swipe left]'); showNext(); }
+                }
+                touchStartX = null;
+                touchStartY = null;
+            });
+        });
+    })();
+    </script>
                 <!-- Decorative floral SVG background (purely visual) -->
                 <!-- decorative floral background removed -->
                 
@@ -1774,42 +1789,41 @@
                         const panel = document.getElementById('contactPanel');
                         if (!panel || !btn) return;
                         const isHidden = panel.classList.contains('hidden');
-                        if (isHidden) {
-                            panel.classList.remove('hidden');
-                            panel.setAttribute('aria-hidden', 'false');
-                            panel.style.display = '';
-                            // Position panel near the button (popover style)
-                                                        try{
-                                                                const rect = btn.getBoundingClientRect();
-                                                                const gap = 8;
-                                                                const maxWidth = 360;
-                                                                let left = rect.left;
-                                                                let top = rect.bottom + gap;
-                                                                // Flip horizontally if overflow on the right
-                                                                if (left + maxWidth + 8 > window.innerWidth) {
-                                                                    left = Math.max(8, window.innerWidth - maxWidth - 8);
-                                                                }
-                                                                // Flip vertically if overflow at bottom: place above button
-                                                                const panelHeight = Math.min(260, window.innerHeight - 40);
-                                                                if (top + panelHeight + 8 > window.innerHeight) {
-                                                                    top = Math.max(8, rect.top - gap - panelHeight);
-                                                                }
+                        if (saveBtn) {
+                            saveBtn.addEventListener('click', async function(){
+                                const statusEl = document.getElementById('accountStatus');
+                                function setStatus(t){ if (statusEl) statusEl.textContent = t; }
+                                var el;
+                                try{ const s = await (await fetch('/site-settings.json',{cache:'no-store'})).json(); if (s && s.orderEndpoint) endpoint = s.orderEndpoint; }catch(_){}
+                                endpoint = endpoint.replace(/\/send-order$/, '/update-user');
+                                try {
+                                    const resp = await fetch(endpoint, {
+                                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ email, name, address })
+                                    });
+                                    const data = await resp.json().catch(()=>null);
+                                    if (resp.ok && data && data.commitOk){ setStatus('✅ Adres GitHub ile senkronize edildi.'); }
+                                    else { setStatus('⚠️ Sunucu yanıtı: ' + (data?.commitError || resp.status)); }
+                                } catch(e){ setStatus('❌ Hata: ' + e.message); }
+                            });
+                        }
+                    // End of saveUserAddress event handler
                                                                 panel.style.transform = 'translate(0,0)';
                                                                 panel.style.left = Math.max(8, left) + 'px';
                                                                 panel.style.top = Math.max(8, top) + 'px';
                                                                 panel.style.maxWidth = maxWidth + 'px';
-                                                            }catch(_){/* ignore */}
-                            if (btn) btn.setAttribute('aria-expanded', 'true');
-                            // focus first focusable element inside panel for accessibility
-                            const focusable = panel.querySelector('a, button, [tabindex]:not([tabindex="-1"])');
-                            if (focusable) try{ focusable.focus(); }catch(e){}
-                        } else {
-                            panel.classList.add('hidden');
-                            panel.setAttribute('aria-hidden', 'true');
-                            panel.style.display = 'none';
-                            if (btn) btn.setAttribute('aria-expanded', 'false');
-                        }
-                    }
+                                                            } catch(_){/* ignore */}
+                                                        if (btn) btn.setAttribute('aria-expanded', 'true');
+                                                        // focus first focusable element inside panel for accessibility
+                                                        const focusable = panel.querySelector('a, button, [tabindex]:not([tabindex="-1"])');
+                                                        if (focusable) try{ focusable.focus(); }catch(e){}
+                                                    } else {
+                                                        panel.classList.add('hidden');
+                                                        panel.setAttribute('aria-hidden', 'true');
+                                                        panel.style.display = 'none';
+                                                        if (btn) btn.setAttribute('aria-expanded', 'false');
+                                                    }
+                                                }
 
                     function closeContact() {
                         const btn = document.getElementById('contactBtn');
@@ -3309,7 +3323,7 @@
                             if (!re.test(phone)){ alert('Telefon numarası formatı geçersiz. Lütfen +90 530 000 00 00 gibi giriniz.'); return; }
                             // Full user record merge
                             let full = null;
-                            try{ full = JSON.parse(localStorage.getItem('user_' + cu.email) || 'null'); }catch(_){ full = null; } finally {}
+                            try{ full = JSON.parse(localStorage.getItem('user_' + cu.email) || 'null'); }catch(_){ full = null; }
                             if (!full || typeof full !== 'object') full = { name: cu.name, email: cu.email };
                             full.phone = phone;
                             try{ 
@@ -3326,19 +3340,22 @@
                             // Sync to GitHub via Contents API
                             const ok = false; // client-side commit disabled
                             // Notify Worker /update-user (server-side commit)
-                        }
-                        // End of saveUserPhone
-                    // Expose for test (outside function)
-                    window.saveUserPhone = saveUserPhone;
+                            window.saveUserPhone = saveUserPhone;
                             try {
                                 let endpoint = '/send-order';
-                                try{ const s = await (await fetch('/site-settings.json',{cache:'no-store'})).json(); if (s && s.orderEndpoint) endpoint = s.orderEndpoint; }catch(_){ }
+                                try {
+                                    const s = await (await fetch('/site-settings.json', { cache: 'no-store' })).json();
+                                    if (s && s.orderEndpoint) endpoint = s.orderEndpoint;
+                                } catch (_) { }
                                 endpoint = endpoint.replace(/\/send-order$/, '/update-user');
-                                const resp = await fetch(endpoint, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(full) });
+                                const resp = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(full) });
                                 // ignore response body; commitFullUserToRepo already did the write
-                            } catch(_){ }
+                            } catch (_) { }
+                            window.openAuthModal = openAuthModal;
                             alert('Telefon numaranız kaydedildi ve sunucuya gönderildi. Değişiklikler senkronize edilecek.');
-                        }catch(e){ alert('Telefon kaydı sırasında hata: ' + (e && e.message ? e.message : e)); }
+                        } catch (e) {
+                            alert('Telefon kaydı sırasında hata: ' + (e && e.message ? e.message : e));
+                        }
                     }
 
                     // Profil sekmesinden varsayılan adres güncelleme
@@ -3578,25 +3595,28 @@
 
                     function addToCart(item) {
                         const user = getCurrentUser();
-                        if (!user) {
-                            openAuthModal();
-                            // user not logged in; open auth modal silently
-                            openAuthModal();
-                            console.log('Kullanıcı giriş yapmalı: sepete ekleme engellendi.');
-                            return;
+                        if (saveBtn) {
+                            saveBtn.addEventListener('click', async function(){
+                                const statusEl = document.getElementById('accountStatus');
+                                function setStatus(t){ if (statusEl) statusEl.textContent = t; }
+                                var el;
+                                try {
+                                    const s = await (await fetch('/site-settings.json', { cache: 'no-store' })).json();
+                                    if (s && s.orderEndpoint) endpoint = s.orderEndpoint;
+                                } catch (_) { }
+                                endpoint = endpoint.replace(/\/send-order$/, '/update-user');
+                                try {
+                                    const resp = await fetch(endpoint, {
+                                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ email, name, address })
+                                    });
+                                    const data = await resp.json().catch(() => null);
+                                    if (resp.ok && data && data.commitOk) { setStatus('✅ Adres GitHub ile senkronize edildi.'); }
+                                    else { setStatus('⚠️ Sunucu yanıtı: ' + (data?.commitError || resp.status)); }
+                                } catch (e) { setStatus('❌ Hata: ' + e.message); }
+                            });
                         }
-                        const cart = loadCart();
-                        const existing = cart.find(i => i.id === item.id);
-                        // Tek adet kuralı: aynı üründen ikinci kez eklenmesin
-                        if (existing) {
-                            showToast('Bu üründen sepete yalnızca 1 adet ekleyebilirsiniz.', { type:'warn', ttl: 5000 });
-                            return; // değişiklik yok
-                        }
-                        cart.push({ id: item.id, name: item.name, price: item.price, qty: 1 });
-                        saveCart(cart);
-                        updateCartCount();
-                        // Küçük bilgilendirme
-                        const count = cart.length; // her ürün 1 adet
+                    // End of saveUserAddress block
                         try { showToast(item.name + ' sepete eklendi. (Ürün sayısı: ' + count + ')'); } catch(e){}
                         // Birden fazla farklı ürün olduğunda satıcıya sor bildirimi
                         showAvailabilityNoticeIfNeeded(cart);
@@ -3826,6 +3846,11 @@
                                     }
                                 }catch(err){ }
                             }, true);
+                            // Ek: mobilde scroll/touch için passive event listener
+                            try {
+                                window.addEventListener('touchstart', function(ev){ /* ...existing code... */ }, { passive: true });
+                                window.addEventListener('wheel', function(ev){ /* ...existing code... */ }, { passive: true });
+                            } catch(e){}
                         }catch(e){ }
                     })();
 
@@ -4494,69 +4519,9 @@ document.addEventListener('click', function(ev){
             // Deduplicate identical alerts within 3s
             if (lastAlert.msg === msg && (now - lastAlert.ts) < 3000) return;
             lastAlert = { msg, ts: now };
-            originalAlert(msg);
-        }catch(e){ originalAlert(msg); }
+        } catch(e){}
     };
-
-    // Intercept register action to set suppression window and ensure one success
-    document.addEventListener('click', function(ev){
-        const t = ev.target;
-        if (!t) return;
-        const action = t.getAttribute && t.getAttribute('data-action');
-        if (action === 'register'){
-            // start a short suppression window to avoid multiple alerts
-            suppressUntil = Date.now() + 5000;
-            // close auth modal after brief delay to avoid overlapping UI alerts
-            setTimeout(function(){
-                try{ document.getElementById('authModal').style.display = 'none'; }catch(e){}
-            }, 300);
-        }
-    });
 })();
-</script>
-</body>
-    <script>
-    // Hesap panelini aç ve alanları doldur
-    (function(){
-        const tabs = document.querySelectorAll('.form-tabs .form-tab');
-        function switchTab(to){
-            document.querySelectorAll('.form-content').forEach(el=>el.classList.remove('active'));
-            const target = document.getElementById(to);
-            if (target) target.classList.add('active');
-            tabs.forEach(b=>b.classList.toggle('active', b.getAttribute('data-tab')===to));
-        }
-        var openAccountBtn = document.querySelector('[data-action="open-account"]');
-        if (openAccountBtn) {
-            openAccountBtn.addEventListener('click', function(){
-                const modal = document.getElementById('authModal');
-                if (modal) {
-                    modal.style.display = 'block';
-                    switchTab('account');
-                }
-                // doldur
-                let cu = null; try{ cu = JSON.parse(localStorage.getItem('currentUser')||'null'); }catch(_){}
-                const email = cu?.email || '';
-                const name = cu?.name || '';
-                const fullStr = email ? localStorage.getItem('user_'+email) : null;
-                let full = null; try { full = fullStr ? JSON.parse(fullStr) : null; } catch(_){}
-                var el;
-                el = document.getElementById('accountEmail'); if (el) el.value = email;
-                el = document.getElementById('accountName'); if (el) el.value = name || (full && full.name) || '';
-                const addr = (full && full.addresses && full.addresses[0]) || (full && full.address) || {};
-                el = document.getElementById('accountCity'); if (el) el.value = addr.city || addr.il || '';
-                el = document.getElementById('accountDistrict'); if (el) el.value = addr.district || addr.ilce || '';
-                el = document.getElementById('accountNeighborhood'); if (el) el.value = addr.neighborhood || addr.mahalle || '';
-                el = document.getElementById('accountAddressDetail'); if (el) el.value = addr.addressDetail || addr.street || '';
-                el = document.getElementById('accountPostalCode'); if (el) el.value = addr.postalCode || addr.zip || '';
-            });
-        }
-
-        var saveBtn = document.getElementById('accountSaveBtn');
-        if (saveBtn) {
-            saveBtn.addEventListener('click', async function(){
-                const statusEl = document.getElementById('accountStatus');
-                function setStatus(t){ if (statusEl) statusEl.textContent = t; }
-                var el;
                 el = document.getElementById('accountEmail');
                 const email = el ? el.value.trim() : '';
                 el = document.getElementById('accountName');
