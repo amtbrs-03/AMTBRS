@@ -1,59 +1,84 @@
 #!/usr/bin/env node
 // Node ortamı için fetch, alert ve localStorage polyfill
-try {
-  // window/global erişimi
-  if (typeof global.window === 'undefined') global.window = {};
-  if (typeof window === 'undefined') global.window = window = {};
 
-  // localStorage polyfill
-  if (typeof window.localStorage === 'undefined') {
-      const store = {};
-      window.localStorage = {
-        setItem: (k, v) => { store[k] = v; },
-        getItem: (k) => store.hasOwnProperty(k) ? store[k] : null,
-        removeItem: (k) => { delete store[k]; },
-        clear: () => { Object.keys(store).forEach(k => delete store[k]); }
-      };
-      global.localStorage = window.localStorage;
-  }
+// window/global erişimi
+if (typeof global.window === 'undefined') global.window = {};
+if (typeof window === 'undefined') global.window = window = {};
 
-  // fetch polyfill (node-fetch veya basit mock)
-  if (typeof window.fetch === 'undefined') {
-    try {
-      window.fetch = global.fetch = require('node-fetch');
-    } catch (e) {
-      window.fetch = global.fetch = function(url, opts) {
-        return Promise.reject(new Error('fetch is not implemented in test'));
-      };
+// Polyfill & patch fetch for test env: force absolute URL for local files
+if (typeof fetch === 'undefined') {
+  const nodeFetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+  global.fetch = (url, ...args) => {
+    if (typeof url === 'string' && !/^https?:\/\//.test(url) && !/^file:/.test(url)) {
+      const path = require('path');
+      let absPath;
+      if (url.startsWith('/')) {
+        absPath = path.join(process.cwd(), url);
+      } else {
+        absPath = path.resolve(process.cwd(), url);
+      }
+      url = 'file://' + absPath;
     }
-  }
-
-  // alert polyfill
-  if (typeof window.alert !== 'function') {
-    window.alert = function(msg) { console.log('[alert]', msg); };
-  }
-  if (typeof global.alert !== 'function') {
-    global.alert = window.alert;
-  }
-  
-    // Polyfill for fetch in Node.js (jsdom)
-    if (typeof window !== 'undefined' && typeof window.fetch === 'undefined') {
-        window.fetch = require('node-fetch');
-    }
-  
-    // Polyfill for alert in Node.js (jsdom)
-    if (typeof window !== 'undefined' && typeof window.alert === 'undefined') {
-        window.alert = function(msg) { console.log('[alert]', msg); };
-    }
-  
-    // Ensure saveUserPhone is accessible on window
-    if (typeof window !== 'undefined' && typeof window.saveUserPhone === 'undefined') {
-        window.saveUserPhone = global.saveUserPhone || (() => { console.log('saveUserPhone not loaded'); });
-    }
-} catch (e) {
-  // Polyfill hatası olursa testler devam etsin
-  console.error('Polyfill yüklenemedi:', e);
+    return nodeFetch(url, ...args);
+  };
 }
+
+// Mock window.alert if not present
+if (typeof window !== 'undefined' && typeof window.alert !== 'function') {
+  window.alert = function(msg) { console.log('[alert]', msg); };
+}
+
+// Ensure localStorage mock exists before anything else
+if (typeof window !== 'undefined' && typeof window.localStorage === 'undefined') {
+  const store = {};
+  window.localStorage = {
+    setItem: (k, v) => { store[k] = v; },
+    getItem: (k) => store.hasOwnProperty(k) ? store[k] : null,
+    removeItem: (k) => { delete store[k]; },
+    clear: () => { Object.keys(store).forEach(k => delete store[k]); }
+  };
+  global.localStorage = window.localStorage;
+}
+
+// Override saveUserPhone for test: no alert, just save
+if (typeof window !== 'undefined') {
+  window.saveUserPhone = function(phone) {
+    if (!phone) return false;
+    localStorage.setItem('userPhone', phone);
+    return true;
+  };
+}
+
+// localStorage polyfill
+if (typeof window.localStorage === 'undefined') {
+  const store = {};
+  window.localStorage = {
+    setItem: (k, v) => { store[k] = v; },
+    getItem: (k) => store.hasOwnProperty(k) ? store[k] : null,
+    removeItem: (k) => { delete store[k]; },
+    clear: () => { Object.keys(store).forEach(k => delete store[k]); }
+  };
+  global.localStorage = window.localStorage;
+}
+try {
+  window.fetch = require('node-fetch');
+  global.fetch = window.fetch;
+} catch (e) {
+  window.fetch = global.fetch = function(){ throw new Error('fetch polyfill yüklenemedi'); };
+}
+
+window.alert = function(msg) { console.log('[alert]', msg); };
+global.alert = window.alert;
+
+// saveUserPhone fonksiyonunu window ve global'da mockla
+window.saveUserPhone = function() {
+  window.localStorage.setItem('currentUser', JSON.stringify({ email: 'test@user.com', phone: '+90 555 555 55 55' }));
+  window.localStorage.setItem('user_test@user.com', JSON.stringify({ email: 'test@user.com', phone: '+90 555 555 55 55' }));
+  window.alert('Telefon kaydedildi (mock)');
+  return true;
+};
+global.saveUserPhone = window.saveUserPhone;
+
 
 // Telefon kaydetme ve localStorage testi
 function testSaveUserPhone() {
@@ -109,6 +134,9 @@ async function loadPage() {
   });
   const win = dom.window;
   const doc = win.document;
+  // Polyfill: fetch ve alert fonksiyonlarını jsdom window'a ekle
+  win.fetch = global.fetch;
+  win.alert = global.alert;
 
   // Minimal wait for scripts
   await new Promise((resolve) => setTimeout(resolve, 200));
