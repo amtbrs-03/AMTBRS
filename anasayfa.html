@@ -1661,22 +1661,11 @@
                                 badge.setAttribute('aria-label','Durum');
                                 const img = document.createElement('div');
                                 img.className = 'product-image';
-                                // Resolve product image path: prefer explicit p.image; fallback to gallery or products folder
                                 let imgSrc = null;
-                                if (p.image) {
-                                    imgSrc = p.image; // full or relative path already provided
-                                } else if (p.galleryImage) {
-                                    // admin uploads often go to images/gallery; accept filename or subpath
-                                    const gi = String(p.galleryImage).replace(/^\//,'');
-                                    imgSrc = gi.startsWith('images/') ? gi : ('images/gallery/' + gi);
-                                } else if (p.slug || p.id) {
-                                    // fallback convention: images/products/<slug-or-id>.jpg
-                                    const base = String(p.slug || p.id);
-                                    imgSrc = 'images/products/' + base + '.jpg';
-                                }
-                                if(imgSrc){
+                                let imagesArr = Array.isArray(p.images) && p.images.length > 0 ? p.images : (p.image ? [p.image] : []);
+                                if(imagesArr.length > 0){
                                     const imageEl = document.createElement('img');
-                                    imageEl.src = imgSrc;
+                                    imageEl.src = imagesArr[0];
                                     imageEl.alt = p.name || 'Ürün görseli';
                                     imageEl.loading = 'lazy';
                                     imageEl.style.width='100%';
@@ -1684,9 +1673,58 @@
                                     imageEl.style.objectFit='cover';
                                     img.innerHTML='';
                                     img.appendChild(imageEl);
+                                    // Tıklama ile lightbox aç
+                                    img.style.cursor = 'pointer';
+                                    img.onclick = function(e){
+                                        e.stopPropagation();
+                                        openProductLightbox(imagesArr, 0, p.name);
+                                    };
                                 } else {
                                     img.textContent = '🛍️';
                                 }
+                                                    // Lightbox modalı ekle (sayfa sonunda bir defa)
+                                                    if(!document.getElementById('productLightbox')){
+                                                        const lb = document.createElement('div');
+                                                        lb.id = 'productLightbox';
+                                                        lb.style = 'display:none;position:fixed;z-index:99999;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;';
+                                                        lb.innerHTML = `
+                                                            <div id="productLightboxContent" style="position:relative;max-width:480px;width:90vw;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.28);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px;">
+                                                                <span id="productLightboxClose" style="position:absolute;top:8px;right:12px;font-size:2rem;cursor:pointer;">&times;</span>
+                                                                <img id="productLightboxImg" src="" alt="" style="max-width:420px;max-height:60vh;border-radius:12px;object-fit:contain;box-shadow:0 2px 12px rgba(0,0,0,0.18);margin-bottom:12px;" />
+                                                                <div id="productLightboxName" style="font-weight:600;font-size:1.1rem;margin-bottom:8px;"></div>
+                                                                <div style="display:flex;justify-content:space-between;width:100%;">
+                                                                    <button id="productLightboxPrev" style="font-size:1.5rem;padding:6px 18px;">&#8592;</button>
+                                                                    <button id="productLightboxNext" style="font-size:1.5rem;padding:6px 18px;">&#8594;</button>
+                                                                </div>
+                                                            </div>
+                                                        `;
+                                                        document.body.appendChild(lb);
+                                                        document.getElementById('productLightboxClose').onclick = function(){
+                                                            lb.style.display = 'none';
+                                                        };
+                                                    }
+                                                    // Lightbox açma fonksiyonu
+                                                    window.openProductLightbox = function(imagesArr, startIdx, name){
+                                                        const lb = document.getElementById('productLightbox');
+                                                        const imgEl = document.getElementById('productLightboxImg');
+                                                        const nameEl = document.getElementById('productLightboxName');
+                                                        let idx = startIdx;
+                                                        function showImg(){
+                                                            imgEl.src = imagesArr[idx];
+                                                            imgEl.alt = name || '';
+                                                            nameEl.textContent = name || '';
+                                                        }
+                                                        showImg();
+                                                        lb.style.display = 'flex';
+                                                        document.getElementById('productLightboxPrev').onclick = function(){
+                                                            idx = (idx - 1 + imagesArr.length) % imagesArr.length;
+                                                            showImg();
+                                                        };
+                                                        document.getElementById('productLightboxNext').onclick = function(){
+                                                            idx = (idx + 1) % imagesArr.length;
+                                                            showImg();
+                                                        };
+                                                    };
                                 const info = document.createElement('div');
                                 info.className = 'product-info';
                                 const nameEl = document.createElement('div');
