@@ -553,7 +553,7 @@
 </head>
 <body>
     <!-- Token Giriş Modalı -->
-    <div id="tokenGate" class="modal" style="display:flex;align-items:center;justify-content:center;position:fixed;z-index:9999;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.18);">
+    <div id="tokenGate" class="modal" style="display:none;align-items:center;justify-content:center;position:fixed;z-index:9999;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.18);">
       <div class="modal-content" style="max-width:420px;">
         <div class="section-header">🔑 GitHub Token Girişi</div>
         <div class="small" style="color:#64748b;margin-bottom:0.75rem">Admin işlemleri için kişisel erişim token'ınızı girin. Token girilmezse sadece uyarı gösterilir, sayfa yine açılır.</div>
@@ -565,9 +565,10 @@
         <div class="small" style="margin-top:0.75rem;color:#6b7280">Not: Token girilmezse admin işlemleri kısıtlı olur, sadece uyarı gösterilir.</div>
       </div>
     </div>
+    <button id="adminLogoutBtn" class="btn" style="position:fixed;top:16px;right:16px;z-index:1000;">Çıkış</button>
     <script>
-      // Token giriş modalı kontrolü
-      document.addEventListener('DOMContentLoaded', function() {
+      // Token giriş modalı kontrolü ve oturumdan çıkınca reset
+      function showTokenGate() {
         var gate = document.getElementById('tokenGate');
         var input = document.getElementById('tokenInput');
         var submit = document.getElementById('tokenSubmit');
@@ -578,16 +579,36 @@
             var val = input.value.trim();
             if (val.length > 10) {
               localStorage.setItem('github_token', val);
+              sessionStorage.setItem('token_entered', '1');
               msg.textContent = 'Token kaydedildi, tam erişim sağlandı.';
               setTimeout(function(){ gate.style.display='none'; location.reload(); }, 800);
             } else {
               localStorage.setItem('github_token', 'BYPASS');
+              sessionStorage.setItem('token_entered', '0');
               msg.textContent = 'Token girilmedi, admin işlemleri kısıtlı. Sayfa açılıyor.';
               setTimeout(function(){ gate.style.display='none'; }, 800);
             }
           };
         }
+      }
+      // Sayfa ilk açıldığında token yoksa veya oturumdan çıkış yapıldıysa tekrar sor
+      document.addEventListener('DOMContentLoaded', function() {
+        var token = localStorage.getItem('github_token');
+        var entered = sessionStorage.getItem('token_entered');
+        if (!token || token === 'BYPASS' || entered !== '1') {
+          showTokenGate();
+        }
+        // Çıkış butonu işlevi
+        var logoutBtn = document.getElementById('adminLogoutBtn');
+        if (logoutBtn) {
+          logoutBtn.onclick = function() {
+            localStorage.removeItem('github_token');
+            sessionStorage.removeItem('token_entered');
+            location.reload();
+          };
+        }
       });
+      // Artık tarayıcı kapatıldığında token silinmez, sadece 'Çıkış' butonuyla silinir.
     </script>
   <!-- Token Modal -->
   <div id="authModal" class="modal">
