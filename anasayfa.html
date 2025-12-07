@@ -1,3 +1,40 @@
+                        // Ürün görseline tıklama ile yeni sekmede ürün detaylarını aç
+                        document.getElementById('products').addEventListener('click', function(e) {
+                            const img = e.target.closest('.product-image');
+                            if (!img) return;
+                            const card = img.closest('.product-card');
+                            if (!card) return;
+                            // Ürün bilgilerini topla
+                            const name = card.getAttribute('data-name') || '';
+                            const price = card.getAttribute('data-price') || '';
+                            const id = card.getAttribute('data-id') || '';
+                            // Tüm resimleri bul
+                            let images = [];
+                            const imgTags = card.querySelectorAll('img.product-image');
+                            imgTags.forEach(tag => images.push(tag.src));
+                            if (images.length === 0) {
+                                // Emoji veya div içeriği
+                                const divImg = card.querySelector('.product-image');
+                                if (divImg && divImg.textContent) images.push(divImg.textContent);
+                            }
+                            // Arka planı ve fontu ana siteyle aynı yap
+                            let bg = "url('images/gallery/floral-bg.jpg') no-repeat center center fixed";
+                            let bgSize = "cover";
+                            let html = `<!DOCTYPE html><html lang='tr'><head><meta charset='utf-8'><title>${name}</title><style>body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;line-height:1.6;color:#0b2f1f;background:${bg};background-size:${bgSize};min-height:100vh;padding:2rem;} .product-image{width:180px;height:180px;object-fit:cover;border-radius:12px;margin-bottom:1rem;background:rgba(255,255,255,0.7);} .product-info{margin-bottom:1.5rem;} .add-cart-btn{background:#16a34a;color:#fff;padding:0.7rem 1.5rem;border:none;border-radius:8px;font-size:1.1rem;cursor:pointer;} h2{font-size:2rem;margin-bottom:1rem;} .card-box{background:rgba(255,255,255,0.85);border-radius:16px;padding:2rem;max-width:400px;margin:auto;box-shadow:0 4px 24px rgba(30,143,85,0.08);} </style></head><body>`;
+                            html += `<div class='card-box'><h2>${name}</h2><div class='product-info'><strong>Fiyat:</strong> ${price} TL</div>`;
+                            images.forEach(src => {
+                                if (src.startsWith('http') || src.startsWith('data:')) {
+                                    html += `<img class='product-image' src='${src}' alt='${name}' />`;
+                                } else if (src.length === 1) {
+                                    html += `<div class='product-image' style='font-size:5rem;text-align:center;'>${src}</div>`;
+                                }
+                            });
+                            html += `<button class='add-cart-btn' onclick="window.addToCart && window.addToCart('${id}','${name}','${price}');alert('Ürün sepete eklendi!');">Sepete Ekle</button></div>`;
+                            html += `<script>window.addToCart=function(id,name,price){try{var cart=JSON.parse(localStorage.getItem('cart')||'[]');cart.push({id:id,name:name,price:price});localStorage.setItem('cart',JSON.stringify(cart));}catch(e){}};<\/script>`;
+                            html += `</body></html>`;
+                            const win = window.open('', '_blank');
+                            if (win) { win.document.write(html); win.document.close(); }
+                        });
 <!doctype html>
 <html lang="tr">
   <head>
@@ -1552,17 +1589,54 @@
                                     if (divImg && divImg.textContent) images.push(divImg.textContent);
                                 }
                                 // Yeni sekme HTML'i oluştur
-                                let html = `<!DOCTYPE html><html lang='tr'><head><meta charset='utf-8'><title>${name}</title><style>body{font-family:sans-serif;padding:2rem;} .product-image{width:180px;height:180px;object-fit:cover;border-radius:12px;margin-bottom:1rem;} .product-info{margin-bottom:1.5rem;} .add-cart-btn{background:#16a34a;color:#fff;padding:0.7rem 1.5rem;border:none;border-radius:8px;font-size:1.1rem;cursor:pointer;} </style></head><body>`;
-                                html += `<h2>${name}</h2><div class='product-info'><strong>Fiyat:</strong> ${price} TL</div>`;
+                                let html = `<!DOCTYPE html><html lang='tr'><head><meta charset='utf-8'><title>${name}</title><style>
+                                    body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;line-height:1.6;color:#0b2f1f;background:${bg};background-size:${bgSize};min-height:100vh;padding:2rem;}
+                                    .product-images-row{display:flex;gap:1.2rem;justify-content:center;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;}
+                                    .product-image-card{width:86px;height:54px;object-fit:cover;border-radius:8px;background:rgba(255,255,255,0.7);box-shadow:0 2px 8px rgba(30,143,85,0.08);display:flex;align-items:center;justify-content:center;}
+                                    .product-image-card img{width:100%;height:100%;object-fit:cover;border-radius:8px;}
+                                    .product-image-card.emoji{font-size:2.2rem;text-align:center;}
+                                    .product-info{margin-bottom:1.5rem;}
+                                    .add-cart-btn{background:#16a34a;color:#fff;padding:0.7rem 1.5rem;border:none;border-radius:8px;font-size:1.1rem;cursor:pointer;}
+                                    h2{font-size:2rem;margin-bottom:1rem;}
+                                    .card-box{background:rgba(255,255,255,0.85);border-radius:16px;padding:2rem;max-width:400px;margin:auto;box-shadow:0 4px 24px rgba(30,143,85,0.08);}
+                                </style></head><body>`;
+                                html += `<div class='card-box'>`;
+                                html += `<div class='product-title' style='font-size:2.1rem;font-weight:900;color:#2563eb;letter-spacing:0.5px;margin-bottom:0.7rem;text-align:center;'>${name}</div>`;
+                                html += `<div class='product-price-tag' style='display:inline-block;background:#16a34a;color:#fff;font-size:1.25rem;font-weight:700;padding:0.5rem 1.2rem;border-radius:10px;box-shadow:0 2px 8px rgba(30,143,85,0.08);margin-bottom:1.2rem;text-align:center;'>${price} TL</div>`;
+                                // Özellikler alanı (isteğe bağlı)
+                                let features = card.getAttribute('data-features') || '';
+                                if(features){
+                                    html += `<div class='product-features' style='margin:1.2rem 0 1.5rem 0;padding:1rem;background:rgba(37,99,235,0.07);border-radius:8px;color:#0b2f1f;font-size:1.05rem;line-height:1.7;'>${features}</div>`;
+                                }
+                                html += `<div class='product-images-row'>`;
                                 images.forEach(src => {
                                     if (src.startsWith('http') || src.startsWith('data:')) {
-                                        html += `<img class='product-image' src='${src}' alt='${name}' />`;
+                                        html += `<div class='product-image-card'><img src='${src}' alt='${name}' /></div>`;
                                     } else if (src.length === 1) {
-                                        html += `<div class='product-image' style='font-size:5rem;text-align:center;'>${src}</div>`;
+                                        html += `<div class='product-image-card emoji'>${src}</div>`;
                                     }
                                 });
-                                html += `<button class='add-cart-btn' onclick="window.addToCart && window.addToCart('${id}','${name}','${price}');alert('Ürün sepete eklendi!');">Sepete Ekle</button>`;
-                                html += `<script>window.addToCart=function(id,name,price){try{var cart=JSON.parse(localStorage.getItem('cart')||'[]');cart.push({id:id,name:name,price:price});localStorage.setItem('cart',JSON.stringify(cart));}catch(e){}};<\/script>`;
+                                html += `</div>`;
+                                html += `<button class='add-cart-btn' onclick="window.handleAddToCart && window.handleAddToCart('${id}','${name}','${price}');">Sepete Ekle</button>`;
+                                html += `<br/><button class='back-home-btn' style='margin-top:1.2rem;background:#2563eb;color:#fff;padding:0.7rem 1.5rem;border:none;border-radius:8px;font-size:1.05rem;cursor:pointer;' onclick=\"window.location.href='/'\">&#8592; Anasayfaya Dön</button>`;
+                                html += `<script>window.handleAddToCart=function(id,name,price){
+    var user = null;
+    try{user=JSON.parse(localStorage.getItem('user')||'null');}catch(e){}
+    if(user && user.email){
+        // Giriş yapmışsa sepete ekle
+        var cart=JSON.parse(localStorage.getItem('cart')||'[]');
+        cart.push({id:id,name:name,price:price});
+        localStorage.setItem('cart',JSON.stringify(cart));
+        alert('Ürün sepete eklendi!');
+    }else{
+        // Giriş yoksa ana siteye yönlendir ve giriş modalını açtır
+        try{
+            window.opener && window.opener.openAuthModal && window.opener.openAuthModal();
+        }catch(e){}
+        alert('Sepete eklemek için önce giriş yapmalısınız!');
+        window.close();
+    }
+};<\/script>`;
                                 html += `</body></html>`;
                                 const win = window.open('', '_blank');
                                 if (win) { win.document.write(html); win.document.close(); }
