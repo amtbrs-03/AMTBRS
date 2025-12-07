@@ -875,6 +875,37 @@
                                 let price = card ? card.querySelector('.product-price')?.textContent : '';
                                 nameEl.textContent = name || '';
                                 priceEl.textContent = price || '';
+                                // --- Kart boyutunu lightbox'a sadece masaüstünde uygula ---
+                                if (!isMobile()) {
+                                    if (card) {
+                                        let cardRect = card.getBoundingClientRect();
+                                        let maxW = Math.min(cardRect.width, window.innerWidth * 0.96);
+                                        let maxH = Math.min(cardRect.height, window.innerHeight * 0.7);
+                                        lb.style.maxWidth = maxW + 'px';
+                                        lb.style.maxHeight = maxH + 'px';
+                                        let imgEl = document.getElementById('productLightboxImg');
+                                        if (imgEl) {
+                                            imgEl.style.maxWidth = maxW + 'px';
+                                            imgEl.style.maxHeight = maxH + 'px';
+                                        }
+                                    } else {
+                                        lb.style.maxWidth = '96vw';
+                                        lb.style.maxHeight = '70vh';
+                                        let imgEl = document.getElementById('productLightboxImg');
+                                        if (imgEl) {
+                                            imgEl.style.maxWidth = '96vw';
+                                            imgEl.style.maxHeight = '70vh';
+                                        }
+                                    }
+                                } else {
+                                    lb.style.maxWidth = '96vw';
+                                    lb.style.maxHeight = '70vh';
+                                    let imgEl = document.getElementById('productLightboxImg');
+                                    if (imgEl) {
+                                        imgEl.style.maxWidth = '96vw';
+                                        imgEl.style.maxHeight = '70vh';
+                                    }
+                                }
                                 lb.classList.remove('hidden');
                                 lb.style.display = 'flex';
                                 document.body.style.overflow = 'hidden';
