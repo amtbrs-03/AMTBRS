@@ -9,6 +9,20 @@ if (typeof localStorage === 'undefined') {
     clear: function () { this._data = {}; }
   };
 }
+// Polyfill fetch and alert for test environment
+if (typeof global.fetch === 'undefined') {
+  global.fetch = function(url, opts) {
+    return Promise.reject(new Error('fetch is not implemented in test'));
+  };
+}
+if (typeof global.window === 'undefined') global.window = {};
+if (typeof global.window.alert === 'undefined') {
+  global.window.alert = function(msg) { console.log('[alert]', msg); };
+}
+if (typeof global.alert === 'undefined') {
+  global.alert = function(msg) { console.log('[alert]', msg); };
+}
+
 // Telefon kaydetme ve localStorage testi
 function testSaveUserPhone() {
   // Mock input
@@ -35,9 +49,6 @@ function testSaveUserPhone() {
   }
 }
 testSaveUserPhone();
-// Test ortamı için fetch ve window.alert mock'u
-if (typeof fetch === 'undefined') {
-  global.fetch = function(url, opts) {
     return Promise.resolve({
       ok: true,
       json: () => Promise.resolve({ success: true, url, opts })

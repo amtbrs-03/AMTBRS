@@ -1175,6 +1175,9 @@
                         </div>
                     </div>
                 <!-- Header içindeki fazladan menü kaldırıldı, sadece nav-top menüsü kaldı -->
+
+
+
                 <!-- Contact dropdown panel (hidden by default) -->
                 <section id="contactPanel" class="contact-panel hidden" aria-hidden="true" aria-labelledby="contactBtn" style="position:fixed;left:0;top:0;transform:translate(-9999px,-9999px);background:rgba(255,255,255,0.98);border-radius:12px;box-shadow:0 20px 60px rgba(2,6,23,0.2);padding:0;z-index:1001;border:2px solid rgba(11,47,31,0.1);">
                     <div style="padding:0.8rem 1rem; max-width:360px;">
@@ -1191,73 +1194,9 @@
                             <button data-action="close-contact" style="flex:1;background:#e53e3e;color:#fff;padding:0.5rem;border-radius:8px;border:none;">Kapat</button>
                         </div>
                     </div>
-                </div>
+                </section>
 
                 <!-- Auth Modal -->
-                <div id="authModal" class="modal">
-                    <div class="modal-content">
-                        <span class="close" data-action="close-auth">&times;</span>
-                        <h2 style="margin-bottom: 1.5rem; color: #0b1220;">Hoşgeldiniz</h2>
-            
-                        <div class="form-tabs">
-                            <button class="form-tab active" data-action="switch-tab" data-tab="login">Giriş</button>
-                            <button class="form-tab" data-action="switch-tab" data-tab="register">Kayıt</button>
-                        </div>
-
-                        <!-- Giriş Formu -->
-                        <div id="login" class="form-content active">
-                            <div class="form-group">
-                                <label for="loginEmail">Email</label>
-                                <input type="email" id="loginEmail" placeholder="Email adresiniz">
-                            </div>
-                            <div class="form-group">
-                                <label for="loginPassword">Şifre</label>
-                                <input type="password" id="loginPassword" placeholder="Şifreniz">
-                                    <script>
-                                        document.addEventListener('DOMContentLoaded', function() {
-                                            var pwInput = document.getElementById('loginPassword');
-                                            var loginBtn = document.querySelector('[data-action="login"]');
-                                            if (pwInput && loginBtn) {
-                                                pwInput.addEventListener('keydown', function(e) {
-                                                    if (e.key === 'Enter') {
-                                                        loginBtn.click();
-                                                    }
-                                                });
-                                            }
-                                            // Kayıt formunda da Enter ile kayıt olabilsin
-                                            var regPwInput = document.getElementById('registerPassword2');
-                                            var regBtn = document.querySelector('[data-action="register"]');
-                                            if (regPwInput && regBtn) {
-                                                regPwInput.addEventListener('keydown', function(e) {
-                                                    if (e.key === 'Enter') {
-                                                        regBtn.click();
-                                                    }
-                                                });
-                                            }
-                                        });
-                                    </script>
-                            </div>
-                            <button data-action="login" style="width: 100%; margin-top: 1rem;">Giriş Yap</button>
-                        </div>
-
-                        <!-- Kayıt Formu -->
-                        <div id="register" class="form-content">
-                            <div id="registerErrorSummary" class="form-error-banner" role="alert" aria-live="assertive"></div>
-                            <div class="form-group">
-                                <label for="registerName">Ad Soyad</label>
-                                <input type="text" id="registerName" placeholder="Ad Soyadınız">
-                            </div>
-                            <div class="form-group">
-                                <label for="registerEmail">Email</label>
-                                <input type="email" id="registerEmail" placeholder="Email adresiniz" onblur="checkEmailAvailability()">
-                                <div id="registerEmailStatus" style="font-size:0.9rem;margin-top:0.4rem;min-height:1.2em"></div>
-                            </div>
-                            <div class="form-group">
-                                <label for="registerPhone">Telefon Numarası</label>
-                                <input type="tel" id="registerPhone" placeholder="Telefon numaranız" pattern="^\+?\d[\d\s()-]{7,}$" aria-describedby="registerPhoneHint" oninput="formatPhoneInput(this)">
-                                <div id="registerPhoneHint" style="font-size:0.8rem;color:#6b7280;margin-top:4px">Örnek: +90 530 000 00 00</div>
-                            </div>
-                            <div class="form-group">
                                 <label for="registerPassword">Şifre</label>
                                 <input type="password" id="registerPassword" placeholder="Şifreniz">
                             </div>
@@ -1622,70 +1561,10 @@
                 </div>
 
                 <!-- Order Detail Modal (daha güzel detay & yazdırılabilir fatura) -->
-                <div id="orderDetailModal" class="modal">
-                    <div class="modal-content">
-                        <span class="close" data-action="close-order-detail">&times;</span>
-                        <h2 style="margin-bottom:0.6rem;color:#0b1220">Sipariş Detayı</h2>
-                        <div id="orderDetailBody">
-                            <div id="odHeader" style="margin-bottom:0.5rem"></div>
-                            <div id="odItems" style="margin-bottom:0.6rem"></div>
-                            <div id="odTotal" style="font-weight:800;color:#0b1220;margin-bottom:0.6rem"></div>
-                            <div style="display:flex;gap:0.5rem;">
-                                <button onclick="printInvoiceCurrent()" style="flex:1;background:#2563eb;color:#fff">Faturayı Yazdır / PDF</button>
-                                <button onclick="closeOrderDetailModal()" style="flex:1">Kapat</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Bottom-right payment widget (compact, non-page) -->
-                <div id="paymentWidget" class="hidden" style="position:fixed; right:1rem; bottom:1rem; width:320px; max-width:92%; z-index:1100;">
-                    <div style="background:#fff;border-radius:12px;box-shadow:0 18px 40px rgba(2,6,23,0.2);overflow:hidden;border:1px solid rgba(10,12,30,0.06);">
-                        <div style="display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0.8rem;background:linear-gradient(90deg,#f7fafc,#eef2ff);border-bottom:1px solid rgba(0,0,0,0.04);">
-                            <strong style="color:#0b1220">Ödeme (Havale/EFT)</strong>
-                            <button onclick="closePaymentWidget()" style="background:transparent;border:none;font-size:1.1rem;cursor:pointer;padding:0 6px;">✕</button>
-                        </div>
-                        <div style="padding:0.85rem;">
-                            <div style="font-size:0.95rem;color:#334155">Lütfen aşağıdaki IBAN'a ödeme yapınız. Ödeme sonrası 'Siparişi Bildir' butonunu kullanın.</div>
-                            <div id="widgetIban" style="font-family:monospace;font-size:1rem;margin-top:0.6rem;color:#0b1220;word-break:break-all">xxxxxxxxxxxxxxx</div>
-                            <div id="widgetTotal" style="margin-top:0.5rem;font-weight:700;color:#0b1220">Toplam: ₺0.00</div>
-                            <div style="display:flex;gap:0.5rem;margin-top:0.8rem;">
-                                <button onclick="copyIbanFromWidget()" style="flex:1;background:#2563eb;color:#fff;padding:0.5rem;border-radius:8px;border:none;">IBAN'ı Kopyala</button>
-                                <button onclick="openFullPaymentPageFromWidget()" style="flex:1;background:#6b7280;color:#fff;padding:0.5rem;border-radius:8px;border:none;">Tam Sayfa</button>
-                            </div>
-                            <div style="display:flex;gap:0.5rem;margin-top:0.6rem;">
-                                <button onclick="sendBankNotificationFromWidget()" style="flex:1;background:#10b981;color:#fff;padding:0.55rem;border-radius:8px;border:none;font-weight:700;">Siparişi Bildir</button>
-                                <button onclick="closePaymentWidget()" style="flex:1;background:#e53e3e;color:#fff;padding:0.55rem;border-radius:8px;border:none;">İptal</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+<!-- Auth Modal moved to end of body for proper overlay -->
+                
+<!-- ...other content... -->
 
-                        <!-- Bank Transfer Modal - show IBAN and instructions -->
-                        <div id="bankModal" class="modal">
-                            <div class="modal-content">
-                                <button class="close" onclick="closeBank()" aria-label="Kapat" style="background:none;border:none;padding:0;cursor:pointer;font-size:1.5rem;line-height:1;" type="button">&times;</button>
-                                <h2 style="margin-bottom: 1rem; color: #0b1220;">Havale / EFT ile Ödeme</h2>
-                                <div id="bankBody">
-                                    <p>Lütfen aşağıdaki IBAN'a havale/eft yapınız. Ödeme yapıldıktan sonra siparişi manuel olarak onaylayacağız.</p>
-                                    <div style="background:#f7f7fb; padding:1rem; border-radius:8px; margin-top:0.75rem;">
-                                        <strong>IBAN:</strong>
-                                        <div id="siteIban" style="font-family:monospace; font-size:1.05rem; margin-top:0.5rem;">xxxxxxxxxxxxxxx</div>
-                                        <div style="margin-top:0.5rem; display:flex; gap:0.5rem;">
-                                            <button onclick="copyIban()">IBAN'ı Kopyala</button>
-                                            <button onclick="openPaymentPage()" style="background:#2563eb; color:#fff;">IBAN'e Git</button>
-                                        </div>
-                                    </div>
-
-                                    <div style="margin-top:1rem;">
-                                        <label for="payerEmail" style="display:block; font-weight:600; margin-bottom:0.4rem;">E-posta Adresiniz (sipariş onayı için)</label>
-                                        <input id="payerEmail" type="email" placeholder="you@example.com" style="width:100%; padding:0.6rem; border:1px solid #ddd; border-radius:6px;" />
-                                    </div>
-
-                                    <div id="bankAmount" style="margin-top:0.75rem; font-weight:700; color:#0b1220;">Toplam: ₺0.00</div>
-
-                                    <div style="margin-top:1rem; display:flex; gap:0.5rem;">
-                                        <button onclick="sendBankNotification()" style="flex:1;">Siparişi Bildir (E-posta Gönder)</button>
-                                        <button onclick="closeBank()" style="flex:1; background:#6b7280">İptal</button>
                                     </div>
                                 </div>
                             </div>
@@ -1710,12 +1589,7 @@
 
                 <!-- Hero section removed (big logo/title) per request -->
 
-                <div class="products-wrapper">
-                    <!-- products-header removed per request -->
-                    <section class="products" id="products">
-                        <!-- Ürünler products.json'dan dinamik olarak yüklenecek -->
-                    </section>
-                </div>
+
 
                 <!-- Hakkımızda Bölümü (Collapsible) -->
                 <section id="hakkimizda" style="max-width:1200px;margin:3rem auto;padding:0;">
@@ -1860,11 +1734,17 @@
                     }
 
                     function openAuthModal() {
-                        const modal = document.getElementById('authModal');
-                        if (modal) modal.style.display = 'block';
+                        var modal = document.getElementById('authModal');
+                        if (modal) {
+                            modal.style.display = 'block';
+                            if (modal.classList.contains('hidden')) modal.classList.remove('hidden');
+                        }
                         try { const b = document.getElementById('authBtn'); if (b) b.setAttribute('aria-expanded', 'true'); } catch (e) {}
                         // Restore register form draft when reopening modal
-                        const reg = document.getElementById('register');
+                        var reg = document.getElementById('register');
+                        if (reg && reg.classList.contains('active')) {
+                            restoreRegisterFormDraft();
+                        }
                         if (reg && reg.classList.contains('active')) {
                             restoreRegisterFormDraft();
                         }
@@ -2473,7 +2353,6 @@
                         console.log('loginUser: ========== LOGIN ATTEMPT START ==========');
                         console.log('loginUser: Email:', email);
                         console.log('loginUser: Device:', navigator.userAgent);
-                        
                         // MOBILE FIX: Detect mobile and prioritize GitHub
                         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
                         console.log('loginUser: Device type:', isMobile ? 'MOBILE' : 'DESKTOP');
@@ -2660,10 +2539,13 @@
                     }
 
                     function updateUIAfterLogin(name) {
-                                        // Hide auth button, show user container
-                                        document.getElementById('authContainer').classList.add('hidden');
-                                        document.getElementById('userContainer').classList.remove('hidden');
-                                        document.getElementById('userName').textContent = 'Hoşgeldiniz, ' + name;
+                        // Hide auth button, show user container (safe)
+                        var authC = document.getElementById('authContainer');
+                        if (authC) authC.classList.add('hidden');
+                        var userC = document.getElementById('userContainer');
+                        if (userC) userC.classList.remove('hidden');
+                        var userName = document.getElementById('userName');
+                        if (userName) userName.textContent = 'Hoşgeldiniz, ' + name;
                     }
 
                     // Show a forced-reset UI inside the auth modal for a specific email
@@ -2776,9 +2658,11 @@
                         }
                         
                         // Reset UI to logged-out state
-                        document.getElementById('authContainer').classList.remove('hidden');
-                        document.getElementById('userContainer').classList.add('hidden');
-                        updateCartCount();
+                        var authC = document.getElementById('authContainer');
+                        if (authC) authC.classList.remove('hidden');
+                        var userC = document.getElementById('userContainer');
+                        if (userC) userC.classList.add('hidden');
+                        if (typeof updateCartCount === 'function') updateCartCount();
                         
                         // Reset auth button label and handler
                         try{
@@ -2827,8 +2711,10 @@
                         localStorage.removeItem('orders_' + email);
 
                         // Reset UI
-                        document.getElementById('authContainer').classList.remove('hidden');
-                        document.getElementById('userContainer').classList.add('hidden');
+                        var authC = document.getElementById('authContainer');
+                        if (authC) authC.classList.remove('hidden');
+                        var userC = document.getElementById('userContainer');
+                        if (userC) userC.classList.add('hidden');
                         updateCartCount();
 
                         // Reset auth button
@@ -3434,10 +3320,21 @@
                             try{ 
                                 localStorage.setItem('user_' + cu.email, JSON.stringify(full));
                                 console.log('[saveUserPhone] Saved:', 'user_' + cu.email, JSON.stringify(full));
+                                // currentUser kaydını da güncelle
+                                let cuObj = null;
+                                try { cuObj = JSON.parse(localStorage.getItem('currentUser') || 'null'); } catch(_) { cuObj = null; }
+                                if (cuObj && typeof cuObj === 'object' && cuObj.email === cu.email) {
+                                    cuObj.phone = phone;
+                                    localStorage.setItem('currentUser', JSON.stringify(cuObj));
+                                }
                             }catch(_){}
                             // Sync to GitHub via Contents API
                             const ok = false; // client-side commit disabled
                             // Notify Worker /update-user (server-side commit)
+                        }
+                        // End of saveUserPhone
+                    // Expose for test (outside function)
+                    window.saveUserPhone = saveUserPhone;
                             try {
                                 let endpoint = '/send-order';
                                 try{ const s = await (await fetch('/site-settings.json',{cache:'no-store'})).json(); if (s && s.orderEndpoint) endpoint = s.orderEndpoint; }catch(_){ }
@@ -4473,14 +4370,18 @@
                                 }
                             } else {
                                 // No valid user, ensure UI is in logged-out state
-                                document.getElementById('authContainer').classList.remove('hidden');
-                                document.getElementById('userContainer').classList.add('hidden');
+                                var ac = document.getElementById('authContainer');
+                                var uc = document.getElementById('userContainer');
+                                if (ac) ac.classList.remove('hidden');
+                                if (uc) uc.classList.add('hidden');
                             }
                         }catch(e){ 
                             console.error('Auto-restore session failed', e);
                             // On error, ensure logged-out state
-                            document.getElementById('authContainer').classList.remove('hidden');
-                            document.getElementById('userContainer').classList.add('hidden');
+                            var ac = document.getElementById('authContainer');
+                            var uc = document.getElementById('userContainer');
+                            if (ac) ac.classList.remove('hidden');
+                            if (uc) uc.classList.add('hidden');
                         }
                     })();
 
@@ -4628,76 +4529,87 @@ document.addEventListener('click', function(ev){
             if (target) target.classList.add('active');
             tabs.forEach(b=>b.classList.toggle('active', b.getAttribute('data-tab')===to));
         }
-        document.querySelector('[data-action="open-account"]').addEventListener('click', function(){
-            const modal = document.getElementById('authModal');
-            modal.style.display = 'block';
-            switchTab('account');
-            // doldur
-            let cu = null; try{ cu = JSON.parse(localStorage.getItem('currentUser')||'null'); }catch(_){}
-            const email = cu?.email || '';
-            const name = cu?.name || '';
-            const fullStr = email ? localStorage.getItem('user_'+email) : null;
-            let full = null; try { full = fullStr ? JSON.parse(fullStr) : null; } catch(_){}
-            document.getElementById('accountEmail').value = email;
-            document.getElementById('accountName').value = name || full?.name || '';
-            const addr = (full?.addresses && full.addresses[0]) || full?.address || {};
-            document.getElementById('accountCity').value = addr.city || addr.il || '';
-            document.getElementById('accountDistrict').value = addr.district || addr.ilce || '';
-            document.getElementById('accountNeighborhood').value = addr.neighborhood || addr.mahalle || '';
-            document.getElementById('accountAddressDetail').value = addr.addressDetail || addr.street || '';
-            document.getElementById('accountPostalCode').value = addr.postalCode || addr.zip || '';
-        });
+        var openAccountBtn = document.querySelector('[data-action="open-account"]');
+        if (openAccountBtn) {
+            openAccountBtn.addEventListener('click', function(){
+                const modal = document.getElementById('authModal');
+                if (modal) {
+                    modal.style.display = 'block';
+                    switchTab('account');
+                }
+                // doldur
+                let cu = null; try{ cu = JSON.parse(localStorage.getItem('currentUser')||'null'); }catch(_){}
+                const email = cu?.email || '';
+                const name = cu?.name || '';
+                const fullStr = email ? localStorage.getItem('user_'+email) : null;
+                let full = null; try { full = fullStr ? JSON.parse(fullStr) : null; } catch(_){}
+                var el;
+                el = document.getElementById('accountEmail'); if (el) el.value = email;
+                el = document.getElementById('accountName'); if (el) el.value = name || (full && full.name) || '';
+                const addr = (full && full.addresses && full.addresses[0]) || (full && full.address) || {};
+                el = document.getElementById('accountCity'); if (el) el.value = addr.city || addr.il || '';
+                el = document.getElementById('accountDistrict'); if (el) el.value = addr.district || addr.ilce || '';
+                el = document.getElementById('accountNeighborhood'); if (el) el.value = addr.neighborhood || addr.mahalle || '';
+                el = document.getElementById('accountAddressDetail'); if (el) el.value = addr.addressDetail || addr.street || '';
+                el = document.getElementById('accountPostalCode'); if (el) el.value = addr.postalCode || addr.zip || '';
+            });
+        }
 
-        // Kaydet ve GitHub ile senkronize et
-        document.getElementById('accountSaveBtn').addEventListener('click', async function(){
-            const statusEl = document.getElementById('accountStatus');
-            function setStatus(t){ statusEl.textContent = t; }
-            const email = document.getElementById('accountEmail').value.trim();
-            const name = document.getElementById('accountName').value.trim();
-            const address = {
-                city: document.getElementById('accountCity').value.trim(),
-                district: document.getElementById('accountDistrict').value.trim(),
-                neighborhood: document.getElementById('accountNeighborhood').value.trim(),
-                addressDetail: document.getElementById('accountAddressDetail').value.trim(),
-                postalCode: document.getElementById('accountPostalCode').value.trim(),
-                isDefault: true
-            };
-            if (!email){ setStatus('Email bulunamadı. Lütfen giriş yapınız.'); return; }
-            setStatus('Kaydediliyor...');
+        var saveBtn = document.getElementById('accountSaveBtn');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', async function(){
+                const statusEl = document.getElementById('accountStatus');
+                function setStatus(t){ if (statusEl) statusEl.textContent = t; }
+                var el;
+                el = document.getElementById('accountEmail');
+                const email = el ? el.value.trim() : '';
+                el = document.getElementById('accountName');
+                const name = el ? el.value.trim() : '';
+                const address = {
+                    city: (el=document.getElementById('accountCity')) ? el.value.trim() : '',
+                    district: (el=document.getElementById('accountDistrict')) ? el.value.trim() : '',
+                    neighborhood: (el=document.getElementById('accountNeighborhood')) ? el.value.trim() : '',
+                    addressDetail: (el=document.getElementById('accountAddressDetail')) ? el.value.trim() : '',
+                    postalCode: (el=document.getElementById('accountPostalCode')) ? el.value.trim() : '',
+                    isDefault: true
+                };
+                if (!email){ setStatus('Email bulunamadı. Lütfen giriş yapınız.'); return; }
+                setStatus('Kaydediliyor...');
 
-            // localStorage güncelle
-            try {
-                const key = 'user_'+email;
-                const curr = JSON.parse(localStorage.getItem(key)||'{}');
-                curr.name = name || curr.name || '';
-                curr.email = email;
-                curr.address = address;
-                curr.addresses = Array.isArray(curr.addresses) ? curr.addresses : [];
-                const def = curr.addresses.find(a=>a&&a.isDefault);
-                const defObj = Object.assign({ id:'default', title:'Varsayılan Adres', isDefault:true }, address);
-                if (def) Object.assign(def, defObj); else curr.addresses.unshift(defObj);
-                curr.updatedAt = Date.now();
-                localStorage.setItem(key, JSON.stringify(curr));
-                // currentUser eşitle
-                const cu = JSON.parse(localStorage.getItem('currentUser')||'{}');
-                cu.email = email; cu.name = name || cu.name || '';
-                localStorage.setItem('currentUser', JSON.stringify(cu));
-            } catch(_){ }
+                // localStorage güncelle
+                try {
+                    const key = 'user_'+email;
+                    const curr = JSON.parse(localStorage.getItem(key)||'{}');
+                    curr.name = name || curr.name || '';
+                    curr.email = email;
+                    curr.address = address;
+                    curr.addresses = Array.isArray(curr.addresses) ? curr.addresses : [];
+                    const def = curr.addresses.find(a=>a&&a.isDefault);
+                    const defObj = Object.assign({ id:'default', title:'Varsayılan Adres', isDefault:true }, address);
+                    if (def) Object.assign(def, defObj); else curr.addresses.unshift(defObj);
+                    curr.updatedAt = Date.now();
+                    localStorage.setItem(key, JSON.stringify(curr));
+                    // currentUser eşitle
+                    const cu = JSON.parse(localStorage.getItem('currentUser')||'{}');
+                    cu.email = email; cu.name = name || cu.name || '';
+                    localStorage.setItem('currentUser', JSON.stringify(cu));
+                } catch(_){ }
 
-            // Sunucuya gönder ve GitHub'a yazdır
-            let endpoint = '/send-order';
-            try{ const s = await (await fetch('/site-settings.json',{cache:'no-store'})).json(); if (s && s.orderEndpoint) endpoint = s.orderEndpoint; }catch(_){}
-            endpoint = endpoint.replace(/\/send-order$/, '/update-user');
-            try {
-                const resp = await fetch(endpoint, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, name, address })
-                });
-                const data = await resp.json().catch(()=>null);
-                if (resp.ok && data && data.commitOk){ setStatus('✅ Adres GitHub ile senkronize edildi.'); }
-                else { setStatus('⚠️ Sunucu yanıtı: ' + (data?.commitError || resp.status)); }
-            } catch(e){ setStatus('❌ Hata: ' + e.message); }
-        });
+                // Sunucuya gönder ve GitHub'a yazdır
+                let endpoint = '/send-order';
+                try{ const s = await (await fetch('/site-settings.json',{cache:'no-store'})).json(); if (s && s.orderEndpoint) endpoint = s.orderEndpoint; }catch(_){}
+                endpoint = endpoint.replace(/\/send-order$/, '/update-user');
+                try {
+                    const resp = await fetch(endpoint, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, name, address })
+                    });
+                    const data = await resp.json().catch(()=>null);
+                    if (resp.ok && data && data.commitOk){ setStatus('✅ Adres GitHub ile senkronize edildi.'); }
+                    else { setStatus('⚠️ Sunucu yanıtı: ' + (data?.commitError || resp.status)); }
+                } catch(e){ setStatus('❌ Hata: ' + e.message); }
+            });
+        }
     })();
 
     // İl/İlçe/Mahalle dinamik yükleme sistemi
@@ -4769,4 +4681,67 @@ document.addEventListener('click', function(ev){
     }
     </script>
     <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+</body>
+<!-- Modal HTML moved to end of body intentionally -->
+<div id="authModal" class="modal">
+    <div class="modal-content">
+        <span class="close" data-action="close-auth">&times;</span>
+        <h2 style="margin-bottom: 1.5rem; color: #0b1220;">Hoşgeldiniz</h2>
+        <div class="form-tabs">
+            <button class="form-tab active" data-action="switch-tab" data-tab="login">Giriş</button>
+            <button class="form-tab" data-action="switch-tab" data-tab="register">Kayıt</button>
+        </div>
+        <!-- Giriş Formu -->
+        <div id="login" class="form-content active">
+            <div class="form-group">
+                <label for="loginEmail">Email</label>
+                <input type="email" id="loginEmail" placeholder="Email adresiniz">
+            </div>
+            <div class="form-group">
+                <label for="loginPassword">Şifre</label>
+                <input type="password" id="loginPassword" placeholder="Şifreniz">
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        var pwInput = document.getElementById('loginPassword');
+                        var loginBtn = document.querySelector('[data-action="login"]');
+                        if (pwInput && loginBtn) {
+                            pwInput.addEventListener('keydown', function(e) {
+                                if (e.key === 'Enter') {
+                                    loginBtn.click();
+                                }
+                            });
+                        }
+                        // Kayıt formunda da Enter ile kayıt olabilsin
+                        var regPwInput = document.getElementById('registerPassword2');
+                        var regBtn = document.querySelector('[data-action="register"]');
+                        if (regPwInput && regBtn) {
+                            regPwInput.addEventListener('keydown', function(e) {
+                                if (e.key === 'Enter') {
+                                    regBtn.click();
+                                }
+                            });
+                        }
+                    });
+                </script>
+            </div>
+            <button data-action="login" style="width: 100%; margin-top: 1rem;">Giriş Yap</button>
+        </div>
+        <!-- Kayıt Formu -->
+        <div id="register" class="form-content">
+            <div id="registerErrorSummary" class="form-error-banner" role="alert" aria-live="assertive"></div>
+            <div class="form-group">
+                <label for="registerName">Ad Soyad</label>
+                <input type="text" id="registerName" placeholder="Ad Soyadınız">
+            </div>
+            <div class="form-group">
+                <label for="registerEmail">Email</label>
+                <input type="email" id="registerEmail" placeholder="Email adresiniz" onblur="checkEmailAvailability()">
+                <div id="registerEmailStatus" style="font-size:0.9rem;margin-top:0.4rem;min-height:1.2em"></div>
+            </div>
+            <div class="form-group">
+                <label for="registerPhone">Telefon Numarası</label>
+                <input type="tel" id="registerPhone" placeholder="Telefon numaranız" pattern="^\+?\d[\d\s()-]{7,}$" aria-describedby="registerPhoneHint" oninput="formatPhoneInput(this)">
+                <div id="registerPhoneHint" style="font-size:0.8rem;color:#6b7280;margin-top:4px">Örnek: +90 530 000 00 00</div>
+            </div>
+            <div class="form-group">
 </html>
