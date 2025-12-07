@@ -2539,10 +2539,13 @@
                     }
 
                     function updateUIAfterLogin(name) {
-                                        // Hide auth button, show user container
-                                        document.getElementById('authContainer').classList.add('hidden');
-                                        document.getElementById('userContainer').classList.remove('hidden');
-                                        document.getElementById('userName').textContent = 'Hoşgeldiniz, ' + name;
+                        // Hide auth button, show user container (safe)
+                        var authC = document.getElementById('authContainer');
+                        if (authC) authC.classList.add('hidden');
+                        var userC = document.getElementById('userContainer');
+                        if (userC) userC.classList.remove('hidden');
+                        var userName = document.getElementById('userName');
+                        if (userName) userName.textContent = 'Hoşgeldiniz, ' + name;
                     }
 
                     // Show a forced-reset UI inside the auth modal for a specific email
@@ -4679,6 +4682,7 @@ document.addEventListener('click', function(ev){
     </script>
     <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 </body>
+<!-- Modal HTML moved to end of body intentionally -->
 <div id="authModal" class="modal">
     <div class="modal-content">
         <span class="close" data-action="close-auth">&times;</span>
