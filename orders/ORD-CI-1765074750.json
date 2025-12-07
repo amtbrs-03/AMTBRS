@@ -1,0 +1,18 @@
+{
+  "id": "ORD-CI-1765074750",
+  "date": 1765074750910,
+  "customerEmail": "ci@example.com",
+  "customerName": "CI User",
+  "customerPhone": "",
+  "address": "İstanbul",
+  "iban": "",
+  "status": "pending",
+  "items": [
+    {
+      "name": "Gül",
+      "qty": 1,
+      "price": 199
+    }
+  ],
+  "total": 199
+}
