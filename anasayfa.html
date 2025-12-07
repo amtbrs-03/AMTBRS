@@ -842,6 +842,10 @@
                                 // Görseli göster: arka plan görseli varsa onu, emoji/text ise onu göster
                                 let el = productImages[idx];
                                 let bg = el.style.backgroundImage;
+                                // Önce eski emoji/text elemanını temizle
+                                let wrap = document.getElementById('lightboxImgWrap');
+                                let oldEmoji = document.getElementById('lightboxEmoji');
+                                if (oldEmoji && wrap.contains(oldEmoji)) wrap.removeChild(oldEmoji);
                                 if(bg && bg !== 'none') {
                                     // Arka plan görseli varsa
                                     let url = bg.replace(/^url\(["']?|["']?\)$/g, '').replace(/url\(["']?|["']?\)/g, '').replace(/"/g, '').replace(/'/g, '');
@@ -852,24 +856,18 @@
                                     // Emoji/text ise
                                     img.src = '';
                                     img.style.display = 'none';
-                                    // LightboxImgWrap içine emoji/text ekle
-                                    let wrap = document.getElementById('lightboxImgWrap');
                                     let emoji = el.textContent || '';
-                                    let emojiEl = document.getElementById('lightboxEmoji');
-                                    if(!emojiEl){
-                                        emojiEl = document.createElement('div');
-                                        emojiEl.id = 'lightboxEmoji';
-                                        emojiEl.style.fontSize = '5rem';
-                                        emojiEl.style.textAlign = 'center';
-                                        emojiEl.style.width = '100%';
-                                        emojiEl.style.height = '70vh';
-                                        emojiEl.style.display = 'flex';
-                                        emojiEl.style.alignItems = 'center';
-                                        emojiEl.style.justifyContent = 'center';
-                                        wrap.appendChild(emojiEl);
-                                    }
-                                    emojiEl.textContent = emoji;
+                                    let emojiEl = document.createElement('div');
+                                    emojiEl.id = 'lightboxEmoji';
+                                    emojiEl.style.fontSize = '5rem';
+                                    emojiEl.style.textAlign = 'center';
+                                    emojiEl.style.width = '100%';
+                                    emojiEl.style.height = '70vh';
                                     emojiEl.style.display = 'flex';
+                                    emojiEl.style.alignItems = 'center';
+                                    emojiEl.style.justifyContent = 'center';
+                                    emojiEl.textContent = emoji;
+                                    wrap.appendChild(emojiEl);
                                 }
                                 // Diğer durumda emoji/text gizle
                                 let emojiEl = document.getElementById('lightboxEmoji');
@@ -892,6 +890,10 @@
                             }
                             function closeLightbox(){
                                 const lb = document.getElementById('productLightbox');
+                                // Emoji/text elemanını temizle
+                                let wrap = document.getElementById('lightboxImgWrap');
+                                let oldEmoji = document.getElementById('lightboxEmoji');
+                                if (oldEmoji && wrap.contains(oldEmoji)) wrap.removeChild(oldEmoji);
                                 lb.classList.add('hidden');
                                 lb.style.display = 'none';
                                 document.body.style.overflow = '';
@@ -913,11 +915,37 @@
                                 else openLightbox(0);
                             }
                             document.addEventListener('DOMContentLoaded', function(){
-                                productImages = Array.from(document.querySelectorAll('.product-image'));
-                                productImages.forEach((el, idx) => {
-                                    el.style.cursor = 'zoom-in';
-                                    el.addEventListener('click', function(){ openLightbox(idx); });
-                                });
+                                function attachLightboxEvents(){
+                                    productImages = Array.from(document.querySelectorAll('.product-image'));
+                                    productImages.forEach((el, idx) => {
+                                        el.style.cursor = 'zoom-in';
+                                        // Her eklenen elemana bir kez event ekle
+                                        if (!el.__lightboxBound) {
+                                            el.addEventListener('click', function(){ openLightbox(idx); });
+                                            el.__lightboxBound = true;
+                                        }
+                                    });
+                                }
+                                attachLightboxEvents();
+
+                                // Yeni ürün kartı eklendiğinde otomatik event ekle
+                                const productsContainer = document.querySelector('.products');
+                                if (productsContainer && window.MutationObserver) {
+                                    const observer = new MutationObserver(function(mutations){
+                                        let needsUpdate = false;
+                                        mutations.forEach(mutation => {
+                                            if (mutation.addedNodes && mutation.addedNodes.length > 0) {
+                                                mutation.addedNodes.forEach(node => {
+                                                    if (node.nodeType === 1 && node.classList.contains('product-card')) {
+                                                        needsUpdate = true;
+                                                    }
+                                                });
+                                            }
+                                        });
+                                        if (needsUpdate) attachLightboxEvents();
+                                    });
+                                    observer.observe(productsContainer, { childList: true, subtree: true });
+                                }
                                 document.getElementById('lightboxClose').onclick = closeLightbox;
                                 document.getElementById('lightboxPrev').onclick = showPrev;
                                 document.getElementById('lightboxNext').onclick = showNext;
