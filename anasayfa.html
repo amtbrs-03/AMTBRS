@@ -1533,6 +1533,15 @@
                         // Lightbox code removed as requested
                         loadProducts();
                             // Ürün görseline tıklama ile yeni sekmede ürün detaylarını aç
+                            // Ürün detay paneli ekle
+                            if (!document.getElementById('productDetailPanel')) {
+                                const panel = document.createElement('div');
+                                panel.id = 'productDetailPanel';
+                                panel.style = 'display:none;position:fixed;top:0;right:0;width:420px;max-width:98vw;height:100vh;z-index:2000;background:rgba(255,255,255,0.98);box-shadow:-4px 0 32px rgba(30,143,85,0.13);overflow-y:auto;padding:2.2rem 1.5rem 2.2rem 2rem;transition:transform 0.3s cubic-bezier(.4,1.2,.4,1);border-radius:24px 0 0 24px;';
+                                panel.innerHTML = '<button id="closeProductDetailPanel" style="position:absolute;top:18px;right:18px;font-size:2rem;background:none;border:none;color:#2563eb;cursor:pointer;">&times;</button><div id="productDetailContent"></div>';
+                                document.body.appendChild(panel);
+                                document.getElementById('closeProductDetailPanel').onclick = function(){ panel.style.display='none'; };
+                            }
                             document.getElementById('products').addEventListener('click', function(e) {
                                 const img = e.target.closest('.product-image');
                                 if (!img) return;
@@ -1551,21 +1560,21 @@
                                     const divImg = card.querySelector('.product-image');
                                     if (divImg && divImg.textContent) images.push(divImg.textContent);
                                 }
-                                // Yeni sekme HTML'i oluştur
-                                let html = `<!DOCTYPE html><html lang='tr'><head><meta charset='utf-8'><title>${name}</title><style>body{font-family:sans-serif;padding:2rem;} .product-image{width:180px;height:180px;object-fit:cover;border-radius:12px;margin-bottom:1rem;} .product-info{margin-bottom:1.5rem;} .add-cart-btn{background:#16a34a;color:#fff;padding:0.7rem 1.5rem;border:none;border-radius:8px;font-size:1.1rem;cursor:pointer;} </style></head><body>`;
-                                html += `<h2>${name}</h2><div class='product-info'><strong>Fiyat:</strong> ${price} TL</div>`;
+                                // Panel içeriğini oluştur
+                                let html = `<h2 style='font-size:1.5rem;font-weight:800;color:#2563eb;margin-bottom:1.2rem;'>${name}</h2>`;
+                                html += `<div style='font-size:1.1rem;font-weight:700;color:#16a34a;margin-bottom:1.2rem;'>${price} TL</div>`;
+                                html += `<div style='display:flex;gap:1.2rem;justify-content:flex-start;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;'>`;
                                 images.forEach(src => {
                                     if (src.startsWith('http') || src.startsWith('data:')) {
-                                        html += `<img class='product-image' src='${src}' alt='${name}' />`;
+                                        html += `<div style='width:86px;height:54px;object-fit:cover;border-radius:8px;background:rgba(255,255,255,0.7);box-shadow:0 2px 8px rgba(30,143,85,0.08);display:flex;align-items:center;justify-content:center;'><img src='${src}' alt='${name}' style='width:100%;height:100%;object-fit:cover;border-radius:8px;'/></div>`;
                                     } else if (src.length === 1) {
-                                        html += `<div class='product-image' style='font-size:5rem;text-align:center;'>${src}</div>`;
+                                        html += `<div style='width:86px;height:54px;display:flex;align-items:center;justify-content:center;font-size:2.2rem;text-align:center;background:rgba(255,255,255,0.7);border-radius:8px;'>${src}</div>`;
                                     }
                                 });
-                                html += `<button class='add-cart-btn' onclick="window.addToCart && window.addToCart('${id}','${name}','${price}');alert('Ürün sepete eklendi!');">Sepete Ekle</button>`;
-                                html += `<script>window.addToCart=function(id,name,price){try{var cart=JSON.parse(localStorage.getItem('cart')||'[]');cart.push({id:id,name:name,price:price});localStorage.setItem('cart',JSON.stringify(cart));}catch(e){}};<\/script>`;
-                                html += `</body></html>`;
-                                const win = window.open('', '_blank');
-                                if (win) { win.document.write(html); win.document.close(); }
+                                html += `</div>`;
+                                html += `<button class='add-cart-btn' style='background:#16a34a;color:#fff;padding:0.7rem 1.5rem;border:none;border-radius:8px;font-size:1.1rem;cursor:pointer;margin-bottom:1.2rem;' onclick=\"window.addToCart && window.addToCart('${id}','${name}','${price}');alert('Ürün sepete eklendi!');\">Sepete Ekle</button>`;
+                                document.getElementById('productDetailContent').innerHTML = html;
+                                document.getElementById('productDetailPanel').style.display = 'block';
                             });
                     });
 
