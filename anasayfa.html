@@ -1806,9 +1806,30 @@
                     document.addEventListener('DOMContentLoaded', function(){
                         window.openProductLightbox = function(imagesArr, startIdx, name){
                             const lb = document.getElementById('productLightbox');
-                            const imgEl = document.getElementById('productLightboxImg');
+                            const imgWrap = document.getElementById('lightboxImgWrap');
                             const nameEl = document.getElementById('lightboxName');
                             let currentIdx = startIdx;
+                            // Lightbox'ı sayfa ortasına ve kredi kartı oranında konumlandır
+                            lb.style.display = 'flex';
+                            lb.style.position = 'fixed';
+                            lb.style.top = '50%';
+                            lb.style.left = '50%';
+                            lb.style.transform = 'translate(-50%, -50%)';
+                            lb.style.maxWidth = '340px';
+                            lb.style.maxHeight = '280px';
+                            lb.style.width = '340px';
+                            lb.style.height = '280px';
+                            lb.style.alignItems = 'flex-start';
+                            lb.style.justifyContent = 'center';
+                            lb.style.zIndex = '9999';
+                            document.body.style.overflow = 'hidden';
+                            // Görsel ve meta kutusu
+                            imgWrap.style.maxWidth = '340px';
+                            imgWrap.style.maxHeight = '210px';
+                            imgWrap.style.width = '340px';
+                            imgWrap.style.height = '210px';
+                            imgWrap.style.marginTop = '70px';
+                            // Resim ve meta güncelleme fonksiyonu
                             function showImg(){
                                 let imgElLocal = document.getElementById('productLightboxImg');
                                 if (!imgElLocal) {
@@ -1817,22 +1838,22 @@
                                     imgElLocal = document.createElement('img');
                                     imgElLocal.id = 'productLightboxImg';
                                     imgElLocal.alt = 'Ürün görseli';
-                                    imgElLocal.style.maxWidth = '96vw';
-                                    imgElLocal.style.maxHeight = '70vh';
-                                    imgElLocal.style.borderRadius = '18px';
-                                    imgElLocal.style.boxShadow = '0 8px 32px rgba(0,0,0,0.28)';
+                                    imgElLocal.style.width = '340px';
+                                    imgElLocal.style.height = '210px';
+                                    imgElLocal.style.borderRadius = '0 0 18px 18px';
+                                    imgElLocal.style.boxShadow = '0 8px 32px rgba(0,0,0,0.18)';
                                     imgElLocal.style.background = '#fff';
-                                    imgElLocal.style.objectFit = 'contain';
+                                    imgElLocal.style.objectFit = 'cover';
                                     wrap.appendChild(imgElLocal);
                                 }
                                 if (imgElLocal && imagesArr[currentIdx]) {
                                     imgElLocal.src = imagesArr[currentIdx];
                                     imgElLocal.alt = name || '';
                                 }
-                                nameEl.textContent = name || '';
+                                if (nameEl) nameEl.textContent = name || '';
                             }
                             showImg();
-                            lb.style.display = 'flex';
+                            // Tuşlar ile resim geçişi
                             document.getElementById('lightboxPrev').onclick = function(){
                                 if(imagesArr.length > 1){
                                     currentIdx = (currentIdx - 1 + imagesArr.length) % imagesArr.length;
@@ -4306,6 +4327,8 @@
                         window.addEventListener('beforeprint', normalizeAll);
                     })();
                 </script>
+            <!-- Dosya sonu: eksik kapanan script ve html etiketleri düzeltildi -->
+            </html>
 <script defer>
 // --- Order status: set to 'hazır' when invoice is generated ---
 async function updateOrderStatus(orderId, newStatus){
