@@ -4301,7 +4301,12 @@ document.addEventListener('click', function(ev){
                 lb.style.height = card.offsetHeight + 'px';
                 lb.style.borderRadius = window.getComputedStyle(card).borderRadius;
             }
-            if(bg && bg !== 'none') {
+            let imgTag = el.querySelector && el.querySelector('img');
+            if (imgTag && imgTag.src) {
+                img.src = imgTag.src;
+                img.style.display = '';
+                img.alt = 'Ürün görseli';
+            } else if(bg && bg !== 'none') {
                 let url = bg.replace(/^url\(["']?|["']?\)$/g, '').replace(/url\(["']?|["']?\)/g, '').replace(/"/g, '').replace(/'/g, '');
                 img.src = url;
                 img.style.display = '';
