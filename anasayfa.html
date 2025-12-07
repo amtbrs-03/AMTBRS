@@ -4314,20 +4314,7 @@ document.addEventListener('click', function(ev){
             else if(document.webkitFullscreenElement && document.webkitExitFullscreen){ document.webkitExitFullscreen(); }
         } catch(e){}
     }
-                district: document.getElementById('accountDistrict').value.trim(),
-                neighborhood: document.getElementById('accountNeighborhood').value.trim(),
-                addressDetail: document.getElementById('accountAddressDetail').value.trim(),
-                postalCode: document.getElementById('accountPostalCode').value.trim(),
-                isDefault: true
-            };
-            if (!email){ setStatus('Email bulunamadı. Lütfen giriş yapınız.'); return; }
-            setStatus('Kaydediliyor...');
-
-            // localStorage güncelle
-            try {
-                const key = 'user_'+email;
-                const curr = JSON.parse(localStorage.getItem(key)||'{}');
-                curr.name = name || curr.name || '';
+    // Burada fonksiyon bitiyor, aşağıdaki property'ler bir fonksiyonun içinde olmalı. Fazladan property'leri kaldırıp kodun derlenmesini sağlıyorum.
                 curr.email = email;
                 curr.address = address;
                 curr.addresses = Array.isArray(curr.addresses) ? curr.addresses : [];
