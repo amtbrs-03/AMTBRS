@@ -1472,9 +1472,13 @@
                             if(!res.ok) throw new Error('products.json yüklenemedi');
                             const listRaw = await res.json();
                             const list = Array.isArray(listRaw) ? listRaw : (Array.isArray(listRaw.items) ? listRaw.items : []);
+                            window._lastProductsList = list;
                             const grid = document.getElementById('products');
                             if(!grid) return;
                             grid.innerHTML = '';
+                            grid.style.display = 'grid';
+                            grid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(260px, 1fr))';
+                            grid.style.gap = '2rem';
                             const fmt = new Intl.NumberFormat('tr-TR', {style:'currency', currency:'TRY'});
                             list.forEach((p, idx)=>{
                                 const card = document.createElement('div');
@@ -1482,13 +1486,36 @@
                                 card.setAttribute('data-id', p.id || ('P'+idx));
                                 card.setAttribute('data-name', p.name || 'Ürün');
                                 card.setAttribute('data-price', p.price || 0);
-                                const badge = document.createElement('span');
-                                badge.className = 'badge badge-green';
-                                badge.textContent = p.badge || 'Yeni';
-                                badge.setAttribute('aria-label','Durum');
+                                card.style.position = 'relative';
+                                card.style.background = '#fafafa';
+                                card.style.borderRadius = '18px';
+                                card.style.boxShadow = '0 4px 18px rgba(30,143,85,0.07)';
+                                card.style.padding = '1.2rem 1.2rem 1.1rem 1.2rem';
+                                card.style.display = 'flex';
+                                card.style.flexDirection = 'column';
+                                card.style.alignItems = 'center';
+                                card.style.justifyContent = 'flex-start';
+                                card.style.minHeight = '340px';
+                                // Badge
+                                if (p.badge) {
+                                    const badge = document.createElement('span');
+                                    badge.className = 'badge badge-green';
+                                    badge.textContent = p.badge;
+                                    badge.setAttribute('aria-label','Durum');
+                                    badge.style.position = 'absolute';
+                                    badge.style.top = '10px';
+                                    badge.style.left = '10px';
+                                    card.appendChild(badge);
+                                }
+                                // Görsel
                                 const img = document.createElement('div');
                                 img.className = 'product-image';
-                                let imgSrc = null;
+                                img.style.width = '100%';
+                                img.style.height = '180px';
+                                img.style.display = 'flex';
+                                img.style.alignItems = 'center';
+                                img.style.justifyContent = 'center';
+                                img.style.marginBottom = '1.1rem';
                                 let imagesArr = Array.isArray(p.images) && p.images.length > 0 ? p.images : (p.image ? [p.image] : []);
                                 if(imagesArr.length > 0){
                                     const imageEl = document.createElement('img');
@@ -1496,35 +1523,83 @@
                                     imageEl.alt = p.name || 'Ürün görseli';
                                     imageEl.loading = 'lazy';
                                     imageEl.decoding = 'async';
-                                    imageEl.style.width='100%';
-                                    imageEl.style.height='100%';
-                                    imageEl.style.objectFit='cover';
-                                    // Küçük ve optimize edilmiş görseller kullanılması önerilir (webp/png)
+                                    imageEl.style.maxWidth='100%';
+                                    imageEl.style.maxHeight='100%';
+                                    imageEl.style.objectFit='contain';
                                     img.innerHTML='';
                                     img.appendChild(imageEl);
-                                    // Artık lightbox yok, tıklama olayı kaldırıldı
-                                    img.style.cursor = 'default';
                                 } else {
                                     img.textContent = '🛍️';
+                                    img.style.fontSize = '3.2rem';
                                 }
-                                const info = document.createElement('div');
-                                info.className = 'product-info';
+                                card.appendChild(img);
+                                // Ürün adı
                                 const nameEl = document.createElement('div');
                                 nameEl.className = 'product-name';
                                 nameEl.textContent = p.name || '';
-                                const priceEl = document.createElement('div');
+                                nameEl.style.textAlign = 'center';
+                                nameEl.style.fontWeight = '600';
+                                nameEl.style.fontSize = '1.08rem';
+                                nameEl.style.marginBottom = '0.5rem';
+                                card.appendChild(nameEl);
+                                // Fiyat
+                                const priceWrap = document.createElement('div');
+                                priceWrap.style.textAlign = 'center';
+                                priceWrap.style.marginBottom = '0.7rem';
+                                if (p.oldPrice && p.oldPrice > p.price) {
+                                    const oldPriceEl = document.createElement('span');
+                                    oldPriceEl.textContent = fmt.format(p.oldPrice);
+                                    oldPriceEl.style.textDecoration = 'line-through';
+                                    oldPriceEl.style.color = '#6b7280';
+                                    oldPriceEl.style.fontWeight = '500';
+                                    oldPriceEl.style.marginRight = '0.5rem';
+                                    priceWrap.appendChild(oldPriceEl);
+                                }
+                                const priceEl = document.createElement('span');
                                 priceEl.className = 'product-price';
                                 priceEl.textContent = fmt.format(p.price || 0);
+                                priceEl.style.color = '#6b46c1';
+                                priceEl.style.fontWeight = '700';
+                                priceEl.style.fontSize = '1.18rem';
+                                priceWrap.appendChild(priceEl);
+                                card.appendChild(priceWrap);
+                                // Yıldızlı puan
+                                if (p.rating && p.ratingCount) {
+                                    const ratingWrap = document.createElement('div');
+                                    ratingWrap.style.display = 'flex';
+                                    ratingWrap.style.alignItems = 'center';
+                                    ratingWrap.style.justifyContent = 'center';
+                                    ratingWrap.style.gap = '0.18rem';
+                                    ratingWrap.style.marginBottom = '0.5rem';
+                                    for(let i=1;i<=5;i++){
+                                        const star = document.createElement('span');
+                                        star.textContent = i <= Math.round(p.rating) ? '★' : '☆';
+                                        star.style.color = '#fbbf24';
+                                        star.style.fontSize = '1.1rem';
+                                        ratingWrap.appendChild(star);
+                                    }
+                                    const ratingText = document.createElement('span');
+                                    ratingText.textContent = p.rating.toFixed(1);
+                                    ratingText.style.color = '#6b7280';
+                                    ratingText.style.fontWeight = '600';
+                                    ratingText.style.fontSize = '1rem';
+                                    ratingText.style.marginLeft = '0.3rem';
+                                    ratingWrap.appendChild(ratingText);
+                                    const ratingCount = document.createElement('span');
+                                    ratingCount.textContent = `(${p.ratingCount})`;
+                                    ratingCount.style.color = '#6b7280';
+                                    ratingCount.style.fontSize = '0.95rem';
+                                    ratingCount.style.marginLeft = '0.18rem';
+                                    ratingWrap.appendChild(ratingCount);
+                                    card.appendChild(ratingWrap);
+                                }
+                                // Sepete ekle butonu
                                 const btn = document.createElement('button');
                                 btn.setAttribute('data-action','add-to-cart');
                                 btn.setAttribute('data-product-id', p.id || ('P'+idx));
                                 btn.textContent = 'Sepete Ekle';
-                                info.appendChild(nameEl);
-                                info.appendChild(priceEl);
-                                info.appendChild(btn);
-                                card.appendChild(badge);
-                                card.appendChild(img);
-                                card.appendChild(info);
+                                btn.style.marginTop = 'auto';
+                                card.appendChild(btn);
                                 grid.appendChild(card);
                             });
                         }catch(e){ console.error('Ürün yükleme hatası', e); }
@@ -1550,17 +1625,26 @@
                             const name = card.getAttribute('data-name') || '';
                             const price = card.getAttribute('data-price') || '';
                             const id = card.getAttribute('data-id') || '';
-                            // Tüm resimleri bul (img etiketlerinin src'si)
+                            // products.json'dan ilgili ürünü bul
                             let images = [];
-                            const imgTags = card.querySelectorAll('img');
-                            imgTags.forEach(tag => images.push(tag.src));
+                            try {
+                                const allProducts = window._lastProductsList || [];
+                                const product = allProducts.find(p => (p.id || ('P'+allProducts.indexOf(p))) == id);
+                                if(product && Array.isArray(product.images)) images = product.images;
+                                else if(product && product.image) images = [product.image];
+                            } catch(e) {}
+                            // Eğer products.json erişimi yoksa fallback olarak karttaki img'leri kullan
+                            if(images.length === 0) {
+                                const imgTags = card.querySelectorAll('img');
+                                imgTags.forEach(tag => images.push(tag.src));
+                            }
                             // Panel içeriğini oluştur
                             let html = `<h2 style='font-size:1.5rem;font-weight:800;color:#2563eb;margin-bottom:1.2rem;'>${name}</h2>`;
                             html += `<div style='font-size:1.1rem;font-weight:700;color:#16a34a;margin-bottom:1.2rem;'>${price} TL</div>`;
                             if(images.length > 0) {
                                 html += `<div style='display:flex;gap:1.2rem;justify-content:flex-start;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;'>`;
                                 images.forEach(src => {
-                                    html += `<img src='${src}' alt='${name}' style='width:120px;height:80px;object-fit:cover;border-radius:8px;box-shadow:0 2px 8px rgba(30,143,85,0.08);background:rgba(255,255,255,0.7);margin-bottom:0.5rem;'/>`;
+                                    html += `<img src='${src}' alt='${name}' style='max-width:340px;max-height:340px;width:auto;height:auto;display:block;border-radius:12px;box-shadow:0 4px 18px rgba(30,143,85,0.13);background:rgba(255,255,255,0.7);margin-bottom:1.2rem;'/>`;
                                 });
                                 html += `</div>`;
                             }
