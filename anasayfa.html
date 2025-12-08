@@ -1644,7 +1644,10 @@
                             }
                             // Panel içeriğini oluştur (modern layout)
                             let mainImg = images[0] || '';
-                            let html = `<div style='display:flex;gap:2.2rem;flex-wrap:wrap;align-items:flex-start;'>`;
+                            let html = `<div style='padding-bottom:0.5rem;'>`;
+                            // Ürün adı panelin en başında, büyük ve siyah
+                            html += `<div style='width:100%;text-align:left;margin-bottom:0.7rem;'><span style='font-size:2.1rem;font-weight:900;color:#18181b;letter-spacing:-0.5px;line-height:1.1;display:inline-block;'>${name}</span></div>`;
+                            html += `<div style='display:flex;gap:2.2rem;flex-wrap:wrap;align-items:flex-start;'>`;
                             // Sol: görseller
                             html += `<div style='flex:0 0 340px;max-width:340px;display:flex;flex-direction:column;align-items:center;'>`;
                             html += `<div id='panelMainImgWrap' style='width:100%;max-width:calc(100vw - 48px);height:340px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:18px;box-shadow:0 4px 18px rgba(30,143,85,0.13);margin-bottom:1.1rem;overflow:hidden;'>`;
@@ -1659,11 +1662,16 @@
                             }
                             html += `</div>`;
                             // Sağ: bilgiler
-                            html += `<div style='flex:1;min-width:220px;display:flex;flex-direction:column;gap:0.7rem;'>`;
-                            html += `<h2 style='font-size:1.5rem;font-weight:800;color:#2563eb;margin-bottom:0.7rem;'>${name}</h2>`;
+                            html += `<div style='flex:1;min-width:220px;display:flex;flex-direction:column;gap:0.7rem;justify-content:center;'>`;
                             if(desc) html += `<div style='font-size:1.05rem;color:#334155;margin-bottom:0.7rem;'>${desc}</div>`;
-                            html += `<div style='font-size:1.1rem;font-weight:700;color:#16a34a;margin-bottom:0.7rem;'>${price} TL`;
-                            if(oldPrice && oldPrice > price) html += ` <span style='text-decoration:line-through;color:#6b7280;font-weight:500;font-size:1rem;margin-left:0.7rem;'>${oldPrice} TL</span>`;
+                            // Fiyat ve sepete ekle ortalanmış
+                            html += `<div style='display:flex;flex-direction:column;align-items:center;justify-content:center;margin-bottom:0.7rem;'>`;
+                            // Fiyatları daima ₺ simgesiyle ve TL formatında göster
+                            const fmt = new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', minimumFractionDigits: 2 });
+                            html += `<div style='font-size:1.3rem;font-weight:800;color:#16a34a;'>${fmt.format(price)}`;
+                            if(oldPrice && oldPrice > price) html += ` <span style='text-decoration:line-through;color:#6b7280;font-weight:500;font-size:1.05rem;margin-left:0.7rem;'>${fmt.format(oldPrice)}</span>`;
+                            html += `</div>`;
+                            html += `<button id='panelAddToCartBtn' class='add-cart-btn' style='background:#16a34a;color:#fff;padding:0.7rem 2.2rem;border:none;border-radius:8px;font-size:1.15rem;cursor:pointer;margin-top:0.7rem;margin-bottom:0.2rem;font-weight:700;'>Sepete Ekle</button>`;
                             html += `</div>`;
                             if(rating && ratingCount) {
                                 html += `<div style='display:flex;align-items:center;gap:0.18rem;margin-bottom:0.7rem;'>`;
@@ -1674,7 +1682,7 @@
                                 html += `<span style='color:#6b7280;font-size:0.95rem;margin-left:0.18rem;'>(${ratingCount})</span>`;
                                 html += `</div>`;
                             }
-                            html += `<button id='panelAddToCartBtn' class='add-cart-btn' style='background:#16a34a;color:#fff;padding:0.7rem 1.5rem;border:none;border-radius:8px;font-size:1.1rem;cursor:pointer;margin-bottom:1.2rem;'>Sepete Ekle</button>`;
+                            html += `</div>`;
                             html += `</div>`;
                             html += `</div>`;
                             document.getElementById('productDetailContent').innerHTML = html;
