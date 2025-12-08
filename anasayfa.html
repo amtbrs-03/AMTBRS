@@ -349,9 +349,9 @@
 
         /* Products scene */
         .products-wrapper {
-            max-width: 1200px;
-            margin: 6rem auto 0; /* moved further down toward page center */
-            padding: 0 2rem 3rem;
+            max-width: 100vw;
+            margin: 2.5rem 0 0 0; /* üstten biraz boşluk, soldan sıfır */
+            padding: 0 0 3rem 0; /* sol padding sıfır */
             perspective: 1400px;
         }
         .products {
@@ -359,6 +359,8 @@
             grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 2rem;
             transform-style: preserve-3d;
+            justify-items: start;
+            align-items: start;
         }
 
         /* Products UI polish */
@@ -1593,13 +1595,8 @@
                                     ratingWrap.appendChild(ratingCount);
                                     card.appendChild(ratingWrap);
                                 }
-                                // Sepete ekle butonu
-                                const btn = document.createElement('button');
-                                btn.setAttribute('data-action','add-to-cart');
-                                btn.setAttribute('data-product-id', p.id || ('P'+idx));
-                                btn.textContent = 'Sepete Ekle';
-                                btn.style.marginTop = 'auto';
-                                card.appendChild(btn);
+                                // Sepete ekle butonu kaldırıldı, kart tıklanabilir yapıldı
+                                card.style.cursor = 'pointer';
                                 grid.appendChild(card);
                             });
                         }catch(e){ console.error('Ürün yükleme hatası', e); }
@@ -1617,59 +1614,94 @@
                             document.getElementById('closeProductDetailPanel').onclick = function(){ panel.style.display='none'; };
                         }
                         document.getElementById('products').addEventListener('click', function(e) {
-                            const img = e.target.closest('.product-image');
-                            if (!img) return;
-                            const card = img.closest('.product-card');
+                            const card = e.target.closest('.product-card');
                             if (!card) return;
                             // Ürün bilgilerini topla
                             const name = card.getAttribute('data-name') || '';
                             const price = card.getAttribute('data-price') || '';
                             const id = card.getAttribute('data-id') || '';
-                            // products.json'dan ilgili ürünü bul
                             let images = [];
+                            let oldPrice = '', rating = '', ratingCount = '', desc = '';
                             try {
                                 const allProducts = window._lastProductsList || [];
                                 const product = allProducts.find(p => (p.id || ('P'+allProducts.indexOf(p))) == id);
                                 if(product && Array.isArray(product.images)) images = product.images;
                                 else if(product && product.image) images = [product.image];
+                                if(product) {
+                                    oldPrice = product.oldPrice || '';
+                                    rating = product.rating || '';
+                                    ratingCount = product.ratingCount || '';
+                                    desc = product.description || '';
+                                }
                             } catch(e) {}
-                            // Eğer products.json erişimi yoksa fallback olarak karttaki img'leri kullan
                             if(images.length === 0) {
                                 const imgTags = card.querySelectorAll('img');
                                 imgTags.forEach(tag => images.push(tag.src));
                             }
-                            // Panel içeriğini oluştur
-                            let html = `<h2 style='font-size:1.5rem;font-weight:800;color:#2563eb;margin-bottom:1.2rem;'>${name}</h2>`;
-                            html += `<div style='font-size:1.1rem;font-weight:700;color:#16a34a;margin-bottom:1.2rem;'>${price} TL</div>`;
-                            if(images.length > 0) {
-                                html += `<div style='display:flex;gap:1.2rem;justify-content:flex-start;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;'>`;
-                                images.forEach(src => {
-                                    html += `<img src='${src}' alt='${name}' style='max-width:340px;max-height:340px;width:auto;height:auto;display:block;border-radius:12px;box-shadow:0 4px 18px rgba(30,143,85,0.13);background:rgba(255,255,255,0.7);margin-bottom:1.2rem;'/>`;
+                            // Panel içeriğini oluştur (modern layout)
+                            let mainImg = images[0] || '';
+                            let html = `<div style='display:flex;gap:2.2rem;flex-wrap:wrap;align-items:flex-start;'>`;
+                            // Sol: görseller
+                            html += `<div style='flex:0 0 340px;max-width:340px;display:flex;flex-direction:column;align-items:center;'>`;
+                            html += `<div id='panelMainImgWrap' style='width:340px;height:340px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:18px;box-shadow:0 4px 18px rgba(30,143,85,0.13);margin-bottom:1.1rem;'>`;
+                            html += `<img id='panelMainImg' src='${mainImg}' alt='${name}' style='max-width:100%;max-height:100%;object-fit:contain;border-radius:16px;'/>`;
+                            html += `</div>`;
+                            if(images.length > 1) {
+                                html += `<div style='display:flex;gap:0.7rem;justify-content:center;'>`;
+                                images.forEach((src, i) => {
+                                    html += `<img src='${src}' alt='${name}' data-idx='${i}' class='panelThumbImg' style='width:56px;height:56px;object-fit:cover;border-radius:8px;box-shadow:0 2px 8px rgba(30,143,85,0.10);cursor:pointer;border:2px solid ${i===0?'#16a34a':'#e5e7eb'};background:#fff;'/>`;
                                 });
                                 html += `</div>`;
                             }
+                            html += `</div>`;
+                            // Sağ: bilgiler
+                            html += `<div style='flex:1;min-width:220px;display:flex;flex-direction:column;gap:0.7rem;'>`;
+                            html += `<h2 style='font-size:1.5rem;font-weight:800;color:#2563eb;margin-bottom:0.7rem;'>${name}</h2>`;
+                            if(desc) html += `<div style='font-size:1.05rem;color:#334155;margin-bottom:0.7rem;'>${desc}</div>`;
+                            html += `<div style='font-size:1.1rem;font-weight:700;color:#16a34a;margin-bottom:0.7rem;'>${price} TL`;
+                            if(oldPrice && oldPrice > price) html += ` <span style='text-decoration:line-through;color:#6b7280;font-weight:500;font-size:1rem;margin-left:0.7rem;'>${oldPrice} TL</span>`;
+                            html += `</div>`;
+                            if(rating && ratingCount) {
+                                html += `<div style='display:flex;align-items:center;gap:0.18rem;margin-bottom:0.7rem;'>`;
+                                for(let i=1;i<=5;i++){
+                                    html += `<span style='color:#fbbf24;font-size:1.1rem;'>${i <= Math.round(rating) ? '★' : '☆'}</span>`;
+                                }
+                                html += `<span style='color:#6b7280;font-weight:600;font-size:1rem;margin-left:0.3rem;'>${parseFloat(rating).toFixed(1)}</span>`;
+                                html += `<span style='color:#6b7280;font-size:0.95rem;margin-left:0.18rem;'>(${ratingCount})</span>`;
+                                html += `</div>`;
+                            }
                             html += `<button id='panelAddToCartBtn' class='add-cart-btn' style='background:#16a34a;color:#fff;padding:0.7rem 1.5rem;border:none;border-radius:8px;font-size:1.1rem;cursor:pointer;margin-bottom:1.2rem;'>Sepete Ekle</button>`;
+                            html += `</div>`;
+                            html += `</div>`;
                             document.getElementById('productDetailContent').innerHTML = html;
-                            // Sepete Ekle butonuna tıklama kontrolü
+                            // Küçük resme tıklanınca ana resim değişsin
                             setTimeout(function(){
+                                document.querySelectorAll('.panelThumbImg').forEach(function(img){
+                                    img.onclick = function(){
+                                        var idx = parseInt(img.getAttribute('data-idx'),10);
+                                        var mainImg = images[idx];
+                                        var mainImgEl = document.getElementById('panelMainImg');
+                                        if(mainImgEl) mainImgEl.src = mainImg;
+                                        document.querySelectorAll('.panelThumbImg').forEach(function(t){ t.style.border='2px solid #e5e7eb'; });
+                                        img.style.border = '2px solid #16a34a';
+                                    };
+                                });
+                                // Sepete ekle butonu
                                 var btn = document.getElementById('panelAddToCartBtn');
                                 if(btn){
                                     btn.onclick = function(){
-                                        // Kullanıcı giriş kontrolü (localStorage'da currentUser var mı?)
                                         var user = null;
                                         try { user = JSON.parse(localStorage.getItem('currentUser')); } catch(e){}
                                         if(user && user.email){
                                             if(window.addToCart) window.addToCart(id, name, price);
                                             alert('Ürün sepete eklendi!');
                                         } else {
-                                            // Giriş modalini aç
                                             if(typeof openAuthModal==='function') openAuthModal();
                                             else alert('Lütfen giriş yapınız!');
                                         }
                                     };
                                 }
                             }, 10);
-                            document.getElementById('productDetailContent').innerHTML = html;
                             // Paneli kartın sağında ve hizasında aç
                             const panel = document.getElementById('productDetailPanel');
                             const cardRect = card.getBoundingClientRect();
