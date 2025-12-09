@@ -1,5 +1,5 @@
 {
-  "updatedAt": 1765322348440,
+  "updatedAt": 1765322497151,
   "items": [
     {
       "id": "IMG_1966.JPG",
@@ -11,6 +11,18 @@
         "images/products/IMG_1966.JPG",
         "images/gallery/IMG_1972.JPG",
         "images/gallery/IMG_1973.JPG"
+      ]
+    },
+    {
+      "id": "TEMP-1765322433131",
+      "name": "plehomantinest",
+      "price": 3000,
+      "badge": "İndirim",
+      "image": "images/gallery/IMG_1967.JPG",
+      "images": [
+        "images/gallery/IMG_1967.JPG",
+        "images/gallery/IMG_1967.JPG",
+        "images/gallery/IMG_1967.JPG"
       ]
     }
   ]
