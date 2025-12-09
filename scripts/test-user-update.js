@@ -202,9 +202,6 @@ async function loadPage() {
         if (typeof url === 'string' && url.indexOf('products.json') !== -1) {
           return Promise.resolve({
             ok: true,
-            status: 200,
-            json: function(){return Promise.resolve([]);},
-            text: function(){return Promise.resolve('[]');}
           });
         }
         return origFetch ? origFetch.apply(this, arguments) : Promise.reject(new Error('fetch not implemented'));
