@@ -9,6 +9,21 @@ if (typeof window === 'undefined') global.window = window = {};
 const fs = require('fs');
 const path = require('path');
 const nodeFetchPatch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+// Node.js ortamı için fetch ve TextDecoder polyfill
+if (typeof window !== 'undefined' && typeof window.fetch !== 'function') {
+  window.fetch = function(url) {
+    const fs = require('fs');
+    const path = url.replace(/\?.*$/, '');
+    return Promise.resolve({
+      ok: true,
+      status: 200,
+      url: url,
+      json: () => Promise.resolve(JSON.parse(fs.readFileSync(path, 'utf8'))),
+      text: () => Promise.resolve(fs.readFileSync(path, 'utf8')),
+      headers: { get: () => null }
+    });
+  };
+}
 class MockResponse {
   constructor(body, opts = {}) {
     this._body = body;
@@ -22,6 +37,9 @@ class MockResponse {
 }
 async function fetchMock(url, ...args) {
   // products.json istenirse fs ile oku
+  // Diğer fetchler node-fetch ile
+  return nodeFetchPatch(fetchUrl, ...args);
+}
   let fetchUrl = url;
   if (typeof url === 'string' && url.startsWith('/')) {
     // Convert relative URL to absolute using site origin
