@@ -1,12 +1,11 @@
 {
   "email": "amtbrs@icloud.com",
-  "phone": "+90 530 306 90 81",
+  "phone": "+90 5XX XXX XXXX",
   "address": "Adresiniz Caddesi 1, Şehir, TR",
   "hours": "Pzt-Cum 09:00-19:00",
   "iban": "TR33 0006 1005 1978 6457 8413 26",
-  "orderEndpoint": "https://ern-site.amtbrs-03.workers.dev/send-order",
   "contactBtnText": "İletişim",
-  "homepageTitle": "HOŞGELDİNİZ",
-  "homepageSubtitle": "ÇİÇEKLERİN BÜYÜLEYİCİ DÜNYASI",
-  "homepageBackground": "images/gallery/IMG_1966.JPG"
+  "homepageTitle": "Hoşgeldiniz",
+  "homepageSubtitle": "Çiçeklerle dolu bir dünya",
+  "homepageBackground": "images/gallery/1.jpg"
 }
