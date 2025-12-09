@@ -3814,8 +3814,9 @@
                                 ${imageHTML}
                                 <div class="product-info">
                                     <div class="product-name">${escapeHtml(p.name)}</div>
-                                    <div class="product-price">₺${(p.price||0).toFixed(2)}</div>
-                                    <button data-action="add-to-cart" data-product-id="${p.id}">Sepete Ekle</button>
+                                    <div class="product-diameter">Saksı Çapı: ${escapeHtml(p.diameter||'')}</div>
+                                    <div class="product-height">Ürün Boyu: ${escapeHtml(p.height||'')}</div>
+                                    <div class="product-desc">${escapeHtml(p.desc||'')}</div>
                                 </div>
                             `;
                             container.appendChild(card);
