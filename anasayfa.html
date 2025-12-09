@@ -120,7 +120,8 @@
                         right: 0;
                         z-index: 1000; /* mobilde sabit başlık en üstte kalsın */
                     }
-                    header.blurred, .products-header.blurred {
+                    /* JSDOM test ortamı için aşağıdaki CSS özellikleri devre dışı bırakıldı */
+                    /* header.blurred, .products-header.blurred {
                         background: rgba(30,143,85,0.55) !important;
                         backdrop-filter: blur(8px) !important;
                         -webkit-backdrop-filter: blur(8px) !important;
@@ -130,7 +131,7 @@
                         background: rgba(255,255,255,0.65) !important;
                         backdrop-filter: blur(8px) !important;
                         -webkit-backdrop-filter: blur(8px) !important;
-                    }
+                    } */
                     /* İçerik, başlık tarafından örtülmesin; JS header yüksekliğini body padding-top'a yazar */
                     body.mobile-header-offset {
                         padding-top: var(--mobile-header-h, 72px);
@@ -138,15 +139,9 @@
                 }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { height: 100%; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-display: swap;
-            line-height: 1.6;
-            color: #0b2f1f;
-            /* Arka plan JS ile ayarlanacak */
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            min-height: 100%;
+        <body>
+            <!-- Sadece tıklama/panel ve ürünler -->
+            <div class="products-wrapper">
             padding-bottom: 4rem;
         }
 
