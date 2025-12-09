@@ -143,8 +143,7 @@
             font-display: swap;
             line-height: 1.6;
             color: #0b2f1f;
-            background: url('images/gallery/floral-bg.jpg') no-repeat center center fixed;
-            background-size: cover;
+            /* Arka plan JS ile ayarlanacak */
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             min-height: 100%;
@@ -1555,6 +1554,8 @@
                                 }
                                 card.appendChild(infoList);
 
+                                // Fiyat ve Sepete Ekle butonu kaldırıldı
+
                                 // Admin düzenleme formu (sadece admin ise)
                                 if (window.getCurrentUser && getCurrentUser() && getCurrentUser().isAdmin) {
                                     const adminForm = document.createElement('form');
@@ -1982,6 +1983,56 @@
                         async function loadSiteSettingsAndApply(){
                             const s = await fetchSiteSettings();
                             applySiteSettings(s);
+                        }
+
+                        // Site ayarlarını uygula (background, başlık, meta, vs.)
+                        function applySiteSettings(cfg) {
+                            if (!cfg || typeof cfg !== 'object') return;
+                            // Arka plan
+                            if (cfg.homepageBackground) {
+                                const imgTest = new window.Image();
+                                imgTest.onload = function() {
+                                    document.body.style.backgroundImage = "url('" + cfg.homepageBackground.replace(/^\//,'') + "')";
+                                    document.body.style.backgroundSize = 'cover';
+                                    document.body.style.backgroundRepeat = 'no-repeat';
+                                    document.body.style.backgroundAttachment = 'fixed';
+                                    document.body.style.backgroundPosition = 'center center';
+                                };
+                                imgTest.onerror = function() {
+                                    document.body.style.backgroundImage = "url('images/gallery/floral-bg.jpg')";
+                                    document.body.style.backgroundSize = 'cover';
+                                    document.body.style.backgroundRepeat = 'no-repeat';
+                                    document.body.style.backgroundAttachment = 'fixed';
+                                    document.body.style.backgroundPosition = 'center center';
+                                    console.warn('Arka plan resmi yüklenemedi, floral-bg.jpg ile devam ediliyor:', cfg.homepageBackground);
+                                };
+                                imgTest.src = cfg.homepageBackground.replace(/^\//,'');
+                            }
+                            // Hero başlık ve alt başlık
+                            const heroTitle = document.querySelector('.hero h1');
+                            const heroSub = document.querySelector('.hero p');
+                            if (heroTitle && cfg.homepageTitle) heroTitle.textContent = cfg.homepageTitle;
+                            if (heroSub && cfg.homepageSubtitle) heroSub.textContent = cfg.homepageSubtitle;
+                            // <title> ve meta
+                            var baseTitle = 'ERN-ÇİÇEK';
+                            var titleText = (cfg.homepageTitle && cfg.homepageTitle.trim()) ? cfg.homepageTitle.trim() : baseTitle;
+                            var subText = (cfg.homepageSubtitle && cfg.homepageSubtitle.trim()) ? cfg.homepageSubtitle.trim() : '';
+                            var composed = subText ? (titleText + ' — ' + subText) : titleText;
+                            try { document.title = composed; } catch(_){}
+                            var ogTitle = document.querySelector('meta[property="og:title"]');
+                            if (ogTitle) ogTitle.setAttribute('content', composed);
+                            var twTitle = document.querySelector('meta[name="twitter:title"]');
+                            if (twTitle) twTitle.setAttribute('content', composed);
+                            var desc = document.querySelector('meta[name="description"]');
+                            if (desc && subText) desc.setAttribute('content', subText);
+                            // Buton metni
+                            const contactBtn = document.getElementById('contactBtn');
+                            if (contactBtn && cfg.contactBtnText) {
+                                const span = contactBtn.querySelector('span:nth-child(2)');
+                                if (span) span.textContent = cfg.contactBtnText;
+                            }
+                            // localStorage'a kaydet
+                            try{ localStorage.setItem('site-settings', JSON.stringify(cfg)); }catch(e){}
                         }
 
                     /* --- Registration / Login --- */
@@ -4373,5 +4424,16 @@ function saveUserPhone() {
         }
     }catch(e){ /* ignore */ }
 })();
+</script>
+<script>
+// site-settings.json'dan arka planı dinamik olarak ayarla
+fetch('site-settings.json')
+    .then(r => r.json())
+    .then(cfg => {
+        if(cfg.homepageBackground) {
+            document.body.style.background = `url('${cfg.homepageBackground}') no-repeat center center fixed`;
+            document.body.style.backgroundSize = 'cover';
+        }
+    });
 </script>
 </html>
