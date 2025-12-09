@@ -180,7 +180,7 @@
             position: relative;
             transform-style: preserve-3d;
             perspective: 800px;
-            background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+            background: linear-gradient(180deg, #ff9800 0%, #ffb347 100%); /* turuncu degrade */
         }
         .logo-icon { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; }
         .logo-icon svg{ display:block; width:28px; height:28px; filter: drop-shadow(0 6px 10px rgba(3,37,18,0.06)); transform: translateZ(6px); animation: floatLogo 6s ease-in-out infinite; }
@@ -192,7 +192,17 @@
         .nav-links a:hover { color: #b8d4ff; transform: translateY(-2px); }
         .auth-btn { background: #6b897f; padding: 0.6rem 1.2rem; border-radius: 8px; cursor: pointer; border: none; color: white; transition: 0.25s; }
         .auth-btn:hover { background: #a2444b; }
-        .user-info { color: rgba(255,255,255,0.9); }
+        .user-info {
+            color: #222;
+            background: #e5e7eb;
+            border-radius: 8px;
+            padding: 0.25rem 0.7rem;
+            font-weight: 600;
+            font-size: 1rem;
+            margin-right: 0.2rem;
+            display: inline-block;
+            transition: background 0.2s;
+        }
 
         .cart-btn {
             position: relative;
@@ -1534,41 +1544,36 @@
                                 infoList.style.gap = '0.13rem';
                                 infoList.style.fontSize = '0.93rem';
                                 infoList.style.color = '#444';
-                                if (p.height) {
-                                    // Yeni ürün kartı bilgisi: sadece istenen alanlar
-                                    if (p.height || p.potType) {
-                                        const infoList = document.createElement('div');
-                                        infoList.style.display = 'flex';
-                                        infoList.style.flexDirection = 'column';
-                                        infoList.style.alignItems = 'flex-start';
-                                        infoList.style.width = '100%';
-                                        infoList.style.gap = '0.13rem';
-                                        infoList.style.fontSize = '0.93rem';
-                                        infoList.style.color = '#444';
-                                        if (p.height) {
-                                            const h = document.createElement('div');
-                                            h.innerHTML = `<span style='font-weight:600;'>Boy:</span> <span>${p.height} cm</span>`;
-                                            infoList.appendChild(h);
-                                        }
-                                        if (p.potType) {
-                                            const s = document.createElement('div');
-                                            s.innerHTML = `<span style='font-weight:600;'>Saksı:</span> <span>${p.potType}</span>`;
-                                            infoList.appendChild(s);
-                                        }
-                                        card.appendChild(infoList);
+                                // Her ürün kartı sadece kendi bilgilerini göstersin
+                                if (p.height || p.potType) {
+                                    const infoList = document.createElement('div');
+                                    infoList.style.display = 'flex';
+                                    infoList.style.flexDirection = 'column';
+                                    infoList.style.alignItems = 'flex-start';
+                                    infoList.style.width = '100%';
+                                    infoList.style.gap = '0.13rem';
+                                    infoList.style.fontSize = '0.93rem';
+                                    infoList.style.color = '#444';
+                                    if (p.height) {
+                                        const h = document.createElement('div');
+                                        h.innerHTML = `<span style='font-weight:600;'>Boy:</span> <span>${p.height} cm</span>`;
+                                        infoList.appendChild(h);
                                     }
-                                    // Ürün hakkında bilgi en altta
-                                    if (p.info) {
-                                        const infoDiv = document.createElement('div');
-                                        infoDiv.className = 'product-info';
-                                        infoDiv.style = 'width:100%;margin-top:0.5rem;font-size:0.95rem;color:#2d3748;background:#f6f6f6;border-radius:8px;padding:0.6rem 0.7rem;text-align:left;word-break:break-word;max-height:72px;overflow:auto;';
-                                        infoDiv.innerHTML = `<span style='font-weight:600;'>Ürün Hakkında:</span> <span>${p.info}</span>`;
-                                        card.appendChild(infoDiv);
+                                    if (p.potType) {
+                                        const s = document.createElement('div');
+                                        s.innerHTML = `<span style='font-weight:600;'>Saksı:</span> <span>${p.potType}</span>`;
+                                        infoList.appendChild(s);
                                     }
-                                    i.innerHTML = `<span style='font-weight:600;'>Bilgi:</span> <span>${p.info}</span>`;
-                                    infoList.appendChild(i);
+                                    card.appendChild(infoList);
                                 }
-                                card.appendChild(infoList);
+                                // Ürün hakkında bilgi en altta, sadece o ürüne ait
+                                if (p.info) {
+                                    const infoDiv = document.createElement('div');
+                                    infoDiv.className = 'product-info';
+                                    infoDiv.style = 'width:100%;margin-top:0.5rem;font-size:0.95rem;color:#2d3748;background:#f6f6f6;border-radius:8px;padding:0.6rem 0.7rem;text-align:left;word-break:break-word;max-height:72px;overflow:auto;';
+                                    infoDiv.innerHTML = `<span style='font-weight:600;'>Ürün Hakkında:</span> <span>${p.info}</span>`;
+                                    card.appendChild(infoDiv);
+                                }
 
                                 // Fiyat ve Sepete Ekle butonu kaldırıldı
 
