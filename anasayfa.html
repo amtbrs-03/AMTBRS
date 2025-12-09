@@ -1534,22 +1534,36 @@
                                 infoList.style.fontSize = '0.93rem';
                                 infoList.style.color = '#444';
                                 if (p.height) {
-                                    const h = document.createElement('div');
-                                    h.innerHTML = `<span style='font-weight:600;'>Boy:</span> <span>${p.height} cm</span>`;
-                                    infoList.appendChild(h);
-                                }
-                                if (p.potType) {
-                                    const s = document.createElement('div');
-                                    s.innerHTML = `<span style='font-weight:600;'>Saksı:</span> <span>${p.potType}</span>`;
-                                    infoList.appendChild(s);
-                                }
-                                if (p.leafWidth) {
-                                    const l = document.createElement('div');
-                                    l.innerHTML = `<span style='font-weight:600;'>Yaprak:</span> <span>${p.leafWidth}</span>`;
-                                    infoList.appendChild(l);
-                                }
-                                if (p.info) {
-                                    const i = document.createElement('div');
+                                    // Yeni ürün kartı bilgisi: sadece istenen alanlar
+                                    if (p.height || p.potType) {
+                                        const infoList = document.createElement('div');
+                                        infoList.style.display = 'flex';
+                                        infoList.style.flexDirection = 'column';
+                                        infoList.style.alignItems = 'flex-start';
+                                        infoList.style.width = '100%';
+                                        infoList.style.gap = '0.13rem';
+                                        infoList.style.fontSize = '0.93rem';
+                                        infoList.style.color = '#444';
+                                        if (p.height) {
+                                            const h = document.createElement('div');
+                                            h.innerHTML = `<span style='font-weight:600;'>Boy:</span> <span>${p.height} cm</span>`;
+                                            infoList.appendChild(h);
+                                        }
+                                        if (p.potType) {
+                                            const s = document.createElement('div');
+                                            s.innerHTML = `<span style='font-weight:600;'>Saksı:</span> <span>${p.potType}</span>`;
+                                            infoList.appendChild(s);
+                                        }
+                                        card.appendChild(infoList);
+                                    }
+                                    // Ürün hakkında bilgi en altta
+                                    if (p.info) {
+                                        const infoDiv = document.createElement('div');
+                                        infoDiv.className = 'product-info';
+                                        infoDiv.style = 'width:100%;margin-top:0.5rem;font-size:0.95rem;color:#2d3748;background:#f6f6f6;border-radius:8px;padding:0.6rem 0.7rem;text-align:left;word-break:break-word;max-height:72px;overflow:auto;';
+                                        infoDiv.innerHTML = `<span style='font-weight:600;'>Ürün Hakkında:</span> <span>${p.info}</span>`;
+                                        card.appendChild(infoDiv);
+                                    }
                                     i.innerHTML = `<span style='font-weight:600;'>Bilgi:</span> <span>${p.info}</span>`;
                                     infoList.appendChild(i);
                                 }
