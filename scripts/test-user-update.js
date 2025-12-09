@@ -14,6 +14,7 @@ class MockResponse {
     this._body = body;
     this.status = opts.status || 200;
     this.ok = this.status >= 200 && this.status < 300;
+    require('./polyfills');
     this.headers = new Map();
   }
   async json() { return JSON.parse(this._body); }
@@ -148,9 +149,6 @@ async function loadPage() {
   let html = fs.readFileSync(htmlPath, 'utf8');
   // products.json, alert, localStorage ve saveUserPhone mock'larını enjekte et
   const browserMocks = `<script>
-    (function(){
-      // fetch mock
-      var origFetch = window.fetch;
       window.fetch = function(url, opts) {
         if (typeof url === 'string' && url.indexOf('products.json') !== -1) {
           return Promise.resolve({
