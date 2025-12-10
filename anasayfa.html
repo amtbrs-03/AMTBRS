@@ -1636,6 +1636,45 @@
                     document.addEventListener('DOMContentLoaded', function(){
                         // Lightbox code removed as requested
                         loadProducts();
+                        
+                        // İletişim bilgilerini site-settings.json'dan yükle
+                        (async function loadContactInfo() {
+                            try {
+                                const settings = await fetchSiteSettings();
+                                if (settings) {
+                                    // E-posta
+                                    const emailLink = document.getElementById('contactEmailLink');
+                                    const emailBtn = document.getElementById('contactEmailBtn');
+                                    if (settings.email) {
+                                        if (emailLink) {
+                                            emailLink.href = 'mailto:' + settings.email;
+                                            emailLink.textContent = settings.email;
+                                        }
+                                        if (emailBtn) {
+                                            emailBtn.href = 'mailto:' + settings.email + '?subject=İletişim%20-%20Web';
+                                        }
+                                    }
+                                    // Telefon
+                                    const phoneEl = document.getElementById('contactPhone');
+                                    if (phoneEl && settings.phone) {
+                                        phoneEl.textContent = settings.phone;
+                                    }
+                                    // Adres
+                                    const addressEl = document.getElementById('contactAddress');
+                                    if (addressEl && settings.address) {
+                                        addressEl.textContent = settings.address;
+                                    }
+                                    // Çalışma Saatleri
+                                    const hoursEl = document.getElementById('contactHours');
+                                    if (hoursEl && settings.hours) {
+                                        hoursEl.textContent = settings.hours;
+                                    }
+                                }
+                            } catch (e) {
+                                console.error('İletişim bilgileri yüklenemedi:', e);
+                            }
+                        })();
+                        
                         // Ürün detay paneli ekle (sadece bir kez)
                         if (!document.getElementById('productDetailPanel')) {
                                                     // Login form submit: prevent reload and call loginUser
