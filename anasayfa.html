@@ -4400,6 +4400,7 @@
                                 if (aux === 'hide-mini-cart') { try{ hideMiniCart(); }catch(e){} }
 
                                 switch(action) {
+                                    case 'go-home': { try{ window.scrollTo({top:0,behavior:'smooth'}); }catch(e){} break; }
                                     case 'scroll': {
                                         const target = t.dataset.target;
                                         if (target) scrollToSection(target);
