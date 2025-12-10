@@ -1631,9 +1631,7 @@
                             grid.style.gap = '1.5rem';
                             grid.style.alignItems = 'stretch';
                             const fmt = new Intl.NumberFormat('tr-TR', {style:'currency', currency:'TRY'});
-                            console.log('[DEBUG] products.json items:', list);
                             list.forEach((p, idx) => {
-                                console.log(`[DEBUG] Product ${idx}:`, p.name, 'potDiameter:', p.potDiameter, 'height:', p.height);
                                 const card = document.createElement('div');
                                 card.className = 'product-card';
                                 card.setAttribute('data-id', p.id || ('P'+idx));
@@ -2094,69 +2092,27 @@
                                 panel.classList.remove('sticky-mode');
                                 document.body.style.overflow = 'hidden';
                             } else {
-                                // Masaüstü: kartın yanında panel (kartın resmini kapatmaz, sağ kenarını aşmaz)
+                                // Masaüstü: ekranın ortasında sabit modal olarak aç
                                 window._activeProductCard = card;
-                                panel.classList.add('sticky-mode');
+                                panel.classList.remove('sticky-mode');
                                 
-                                // Panel konumlandırma fonksiyonu
-                                function positionPanelNearCard() {
-                                    const activeCard = window._activeProductCard;
-                                    if (!activeCard) return;
-                                    
-                                    const cardRect = activeCard.getBoundingClientRect();
-                                    const viewportHeight = window.innerHeight;
-                                    const viewportWidth = window.innerWidth;
-                                    
-                                    // Kart içindeki resim genişliği (140px) + padding
-                                    const cardImageWidth = 140 + 16; // resim + sol padding
-                                    
-                                    // Panel genişliği: kartın sağ tarafına sığacak kadar
-                                    const availableWidth = cardRect.width - cardImageWidth - 8;
-                                    const panelWidth = Math.max(220, Math.min(availableWidth, 280));
-                                    
-                                    // Panel kartın içinde, resmin sağında konumlanacak
-                                    let left = cardRect.left + cardImageWidth;
-                                    
-                                    // Panel kartın sağ kenarını aşmasın
-                                    if (left + panelWidth > cardRect.right - 8) {
-                                        left = cardRect.right - panelWidth - 8;
-                                    }
-                                    
-                                    // Ekran sınırları kontrolü
-                                    if (left < 16) left = 16;
-                                    if (left + panelWidth > viewportWidth - 16) {
-                                        left = viewportWidth - panelWidth - 16;
-                                    }
-                                    
-                                    // Dikey konumlandırma - kartın üst kenarından başlasın
-                                    let top = cardRect.top;
-                                    
-                                    const panelHeight = panel.offsetHeight || 400;
-                                    
-                                    // Ekranın üstünden taşmasın
-                                    if (top < 16) top = 16;
-                                    
-                                    // Ekranın altından taşmasın
-                                    if (top + panelHeight > viewportHeight - 16) {
-                                        top = viewportHeight - panelHeight - 16;
-                                    }
-                                    
-                                    panel.style.position = 'fixed';
-                                    panel.style.left = left + 'px';
-                                    panel.style.top = top + 'px';
-                                    panel.style.width = panelWidth + 'px';
-                                    panel.style.maxHeight = (viewportHeight - 32) + 'px';
-                                    panel.style.height = 'auto';
-                                    panel.style.transform = 'none';
+                                // Panel ekranın ortasında
+                                panel.style.position = 'fixed';
+                                panel.style.top = '50%';
+                                panel.style.left = '50%';
+                                panel.style.transform = 'translate(-50%, -50%)';
+                                panel.style.width = '520px';
+                                panel.style.maxWidth = '90vw';
+                                panel.style.maxHeight = '85vh';
+                                panel.style.height = 'auto';
+                                panel.style.borderRadius = '20px';
+                                
+                                // Eski scroll handler'ları temizle
+                                if (window._panelScrollHandler) {
+                                    window.removeEventListener('scroll', window._panelScrollHandler);
+                                    window.removeEventListener('resize', window._panelScrollHandler);
+                                    window._panelScrollHandler = null;
                                 }
-                                
-                                // İlk konumlandırma
-                                positionPanelNearCard();
-                                
-                                // Scroll ve resize'da paneli güncelle
-                                window._panelScrollHandler = positionPanelNearCard;
-                                window.addEventListener('scroll', window._panelScrollHandler, { passive: true });
-                                window.addEventListener('resize', window._panelScrollHandler, { passive: true });
                             }
                             panel.style.display = 'block';
                         });
