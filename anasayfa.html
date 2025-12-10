@@ -521,7 +521,7 @@
                         #aboutBtn { grid-area: about; display: block; }
             }
             .products-wrapper { padding: 0 0.3rem 0.8rem; }
-            .products { gap:0.4rem; grid-template-columns: 1fr; }
+            .products { gap:0.4rem; grid-template-columns: 1fr; padding-top: 1.5rem; }
             .product-card { padding:.45rem; border-radius:8px }
             .product-name { font-size:0.98rem; font-weight:700; letter-spacing:0.1px; }
             .product-price { font-size:1.08rem; font-weight:800; letter-spacing:0.1px; }
@@ -849,6 +849,12 @@
                 background:#fff; 
                 color:#0b1220; 
                 border:1px solid rgba(10,12,30,0.1); 
+            }
+            
+            /* Ürün kartları header'ın altından başlasın */
+            .products-wrapper {
+                margin-top: 200px;
+                padding-top: 1rem;
             }
         }
         /* Mini cart dropdown */
