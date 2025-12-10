@@ -537,37 +537,39 @@
                 display:block;
                 width:100%;
                 box-sizing:border-box;
-                padding: 1rem 0.6rem;
-                font-size: 1.06rem;
+                padding: 0.8rem 0.5rem;
+                font-size: 0.9rem;
                 font-weight: 700;
-                letter-spacing: 0.2px;
-                border-radius: 16px;
+                letter-spacing: 0.1px;
+                border-radius: 12px;
                 text-align:center;
-                margin:0 auto;
+                margin:0;
                 min-width:unset;
                 max-width:100%;
-                line-height:1.2; 
-                font-weight: 800;
-                letter-spacing: 0.1px;
+                line-height:1.2;
                 white-space: nowrap; 
                 overflow: hidden; 
                 text-overflow: ellipsis; 
-                text-shadow: 0 4px 14px rgba(0,0,0,0.28);
-                font-size:0.98rem; 
-                line-height: 1.25;
-                opacity: .92;
-                        /* Dışarı çıkarılmış selectorlar */
-                        .nav-top ul.nav-links {
-                            display: grid !important;
-                            grid-template-columns: repeat(4, minmax(0, 1fr));
-                            grid-template-areas: "home cart contact about";
-                            gap: 0.6rem;
-                            align-items: stretch;
-                            padding: 0.4rem 0.2rem;
-                        }
-                        #homeBtn { grid-area: home; }
-                        #aboutBtn { grid-area: about; display: block; }
+                text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                opacity: 1;
             }
+            /* Mobil nav-links 2x2 grid */
+            .nav-top ul.nav-links {
+                display: grid !important;
+                grid-template-columns: repeat(2, 1fr) !important;
+                grid-template-rows: auto auto;
+                gap: 0.5rem !important;
+                padding: 0.5rem !important;
+                width: 100%;
+            }
+            .nav-top ul.nav-links > li {
+                width: 100%;
+                margin: 0;
+            }
+            #homeBtn { order: 1; }
+            #cartContainer { order: 2; }
+            #contactBtn { order: 3; }
+            #aboutBtn { order: 4; display: block !important; }
             .products-wrapper { padding: 0 0.3rem 0.8rem; }
             .products { gap:0.4rem; grid-template-columns: 1fr; }
             .product-card { padding:.45rem; border-radius:8px }
@@ -738,50 +740,98 @@
         .contact-btn:hover { transform: translateY(-2px); box-shadow: 0 18px 36px rgba(16,185,129,0.3); }
         .contact-btn:active { transform: translateY(0); box-shadow: 0 8px 18px rgba(16,185,129,0.22); }
         .contact-btn:focus { outline: 3px solid rgba(16,185,129,0.18); outline-offset: 2px; }
-        /* Mobile: header nav buttons in two columns */
+        
+        /* Mobile: header nav buttons - 2x2 grid düzeni */
         @media (max-width: 700px) {
             header { position: fixed; top: 0; left: 0; right: 0; z-index: 1200; }
-            .nav-top ul.nav-links { 
-                display: grid !important;
-                /* Tek satırda 4 buton: Ana Sayfa, Sepet, İletişim, Hakkımızda */
-                grid-template-columns: repeat(4, minmax(0, 1fr));
-                grid-template-areas: "home cart contact about";
-                gap: 0.7rem; /* dar ekranlarda butonlar arası boşluğu artır ve tümünü genişlet */
-                align-items: stretch;
-                padding: 0.7rem 0.4rem; /* tıklanabilir alanı büyüt */
+            
+            /* Nav düzeni: flex-direction column */
+            nav { 
+                flex-direction: column; 
+                padding: 0.5rem !important;
+                gap: 0.5rem;
             }
-            .nav-top ul.nav-links > li { width: 100%; }
-            .nav-top ul.nav-links > li > .contact-btn,
-            .nav-top ul.nav-links > li > a.contact-btn {
-                width: 100%;
-                min-height: 48px; /* daha büyük dokunma hedefi */
-                padding: 0.85rem 0.65rem; /* yatay ve dikey alanı genişlet */
-                font-size: 1.02rem; /* görünürlüğü artır */
-                white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            
+            /* Logo küçült */
+            .logo { 
+                margin-bottom: 0.3rem;
             }
-            /* place items explicitly into two rows */
-            #homeBtn { grid-area: home; }
-            #cartContainer { grid-area: cart; }
-            #contactBtn { grid-area: contact; }
-            /* show About and place it in the fourth column */
-            #aboutBtn { grid-area: about; display: block; }
-            /* make auth/login occupy full-width on a third row under nav */
-            .nav-bottom { display: block; padding: 0.4rem 0.2rem; }
-            #authContainer, #userContainer { width: 100%; }
-            #authBtn, #profileToggle { width: 100%; min-height: 44px; }
-            /* distinct styles per action for visual variety */
-            #homeBtn.contact-btn { background: linear-gradient(135deg,#22c55e,#16a34a); }
-            #cartBtn.contact-btn { background: linear-gradient(135deg,#f59e0b,#d97706); }
-            #contactBtn.contact-btn, #aboutBtn.contact-btn { background: linear-gradient(135deg,#14b8a6,#0ea5e9); }
-            /* cart pill counter contrast tweak on mobile */
-            #cartBtn .cart-count { background:#fff; color:#0b1220; border:1px solid rgba(10,12,30,0.1); }
-
-            /* Ensure logo text remains single-line with ellipsis on mobile */
             .logo-text {
+                font-size: 0.9rem;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
-                max-width: 60vw; /* dar ekranda logo metni için biraz daha alan */
+                max-width: 50vw;
+            }
+            
+            /* Nav-top tam genişlik */
+            .nav-top {
+                width: 100%;
+            }
+            
+            /* Nav-links: 2x2 grid */
+            .nav-top ul.nav-links { 
+                display: grid !important;
+                grid-template-columns: 1fr 1fr !important;
+                grid-template-rows: auto auto !important;
+                gap: 0.4rem !important;
+                padding: 0 !important;
+                width: 100% !important;
+                margin: 0 !important;
+            }
+            
+            .nav-top ul.nav-links > li { 
+                width: 100% !important; 
+                margin: 0 !important;
+            }
+            
+            /* Butonlar için ortak stiller */
+            .nav-top ul.nav-links > li > .contact-btn,
+            .nav-top ul.nav-links > li > button.contact-btn {
+                width: 100% !important;
+                min-height: 44px;
+                padding: 0.6rem 0.4rem !important;
+                font-size: 0.85rem !important;
+                white-space: nowrap; 
+                overflow: hidden; 
+                text-overflow: ellipsis;
+                display: flex !important;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            /* Grid sıralaması */
+            .nav-top ul.nav-links > li:nth-child(1) { order: 1; } /* Ana Sayfa */
+            .nav-top ul.nav-links > li:nth-child(2) { order: 2; } /* Sepet */
+            .nav-top ul.nav-links > li:nth-child(3) { order: 3; } /* İletişim */
+            .nav-top ul.nav-links > li:nth-child(4) { order: 4; } /* Hakkımızda */
+            
+            /* Buton renkleri */
+            #homeBtn.contact-btn { background: linear-gradient(135deg,#22c55e,#16a34a) !important; }
+            #cartBtn.contact-btn { background: linear-gradient(135deg,#f59e0b,#d97706) !important; }
+            #contactBtn.contact-btn { background: linear-gradient(135deg,#14b8a6,#0d9488) !important; }
+            #aboutBtn.contact-btn { background: linear-gradient(135deg,#6366f1,#4f46e5) !important; display: flex !important; }
+            
+            /* Sepet sayacı */
+            #cartBtn .cart-count { 
+                background:#fff; 
+                color:#0b1220; 
+                border:1px solid rgba(10,12,30,0.1);
+                font-size: 0.7rem;
+                padding: 1px 4px;
+            }
+            
+            /* Auth bölümü */
+            .nav-bottom { 
+                display: block; 
+                width: 100%;
+                padding: 0.3rem 0 0 0; 
+            }
+            #authContainer, #userContainer { width: 100%; }
+            #authBtn { 
+                width: 100%; 
+                min-height: 40px;
+                font-size: 0.85rem !important;
             }
         }
         /* Mini cart dropdown */
@@ -818,6 +868,64 @@
             }
             .mini-cart .mc-item div:first-child{width:48px;height:48px}
             .mini-cart .mc-footer{flex-direction:row-reverse;gap:0.5rem}
+        }
+        
+        /* Ürün Detay Paneli - Mobil Tam Ekran */
+        @media (max-width: 700px) {
+            #productDetailPanel {
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                bottom: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                max-width: 100vw !important;
+                max-height: 100vh !important;
+                border-radius: 0 !important;
+                padding: 1rem !important;
+                padding-top: 3.5rem !important;
+                z-index: 3000 !important;
+                overflow-y: auto !important;
+                background: #fff !important;
+            }
+            
+            #productDetailPanel #closeProductDetailPanel {
+                position: fixed !important;
+                top: 0.5rem !important;
+                right: 0.5rem !important;
+                width: 44px !important;
+                height: 44px !important;
+                font-size: 2rem !important;
+                background: rgba(0,0,0,0.05) !important;
+                border-radius: 50% !important;
+                z-index: 3100 !important;
+            }
+            
+            #productDetailContent {
+                padding-top: 0 !important;
+            }
+            
+            /* Panel içindeki flex düzeni mobilde column yap */
+            #productDetailContent > div > div[style*="display:flex"] {
+                flex-direction: column !important;
+            }
+            
+            /* Görsel alanı */
+            #productDetailContent #panelMainImgWrap {
+                width: 100% !important;
+                max-width: 100% !important;
+                height: auto !important;
+                min-height: 250px !important;
+                max-height: 50vh !important;
+            }
+            
+            #productDetailContent #panelMainImg {
+                width: 100% !important;
+                height: auto !important;
+                max-height: 50vh !important;
+            }
+        }
         }
     </style>
   </head>
@@ -1655,7 +1763,7 @@
                             style.textContent = '#closeProductDetailPanel:hover { background:rgba(0,0,0,0.04); color:#2563eb; }';
                             document.head.appendChild(style);
                             document.body.appendChild(panel);
-                            document.getElementById('closeProductDetailPanel').onclick = function(){ panel.style.display='none'; };
+                            document.getElementById('closeProductDetailPanel').onclick = function(){ panel.style.display='none'; document.body.style.overflow=''; };
                         }
                         document.getElementById('products').addEventListener('click', function(e) {
                             const card = e.target.closest('.product-card');
@@ -1759,24 +1867,22 @@
                             const cardRect = card.getBoundingClientRect();
                             const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
                             const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
-                            // Mobilde paneli kartın tam üstünde ve ekrana göre konumlandır
+                            // Mobilde paneli TAM EKRAN aç
                             if (window.innerWidth <= 700) {
-                                // Paneli kartın tam üstüne, genişliği karta eşit veya ekrana sığacak şekilde ayarla
-                                let left = cardRect.left + scrollLeft;
-                                let top = cardRect.top + scrollTop;
-                                let width = cardRect.width;
-                                // Panel ekran dışına taşarsa sola kaydır
-                                if (left + width > window.innerWidth + scrollLeft) {
-                                    left = window.innerWidth + scrollLeft - width - 8;
-                                }
-                                if (left < scrollLeft + 4) left = scrollLeft + 4;
-                                // Panel ekranın üstünden taşarsa yukarıdan 8px bırak
-                                if (top < scrollTop + 8) top = scrollTop + 8;
-                                panel.style.left = left + 'px';
-                                panel.style.top = top + 'px';
-                                panel.style.width = width + 'px';
-                                panel.style.maxWidth = '98vw';
-                                panel.style.borderRadius = '16px';
+                                // Mobilde tam ekran modal olarak aç
+                                panel.style.position = 'fixed';
+                                panel.style.left = '0';
+                                panel.style.top = '0';
+                                panel.style.width = '100vw';
+                                panel.style.height = '100vh';
+                                panel.style.maxWidth = '100vw';
+                                panel.style.maxHeight = '100vh';
+                                panel.style.borderRadius = '0';
+                                panel.style.padding = '1rem';
+                                panel.style.paddingTop = '3rem';
+                                panel.style.overflowY = 'auto';
+                                panel.style.zIndex = '3000';
+                                document.body.style.overflow = 'hidden'; // Arka planı kilitle
                                 panel.style.display = 'block';
                             } else {
                                 // Masaüstü: paneli kartın sağında göster
