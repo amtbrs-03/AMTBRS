@@ -1683,7 +1683,25 @@
                                     card.appendChild(infoDiv);
                                 }
 
-                                // Fiyat ve Sepete Ekle butonu kaldırıldı
+                                // Fiyat gösterimi
+                                if (p.price !== undefined && p.price !== null && p.price !== '') {
+                                    const priceEl = document.createElement('div');
+                                    priceEl.className = 'product-price';
+                                    priceEl.style = 'font-size:1.25rem;font-weight:800;color:#16a34a;margin-top:0.5rem;text-align:center;';
+                                    priceEl.textContent = fmt.format(p.price);
+                                    card.appendChild(priceEl);
+                                }
+
+                                // Rozet (badge) gösterimi
+                                if (p.badge) {
+                                    const badgeEl = document.createElement('span');
+                                    badgeEl.className = 'product-badge';
+                                    badgeEl.style = 'position:absolute;top:12px;left:12px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-size:0.75rem;font-weight:700;padding:0.25rem 0.6rem;border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,0.15);';
+                                    if (p.badge === 'Yeni') badgeEl.style.background = 'linear-gradient(135deg,#22c55e,#16a34a)';
+                                    if (p.badge === 'Popüler') badgeEl.style.background = 'linear-gradient(135deg,#6366f1,#4f46e5)';
+                                    badgeEl.textContent = p.badge;
+                                    card.appendChild(badgeEl);
+                                }
 
                                 // Admin düzenleme formu (sadece admin ise)
                                 if (window.getCurrentUser && getCurrentUser() && getCurrentUser().isAdmin) {
