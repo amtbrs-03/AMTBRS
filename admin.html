@@ -654,7 +654,7 @@
             if (tokenInput) tokenInput.value = '';
             var notice = document.getElementById('patNoticeInline');
             if (notice) notice.style.display = 'none';
-            alert('Token silindi. Yeniden girmek için sayfayı yenileyin veya yeni token girin.');
+            showNotification('Token silindi. Yeniden girmek için sayfayı yenileyin.', {type: 'info'});
           };
         }
       } catch(e){}
@@ -1028,7 +1028,7 @@
   // Oturum kapatma ve tarayıcı verilerini temizleme
   function logoutAdminSession(){
     // Eski confirm yerine özel modal aç
-    try { openLogoutConfirmModal(); } catch(e){ alert('Çıkış penceresi açılamadı: ' + (e.message||e)); }
+    try { openLogoutConfirmModal(); } catch(e){ showNotification('Çıkış penceresi açılamadı: ' + (e.message||e), {type: 'error'}); }
   }
   function performLogoutNow(){
     try {
@@ -1043,7 +1043,7 @@
       }
       closeLogoutConfirmModal();
       location.reload();
-    } catch(e){ alert('Çıkış sırasında hata: ' + (e.message||e)); }
+    } catch(e){ showNotification('Çıkış sırasında hata: ' + (e.message||e), {type: 'error'}); }
   }
   // Inline onclick ile çağrı için global bağlama
   window.logoutAdminSession = logoutAdminSession;
@@ -1391,7 +1391,7 @@
         if (typeof window.logoutAdminSession !== 'function') {
           // Acil durumda yerinde tanımla
           window.logoutAdminSession = function(){
-            try { openLogoutConfirmModal(); } catch(e){ alert('Çıkış penceresi açılamadı: ' + (e.message||e)); }
+            try { openLogoutConfirmModal(); } catch(e){ showNotification('Çıkış penceresi açılamadı: ' + (e.message||e), {type: 'error'}); }
           };
         }
         var btn = document.getElementById('adminLogoutBtn');
@@ -1547,7 +1547,7 @@
             else throw new Error('Ürün bulunamadı: '+id);
           } catch(err){
             const msg = (err && err.name === 'AbortError') ? 'Zaman aşımı: products.json yüklenemedi' : (err.message||'Bilinmeyen hata');
-            alert('Hata: '+ msg);
+            showNotification('Hata: '+ msg, {type: 'error'});
           }
         }
 
@@ -1582,7 +1582,7 @@
             return; // ignore rapid duplicate calls
           }
           panel.__lastOpenTs = now;
-          if(!panel) { alert('Hata: Modal panel bulunamadı!'); return; }
+          if(!panel) { showNotification('Hata: Modal panel bulunamadı!', {type: 'error'}); return; }
           
           // Header fill
           const heroThumb = document.getElementById('editHeroThumb');
@@ -1863,18 +1863,18 @@
             });
             if (!putRes.ok) {
               if (putRes.status === 409) {
-                alert('Ürün zaten silindi');
+                showNotification('Ürün zaten silindi', {type: 'warning'});
                 renderAdminProducts();
                 return;
               }
               const t = await putRes.text().catch(()=> '');
               throw new Error('GitHub kaydı başarısız: '+putRes.status+' '+t);
             }
-            alert('✅ Ürün silindi');
+            showNotification('Ürün başarıyla silindi', {type: 'success'});
             renderAdminProducts();
           } catch(e){
             const msg = String(e && e.message ? e.message : e);
-            alert('Hata: ' + msg);
+            showNotification('Hata: ' + msg, {type: 'error'});
           }
         }
 
@@ -1903,7 +1903,7 @@
             });
             if(!putRes.ok){ const t=await putRes.text().catch(()=> ''); throw new Error('GitHub güncelleme başarısız: '+putRes.status+' '+t); }
             renderAdminProducts();
-          }catch(e){ alert('Hata: '+(e.message||e)); }
+          }catch(e){ showNotification('Hata: '+(e.message||e), {type: 'error'}); }
         }
         window.moveProduct = moveProduct;
 
@@ -1969,7 +1969,7 @@
           if(addBtn){
             addBtn.addEventListener('click', ()=>{
               const host = document.getElementById('products');
-              if(!host){ alert('Hata: ürün konteyneri bulunamadı'); return; }
+              if(!host){ showNotification('Hata: ürün konteyneri bulunamadı', {type: 'error'}); return; }
               const card = document.createElement('div');
               card.className = 'prod-item editable-card';
               // Kayıtlı kartın aynısı, boş değerlerle
@@ -2006,7 +2006,7 @@
                 const badgeSel = card.querySelector('#tmp-badge-select')?.value || '';
                 const tempProduct = { id: idVal, name, price: priceNum, badge: badgeSel, image: img, images: img? [img]:[] };
                 if(typeof openProductEditPanel==='function'){ openProductEditPanel(tempProduct); }
-                else { alert('Düzenleme modalı bulunamadı.'); }
+                else { showNotification('Düzenleme modalı bulunamadı', {type: 'error'}); }
               });
               const removeBtn = card.querySelector('[data-action="remove-card"]');
               removeBtn?.addEventListener('click', ()=>{ card.remove(); });
@@ -2816,7 +2816,7 @@ try {
       let originalText = '';
       try {
         const token = getGitHubToken();
-        if (!token) { alert('GitHub token bulunamadı. Lütfen ayarlarda token tanımlayın.'); return; }
+        if (!token) { showNotification('GitHub token bulunamadı. Lütfen ayarlarda token tanımlayın.', {type: 'warning'}); return; }
 
         const owner = 'amtbrs-03';
         const repo = 'AMTBRS';
@@ -2841,7 +2841,7 @@ try {
         const getResponse = await fetch(getUrl);
 
         if (getResponse.status === 404) {
-          alert('Kullanıcı dosyası bulunamadı (zaten silinmiş olabilir).');
+          showNotification('Kullanıcı dosyası bulunamadı (zaten silinmiş olabilir)', {type: 'warning'});
           // Yine de listeyi yenileyelim
           const btn = document.getElementById('loadUsersBtn'); if (btn) btn.click();
           return;
@@ -2877,14 +2877,14 @@ try {
         }
 
         console.log('User deleted successfully');
-        alert(`✅ "${name}" kullanıcısı başarıyla silindi!`);
+        showNotification(`"${name}" kullanıcısı başarıyla silindi!`, {type: 'success'});
         
         // Reload users list
         const btn = document.getElementById('loadUsersBtn'); if (btn) btn.click();
 
       } catch(err) {
         console.error('Delete user error:', err);
-        alert(`❌ Hata: ${err && err.message ? err.message : err}`);
+        showNotification(`Hata: ${err && err.message ? err.message : err}`, {type: 'error'});
       } finally {
         if (btnEl) {
           btnEl.disabled = false;
@@ -3142,9 +3142,9 @@ try {
         await withProgress(btn, '⏳ Kaydediliyor...', async ()=>{
           // Inline panel-based batch save
           const panels = Array.from(document.querySelectorAll('.prod-edit-panel')).filter(p=>p.style.display !== 'none');
-          if (!panels.length){ alert('Açık düzenleme paneli yok. Önce Düzenle ile bir ürün açın.'); return; }
+          if (!panels.length){ showNotification('Açık düzenleme paneli yok. Önce Düzenle ile bir ürün açın.', {type: 'warning'}); return; }
           const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
-          if (!token){ alert('GitHub token yok. Kaydetmek için önce token ekleyin.'); return; }
+          if (!token){ showNotification('GitHub token yok. Kaydetmek için önce token ekleyin.', {type: 'warning'}); return; }
           // Fetch remote products.json for freshest copy & SHA
           const apiUrl = 'https://api.github.com/repos/amtbrs-03/AMTBRS/contents/products.json';
           let sha=null; let remoteObj={ updatedAt: Date.now(), items: [] };
@@ -3186,7 +3186,7 @@ try {
             const idx = remoteObj.items.findIndex(p=>String(p.id)===String(id));
             if(idx!==-1){ remoteObj.items[idx] = { ...remoteObj.items[idx], name, price, badge, image }; }
           }
-          if(errors.length){ alert('Kaydetme iptal edildi:\n' + errors.join('\n')); return; }
+          if(errors.length){ showNotification('Kaydetme iptal edildi: ' + errors.join(', '), {type: 'error'}); return; }
           remoteObj.updatedAt = Date.now();
           // Commit
           let committed=false;
@@ -3195,8 +3195,8 @@ try {
             if(putRes.ok){ committed=true; }
             else { const t=await putRes.text().catch(()=> ''); console.warn('[admin] batch commit hata', putRes.status, t); }
           }catch(e){ console.warn('[admin] batch commit exception', e); }
-          if(committed){ alert('✅ Değişiklikler GitHub’a gönderildi ve canlıya alındı.'); }
-          else { alert('⚠️ GitHub kaydı başarısız. Değişiklikler uygulanmadı.'); }
+          if(committed){ showNotification('Değişiklikler GitHub\'a gönderildi ve canlıya alındı!', {type: 'success'}); }
+          else { showNotification('GitHub kaydı başarısız. Değişiklikler uygulanmadı.', {type: 'error'}); }
           // Refresh list
           if(committed) renderAdminProducts();
         }); // end withProgress
@@ -3224,9 +3224,9 @@ try {
         await withProgress(btn, '⏳ GitHub\'a kaydediliyor...', async ()=>{
           try {
             const prods = getProducts();
-            if (!prods || !prods.length) return alert('Kayıtlı ürün yok');
+            if (!prods || !prods.length) return showNotification('Kayıtlı ürün yok', {type: 'warning'});
             const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
-            if (!token) return alert('GitHub token yok (Ayarlar bölümünden ekleyin).');
+            if (!token) return showNotification('GitHub token yok (Ayarlar bölümünden ekleyin)', {type: 'warning'});
             const owner = 'amtbrs-03'; const repo = 'AMTBRS'; const branch = 'site-release'; const path = 'products.json';
             const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
             let sha = null;
@@ -3239,8 +3239,8 @@ try {
             const contentB64 = toBase64(JSON.stringify(remoteObj, null, 2));
             const body = { message: 'chore(admin): ürün push', content: contentB64, branch }; if (sha) body.sha = sha;
             const putRes = await fetch(apiUrl, { method:'PUT', headers:{ 'Content-Type':'application/json', 'Authorization': `token ${token}` }, body: JSON.stringify(body) });
-            if (putRes.ok) alert('✅ Ürünler GitHub\'a kaydedildi'); else { const t = await putRes.text().catch(()=> ''); alert('Push başarısız: ' + putRes.status + ' ' + t); }
-          } catch(err){ console.error(err); alert('Ürün push sırasında hata: ' + err.message); }
+            if (putRes.ok) showNotification('Ürünler GitHub\'a kaydedildi', {type: 'success'}); else { const t = await putRes.text().catch(()=> ''); showNotification('Push başarısız: ' + putRes.status + ' ' + t, {type: 'error'}); }
+          } catch(err){ console.error(err); showNotification('Ürün push sırasında hata: ' + err.message, {type: 'error'}); }
         });
       });
 
@@ -3318,7 +3318,7 @@ try {
           const push = !!document.getElementById('pushSettingsToGithub') && document.getElementById('pushSettingsToGithub').checked;
           
           if (!push) {
-            alert('Ayarlar tarayıcıda kaydedildi.');
+            showNotification('Ayarlar tarayıcıda kaydedildi', {type: 'success'});
             return;
           }
 
@@ -3327,7 +3327,7 @@ try {
             console.log('Saving site settings to GitHub...');
             const token = getToken();
             if (!token) {
-              alert('GitHub token bulunamadı. Ayarlar sadece tarayıcıda kaydedildi.');
+              showNotification('GitHub token bulunamadı. Ayarlar sadece tarayıcıda kaydedildi.', {type: 'warning'});
               return;
             }
 
@@ -3375,15 +3375,15 @@ try {
 
             if (putRes.ok) {
               console.log('✓ Site settings saved to GitHub');
-              alert('Ayarlar tarayıcıda ve GitHub\'da kaydedildi.');
+              showNotification('Ayarlar tarayıcıda ve GitHub\'da kaydedildi', {type: 'success'});
             } else {
               const errorText = await putRes.text();
               console.error('GitHub save failed:', putRes.status, errorText);
-              alert('Ayarlar tarayıcıda kaydedildi ancak GitHub\'a kaydedilemedi: ' + putRes.status);
+              showNotification('Ayarlar tarayıcıda kaydedildi ancak GitHub\'a kaydedilemedi: ' + putRes.status, {type: 'warning'});
             }
           }catch(err){ 
             console.error('GitHub save error', err); 
-            alert('Ayarlar tarayıcıda kaydedildi ancak GitHub\'a kaydederken hata oluştu: ' + err.message); 
+            showNotification('Ayarlar tarayıcıda kaydedildi ancak GitHub\'a kaydederken hata oluştu: ' + err.message, {type: 'warning'}); 
           }
         });
       });
@@ -3406,7 +3406,7 @@ try {
           };
           setSiteSettings(defaults);
           loadSettingsIntoForm();
-          alert('Varsayılan ayarlar yüklendi ve kaydedildi.');
+          showNotification('Varsayılan ayarlar yüklendi ve kaydedildi', {type: 'success'});
         });
       });
 
@@ -3427,7 +3427,7 @@ try {
           { id: uid(), name: 'Mevsim Buketi', price: 99.00, image: '💐' }
           ];
           setProducts(defaults);
-          alert('Varsayılan ürünler yüklendi.');
+          showNotification('Varsayılan ürünler yüklendi', {type: 'success'});
           render();
         });
       });
@@ -3469,9 +3469,9 @@ try {
             }
             parsed = arr;
           }
-        }catch(err){ alert('Dosya okunamadı: ' + err.message); return; }
+        }catch(err){ showNotification('Dosya okunamadı: ' + err.message, {type: 'error'}); return; }
 
-        if (!Array.isArray(parsed)) return alert('Beklenen format: ürünlerin dizi halinde JSON veya CSV');
+        if (!Array.isArray(parsed)) return showNotification('Beklenen format: ürünlerin dizi halinde JSON veya CSV', {type: 'error'});
         if (!confirm('İçe aktar: mevcut ürünlerin üzerine yazılsın mı? (İptal = birleştir)')){
           // merge
           const cur = getProducts();
@@ -3482,7 +3482,7 @@ try {
           const replaced = parsed.map(p=>({ id: p.id||uid(), name: p.name||'', price: Number(p.price)||0, image: p.image||'' }));
           setProducts(replaced);
         }
-        alert('İçe aktarma tamamlandı.');
+        showNotification('İçe aktarma tamamlandı', {type: 'success'});
         e.target.value = '';
         render();
       });
@@ -3801,7 +3801,7 @@ try {
         }
       } catch(e) {
         console.error('refreshUsersList error:', e);
-        alert('Kullanıcı listesi yenilenirken hata oluştu: ' + (e.message || e));
+        showNotification('Kullanıcı listesi yenilenirken hata oluştu: ' + (e.message || e), {type: 'error'});
       } finally {
         btn.disabled = false;
         btn.textContent = originalText;
@@ -4026,10 +4026,10 @@ try {
     async function flushPendingUserEdits(){
       const key='pending_user_edits';
       const arr = JSON.parse(localStorage.getItem(key)||'[]');
-      if(!arr.length){ alert('Bekleyen kullanıcı güncellemesi yok'); return; }
+      if(!arr.length){ showNotification('Bekleyen kullanıcı güncellemesi yok', {type: 'info'}); return; }
       const token = (typeof getGitHubToken==='function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
       const tokenInfo = await validateGitHubToken(token);
-      if(!tokenInfo.valid){ alert('Token geçersiz veya yok. Önce geçerli token ekleyin.'); return; }
+      if(!tokenInfo.valid){ showNotification('Token geçersiz veya yok. Önce geçerli token ekleyin.', {type: 'warning'}); return; }
       const owner='amtbrs-03'; const repo='AMTBRS'; const branch='site-release';
       let success=0, fail=0; const failures=[];
       for(const u of arr){
@@ -4056,7 +4056,7 @@ try {
         const remaining = arr.filter(u=> failures.some(f=> f.startsWith(u.email+':')));
         localStorage.setItem(key, JSON.stringify(remaining));
       }
-      alert(`Kuyruk gönderildi. Başarılı: ${success}, Hatalı: ${fail}` + (fail? '\n' + failures.join('\n') : ''));
+      showNotification(`Kuyruk gönderildi. Başarılı: ${success}, Hatalı: ${fail}`, {type: fail ? 'warning' : 'success'});
     }
     window.flushPendingUserEdits = flushPendingUserEdits;
     
@@ -4223,15 +4223,15 @@ try {
       async function cleanupOldCarts(){
         try{
           const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
-          if(!token){ return alert('GitHub token gerekli (Ayarlardan girin).'); }
+          if(!token){ return showNotification('GitHub token gerekli (Ayarlardan girin)', {type: 'warning'}); }
           setStatus('Temizleniyor...', true);
           const dirUrl = `https://api.github.com/repos/${owner}/${repo}/contents/carts?ref=${encodeURIComponent(branch)}`;
           const listRes = await fetch(dirUrl, { headers:{ 'Accept':'application/vnd.github.v3+json', 'Authorization': `token ${token}` }, cache:'no-store' });
-          if(listRes.status === 404){ return alert('carts klasörü yok.'); }
+          if(listRes.status === 404){ return showNotification('carts klasörü yok', {type: 'info'}); }
           if(!listRes.ok){ throw new Error('Liste alınamadı: '+listRes.status); }
           const files = await listRes.json();
           const jsonFiles = Array.isArray(files) ? files.filter(f=>/\.json$/i.test(f.name)) : [];
-          if(!jsonFiles.length){ return alert('Silinecek sepet yok.'); }
+          if(!jsonFiles.length){ return showNotification('Silinecek sepet yok', {type: 'info'}); }
           const now = Date.now();
           const OLD_MS = 24*60*60*1000;
           const toDelete = [];
@@ -4246,7 +4246,7 @@ try {
               }
             }catch(e){ console.warn('Dosya okunamadı temizleme sırasında', f.name, e); }
           }
-          if(!toDelete.length){ setStatus('Eski yok', true); return alert('24 saatten eski sepet yok.'); }
+          if(!toDelete.length){ setStatus('Eski yok', true); return showNotification('24 saatten eski sepet yok', {type: 'info'}); }
           if(!confirm(`${toDelete.length} adet eski sepet silinsin mi?`)) { setStatus('İptal', true); return; }
           let success = 0;
           for(const item of toDelete){
@@ -4258,12 +4258,12 @@ try {
             }catch(e){ console.warn('Silme hatası', item.path, e); }
           }
           setStatus(`Temizlendi (${success})`, true);
-          alert(`${success} eski sepet silindi.`);
+          showNotification(`${success} eski sepet silindi`, {type: 'success'});
           loadLiveCarts();
         }catch(e){
           console.error('cleanupOldCarts hata', e);
           setStatus('Temizleme hatası', false);
-          alert('Temizleme hatası: ' + (e.message||e));
+          showNotification('Temizleme hatası: ' + (e.message||e), {type: 'error'});
         }
       }
 
@@ -4308,7 +4308,7 @@ try {
       }catch(e){
         console.error('Dummy sepet hatası', e);
         setStatus('Dummy hata: '+ (e.message||e), false);
-        alert('Dummy sepet oluşturulamadı: ' + (e.message||e));
+        showNotification('Dummy sepet oluşturulamadı: ' + (e.message||e), {type: 'error'});
       }
     }
 
@@ -4622,6 +4622,88 @@ try {
       toast.style.animation = 'slideOut 0.3s ease';
       setTimeout(() => toast.remove(), 300);
     }, 3000);
+  }
+  
+  // Bilgilendirme mesajı sistemi (alert yerine)
+  function showNotification(message, options = {}) {
+    const type = options.type || 'info'; // success, warning, error, info
+    const duration = options.duration || 3500;
+    
+    // Renk ve ikon ayarları
+    const configs = {
+      success: { bg: 'linear-gradient(135deg, #10b981, #059669)', icon: '✓', iconBg: 'rgba(255,255,255,0.2)' },
+      warning: { bg: 'linear-gradient(135deg, #f59e0b, #d97706)', icon: '⚠', iconBg: 'rgba(255,255,255,0.2)' },
+      error: { bg: 'linear-gradient(135deg, #ef4444, #dc2626)', icon: '✕', iconBg: 'rgba(255,255,255,0.2)' },
+      info: { bg: 'linear-gradient(135deg, #3b82f6, #2563eb)', icon: 'ℹ', iconBg: 'rgba(255,255,255,0.2)' }
+    };
+    const config = configs[type] || configs.info;
+    
+    // Container oluştur
+    const container = document.createElement('div');
+    container.style.cssText = `
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      background: ${config.bg};
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.25), 0 4px 12px rgba(0,0,0,0.15);
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 600;
+      max-width: 400px;
+      animation: notifSlideIn 0.35s cubic-bezier(0.16,1,0.3,1);
+      cursor: pointer;
+    `;
+    
+    // İkon
+    const iconEl = document.createElement('span');
+    iconEl.style.cssText = `
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      background: ${config.iconBg};
+      border-radius: 50%;
+      font-size: 1rem;
+      flex-shrink: 0;
+    `;
+    iconEl.textContent = config.icon;
+    
+    // Mesaj
+    const msgEl = document.createElement('span');
+    msgEl.textContent = message;
+    msgEl.style.lineHeight = '1.4';
+    
+    container.appendChild(iconEl);
+    container.appendChild(msgEl);
+    
+    // Animasyon stili ekle
+    if (!document.getElementById('notifAnimStyle')) {
+      const style = document.createElement('style');
+      style.id = 'notifAnimStyle';
+      style.textContent = `
+        @keyframes notifSlideIn { from { opacity: 0; transform: translateX(100px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes notifSlideOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(100px); } }
+      `;
+      document.head.appendChild(style);
+    }
+    
+    document.body.appendChild(container);
+    
+    // Tıkla veya süre sonunda kapat
+    const close = () => {
+      container.style.animation = 'notifSlideOut 0.3s ease forwards';
+      setTimeout(() => container.remove(), 300);
+    };
+    
+    container.onclick = close;
+    setTimeout(close, duration);
   }
   
   // Gallery picker for product image selection
