@@ -1545,7 +1545,7 @@
                                 infoList.style.fontSize = '0.93rem';
                                 infoList.style.color = '#444';
                                 // Her ürün kartı sadece kendi bilgilerini göstersin
-                                if (p.height || p.potType) {
+                                if (p.height || p.potDiameter || p.potType) {
                                     const infoList = document.createElement('div');
                                     infoList.style.display = 'flex';
                                     infoList.style.flexDirection = 'column';
@@ -1554,6 +1554,11 @@
                                     infoList.style.gap = '0.13rem';
                                     infoList.style.fontSize = '0.93rem';
                                     infoList.style.color = '#444';
+                                    if (p.potDiameter) {
+                                        const d = document.createElement('div');
+                                        d.innerHTML = `<span style='font-weight:600;'>Saksı Çapı:</span> <span>${p.potDiameter} cm</span>`;
+                                        infoList.appendChild(d);
+                                    }
                                     if (p.height) {
                                         const h = document.createElement('div');
                                         h.innerHTML = `<span style='font-weight:600;'>Boy:</span> <span>${p.height} cm</span>`;
