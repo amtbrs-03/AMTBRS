@@ -1675,6 +1675,56 @@
                             }
                         })();
                         
+                        // Hakkımızda bilgilerini site-settings.json'dan yükle
+                        (async function loadAboutInfo() {
+                            try {
+                                const settings = await fetchSiteSettings();
+                                if (settings) {
+                                    const aboutPanel = document.getElementById('aboutPanel');
+                                    if (aboutPanel && (settings.aboutText || settings.aboutTitle || settings.aboutBackground)) {
+                                        // Arka plan görseli
+                                        if (settings.aboutBackground) {
+                                            aboutPanel.style.backgroundImage = `url('${settings.aboutBackground}')`;
+                                            aboutPanel.style.backgroundSize = 'cover';
+                                            aboutPanel.style.backgroundPosition = 'center';
+                                        }
+                                        
+                                        // İçeriği güncelle
+                                        let html = '<div style="background:rgba(255,255,255,0.92);border-radius:12px;padding:1.5rem;">';
+                                        
+                                        // Başlık
+                                        if (settings.aboutTitle) {
+                                            html += `<h2 style="font-size:1.5rem;font-weight:700;color:#166534;margin-bottom:1rem;text-align:center;">${settings.aboutTitle}</h2>`;
+                                        }
+                                        
+                                        // Ana metin
+                                        if (settings.aboutText) {
+                                            html += `<div style="margin-bottom:1rem;text-align:center;color:#334155;font-size:1rem;line-height:1.7;">${settings.aboutText.replace(/\n/g, '<br>')}</div>`;
+                                        }
+                                        
+                                        // Özellikler
+                                        if (settings.aboutFeatures) {
+                                            const features = settings.aboutFeatures.split(',').map(f => f.trim()).filter(Boolean);
+                                            if (features.length > 0) {
+                                                html += '<div style="margin-top:1rem;padding:1rem;background:#f0fdf4;border-radius:10px;border-left:4px solid #16a34a;">';
+                                                html += '<h3 style="font-size:1.05rem;margin-bottom:0.6rem;color:#166534;font-weight:700;">✨ Neden Biz?</h3>';
+                                                html += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.5rem;color:#334155;font-size:0.9rem;">';
+                                                features.forEach(f => {
+                                                    html += `<div>✓ ${f}</div>`;
+                                                });
+                                                html += '</div></div>';
+                                            }
+                                        }
+                                        
+                                        html += '</div>';
+                                        aboutPanel.innerHTML = html;
+                                    }
+                                }
+                            } catch (e) {
+                                console.error('Hakkımızda bilgileri yüklenemedi:', e);
+                            }
+                        })();
+                        
                         // Ürün detay paneli ekle (sadece bir kez)
                         if (!document.getElementById('productDetailPanel')) {
                                                     // Login form submit: prevent reload and call loginUser
