@@ -1666,21 +1666,29 @@
                             const card = e.target.closest('.product-card');
                             if (!card) return;
                             // Ürün bilgilerini topla
-                            const name = card.getAttribute('data-name') || '';
-                            const price = card.getAttribute('data-price') || '';
                             const id = card.getAttribute('data-id') || '';
+                            let name = card.getAttribute('data-name') || '';
+                            let price = card.getAttribute('data-price') || '';
                             let images = [];
                             let oldPrice = '', rating = '', ratingCount = '', desc = '';
+                            let potDiameter = '', height = '', potType = '', info = '';
                             try {
                                 const allProducts = window._lastProductsList || [];
                                 const product = allProducts.find(p => (p.id || ('P'+allProducts.indexOf(p))) == id);
                                 if(product && Array.isArray(product.images)) images = product.images;
                                 else if(product && product.image) images = [product.image];
                                 if(product) {
+                                    // Admin tarafından güncellenen değerleri products listesinden al
+                                    name = product.name || name;
+                                    price = product.price || price;
                                     oldPrice = product.oldPrice || '';
                                     rating = product.rating || '';
                                     ratingCount = product.ratingCount || '';
-                                    desc = product.description || '';
+                                    desc = product.description || product.info || '';
+                                    potDiameter = product.potDiameter || '';
+                                    height = product.height || '';
+                                    potType = product.potType || '';
+                                    info = product.info || '';
                                 }
                             } catch(e) {}
                             if(images.length === 0) {
@@ -1708,7 +1716,16 @@
                             html += `</div>`;
                             // Sağ: bilgiler
                             html += `<div style='flex:1;min-width:220px;display:flex;flex-direction:column;gap:0.7rem;justify-content:center;'>`;
-                            if(desc) html += `<div style='font-size:1.05rem;color:#334155;margin-bottom:0.7rem;'>${desc}</div>`;
+                            // Ürün özellikleri (Saksı Çapı, Boy, Ürün Hakkında)
+                            if(potDiameter || height || potType || info) {
+                                html += `<div style='display:flex;flex-direction:column;gap:0.4rem;margin-bottom:0.7rem;padding:0.8rem;background:#f8fafc;border-radius:10px;'>`;
+                                if(potDiameter) html += `<div style='font-size:0.98rem;color:#334155;'><span style='font-weight:600;'>Saksı Çapı:</span> ${potDiameter} cm</div>`;
+                                if(height) html += `<div style='font-size:0.98rem;color:#334155;'><span style='font-weight:600;'>Ürün Boyu:</span> ${height} cm</div>`;
+                                if(potType) html += `<div style='font-size:0.98rem;color:#334155;'><span style='font-weight:600;'>Saksı Türü:</span> ${potType}</div>`;
+                                if(info) html += `<div style='font-size:0.98rem;color:#334155;'><span style='font-weight:600;'>Ürün Hakkında:</span> ${info}</div>`;
+                                html += `</div>`;
+                            }
+                            if(desc && desc !== info) html += `<div style='font-size:1.05rem;color:#334155;margin-bottom:0.7rem;'>${desc}</div>`;
                             // Fiyat ve sepete ekle ortalanmış
                             html += `<div style='display:flex;flex-direction:column;align-items:center;justify-content:center;margin-bottom:0.7rem;'>`;
                             // Fiyatları daima ₺ simgesiyle ve TL formatında göster
