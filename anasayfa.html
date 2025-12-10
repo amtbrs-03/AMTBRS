@@ -1922,6 +1922,17 @@
                             html += `<div style='font-size:1.3rem;font-weight:800;color:#16a34a;'>${fmt.format(price)}`;
                             if(oldPrice && oldPrice > price) html += ` <span style='text-decoration:line-through;color:#6b7280;font-weight:500;font-size:1.05rem;margin-left:0.7rem;'>${fmt.format(oldPrice)}</span>`;
                             html += `</div>`;
+                            // Adet seçimi (max 3)
+                            html += `<div style='display:flex;align-items:center;gap:0.5rem;margin-top:0.7rem;'>`;
+                            html += `<label for='panelQtyInput' style='font-size:0.95rem;font-weight:600;color:#334155;'>Adet:</label>`;
+                            html += `<div style='display:flex;align-items:center;gap:0.3rem;'>`;
+                            html += `<button id='panelQtyMinus' type='button' style='width:36px;height:36px;border:1px solid #d1d5db;background:#f9fafb;border-radius:6px;font-size:1.3rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#334155;' aria-label='Azalt'>−</button>`;
+                            html += `<input id='panelQtyInput' type='number' value='1' min='1' max='3' style='width:50px;height:36px;text-align:center;border:1px solid #d1d5db;border-radius:6px;font-size:1rem;font-weight:600;' readonly />`;
+                            html += `<button id='panelQtyPlus' type='button' style='width:36px;height:36px;border:1px solid #d1d5db;background:#f9fafb;border-radius:6px;font-size:1.3rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#334155;' aria-label='Artır'>+</button>`;
+                            html += `</div>`;
+                            html += `<span style='font-size:0.85rem;color:#6b7280;'>(Max: 3)</span>`;
+                            html += `</div>`;
+                            html += `<div id='panelQtyWarning' style='display:none;margin-top:0.4rem;padding:0.4rem 0.8rem;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;color:#dc2626;font-size:0.9rem;font-weight:500;'>⚠️ Bu üründen en fazla 3 adet ekleyebilirsiniz.</div>`;
                             html += `<button id='panelAddToCartBtn' class='add-cart-btn' style='background:#16a34a;color:#fff;padding:0.7rem 2.2rem;border:none;border-radius:8px;font-size:1.15rem;cursor:pointer;margin-top:0.7rem;margin-bottom:0.2rem;font-weight:700;'>Sepete Ekle</button>`;
                             html += `</div>`;
                             if(rating && ratingCount) {
@@ -1949,15 +1960,93 @@
                                         img.style.border = '2px solid #16a34a';
                                     };
                                 });
+                                
+                                // Adet butonları işleyişi
+                                var qtyInput = document.getElementById('panelQtyInput');
+                                var qtyMinus = document.getElementById('panelQtyMinus');
+                                var qtyPlus = document.getElementById('panelQtyPlus');
+                                var qtyWarning = document.getElementById('panelQtyWarning');
+                                var MAX_QTY = 3;
+                                
+                                // Sepetteki mevcut adet kontrolü
+                                function getCartQtyForProduct(productId) {
+                                    try {
+                                        var cart = JSON.parse(localStorage.getItem('cart') || '[]');
+                                        var item = cart.find(function(c) { return c.id === productId; });
+                                        return item ? (item.qty || 1) : 0;
+                                    } catch(e) { return 0; }
+                                }
+                                
+                                var currentCartQty = getCartQtyForProduct(id);
+                                var remainingAllowed = MAX_QTY - currentCartQty;
+                                
+                                // Eğer sepette zaten 3 adet varsa uyarı göster
+                                if (remainingAllowed <= 0) {
+                                    qtyInput.value = 0;
+                                    qtyWarning.style.display = 'block';
+                                    qtyWarning.textContent = '⚠️ Sepetinizde bu üründen zaten 3 adet var.';
+                                    document.getElementById('panelAddToCartBtn').disabled = true;
+                                    document.getElementById('panelAddToCartBtn').style.opacity = '0.5';
+                                    document.getElementById('panelAddToCartBtn').style.cursor = 'not-allowed';
+                                } else {
+                                    qtyInput.max = remainingAllowed;
+                                    if (parseInt(qtyInput.value) > remainingAllowed) {
+                                        qtyInput.value = remainingAllowed;
+                                    }
+                                }
+                                
+                                if (qtyMinus) {
+                                    qtyMinus.onclick = function() {
+                                        var val = parseInt(qtyInput.value) || 1;
+                                        if (val > 1) {
+                                            qtyInput.value = val - 1;
+                                            qtyWarning.style.display = 'none';
+                                        }
+                                    };
+                                }
+                                
+                                if (qtyPlus) {
+                                    qtyPlus.onclick = function() {
+                                        var val = parseInt(qtyInput.value) || 1;
+                                        var maxAllowed = Math.min(MAX_QTY, remainingAllowed);
+                                        if (val < maxAllowed) {
+                                            qtyInput.value = val + 1;
+                                            qtyWarning.style.display = 'none';
+                                        } else {
+                                            qtyWarning.style.display = 'block';
+                                            qtyWarning.textContent = '⚠️ Bu üründen en fazla 3 adet ekleyebilirsiniz.';
+                                        }
+                                    };
+                                }
+                                
                                 // Sepete ekle butonu
                                 var btn = document.getElementById('panelAddToCartBtn');
-                                if(btn){
+                                if(btn && !btn.disabled){
                                     btn.onclick = function(){
                                         var user = null;
                                         try { user = JSON.parse(localStorage.getItem('currentUser')); } catch(e){}
                                         if(user && user.email){
-                                            if(window.addToCart) window.addToCart(id, name, price);
-                                            alert('Ürün sepete eklendi!');
+                                            var qty = parseInt(qtyInput.value) || 1;
+                                            // Limit kontrolü
+                                            var currentInCart = getCartQtyForProduct(id);
+                                            if (currentInCart + qty > MAX_QTY) {
+                                                qty = MAX_QTY - currentInCart;
+                                                if (qty <= 0) {
+                                                    qtyWarning.style.display = 'block';
+                                                    qtyWarning.textContent = '⚠️ Sepetinizde bu üründen zaten 3 adet var.';
+                                                    return;
+                                                }
+                                            }
+                                            if(window.addToCartWithQty) {
+                                                window.addToCartWithQty(id, name, price, qty);
+                                            } else if(window.addToCart) {
+                                                // Fallback: eski fonksiyon
+                                                for(var i=0; i<qty; i++) window.addToCart({id:id, name:name, price:price});
+                                            }
+                                            alert(qty + ' adet ' + name + ' sepete eklendi!');
+                                            // Paneli kapat
+                                            document.getElementById('productDetailPanel').style.display = 'none';
+                                            document.body.style.overflow = '';
                                         } else {
                                             if(typeof openAuthModal==='function') openAuthModal();
                                             else alert('Lütfen giriş yapınız!');
@@ -3546,7 +3635,48 @@
                         addToCart({ id, name, price });
                     }
 
+                    // Adet ile sepete ekleme fonksiyonu (max 3 adet/ürün)
+                    function addToCartWithQty(id, name, price, qty) {
+                        const MAX_QTY_PER_PRODUCT = 3;
+                        const user = getCurrentUser();
+                        if (!user) {
+                            openAuthModal();
+                            console.log('Kullanıcı giriş yapmalı: sepete ekleme engellendi.');
+                            return false;
+                        }
+                        const cart = loadCart();
+                        const existing = cart.find(i => i.id === id);
+                        
+                        if (existing) {
+                            // Mevcut ürünün adetini artır (max 3)
+                            const newQty = (existing.qty || 1) + qty;
+                            if (newQty > MAX_QTY_PER_PRODUCT) {
+                                const allowed = MAX_QTY_PER_PRODUCT - (existing.qty || 1);
+                                if (allowed <= 0) {
+                                    showToast('Bu üründen sepete en fazla 3 adet ekleyebilirsiniz.', { type:'warn', ttl: 5000 });
+                                    return false;
+                                }
+                                existing.qty = MAX_QTY_PER_PRODUCT;
+                                showToast(allowed + ' adet eklendi. (Limit: 3 adet)', { type:'warn', ttl: 5000 });
+                            } else {
+                                existing.qty = newQty;
+                            }
+                        } else {
+                            // Yeni ürün ekle
+                            const addQty = Math.min(qty, MAX_QTY_PER_PRODUCT);
+                            cart.push({ id: id, name: name, price: price, qty: addQty });
+                        }
+                        
+                        saveCart(cart);
+                        updateCartCount();
+                        showAvailabilityNoticeIfNeeded(cart);
+                        return true;
+                    }
+                    // Global erişim için
+                    window.addToCartWithQty = addToCartWithQty;
+
                     function addToCart(item) {
+                        const MAX_QTY_PER_PRODUCT = 3;
                         const user = getCurrentUser();
                         if (!user) {
                             openAuthModal();
@@ -3557,17 +3687,23 @@
                         }
                         const cart = loadCart();
                         const existing = cart.find(i => i.id === item.id);
-                        // Tek adet kuralı: aynı üründen ikinci kez eklenmesin
+                        
                         if (existing) {
-                            showToast('Bu üründen sepete yalnızca 1 adet ekleyebilirsiniz.', { type:'warn', ttl: 5000 });
-                            return; // değişiklik yok
+                            // Mevcut ürünün adetini kontrol et (max 3)
+                            if ((existing.qty || 1) >= MAX_QTY_PER_PRODUCT) {
+                                showToast('Bu üründen sepete en fazla 3 adet ekleyebilirsiniz.', { type:'warn', ttl: 5000 });
+                                return; // değişiklik yok
+                            }
+                            existing.qty = (existing.qty || 1) + 1;
+                        } else {
+                            cart.push({ id: item.id, name: item.name, price: item.price, qty: 1 });
                         }
-                        cart.push({ id: item.id, name: item.name, price: item.price, qty: 1 });
+                        
                         saveCart(cart);
                         updateCartCount();
                         // Küçük bilgilendirme
-                        const count = cart.length; // her ürün 1 adet
-                        try { showToast(item.name + ' sepete eklendi. (Ürün sayısı: ' + count + ')'); } catch(e){}
+                        const totalQty = cart.reduce((s,i) => s + (i.qty||0), 0);
+                        try { showToast(item.name + ' sepete eklendi. (Toplam: ' + totalQty + ' adet)'); } catch(e){}
                         // Birden fazla farklı ürün olduğunda satıcıya sor bildirimi
                         showAvailabilityNoticeIfNeeded(cart);
                     }
