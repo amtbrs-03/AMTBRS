@@ -2054,7 +2054,7 @@
                     // Site ayarlarını uygula (contactBtn text)
                     (async function applySiteSettingsToContact() {
                         try {
-                            const cfg = await getSiteSettings();
+                            const cfg = await fetchSiteSettings();
                             if (cfg && cfg.contactBtnText) {
                                 const contactBtn = document.getElementById('contactBtn');
                                 if (contactBtn) {
