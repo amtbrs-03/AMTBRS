@@ -1884,8 +1884,8 @@
                             // Panel içeriğini oluştur (modern layout)
                             let mainImg = images[0] || '';
                             let html = `<div style='padding-bottom:0.5rem;'>`;
-                            // Ürün adı panelin en başında, büyük ve siyah
-                            html += `<div style='width:100%;text-align:left;margin-bottom:0.7rem;'><span style='font-size:2.1rem;font-weight:900;color:#18181b;letter-spacing:-0.5px;line-height:1.1;display:inline-block;'>${name}</span></div>`;
+                            // Ürün adı - kompakt, tek satır, estetik
+                            html += `<div style='width:100%;text-align:center;margin-bottom:0.5rem;padding-bottom:0.4rem;border-bottom:1px solid #e5e7eb;'><span style='font-size:1.15rem;font-weight:700;color:#1e293b;letter-spacing:0.3px;line-height:1.2;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'>${name}</span></div>`;
                             html += `<div style='display:flex;gap:2.2rem;flex-wrap:wrap;align-items:flex-start;'>`;
                             // Sol: görseller
                             html += `<div style='flex:0 0 340px;max-width:340px;display:flex;flex-direction:column;align-items:center;'>`;
