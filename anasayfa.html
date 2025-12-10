@@ -2003,14 +2003,14 @@
                                                 // Fallback: eski fonksiyon
                                                 for(var i=0; i<qty; i++) window.addToCart({id:id, name:name, price:price});
                                             }
-                                            alert(qty + ' adet ' + name + ' sepete eklendi!');
+                                            showNotification(qty + ' adet ' + name + ' sepete eklendi!', {type: 'success', duration: 2500});
                                             // Paneli kapat
                                             document.getElementById('productDetailPanel').style.display = 'none';
                                             document.body.style.overflow = '';
                                         } else {
                                             // Kullanıcı giriş yapmamış, auth modal aç
-                                            alert('Sepete ürün eklemek için lütfen giriş yapın veya kayıt olun.');
-                                            if(typeof openAuthModal==='function') openAuthModal();
+                                            showNotification('Sepete ürün eklemek için giriş yapın', {type: 'info', duration: 2500});
+                                            setTimeout(function(){ if(typeof openAuthModal==='function') openAuthModal(); }, 800);
                                         }
                                     };
                                 }
@@ -2242,22 +2242,22 @@
                         const postalCode = document.getElementById('registerPostalCode').value.trim();
 
                         if (!name || !email || !password || !password2 || !phone) {
-                            alert('Lütfen tüm zorunlu alanları doldurunuz!');
+                            showNotification('Lütfen tüm zorunlu alanları doldurunuz', {type: 'warn', duration: 2500});
                             return;
                         }
                         // Basit telefon doğrulaması
                         if (!/^\+?\d[\d\s()-]{7,}$/.test(phone)) {
-                            alert('Telefon numarası formatı geçersiz. Lütfen +90 530 000 00 00 gibi giriniz.');
+                            showNotification('Telefon numarası formatı geçersiz', {type: 'warn', duration: 2500});
                             return;
                         }
                         
                         if (!city || !district || !addressDetail) {
-                            alert('Lütfen adres bilgilerini eksiksiz doldurunuz (İl, İlçe, Adres Detayı zorunludur)!');
+                            showNotification('İl, İlçe ve Adres Detayı zorunludur', {type: 'warn', duration: 2500});
                             return;
                         }
                         
                         if (password !== password2) {
-                            alert('Şifreler eşleşmiyor!');
+                            showNotification('Şifreler eşleşmiyor', {type: 'error', duration: 2500});
                             return;
                         }
 
@@ -2271,7 +2271,7 @@
                             const remoteUser = await fetchUserFromRepo(email);
                             if (remoteUser) {
                                 console.log('registerUser: User already exists in GitHub');
-                                alert('Bu email adresi ile zaten bir kayıt bulunmaktadır. Lütfen giriş yapın.');
+                                showNotification('Bu email ile kayıt bulunuyor. Lütfen giriş yapın.', {type: 'info', duration: 3000});
                                 switchTab('login', document.querySelector('.form-tab'));
                                 document.getElementById('loginEmail').value = email;
                                 return;
@@ -2360,13 +2360,13 @@
                             if (remoteSuccess) {
                                 console.log('registerUser: ✓ GitHub kaydı başarılı');
                                 // Kayıt başarılı - giriş yapabilir
-                                alert('✅ Kayıt başarıyla tamamlandı!\n\nBilgileriniz güvenli bir şekilde kaydedildi.\nŞimdi giriş yapabilirsiniz.');
+                                showNotification('Kayıt başarıyla tamamlandı! Şimdi giriş yapabilirsiniz.', {type: 'success', duration: 3000});
                                 switchTab('login', document.querySelector('.form-tab'));
                                 document.getElementById('loginEmail').value = email;
                                 return;
                             } else {
                                 console.error('registerUser: GitHub kayıt başarısız oldu');
-                                alert('❌ Kayıt başarısız oldu!\n\nSunucuya bağlanılamadı veya kayıt işlemi tamamlanamadı.\n\nLütfen:\n- İnternet bağlantınızı kontrol edin\n- Birkaç dakika bekleyip tekrar deneyin\n- Sorun devam ederse destek ile iletişime geçin');
+                                showNotification('Kayıt tamamlanamadı. Lütfen internet bağlantınızı kontrol edip tekrar deneyin.', {type: 'error', duration: 4000});
                                 return;
                             }
                         }catch(e){
@@ -2387,7 +2387,7 @@
                                 userFriendlyMsg += 'Teknik Hata: ' + errorMsg + '\n\nLütfen daha sonra tekrar deneyin veya destek ile iletişime geçin.';
                             }
                             
-                            alert(userFriendlyMsg);
+                            showNotification(userFriendlyMsg.replace(/\n/g, ' '), {type: 'error', duration: 4500});
                             return;
                         }
                     }
@@ -2397,7 +2397,7 @@
                         const password = document.getElementById('loginPassword').value;
 
                         if (!email || !password) {
-                            alert('Lütfen email ve şifre giriniz!');
+                            showNotification('Lütfen email ve şifre giriniz', {type: 'warn', duration: 2500});
                             return;
                         }
 
@@ -2491,21 +2491,21 @@
                                 }
                             }catch(e){
                                 console.error('loginUser: ⚠️ Remote fetch failed', e);
-                                alert('Kullanıcı bulunamadı! Lütfen önce kayıt olun veya internet bağlantınızı kontrol edin.');
+                                showNotification('Kullanıcı bulunamadı. Kayıt olun veya bağlantınızı kontrol edin.', {type: 'error', duration: 3500});
                                 return;
                             }
                         }
                         
                         if (!userData) {
                             console.error('loginUser: ⚠️ No user data available');
-                            alert('Kullanıcı bulunamadı!\n\n- Kayıtlı email kullandığınızdan emin olun.\n- Kayıt sırasında internet bağlantınızda sorun olduysa tekrar deneyin.\n- Mobilde iseniz internet bağlantınızın açık olduğundan emin olun.\n- Sorun devam ederse destek ile iletişime geçin.');
+                            showNotification('Kullanıcı bulunamadı. Lütfen kayıt olun.', {type: 'error', duration: 3000});
                             return;
                         }
 
                         if (!userData.pw || !userData.pw.salt || !userData.pw.hash) {
                             console.error('loginUser: ⚠️ Invalid user data structure - missing password fields');
                             console.log('loginUser: User data:', JSON.stringify(userData, null, 2));
-                            alert('Kullanıcı verisi hatalı!\n\n- Kayıt işlemi tam tamamlanmamış olabilir.\n- Lütfen tekrar kayıt olun veya destek ile iletişime geçin.');
+                            showNotification('Hesap bilgilerinizde sorun var. Lütfen tekrar kayıt olun.', {type: 'error', duration: 3500});
                             return;
                         }
 
@@ -2528,13 +2528,13 @@
                                 if (attempts >= 3) {
                                     // Reset attempts and open forced reset UI
                                     localStorage.removeItem(failKey);
-                                    alert('Parola 3 kez yanlış girildi. Parolanızı sıfırlamanız gerekiyor.');
+                                    showNotification('Şifre 3 kez yanlış girildi. Parolanızı sıfırlayın.', {type: 'error', duration: 4000});
                                     // open auth modal and switch to reset UI
                                     openAuthModal();
                                     showForcedResetUI(email);
                                     return;
                                 } else {
-                                    alert('Şifre yanlış! (' + attempts + '/3)');
+                                    showNotification('Şifre yanlış! (' + attempts + '/3)', {type: 'warn', duration: 2500});
                                     return;
                                 }
                             } else {
@@ -2550,7 +2550,7 @@
                                 message: e.message,
                                 stack: e.stack
                             });
-                            alert('Giriş sırasında bir hata oluştu. Lütfen tekrar deneyin veya destek ile iletişime geçin.');
+                            showNotification('Giriş sırasında hata oluştu. Tekrar deneyin.', {type: 'error', duration: 3000});
                             return;
                         }
 
@@ -2567,7 +2567,6 @@
                             console.log('loginUser: ✓ Session saved to localStorage');
                             sessionSaved = true;
                         } catch(e) {
-                            alert('Tarayıcıda localStorage erişilemiyor! Oturum kaydedilemedi. Gizli modda mısınız?');
                             console.error('loginUser: ⚠️ localStorage session save error', e);
                         }
                         
@@ -2577,13 +2576,12 @@
                             console.log('loginUser: ✓ Session saved to sessionStorage');
                             sessionSaved = true;
                         } catch(e) {
-                            alert('Tarayıcıda sessionStorage erişilemiyor! Oturum kaydedilemedi. Gizli modda mısınız?');
                             console.error('loginUser: ⚠️ sessionStorage session save error', e);
                         }
                         
                         if (!sessionSaved) {
                             console.error('loginUser: ⚠️ Could not save session to any storage');
-                            alert('Oturum kaydedilemedi!\n\n- Tarayıcınızın gizli modda olmadığından emin olun.\n- Tarayıcı ayarlarından site verisi/çerez engeli olmadığından emin olun.\n- Sorun devam ederse farklı bir tarayıcıda deneyin.');
+                            showNotification('Oturum kaydedilemedi. Gizli mod kullanıyorsanız devre dışı bırakın.', {type: 'warn', duration: 4000});
                         }
                         
                         // update lastLogin remotely (best-effort)
@@ -3527,6 +3525,97 @@
                         localStorage.setItem(cartKeyForUser(user.email), JSON.stringify(cart));
                         try { persistCartSnapshot(cart, user); } catch(e) { /* sessiz */ }
                     }
+
+                    // Estetik bildirim sistemi - alert yerine kullanılacak
+                    function showNotification(msg, opts) {
+                        opts = opts || {};
+                        const type = opts.type || 'info'; // info, success, warn, error
+                        const duration = opts.duration || 4000;
+                        
+                        // Mevcut bildirimi kaldır
+                        const existing = document.getElementById('ernNotification');
+                        if (existing) existing.remove();
+                        
+                        // Bildirim container
+                        const notification = document.createElement('div');
+                        notification.id = 'ernNotification';
+                        notification.style.cssText = `
+                            position: fixed;
+                            top: 50%;
+                            left: 50%;
+                            transform: translate(-50%, -50%) scale(0.9);
+                            z-index: 100000;
+                            min-width: 280px;
+                            max-width: 380px;
+                            padding: 1.5rem 2rem;
+                            border-radius: 20px;
+                            text-align: center;
+                            font-family: inherit;
+                            opacity: 0;
+                            transition: all 0.3s ease;
+                            box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+                        `;
+                        
+                        // Tip bazlı renkler
+                        const colors = {
+                            success: { bg: 'linear-gradient(135deg, #10b981, #059669)', icon: '✓', iconBg: 'rgba(255,255,255,0.2)' },
+                            warn: { bg: 'linear-gradient(135deg, #f59e0b, #d97706)', icon: '⚠', iconBg: 'rgba(255,255,255,0.2)' },
+                            error: { bg: 'linear-gradient(135deg, #ef4444, #dc2626)', icon: '✕', iconBg: 'rgba(255,255,255,0.2)' },
+                            info: { bg: 'linear-gradient(135deg, #3b82f6, #2563eb)', icon: 'ℹ', iconBg: 'rgba(255,255,255,0.2)' }
+                        };
+                        const c = colors[type] || colors.info;
+                        notification.style.background = c.bg;
+                        
+                        notification.innerHTML = `
+                            <div style="width:50px;height:50px;background:${c.iconBg};border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.5rem;color:#fff;">
+                                ${c.icon}
+                            </div>
+                            <div style="color:#fff;font-size:1.05rem;font-weight:600;line-height:1.5;word-break:break-word;">
+                                ${msg}
+                            </div>
+                        `;
+                        
+                        // Arka plan overlay
+                        const overlay = document.createElement('div');
+                        overlay.id = 'ernNotificationOverlay';
+                        overlay.style.cssText = `
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            right: 0;
+                            bottom: 0;
+                            background: rgba(0,0,0,0.4);
+                            z-index: 99999;
+                            opacity: 0;
+                            transition: opacity 0.3s ease;
+                        `;
+                        
+                        document.body.appendChild(overlay);
+                        document.body.appendChild(notification);
+                        
+                        // Animasyon
+                        requestAnimationFrame(() => {
+                            overlay.style.opacity = '1';
+                            notification.style.opacity = '1';
+                            notification.style.transform = 'translate(-50%, -50%) scale(1)';
+                        });
+                        
+                        // Tıklayınca veya süre dolunca kapat
+                        const close = () => {
+                            notification.style.opacity = '0';
+                            notification.style.transform = 'translate(-50%, -50%) scale(0.9)';
+                            overlay.style.opacity = '0';
+                            setTimeout(() => {
+                                notification.remove();
+                                overlay.remove();
+                            }, 300);
+                        };
+                        
+                        overlay.onclick = close;
+                        notification.onclick = close;
+                        setTimeout(close, duration);
+                    }
+                    window.showNotification = showNotification;
 
                     // Basit toast bildirimi (erişilebilir, otomatik kaybolur)
                     function showToast(msg, opts){
