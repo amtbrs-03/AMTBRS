@@ -1535,16 +1535,7 @@
                                 nameEl.style = 'font-size:1.08rem;font-weight:700;color:#18181b;letter-spacing:-0.5px;line-height:1.18;margin-bottom:0.18rem;text-align:center;';
                                 card.appendChild(nameEl);
 
-                                // Bilgi başlıkları (boy, saksı, yaprak, info)
-                                const infoList = document.createElement('div');
-                                infoList.style.display = 'flex';
-                                infoList.style.flexDirection = 'column';
-                                infoList.style.alignItems = 'flex-start';
-                                infoList.style.width = '100%';
-                                infoList.style.gap = '0.13rem';
-                                infoList.style.fontSize = '0.93rem';
-                                infoList.style.color = '#444';
-                                // Her ürün kartı sadece kendi bilgilerini göstersin
+                                // Bilgi başlıkları (boy, saksı çapı, saksı türü)
                                 if (p.height || p.potDiameter || p.potType) {
                                     const infoList = document.createElement('div');
                                     infoList.style.display = 'flex';
@@ -1553,6 +1544,11 @@
                                     infoList.style.width = '100%';
                                     infoList.style.gap = '0.13rem';
                                     infoList.style.fontSize = '0.93rem';
+                                    infoList.style.color = '#444';
+                                    infoList.style.marginTop = '0.5rem';
+                                    infoList.style.padding = '0.5rem';
+                                    infoList.style.background = '#f8fafc';
+                                    infoList.style.borderRadius = '8px';
                                     infoList.style.color = '#444';
                                     if (p.potDiameter) {
                                         const d = document.createElement('div');

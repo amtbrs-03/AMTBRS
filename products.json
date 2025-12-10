@@ -11,7 +11,10 @@
         "images/products/IMG_1966.JPG",
         "images/gallery/IMG_1972.JPG",
         "images/gallery/IMG_1973.JPG"
-      ]
+      ],
+      "potDiameter": "14",
+      "height": "45",
+      "info": "Bakımı kolay, gölge seven tropik bitki"
     },
     {
       "id": "TEMP-1765322433131",
@@ -23,7 +26,10 @@
         "images/gallery/IMG_1967.JPG",
         "images/gallery/IMG_1967.JPG",
         "images/gallery/IMG_1967.JPG"
-      ]
+      ],
+      "potDiameter": "18",
+      "height": "60",
+      "info": "Özel koleksiyon ürünü"
     }
   ]
 }
