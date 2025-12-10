@@ -2083,7 +2083,7 @@
                                 panel.classList.remove('sticky-mode');
                                 document.body.style.overflow = 'hidden';
                             } else {
-                                // Masaüstü: kartın üstünde panel (sol kart için soldan, sağ kart için sağdan hizalı)
+                                // Masaüstü: kartın yanında panel (kartın resmini kapatmaz, sağ kenarını aşmaz)
                                 window._activeProductCard = card;
                                 panel.classList.add('sticky-mode');
                                 
@@ -2093,22 +2093,22 @@
                                     if (!activeCard) return;
                                     
                                     const cardRect = activeCard.getBoundingClientRect();
-                                    const panelWidth = 380;
-                                    const panelHeight = panel.offsetHeight || 450;
                                     const viewportHeight = window.innerHeight;
                                     const viewportWidth = window.innerWidth;
                                     
-                                    // Kartın ekranın sol mu sağ mı yarısında olduğunu belirle
-                                    const cardCenterX = cardRect.left + (cardRect.width / 2);
-                                    const isLeftSide = cardCenterX < viewportWidth / 2;
+                                    // Kart içindeki resim genişliği (140px) + padding
+                                    const cardImageWidth = 140 + 16; // resim + sol padding
                                     
-                                    let left;
-                                    if (isLeftSide) {
-                                        // Sol taraftaki kart: panelin sol kenarı kartın sol kenarıyla hizalı
-                                        left = cardRect.left;
-                                    } else {
-                                        // Sağ taraftaki kart: panelin sağ kenarı kartın sağ kenarıyla hizalı
-                                        left = cardRect.right - panelWidth;
+                                    // Panel genişliği: kartın sağ tarafına sığacak kadar
+                                    const availableWidth = cardRect.width - cardImageWidth - 8;
+                                    const panelWidth = Math.max(220, Math.min(availableWidth, 280));
+                                    
+                                    // Panel kartın içinde, resmin sağında konumlanacak
+                                    let left = cardRect.left + cardImageWidth;
+                                    
+                                    // Panel kartın sağ kenarını aşmasın
+                                    if (left + panelWidth > cardRect.right - 8) {
+                                        left = cardRect.right - panelWidth - 8;
                                     }
                                     
                                     // Ekran sınırları kontrolü
@@ -2117,8 +2117,10 @@
                                         left = viewportWidth - panelWidth - 16;
                                     }
                                     
-                                    // Dikey konumlandırma - kartın üstünde, kartın üst kenarından başlasın
+                                    // Dikey konumlandırma - kartın üst kenarından başlasın
                                     let top = cardRect.top;
+                                    
+                                    const panelHeight = panel.offsetHeight || 400;
                                     
                                     // Ekranın üstünden taşmasın
                                     if (top < 16) top = 16;
