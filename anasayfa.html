@@ -692,6 +692,38 @@
         .contact-btn:active { transform: translateY(0); box-shadow: 0 8px 18px rgba(16,185,129,0.22); }
         .contact-btn:focus { outline: 3px solid rgba(16,185,129,0.18); outline-offset: 2px; }
         
+        /* Ürün detay paneli - Masaüstünde kartın yanında sticky */
+        #productDetailPanel {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 520px;
+            max-height: 85vh;
+            z-index: 2000;
+            background: rgba(255,255,255,0.99);
+            box-shadow: 0 8px 48px rgba(30,143,85,0.18), 0 0 0 1px rgba(0,0,0,0.05);
+            overflow-y: auto;
+            padding: 1.5rem;
+            border-radius: 20px;
+        }
+        
+        /* Masaüstü - sticky panel kartın yanında */
+        @media (min-width: 701px) {
+            #productDetailPanel.sticky-mode {
+                position: fixed;
+                top: auto;
+                left: auto;
+                transform: none;
+                width: 400px;
+                max-width: 400px;
+                max-height: 80vh;
+                border-radius: 16px;
+            }
+        }
+        
         /* Ürün detay paneli mobilde tam ekran */
         @media (max-width: 700px) {
             #productDetailPanel {
@@ -1800,15 +1832,21 @@
                                                     }
                             const panel = document.createElement('div');
                             panel.id = 'productDetailPanel';
-                            // Stil CSS ile yönetiliyor, temel stil buradan
-                            panel.style = 'display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:2000;background:rgba(255,255,255,0.98);box-shadow:0 4px 32px rgba(30,143,85,0.13);overflow-y:auto;padding:1.5rem;';
+                            // Stil CSS ile yönetiliyor
                             panel.innerHTML = '<button id="closeProductDetailPanel" style="position:absolute;top:12px;right:12px;width:44px;height:44px;z-index:2100;background:rgba(255,255,255,0.95);border:none;color:#334155;font-size:2rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s;box-shadow:0 2px 10px rgba(0,0,0,0.15);border-radius:50%;" aria-label="Kapat">&times;</button><div id="productDetailContent" style="padding-top:2.5rem;"></div>';
                             // X butonuna hover efekti ve minimal görünüm
                             const style = document.createElement('style');
                             style.textContent = '#closeProductDetailPanel:hover { background:rgba(0,0,0,0.04); color:#2563eb; }';
                             document.head.appendChild(style);
                             document.body.appendChild(panel);
-                            document.getElementById('closeProductDetailPanel').onclick = function(){ panel.style.display='none'; document.body.style.overflow=''; };
+                            document.getElementById('closeProductDetailPanel').onclick = function(){ 
+                                panel.style.display='none'; 
+                                panel.classList.remove('sticky-mode');
+                                document.body.style.overflow=''; 
+                                window._activeProductCard = null;
+                                window.removeEventListener('scroll', window._panelScrollHandler);
+                                window.removeEventListener('resize', window._panelScrollHandler);
+                            };
                         }
                         document.getElementById('products').addEventListener('click', function(e) {
                             const card = e.target.closest('.product-card');
@@ -2003,9 +2041,16 @@
                                                 for(var i=0; i<qty; i++) window.addToCart({id:id, name:name, price:price});
                                             }
                                             showNotification(qty + ' adet ' + name + ' sepete eklendi!', {type: 'success', duration: 2500});
-                                            // Paneli kapat
-                                            document.getElementById('productDetailPanel').style.display = 'none';
+                                            // Paneli kapat ve event listener'ları temizle
+                                            var panelEl = document.getElementById('productDetailPanel');
+                                            panelEl.style.display = 'none';
+                                            panelEl.classList.remove('sticky-mode');
                                             document.body.style.overflow = '';
+                                            window._activeProductCard = null;
+                                            if (window._panelScrollHandler) {
+                                                window.removeEventListener('scroll', window._panelScrollHandler);
+                                                window.removeEventListener('resize', window._panelScrollHandler);
+                                            }
                                         } else {
                                             // Kullanıcı giriş yapmamış, auth modal aç
                                             showNotification('Sepete ürün eklemek için giriş yapın', {type: 'info', duration: 2500});
@@ -2028,25 +2073,64 @@
                                 panel.style.width = '100vw';
                                 panel.style.height = '100vh';
                                 panel.style.borderRadius = '0';
+                                panel.classList.remove('sticky-mode');
                                 document.body.style.overflow = 'hidden';
                             } else {
-                                // Masaüstü: kartın yanında
-                                const cardRect = card.getBoundingClientRect();
-                                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                                const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
-                                let left = cardRect.right + scrollLeft + 12;
-                                let top = cardRect.top + scrollTop;
-                                const panelWidth = Math.min(420, window.innerWidth * 0.98);
-                                if (left + panelWidth > window.innerWidth + scrollLeft) {
-                                    left = cardRect.left + scrollLeft - panelWidth - 12;
+                                // Masaüstü: kartın yanında sticky panel
+                                window._activeProductCard = card;
+                                panel.classList.add('sticky-mode');
+                                
+                                // Panel konumlandırma fonksiyonu
+                                function positionPanelNearCard() {
+                                    const activeCard = window._activeProductCard;
+                                    if (!activeCard) return;
+                                    
+                                    const cardRect = activeCard.getBoundingClientRect();
+                                    const panelWidth = 400;
+                                    const panelHeight = panel.offsetHeight || 500;
+                                    const viewportHeight = window.innerHeight;
+                                    const viewportWidth = window.innerWidth;
+                                    
+                                    // Paneli kartın sağına konumlandır
+                                    let left = cardRect.right + 16;
+                                    
+                                    // Sağda yer yoksa sola konumlandır
+                                    if (left + panelWidth > viewportWidth - 16) {
+                                        left = cardRect.left - panelWidth - 16;
+                                    }
+                                    
+                                    // Solda da yer yoksa overlay olarak ortala
+                                    if (left < 16) {
+                                        left = (viewportWidth - panelWidth) / 2;
+                                    }
+                                    
+                                    // Dikey konumlandırma - kartın ortasına hizala
+                                    let top = cardRect.top + (cardRect.height / 2) - (panelHeight / 2);
+                                    
+                                    // Ekranın üstünden taşmasın
+                                    if (top < 16) top = 16;
+                                    
+                                    // Ekranın altından taşmasın
+                                    if (top + panelHeight > viewportHeight - 16) {
+                                        top = viewportHeight - panelHeight - 16;
+                                    }
+                                    
+                                    panel.style.position = 'fixed';
+                                    panel.style.left = left + 'px';
+                                    panel.style.top = top + 'px';
+                                    panel.style.width = panelWidth + 'px';
+                                    panel.style.maxHeight = (viewportHeight - 32) + 'px';
+                                    panel.style.height = 'auto';
+                                    panel.style.transform = 'none';
                                 }
-                                if (top < scrollTop + 12) top = scrollTop + 12;
-                                panel.style.position = 'absolute';
-                                panel.style.left = left + 'px';
-                                panel.style.top = top + 'px';
-                                panel.style.width = panelWidth + 'px';
-                                panel.style.height = 'auto';
-                                panel.style.borderRadius = '24px';
+                                
+                                // İlk konumlandırma
+                                positionPanelNearCard();
+                                
+                                // Scroll ve resize'da paneli güncelle
+                                window._panelScrollHandler = positionPanelNearCard;
+                                window.addEventListener('scroll', window._panelScrollHandler, { passive: true });
+                                window.addEventListener('resize', window._panelScrollHandler, { passive: true });
                             }
                             panel.style.display = 'block';
                         });
