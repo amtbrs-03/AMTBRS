@@ -1511,18 +1511,39 @@
         // Product edit panel functions (must be defined before renderAdminProducts for event delegation)
         async function openProductEditPanelById(id) {
           try {
+            // 1. Fetch local products.json
             const controller = new AbortController();
             const t = setTimeout(()=>controller.abort(), 8000);
-            const res = await fetch('products.json?' + Date.now(), { signal: controller.signal, cache:'no-store' });
+            let res = await fetch('products.json?' + Date.now(), { signal: controller.signal, cache:'no-store' });
             clearTimeout(t);
-            if(!res.ok){
-              const txt = await res.text().catch(()=> '');
-              throw new Error('products.json alınamadı ('+res.status+') '+txt);
+            let data = null;
+            if(res.ok){
+              data = await res.json();
             }
-            const data = await res.json();
-            const products = Array.isArray(data.items)?data.items:(Array.isArray(data)?data:[]);
-            if(!Array.isArray(products) || !products.length) throw new Error('Ürün listesi boş veya geçersiz');
-            const p = products.find(x=>String(x.id)===String(id));
+            let products = Array.isArray(data?.items)?data.items:(Array.isArray(data)?data:[]);
+            let p = products.find(x=>String(x.id)===String(id));
+            // If product is missing or has missing info, fetch remote
+            const needsRemote = !p || !p.name || !p.price || !p.image;
+            if(needsRemote){
+              // 2. Try remote fetch
+              const remoteUrl = 'https://raw.githubusercontent.com/amtbrs-03/AMTBRS/site-release/products.json?_=' + Date.now();
+              try {
+                res = await fetch(remoteUrl, { cache:'no-store' });
+                if(res.ok){
+                  data = await res.json();
+                  products = Array.isArray(data?.items)?data.items:(Array.isArray(data)?data:[]);
+                  const remoteP = products.find(x=>String(x.id)===String(id));
+                  if(remoteP) {
+                    // If local exists, merge remote info into local (prefer remote for missing fields)
+                    if(p) {
+                      p = { ...remoteP, ...p, ...Object.fromEntries(Object.entries(remoteP).filter(([k,v])=>!p[k]||p[k]==='')) };
+                    } else {
+                      p = remoteP;
+                    }
+                  }
+                }
+              } catch(_){ /* ignore remote fetch errors */ }
+            }
             if(p) openProductEditPanel(p);
             else throw new Error('Ürün bulunamadı: '+id);
           } catch(err){

@@ -1587,21 +1587,32 @@
                                     adminForm.style.fontSize = '0.93rem';
                                     adminForm.innerHTML = `
                                         <div style='font-weight:700;margin-bottom:0.3rem;color:#16a34a;'>Admin Ürün Düzenle</div>
-                                        <label>Boy: <input name='height' value='${p.height||''}' style='width:80px;margin-left:0.3rem;'/></label><br/>
-                                        <label>Saksı: <input name='potType' value='${p.potType||''}' style='width:80px;margin-left:0.3rem;'/></label><br/>
+                                        <label>Adı: <input name='name' value='${p.name||''}' style='width:120px;margin-left:0.3rem;'/></label><br/>
+                                        <label>Fiyat (₺): <input name='price' type='number' min='0' step='0.01' value='${p.price||''}' style='width:80px;margin-left:0.3rem;'/></label><br/>
+                                        <label>Rozet: <select name='badge' style='width:90px;margin-left:0.3rem;'>
+                                            <option value='' ${!p.badge?'selected':''}>Yok</option>
+                                            <option value='Yeni' ${p.badge==='Yeni'?'selected':''}>Yeni</option>
+                                            <option value='İndirim' ${p.badge==='İndirim'?'selected':''}>İndirim</option>
+                                            <option value='Popüler' ${p.badge==='Popüler'?'selected':''}>Popüler</option>
+                                        </select></label><br/>
+                                        <label>Saksı Çapı (cm): <input name='potDiameter' type='number' min='0' step='0.1' value='${p.potDiameter||''}' style='width:80px;margin-left:0.3rem;'/></label><br/>
+                                        <label>Boy (cm): <input name='height' type='number' min='0' step='0.1' value='${p.height||''}' style='width:80px;margin-left:0.3rem;'/></label><br/>
                                         <label>Yaprak: <input name='leafWidth' value='${p.leafWidth||''}' style='width:80px;margin-left:0.3rem;'/></label><br/>
                                         <label>Bilgi: <input name='info' value='${p.info||''}' style='width:120px;margin-left:0.3rem;'/></label><br/>
                                         <button type='submit' style='margin-top:0.4rem;background:#16a34a;color:#fff;border:none;padding:0.3rem 0.8rem;border-radius:5px;cursor:pointer;'>Kaydet</button>
                                     `;
                                     adminForm.onsubmit = function(e){
                                         e.preventDefault();
-                                        // Basit güncelleme: ürün objesini güncelle ve localStorage'a yaz
                                         const fd = new FormData(adminForm);
+                                        p.name = fd.get('name');
+                                        p.price = parseFloat(fd.get('price')) || 0;
+                                        p.badge = fd.get('badge');
+                                        p.potDiameter = fd.get('potDiameter');
                                         p.height = fd.get('height');
                                         p.potType = fd.get('potType');
                                         p.leafWidth = fd.get('leafWidth');
                                         p.info = fd.get('info');
-                                        // Güncellenen ürünleri localStorage'a kaydet (veya sunucuya gönderilebilir)
+                                        // Güncellenen ürünleri localStorage'a kaydet
                                         let all = window._lastProductsList || [];
                                         let idx = all.findIndex(x => (x.id||('P'+all.indexOf(x))) == (p.id||('P'+idx)));
                                         if(idx>-1) all[idx] = p;
