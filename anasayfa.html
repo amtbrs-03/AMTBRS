@@ -1,3 +1,36 @@
+                    /* --- About panel toggle --- */
+                    function toggleAbout(e) {
+                        try{ e && e.preventDefault && e.preventDefault(); }catch(err){}
+                        let btn = null;
+                        if (e && e.target) btn = e.target.closest && e.target.closest('[data-action="toggle-about"]');
+                        if (!btn) btn = document.getElementById('aboutBtn');
+                        const panel = document.getElementById('aboutPanel');
+                        if (!panel) return;
+                        const isHidden = panel.classList.contains('hidden');
+                        if (isHidden) {
+                            panel.classList.remove('hidden');
+                            panel.setAttribute('aria-hidden', 'false');
+                            panel.style.display = '';
+                            // Paneli butonun altına ve sağa hizalı şekilde yerleştir
+                            const rect = btn.getBoundingClientRect();
+                            const panelRect = panel.getBoundingClientRect();
+                            const top = rect.bottom + window.scrollY + 8;
+                            let left = rect.right - panelRect.width + window.scrollX;
+                            if (left < 8) left = 8;
+                            if (left + panelRect.width > window.innerWidth) {
+                                left = window.innerWidth - panelRect.width - 16;
+                            }
+                            panel.style.position = 'fixed';
+                            panel.style.top = top + 'px';
+                            panel.style.left = left + 'px';
+                            panel.style.transform = 'none';
+                        } else {
+                            panel.classList.add('hidden');
+                            panel.setAttribute('aria-hidden', 'true');
+                            panel.style.display = 'none';
+                            panel.style.transform = 'translate(-9999px,-9999px)';
+                        }
+                    }
 <!doctype html>
 <html lang="tr">
   <head>
@@ -1759,20 +1792,41 @@
                             const cardRect = card.getBoundingClientRect();
                             const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
                             const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
-                            // Paneli kartın sağ kenarına hizala, üstü kartla aynı hizada olsun
-                            let left = cardRect.right + scrollLeft + 12; // 12px boşluk
-                            let top = cardRect.top + scrollTop;
-                            // Panel ekran dışına taşarsa sola kaydır
-                            const panelWidth = Math.min(420, window.innerWidth * 0.98);
-                            if (left + panelWidth > window.innerWidth + scrollLeft) {
-                                left = cardRect.left + scrollLeft - panelWidth - 12;
+                            // Mobilde paneli kartın tam üstünde ve ekrana göre konumlandır
+                            if (window.innerWidth <= 700) {
+                                // Paneli kartın tam üstüne, genişliği karta eşit veya ekrana sığacak şekilde ayarla
+                                let left = cardRect.left + scrollLeft;
+                                let top = cardRect.top + scrollTop;
+                                let width = cardRect.width;
+                                // Panel ekran dışına taşarsa sola kaydır
+                                if (left + width > window.innerWidth + scrollLeft) {
+                                    left = window.innerWidth + scrollLeft - width - 8;
+                                }
+                                if (left < scrollLeft + 4) left = scrollLeft + 4;
+                                // Panel ekranın üstünden taşarsa yukarıdan 8px bırak
+                                if (top < scrollTop + 8) top = scrollTop + 8;
+                                panel.style.left = left + 'px';
+                                panel.style.top = top + 'px';
+                                panel.style.width = width + 'px';
+                                panel.style.maxWidth = '98vw';
+                                panel.style.borderRadius = '16px';
+                                panel.style.display = 'block';
+                            } else {
+                                // Masaüstü: paneli kartın sağında göster
+                                let left = cardRect.right + scrollLeft + 12; // 12px boşluk
+                                let top = cardRect.top + scrollTop;
+                                const panelWidth = Math.min(420, window.innerWidth * 0.98);
+                                if (left + panelWidth > window.innerWidth + scrollLeft) {
+                                    left = cardRect.left + scrollLeft - panelWidth - 12;
+                                }
+                                if (top < scrollTop + 12) top = scrollTop + 12;
+                                panel.style.left = left + 'px';
+                                panel.style.top = top + 'px';
+                                panel.style.width = panelWidth + 'px';
+                                panel.style.maxWidth = '98vw';
+                                panel.style.borderRadius = '24px';
+                                panel.style.display = 'block';
                             }
-                            // Panel ekranın üstünden taşarsa yukarıdan 12px bırak
-                            if (top < scrollTop + 12) top = scrollTop + 12;
-                            panel.style.left = left + 'px';
-                            panel.style.top = top + 'px';
-                            panel.style.width = panelWidth + 'px';
-                            panel.style.display = 'block';
                         });
                     });
 
@@ -1809,72 +1863,25 @@
                             panel.setAttribute('aria-hidden', 'false');
                             panel.style.display = '';
                             // Position panel near the button (popover style)
-                                                        list.forEach((p, idx) => {
-                                                            const card = document.createElement('div');
-                                                            card.className = 'product-card';
-                                                            card.setAttribute('data-id', p.id || ('P'+idx));
-                                                            card.setAttribute('data-name', p.name || 'Ürün');
-                                                            card.style.position = 'relative';
-                                                            card.style.background = '#fafafa';
-                                                            card.style.borderRadius = '18px';
-                                                            card.style.boxShadow = '0 4px 18px rgba(30,143,85,0.07)';
-                                                            card.style.padding = '1.2rem 1.2rem 1.1rem 1.2rem';
-                                                            card.style.display = 'flex';
-                                                            card.style.flexDirection = 'column';
-                                                            card.style.alignItems = 'center';
-                                                            card.style.justifyContent = 'flex-start';
-                                                            card.style.minHeight = '340px';
-
-                                                            // Badge
-                                                            if (p.badge) {
-                                                                const badge = document.createElement('span');
-                                                                badge.className = 'badge badge-green';
-                                                                badge.textContent = p.badge;
-                                                                badge.setAttribute('aria-label','Durum');
-                                                                badge.style.position = 'absolute';
-                                                                badge.style.top = '10px';
-                                                                badge.style.left = '10px';
-                                                                card.appendChild(badge);
-                                                            }
-
-                                                            // Görsel
-                                                            const img = document.createElement('div');
-                                                            img.className = 'product-image';
-                                                            img.style.width = '100%';
-                                                            img.style.height = '180px';
-                                                            img.style.display = 'flex';
-                                                            img.style.alignItems = 'center';
-                                                            img.style.justifyContent = 'center';
-                                                            img.style.marginBottom = '0.7rem';
-                                                            let imagesArr = Array.isArray(p.images) && p.images.length > 0 ? p.images : (p.image ? [p.image] : []);
-                                                            if(imagesArr.length > 0){
-                                                                const imageEl = document.createElement('img');
-                                                                imageEl.src = imagesArr[0];
-                                                                imageEl.alt = p.name || 'Ürün görseli';
-                                                                imageEl.loading = 'lazy';
-                                                                imageEl.decoding = 'async';
-                                                                imageEl.style.maxWidth='100%';
-                                                                imageEl.style.maxHeight='100%';
-                                                                imageEl.style.objectFit='contain';
-                                                                img.innerHTML='';
-                                                                img.appendChild(imageEl);
-                                                            } else {
-                                                                img.textContent = '🛍️';
-                                                                img.style.fontSize = '3.2rem';
-                                                            }
-                                                            card.appendChild(img);
-
-                                                            // Ürün adı hemen resmin altında, küçük puntoda
-                                                            const nameEl = document.createElement('div');
-                                                            nameEl.className = 'product-name';
-                                                            nameEl.textContent = p.name || '';
-                                                            nameEl.style.textAlign = 'center';
-                                                            nameEl.style.fontWeight = '600';
-                                                            nameEl.style.fontSize = '1.01rem';
-                                                            nameEl.style.margin = '0.2rem 0 0.3rem 0';
-                                                            card.appendChild(nameEl);
-
-                                                            // Ürün boyu, saksı tipi, yaprak genişliği, bilgi başlıkları
+                            // Paneli butonun altına ve ortalanmış şekilde yerleştir
+                            const rect = btn.getBoundingClientRect();
+                            const panelRect = panel.getBoundingClientRect();
+                            const top = rect.bottom + window.scrollY + 8;
+                            let left = rect.left + window.scrollX;
+                            // Panel ekran dışına taşmasın
+                            if (left + panelRect.width > window.innerWidth) {
+                                left = window.innerWidth - panelRect.width - 16;
+                            }
+                            panel.style.position = 'fixed';
+                            panel.style.top = top + 'px';
+                            panel.style.left = left + 'px';
+                            panel.style.transform = 'none';
+                        } else {
+                            panel.classList.add('hidden');
+                            panel.setAttribute('aria-hidden', 'true');
+                            panel.style.display = 'none';
+                            panel.style.transform = 'translate(-9999px,-9999px)';
+                        }
                                                             const infoList = document.createElement('div');
                                                             infoList.style.display = 'flex';
                                                             infoList.style.flexDirection = 'column';
