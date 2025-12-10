@@ -1576,44 +1576,37 @@
                                 nameEl.style = 'font-size:1.08rem;font-weight:700;color:#18181b;letter-spacing:-0.5px;line-height:1.18;margin-bottom:0.18rem;text-align:center;';
                                 card.appendChild(nameEl);
 
-                                // Bilgi başlıkları (boy, saksı çapı, saksı türü)
-                                if (p.height || p.potDiameter || p.potType) {
-                                    const infoList = document.createElement('div');
-                                    infoList.style.display = 'flex';
-                                    infoList.style.flexDirection = 'column';
-                                    infoList.style.alignItems = 'flex-start';
-                                    infoList.style.width = '100%';
-                                    infoList.style.gap = '0.13rem';
-                                    infoList.style.fontSize = '0.93rem';
-                                    infoList.style.color = '#444';
-                                    infoList.style.marginTop = '0.5rem';
-                                    infoList.style.padding = '0.5rem';
-                                    infoList.style.background = '#f8fafc';
-                                    infoList.style.borderRadius = '8px';
-                                    infoList.style.color = '#444';
-                                    if (p.potDiameter) {
-                                        const d = document.createElement('div');
-                                        d.innerHTML = `<span style='font-weight:600;'>Saksı Çapı:</span> <span>${p.potDiameter} cm</span>`;
-                                        infoList.appendChild(d);
-                                    }
-                                    if (p.height) {
-                                        const h = document.createElement('div');
-                                        h.innerHTML = `<span style='font-weight:600;'>Boy:</span> <span>${p.height} cm</span>`;
-                                        infoList.appendChild(h);
-                                    }
-                                    if (p.potType) {
-                                        const s = document.createElement('div');
-                                        s.innerHTML = `<span style='font-weight:600;'>Saksı:</span> <span>${p.potType}</span>`;
-                                        infoList.appendChild(s);
-                                    }
+                                // Bilgi başlıkları (boy, saksı çapı, saksı türü) - ÜRÜN KARTINDA GÖSTERİLİYOR
+                                const infoList = document.createElement('div');
+                                infoList.className = 'product-specs';
+                                infoList.style.cssText = 'display:flex;flex-direction:column;align-items:flex-start;width:100%;gap:0.25rem;font-size:0.9rem;color:#334155;margin-top:0.6rem;padding:0.6rem 0.7rem;background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border-radius:10px;border:1px solid #86efac;';
+                                
+                                if (p.potDiameter) {
+                                    const d = document.createElement('div');
+                                    d.innerHTML = `<span style='font-weight:600;color:#166534;'>🌱 Saksı Çapı:</span> <span>${p.potDiameter} cm</span>`;
+                                    infoList.appendChild(d);
+                                }
+                                if (p.height) {
+                                    const h = document.createElement('div');
+                                    h.innerHTML = `<span style='font-weight:600;color:#166534;'>📏 Boy:</span> <span>${p.height} cm</span>`;
+                                    infoList.appendChild(h);
+                                }
+                                if (p.potType) {
+                                    const s = document.createElement('div');
+                                    s.innerHTML = `<span style='font-weight:600;color:#166534;'>🪴 Saksı:</span> <span>${p.potType}</span>`;
+                                    infoList.appendChild(s);
+                                }
+                                // Sadece en az bir bilgi varsa karta ekle
+                                if (p.potDiameter || p.height || p.potType) {
                                     card.appendChild(infoList);
                                 }
-                                // Ürün hakkında bilgi en altta, sadece o ürüne ait
+                                
+                                // Ürün hakkında bilgi - ÜRÜN KARTINDA GÖSTERİLİYOR
                                 if (p.info) {
                                     const infoDiv = document.createElement('div');
-                                    infoDiv.className = 'product-info';
-                                    infoDiv.style = 'width:100%;margin-top:0.5rem;font-size:0.95rem;color:#2d3748;background:#f6f6f6;border-radius:8px;padding:0.6rem 0.7rem;text-align:left;word-break:break-word;max-height:72px;overflow:auto;';
-                                    infoDiv.innerHTML = `<span style='font-weight:600;'>Ürün Hakkında:</span> <span>${p.info}</span>`;
+                                    infoDiv.className = 'product-about';
+                                    infoDiv.style.cssText = 'width:100%;margin-top:0.5rem;font-size:0.88rem;color:#1e40af;background:linear-gradient(135deg,#eff6ff,#dbeafe);border-radius:8px;padding:0.55rem 0.7rem;text-align:left;word-break:break-word;border:1px solid #93c5fd;';
+                                    infoDiv.innerHTML = `<span style='font-weight:600;'>💬 Ürün Hakkında:</span> <span style='color:#334155;'>${p.info}</span>`;
                                     card.appendChild(infoDiv);
                                 }
 
