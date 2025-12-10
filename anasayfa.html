@@ -450,23 +450,6 @@
         .badge.badge-green { background: #10b981; box-shadow: 0 6px 14px rgba(16,185,129,0.25); }
         .badge.badge-amber { background: #f59e0b; box-shadow: 0 6px 14px rgba(245,158,11,0.25); }
 
-        .product-info {
-            padding: 0.5rem 0 0;
-        }
-        .product-name {
-            font-size: 1.05rem;
-            margin-bottom: .5rem;
-            color: #0b1220;
-            font-weight: 600;
-            letter-spacing: .2px;
-        }
-        .product-price {
-            color: #16a34a;
-            font-size: 1.2rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-
         button { background: linear-gradient(180deg,#16a34a,#15803d); color: white; border: none; padding: .7rem 1rem; border-radius:10px; cursor:pointer; transition: transform 220ms, box-shadow 220ms; width:100%; box-shadow:0 4px 12px rgba(22,163,74,0.25); font-weight:600 }
         button:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(22,163,74,0.35) }
 
@@ -1613,19 +1596,17 @@
                                 card.style.height = 'auto';
                                 card.style.minHeight = '420px';
 
-                                // Ürün görseli - Yatay kredi kartı boyutu (85.6mm x 53.98mm oranı)
+                                // Ürün görseli - CSS'de tanımlı stiller (.product-image)
                                 let imgSrc = Array.isArray(p.images) && p.images.length ? p.images[0] : (p.image || 'images/products/default.jpg');
                                 const img = document.createElement('img');
                                 img.src = imgSrc;
                                 img.alt = p.name || 'Ürün';
                                 img.className = 'product-image';
-                                img.style = 'width:100%;max-width:260px;height:164px;object-fit:cover;border-radius:12px;box-shadow:0 2px 12px rgba(30,143,85,0.10);background:#fff;margin-bottom:0.7rem;aspect-ratio:1.586/1;';
                                 card.appendChild(img);
-                                // Ürün adı
+                                // Ürün adı - CSS'de tanımlı stiller (.product-name)
                                 const nameEl = document.createElement('div');
                                 nameEl.className = 'product-name';
                                 nameEl.textContent = p.name || 'Ürün';
-                                nameEl.style = 'font-size:1.08rem;font-weight:700;color:#18181b;letter-spacing:-0.5px;line-height:1.18;margin-bottom:0.18rem;text-align:center;';
                                 card.appendChild(nameEl);
 
                                 // Bilgi başlıkları (boy, saksı çapı, saksı türü) - ÜRÜN KARTINDA GÖSTERİLİYOR
