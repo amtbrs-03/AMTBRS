@@ -1143,7 +1143,8 @@
     const image2=(document.getElementById('editProductImage2')?.value||'').trim();
     const image3=(document.getElementById('editProductImage3')?.value||'').trim();
     const image4=(document.getElementById('editProductImage4')?.value||'').trim();
-    // Ürün bilgileri - height ve info alanları
+    // Ürün bilgileri - potDiameter, height ve info alanları
+    const potDiameter=(document.getElementById('editPotDiameter')?.value||'').trim();
     const height=(document.getElementById('editProductHeight')?.value||'').trim();
     const info=(document.getElementById('editProductInfo')?.value||'').trim();
     const autoBind = true; // Her zaman arka planda otomatik bağla
@@ -1222,7 +1223,7 @@
                 try { products = JSON.parse(txt); } catch(e){ throw new Error('products.json parse hatası'); }
                 if(!Array.isArray(products.items)) products.items = Array.isArray(products) ? products : [];
                 const imagesArr=[image].concat([image2,image3,image4].filter(Boolean));
-                const next = { id, name, price, badge, image: imagesArr[0], images: imagesArr, height: height || '', info: info || '' };
+                const next = { id, name, price, badge, image: imagesArr[0], images: imagesArr, potDiameter: potDiameter || '', height: height || '', info: info || '' };
                 const idNorm = String(id).toLowerCase().replace(/\.(jpg|jpeg|png|webp)$/i,'');
                 let idx = -1;
                 if(Array.isArray(products.items)){
@@ -1251,7 +1252,7 @@
               }
               const data=await res.json(); let products=JSON.parse(fromBase64(data.content));
               const imagesArr=[image].concat([image2,image3,image4].filter(Boolean));
-              const next = { id, name, price, badge, image: imagesArr[0], images: imagesArr, height: height || '', info: info || '' };
+              const next = { id, name, price, badge, image: imagesArr[0], images: imagesArr, potDiameter: potDiameter || '', height: height || '', info: info || '' };
               const idNorm = String(id).toLowerCase().replace(/\.(jpg|jpeg|png|webp)$/i,'');
               let idx = -1;
               if(Array.isArray(products.items)){
@@ -1599,7 +1600,8 @@
           const im2 = document.getElementById('editProductImage2'); if(im2) im2.value = imgs[1]||'';
           const im3 = document.getElementById('editProductImage3'); if(im3) im3.value = imgs[2]||'';
           const im4 = document.getElementById('editProductImage4'); if(im4) im4.value = imgs[3]||'';
-          // Height ve Info alanlarını doldur
+          // Ürün bilgi alanlarını doldur (potDiameter, height, info)
+          const potDiameterEl = document.getElementById('editPotDiameter'); if(potDiameterEl) potDiameterEl.value = product.potDiameter||'';
           const heightEl = document.getElementById('editProductHeight'); if(heightEl) heightEl.value = product.height||'';
           const infoEl = document.getElementById('editProductInfo'); if(infoEl) infoEl.value = product.info||'';
           document.getElementById('editProductMsg').textContent='';
