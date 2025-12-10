@@ -1595,13 +1595,13 @@
                                 card.style.height = 'auto';
                                 card.style.minHeight = '420px';
 
-                                // Ürün görseli
+                                // Ürün görseli - Yatay kredi kartı boyutu (85.6mm x 53.98mm oranı)
                                 let imgSrc = Array.isArray(p.images) && p.images.length ? p.images[0] : (p.image || 'images/products/default.jpg');
                                 const img = document.createElement('img');
                                 img.src = imgSrc;
                                 img.alt = p.name || 'Ürün';
                                 img.className = 'product-image';
-                                img.style = 'width:100%;max-width:180px;height:180px;object-fit:cover;border-radius:14px;box-shadow:0 2px 12px rgba(30,143,85,0.10);background:#fff;margin-bottom:0.7rem;';
+                                img.style = 'width:100%;max-width:260px;height:164px;object-fit:cover;border-radius:12px;box-shadow:0 2px 12px rgba(30,143,85,0.10);background:#fff;margin-bottom:0.7rem;aspect-ratio:1.586/1;';
                                 card.appendChild(img);
                                 // Ürün adı
                                 const nameEl = document.createElement('div');
@@ -1863,18 +1863,8 @@
                                 html += `</div>`;
                             }
                             html += `</div>`;
-                            // Sağ: bilgiler
+                            // Sağ: bilgiler (Saksı Çapı, Boy, Ürün Hakkında anasayfada zaten var, panelde gösterilmeyecek)
                             html += `<div style='flex:1;min-width:220px;display:flex;flex-direction:column;gap:0.7rem;justify-content:center;'>`;
-                            // Ürün özellikleri (Saksı Çapı, Boy, Ürün Hakkında)
-                            if(potDiameter || height || potType || info) {
-                                html += `<div style='display:flex;flex-direction:column;gap:0.4rem;margin-bottom:0.7rem;padding:0.8rem;background:#f8fafc;border-radius:10px;'>`;
-                                if(potDiameter) html += `<div style='font-size:0.98rem;color:#334155;'><span style='font-weight:600;'>Saksı Çapı:</span> ${potDiameter} cm</div>`;
-                                if(height) html += `<div style='font-size:0.98rem;color:#334155;'><span style='font-weight:600;'>Ürün Boyu:</span> ${height} cm</div>`;
-                                if(potType) html += `<div style='font-size:0.98rem;color:#334155;'><span style='font-weight:600;'>Saksı Türü:</span> ${potType}</div>`;
-                                if(info) html += `<div style='font-size:0.98rem;color:#334155;'><span style='font-weight:600;'>Ürün Hakkında:</span> ${info}</div>`;
-                                html += `</div>`;
-                            }
-                            if(desc && desc !== info) html += `<div style='font-size:1.05rem;color:#334155;margin-bottom:0.7rem;'>${desc}</div>`;
                             // Fiyat ve sepete ekle ortalanmış
                             html += `<div style='display:flex;flex-direction:column;align-items:center;justify-content:center;margin-bottom:0.7rem;'>`;
                             // Fiyatları daima ₺ simgesiyle ve TL formatında göster
