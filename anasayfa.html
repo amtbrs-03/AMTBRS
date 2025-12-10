@@ -1631,11 +1631,14 @@
                             grid.style.gap = '1.5rem';
                             grid.style.alignItems = 'stretch';
                             const fmt = new Intl.NumberFormat('tr-TR', {style:'currency', currency:'TRY'});
+                            console.log('[DEBUG] products.json items:', list);
                             list.forEach((p, idx) => {
+                                console.log(`[DEBUG] Product ${idx}:`, p.name, 'potDiameter:', p.potDiameter, 'height:', p.height);
                                 const card = document.createElement('div');
                                 card.className = 'product-card';
                                 card.setAttribute('data-id', p.id || ('P'+idx));
                                 card.setAttribute('data-name', p.name || 'Ürün');
+                                card.setAttribute('data-price', p.price || 0);
                                 card.style.position = 'relative';
                                 // Ürün görseli - Sol taraf
                                 let imgSrc = Array.isArray(p.images) && p.images.length ? p.images[0] : (p.image || 'images/products/default.jpg');
