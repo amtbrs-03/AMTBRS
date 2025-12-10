@@ -926,6 +926,76 @@
                 max-height: 50vh !important;
             }
         }
+        
+        /* Mobil Auth Modal - Tam Ekran Ortalı */
+        @media (max-width: 700px) {
+            .modal {
+                display: none;
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                bottom: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                z-index: 2000 !important;
+                background: rgba(0,0,0,0.6) !important;
+                /* Flexbox ile içeriği ortala */
+                align-items: center !important;
+                justify-content: center !important;
+            }
+            
+            .modal[style*="display: block"],
+            .modal[style*="display:block"] {
+                display: flex !important;
+            }
+            
+            .modal .modal-content {
+                position: relative !important;
+                margin: 0 !important;
+                width: 94% !important;
+                max-width: 400px !important;
+                max-height: 85vh !important;
+                border-radius: 20px !important;
+                padding: 1.5rem !important;
+                overflow-y: auto !important;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3) !important;
+            }
+            
+            /* Auth modal için özel ayar */
+            #authModal .modal-content {
+                background: #fff !important;
+            }
+            
+            /* Sepet modal için özel ayar */
+            #cartModal .modal-content {
+                background: #fff !important;
+            }
+            
+            /* Close butonu */
+            .modal .close {
+                position: absolute;
+                top: 0.5rem;
+                right: 0.8rem;
+                font-size: 2rem;
+                z-index: 10;
+            }
+            
+            /* Form grupları */
+            .modal .form-group input {
+                font-size: 16px !important; /* iOS zoom engellemek için */
+                padding: 0.9rem !important;
+            }
+            
+            /* Form tabs */
+            .modal .form-tabs {
+                gap: 0.5rem;
+            }
+            
+            .modal .form-tabs button {
+                padding: 0.7rem 0.5rem;
+                font-size: 0.95rem;
+            }
         }
     </style>
   </head>
@@ -1923,7 +1993,13 @@
 
                     /* --- Auth modal and tabs --- */
                     function openAuthModal() {
-                        document.getElementById('authModal').style.display = 'block';
+                        const modal = document.getElementById('authModal');
+                        // Mobilde flex ile ortala, masaüstünde block
+                        if (window.innerWidth <= 700) {
+                            modal.style.display = 'flex';
+                        } else {
+                            modal.style.display = 'block';
+                        }
                         try{ const b = document.getElementById('authBtn'); if (b) b.setAttribute('aria-expanded','true'); }catch(e){}
                     }
 
@@ -3624,7 +3700,13 @@
                             return;
                         }
                         renderCart();
-                        document.getElementById('cartModal').style.display = 'block';
+                        const modal = document.getElementById('cartModal');
+                        // Mobilde flex ile ortala
+                        if (window.innerWidth <= 700) {
+                            modal.style.display = 'flex';
+                        } else {
+                            modal.style.display = 'block';
+                        }
                         try{ const b = document.getElementById('cartBtn'); if (b) b.setAttribute('aria-expanded','true'); }catch(e){}
                     }
 
