@@ -1654,17 +1654,17 @@
                                 
                                 if (p.potDiameter) {
                                     const d = document.createElement('div');
-                                    d.innerHTML = `<span style='font-weight:600;color:#166534;'>🌱</span> <span>${p.potDiameter} cm</span>`;
+                                    d.innerHTML = `<span style='font-weight:600;color:#166534;'>🌱 Saksı Çapı:</span> <span>${p.potDiameter} cm</span>`;
                                     infoList.appendChild(d);
                                 }
                                 if (p.height) {
                                     const h = document.createElement('div');
-                                    h.innerHTML = `<span style='font-weight:600;color:#166534;'>📏</span> <span>${p.height} cm</span>`;
+                                    h.innerHTML = `<span style='font-weight:600;color:#166534;'>📏 Boy:</span> <span>${p.height} cm</span>`;
                                     infoList.appendChild(h);
                                 }
                                 if (p.potType) {
                                     const s = document.createElement('div');
-                                    s.innerHTML = `<span style='font-weight:600;color:#166534;'>🪴</span> <span>${p.potType}</span>`;
+                                    s.innerHTML = `<span style='font-weight:600;color:#166534;'>🪴 Saksı:</span> <span>${p.potType}</span>`;
                                     infoList.appendChild(s);
                                 }
                                 if (p.potDiameter || p.height || p.potType) {
@@ -1676,7 +1676,7 @@
                                     const infoDiv = document.createElement('div');
                                     infoDiv.className = 'product-about';
                                     infoDiv.style.cssText = 'color:#1e40af;background:linear-gradient(135deg,#eff6ff,#dbeafe);border-radius:6px;padding:0.4rem 0.5rem;text-align:left;word-break:break-word;border:1px solid #93c5fd;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;';
-                                    infoDiv.innerHTML = `<span style='font-weight:600;'>💬</span> <span style='color:#334155;'>${p.info}</span>`;
+                                    infoDiv.innerHTML = `<span style='font-weight:600;'>💬 Hakkında:</span> <span style='color:#334155;'>${p.info}</span>`;
                                     infoColumn.appendChild(infoDiv);
                                 }
                                 
