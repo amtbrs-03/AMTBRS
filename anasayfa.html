@@ -2049,84 +2049,21 @@
                             panel.style.display = 'none';
                             panel.style.transform = 'translate(-9999px,-9999px)';
                         }
-                                                            const infoList = document.createElement('div');
-                                                            infoList.style.display = 'flex';
-                                                            infoList.style.flexDirection = 'column';
-                                                            infoList.style.alignItems = 'flex-start';
-                                                            infoList.style.width = '100%';
-                                                            infoList.style.gap = '0.13rem';
-                                                            infoList.style.fontSize = '0.93rem';
-                                                            infoList.style.color = '#444';
-                                                            // Boy
-                                                            if (p.height) {
-                                                                const h = document.createElement('div');
-                                                                h.innerHTML = `<span style='font-weight:600;'>Boy:</span> <span>${p.height}</span>`;
-                                                                infoList.appendChild(h);
-                                                            }
-                                                            // Saksı tipi
-                                                            if (p.potType) {
-                                                                const s = document.createElement('div');
-                                                                s.innerHTML = `<span style='font-weight:600;'>Saksı:</span> <span>${p.potType}</span>`;
-                                                                infoList.appendChild(s);
-                                                            }
-                                                            // Yaprak genişliği
-                                                            if (p.leafWidth) {
-                                                                const l = document.createElement('div');
-                                                                l.innerHTML = `<span style='font-weight:600;'>Yaprak:</span> <span>${p.leafWidth}</span>`;
-                                                                infoList.appendChild(l);
-                                                            }
-                                                            // Bilgi
-                                                            if (p.info) {
-                                                                const i = document.createElement('div');
-                                                                i.innerHTML = `<span style='font-weight:600;'>Bilgi:</span> <span>${p.info}</span>`;
-                                                                infoList.appendChild(i);
-                                                            }
-                                                            card.appendChild(infoList);
+                    }
 
-                                                            // Admin düzenleme formu (sadece admin ise)
-                                                            if (window.getCurrentUser && getCurrentUser() && getCurrentUser().isAdmin) {
-                                                                const adminForm = document.createElement('form');
-                                                                adminForm.style.marginTop = '0.7rem';
-                                                                adminForm.style.background = '#f3f4f6';
-                                                                adminForm.style.padding = '0.7rem 0.8rem';
-                                                                adminForm.style.borderRadius = '8px';
-                                                                adminForm.style.fontSize = '0.93rem';
-                                                                adminForm.innerHTML = `
-                                                                    <div style='font-weight:700;margin-bottom:0.3rem;color:#16a34a;'>Admin Ürün Düzenle</div>
-                                                                    <label>Boy: <input name='height' value='${p.height||''}' style='width:80px;margin-left:0.3rem;'/></label><br/>
-                                                                    <label>Saksı: <input name='potType' value='${p.potType||''}' style='width:80px;margin-left:0.3rem;'/></label><br/>
-                                                                    <label>Yaprak: <input name='leafWidth' value='${p.leafWidth||''}' style='width:80px;margin-left:0.3rem;'/></label><br/>
-                                                                    <label>Bilgi: <input name='info' value='${p.info||''}' style='width:120px;margin-left:0.3rem;'/></label><br/>
-                                                                    <button type='submit' style='margin-top:0.4rem;background:#16a34a;color:#fff;border:none;padding:0.3rem 0.8rem;border-radius:5px;cursor:pointer;'>Kaydet</button>
-                                                                `;
-                                                                adminForm.onsubmit = function(e){
-                                                                    e.preventDefault();
-                                                                    // Basit güncelleme: ürün objesini güncelle ve localStorage'a yaz
-                                                                    const fd = new FormData(adminForm);
-                                                                    p.height = fd.get('height');
-                                                                    p.potType = fd.get('potType');
-                                                                    p.leafWidth = fd.get('leafWidth');
-                                                                    p.info = fd.get('info');
-                                                                    // Güncellenen ürünleri localStorage'a kaydet (veya sunucuya gönderilebilir)
-                                                                    let all = window._lastProductsList || [];
-                                                                    let idx = all.findIndex(x => (x.id||('P'+all.indexOf(x))) == (p.id||('P'+idx)));
-                                                                    if(idx>-1) all[idx] = p;
-                                                                    window._lastProductsList = all;
-                                                                    localStorage.setItem('products', JSON.stringify(all));
-                                                                    alert('Ürün güncellendi (localStorage)');
-                                                                };
-                                                                card.appendChild(adminForm);
-                                                            }
-
-                                                            card.style.cursor = 'pointer';
-                                                            grid.appendChild(card);
-                                                        });
-                                const span = contactBtn.querySelector('span:nth-child(2)');
-                                if (span) span.textContent = cfg.contactBtnText;
+                    // Site ayarlarını uygula (contactBtn text)
+                    (async function applySiteSettingsToContact() {
+                        try {
+                            const cfg = await getSiteSettings();
+                            if (cfg && cfg.contactBtnText) {
+                                const contactBtn = document.getElementById('contactBtn');
+                                if (contactBtn) {
+                                    const span = contactBtn.querySelector('span:nth-child(2)');
+                                    if (span) span.textContent = cfg.contactBtnText;
+                                }
                             }
                             // homepage visuals and document titles (if elements exist)
-                            try {
-                                if (cfg.homepageBackground) {
+                            if (cfg.homepageBackground) {
                                     // Try to load the image, fallback if error
                                     const imgTest = new window.Image();
                                     imgTest.onload = function() {
