@@ -2018,8 +2018,9 @@
                                             document.getElementById('productDetailPanel').style.display = 'none';
                                             document.body.style.overflow = '';
                                         } else {
+                                            // Kullanıcı giriş yapmamış, auth modal aç
+                                            alert('Sepete ürün eklemek için lütfen giriş yapın veya kayıt olun.');
                                             if(typeof openAuthModal==='function') openAuthModal();
-                                            else alert('Lütfen giriş yapınız!');
                                         }
                                     };
                                 }
