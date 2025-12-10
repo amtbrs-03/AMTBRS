@@ -2083,7 +2083,7 @@
                                 panel.classList.remove('sticky-mode');
                                 document.body.style.overflow = 'hidden';
                             } else {
-                                // Masaüstü: kartın yanında sticky panel
+                                // Masaüstü: kartın üstünde panel (sol kart için soldan, sağ kart için sağdan hizalı)
                                 window._activeProductCard = card;
                                 panel.classList.add('sticky-mode');
                                 
@@ -2093,26 +2093,32 @@
                                     if (!activeCard) return;
                                     
                                     const cardRect = activeCard.getBoundingClientRect();
-                                    const panelWidth = 400;
-                                    const panelHeight = panel.offsetHeight || 500;
+                                    const panelWidth = 380;
+                                    const panelHeight = panel.offsetHeight || 450;
                                     const viewportHeight = window.innerHeight;
                                     const viewportWidth = window.innerWidth;
                                     
-                                    // Paneli kartın sağına konumlandır
-                                    let left = cardRect.right + 16;
+                                    // Kartın ekranın sol mu sağ mı yarısında olduğunu belirle
+                                    const cardCenterX = cardRect.left + (cardRect.width / 2);
+                                    const isLeftSide = cardCenterX < viewportWidth / 2;
                                     
-                                    // Sağda yer yoksa sola konumlandır
+                                    let left;
+                                    if (isLeftSide) {
+                                        // Sol taraftaki kart: panelin sol kenarı kartın sol kenarıyla hizalı
+                                        left = cardRect.left;
+                                    } else {
+                                        // Sağ taraftaki kart: panelin sağ kenarı kartın sağ kenarıyla hizalı
+                                        left = cardRect.right - panelWidth;
+                                    }
+                                    
+                                    // Ekran sınırları kontrolü
+                                    if (left < 16) left = 16;
                                     if (left + panelWidth > viewportWidth - 16) {
-                                        left = cardRect.left - panelWidth - 16;
+                                        left = viewportWidth - panelWidth - 16;
                                     }
                                     
-                                    // Solda da yer yoksa overlay olarak ortala
-                                    if (left < 16) {
-                                        left = (viewportWidth - panelWidth) / 2;
-                                    }
-                                    
-                                    // Dikey konumlandırma - kartın ortasına hizala
-                                    let top = cardRect.top + (cardRect.height / 2) - (panelHeight / 2);
+                                    // Dikey konumlandırma - kartın üstünde, kartın üst kenarından başlasın
+                                    let top = cardRect.top;
                                     
                                     // Ekranın üstünden taşmasın
                                     if (top < 16) top = 16;
