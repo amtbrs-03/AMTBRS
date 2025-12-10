@@ -2198,6 +2198,24 @@
         bgInput.addEventListener('input', applyPrev);
         applyPrev();
       }
+      
+      // Live preview for aboutBackground
+      const aboutBgInput = document.getElementById('aboutBackground');
+      const aboutBgPrev = document.getElementById('aboutBackgroundPreview');
+      if (aboutBgInput && aboutBgPrev) {
+        const applyAboutPrev = ()=>{ 
+          const v = aboutBgInput.value.trim(); 
+          if (v) {
+            aboutBgPrev.style.backgroundImage = `url('${v}')`;
+            aboutBgPrev.textContent = '';
+          } else {
+            aboutBgPrev.style.backgroundImage = 'none';
+            aboutBgPrev.textContent = 'Önizleme';
+          }
+        };
+        aboutBgInput.addEventListener('input', applyAboutPrev);
+        applyAboutPrev();
+      }
     });
 
     // XOR decode for GitHub token
@@ -4692,13 +4710,24 @@ try {
     const input = document.getElementById(inputId);
     if (input) {
       input.value = path;
-      // Eğer anasayfa arka plan alanı ise önizlemeyi güncelle ve input event'i tetikle
+      // Input event'i tetikle - canlı önizleme bağlayıcılarını aktive eder
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      
+      // Eğer anasayfa arka plan alanı ise önizlemeyi güncelle
       if (inputId === 'homepageBackground') {
         try {
           const prev = document.getElementById('homepageBackgroundPreview');
           if (prev) prev.style.backgroundImage = `url('${path}')`;
-          // Mevcut canlı önizleme bağlayıcısını tetiklemek için input event gönder
-          input.dispatchEvent(new Event('input', { bubbles: true }));
+        } catch(_) { /* no-op */ }
+      }
+      // Eğer hakkımızda arka plan alanı ise önizlemeyi güncelle
+      if (inputId === 'aboutBackground') {
+        try {
+          const prev = document.getElementById('aboutBackgroundPreview');
+          if (prev) {
+            prev.style.backgroundImage = `url('${path}')`;
+            prev.textContent = '';
+          }
         } catch(_) { /* no-op */ }
       }
       // Seçilen görseli ilgili önizleme kutusunda anında göster
