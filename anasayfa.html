@@ -1,40 +1,36 @@
-<!-- ...existing code... -->
-</body>
-<script>
-// --- About panel toggle ---
-function toggleAbout(e) {
-    try{ e && e.preventDefault && e.preventDefault(); }catch(err){}
-    let btn = null;
-    if (e && e.target) btn = e.target.closest && e.target.closest('[data-action="toggle-about"]');
-    if (!btn) btn = document.getElementById('aboutBtn');
-    const panel = document.getElementById('aboutPanel');
-    if (!panel) return;
-    const isHidden = panel.classList.contains('hidden');
-    if (isHidden) {
-        panel.classList.remove('hidden');
-        panel.setAttribute('aria-hidden', 'false');
-        panel.style.display = '';
-        // Paneli butonun altına ve sağa hizalı şekilde yerleştir
-        const rect = btn.getBoundingClientRect();
-        const panelRect = panel.getBoundingClientRect();
-        const top = rect.bottom + window.scrollY + 8;
-        let left = rect.right - panelRect.width + window.scrollX;
-        if (left < 8) left = 8;
-        if (left + panelRect.width > window.innerWidth) {
-            left = window.innerWidth - panelRect.width - 16;
-        }
-        panel.style.position = 'fixed';
-        panel.style.top = top + 'px';
-        panel.style.left = left + 'px';
-        panel.style.transform = 'none';
-    } else {
-        panel.classList.add('hidden');
-        panel.setAttribute('aria-hidden', 'true');
-        panel.style.display = 'none';
-        panel.style.transform = 'translate(-9999px,-9999px)';
-    }
-}
-</script>
+                    /* --- About panel toggle --- */
+                    function toggleAbout(e) {
+                        try{ e && e.preventDefault && e.preventDefault(); }catch(err){}
+                        let btn = null;
+                        if (e && e.target) btn = e.target.closest && e.target.closest('[data-action="toggle-about"]');
+                        if (!btn) btn = document.getElementById('aboutBtn');
+                        const panel = document.getElementById('aboutPanel');
+                        if (!panel) return;
+                        const isHidden = panel.classList.contains('hidden');
+                        if (isHidden) {
+                            panel.classList.remove('hidden');
+                            panel.setAttribute('aria-hidden', 'false');
+                            panel.style.display = '';
+                            // Paneli butonun altına ve sağa hizalı şekilde yerleştir
+                            const rect = btn.getBoundingClientRect();
+                            const panelRect = panel.getBoundingClientRect();
+                            const top = rect.bottom + window.scrollY + 8;
+                            let left = rect.right - panelRect.width + window.scrollX;
+                            if (left < 8) left = 8;
+                            if (left + panelRect.width > window.innerWidth) {
+                                left = window.innerWidth - panelRect.width - 16;
+                            }
+                            panel.style.position = 'fixed';
+                            panel.style.top = top + 'px';
+                            panel.style.left = left + 'px';
+                            panel.style.transform = 'none';
+                        } else {
+                            panel.classList.add('hidden');
+                            panel.setAttribute('aria-hidden', 'true');
+                            panel.style.display = 'none';
+                            panel.style.transform = 'translate(-9999px,-9999px)';
+                        }
+                    }
 <!doctype html>
 <html lang="tr">
   <head>
@@ -1946,7 +1942,7 @@ function toggleAbout(e) {
                                                                     p.info = fd.get('info');
                                                                     // Güncellenen ürünleri localStorage'a kaydet (veya sunucuya gönderilebilir)
                                                                     let all = window._lastProductsList || [];
-                                                                    let idx = all.findIndex((x, i) => (x.id || ('P' + i)) == (p.id || ('P' + i)));
+                                                                    let idx = all.findIndex(x => (x.id||('P'+all.indexOf(x))) == (p.id||('P'+idx)));
                                                                     if(idx>-1) all[idx] = p;
                                                                     window._lastProductsList = all;
                                                                     localStorage.setItem('products', JSON.stringify(all));
