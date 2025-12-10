@@ -38,8 +38,6 @@ class MockResponse {
 async function fetchMock(url, ...args) {
   // products.json istenirse fs ile oku
   // Diğer fetchler node-fetch ile
-  return nodeFetchPatch(fetchUrl, ...args);
-}
   let fetchUrl = url;
   if (typeof url === 'string' && url.startsWith('/')) {
     // Convert relative URL to absolute using site origin

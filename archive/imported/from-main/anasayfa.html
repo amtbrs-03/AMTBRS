@@ -341,7 +341,7 @@
     <header>
         <nav>
             <div class="logo">[ERN-ÇİÇEK]</div>
-            <ul class="nav-links"></ul>
+            <ul class="nav-links">
                 <li><a href="#home">Ana Sayfa</a></li>
                 <li><a href="#products">Ürünler</a></li>
                 <li><a href="#about">Hakkında</a></li>
@@ -369,7 +369,7 @@
             <span class="close" onclick="closeAuthModal()">&times;</span>
             <h2 style="margin-bottom: 1.5rem; color: #0b1220;">Hoşgeldiniz</h2>
             
-            <div class="form-tabs"></div>
+            <div class="form-tabs">
                 <button class="form-tab active" onclick="switchTab('login', this)">Giriş</button>
                 <button class="form-tab" onclick="switchTab('register', this)">Kayıt</button>
             </div>
@@ -401,7 +401,7 @@
                     <label>Şifre</label>
                     <input type="password" id="registerPassword" placeholder="Şifreniz">
                 </div>
-                <div class="form-group"></div>
+                <div class="form-group">
                     <label>Şifre Tekrar</label>
                     <input type="password" id="registerPassword2" placeholder="Şifreniz tekrar">
                 </div>
@@ -862,6 +862,17 @@
                     }
                 } catch (e) { /* parse hata */ }
             }
+        }
+
+        // Kullanıcıyı localStorage'dan al
+        function getCurrentUser() {
+            const userStr = localStorage.getItem('currentUser');
+            return userStr ? JSON.parse(userStr) : null;
+        }
+
+        // Sepet anahtarı üret
+        function cartKeyForUser(email) {
+            return 'cart_' + email;
         }
 
         // Init on load
