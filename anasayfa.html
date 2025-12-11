@@ -2678,8 +2678,8 @@
                         
                         console.log('loginUser: ========== LOGIN ATTEMPT END (SUCCESS) ==========');
                         
-                        // Otomatik olarak hesap modalını aç
-                        setTimeout(() => { openAccountModal(); }, 300);
+                        // Hesap modalı artık otomatik açılmıyor - kullanıcı isterse menüden açabilir
+                        showNotification('Hoşgeldiniz, ' + userData.name + '!', {type: 'success', duration: 2500});
                     }
 
                     function updateUIAfterLogin(name) {
