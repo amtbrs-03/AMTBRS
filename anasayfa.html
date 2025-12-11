@@ -1622,6 +1622,7 @@
                             grid.style.alignItems = 'stretch';
                             const fmt = new Intl.NumberFormat('tr-TR', {style:'currency', currency:'TRY'});
                             list.forEach((p, idx) => {
+                                console.log('Ürün:', p.name, 'potDiameter:', p.potDiameter, 'height:', p.height, 'info:', p.info);
                                 const card = document.createElement('div');
                                 card.className = 'product-card';
                                 card.setAttribute('data-id', p.id || ('P'+idx));
