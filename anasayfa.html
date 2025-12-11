@@ -1622,7 +1622,6 @@
                             grid.style.alignItems = 'stretch';
                             const fmt = new Intl.NumberFormat('tr-TR', {style:'currency', currency:'TRY'});
                             list.forEach((p, idx) => {
-                                console.log('Ürün:', p.name, 'potDiameter:', p.potDiameter, 'height:', p.height, 'info:', p.info);
                                 const card = document.createElement('div');
                                 card.className = 'product-card';
                                 card.setAttribute('data-id', p.id || ('P'+idx));
@@ -4308,7 +4307,7 @@
                         initProducts();
                         updateCartCount();
                         // Ürünleri GitHub'dan yüklemeyi dene (varsa)
-                        try { await loadProductsFromGitHub(); } catch(e) { console.warn('GitHub ürün yükleme hatası', e); }
+                        // loadProductsFromGitHub kaldırıldı - loadProducts() zaten products.json yüklüyor
                         // Yalnızca admin (gh_token mevcut) için GitHub’a Kaydet butonunu göster
                         try{
                             const hasToken = !!(localStorage.getItem('gh_token')||'').trim();
