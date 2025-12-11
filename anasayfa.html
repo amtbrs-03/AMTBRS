@@ -2050,7 +2050,7 @@
                             // Paneli aç
                             const panel = document.getElementById('productDetailPanel');
                             
-                            // Mobilde tam ekran, masaüstünde ortada kompakt
+                            // Mobilde tam ekran, masaüstünde ürün kartının altında ortalanmış
                             if (window.innerWidth <= 700) {
                                 // Mobil: tam ekran modal
                                 panel.style.position = 'fixed';
@@ -2065,14 +2065,43 @@
                                 panel.style.transform = 'none';
                                 document.body.style.overflow = 'hidden';
                             } else {
-                                // Masaüstü: ekranın ortasında kompakt panel (resim genişliğinde)
-                                panel.style.position = 'fixed';
-                                panel.style.top = '50%';
-                                panel.style.left = '50%';
-                                panel.style.transform = 'translate(-50%, -50%)';
-                                panel.style.width = '360px';
+                                // Masaüstü: ürün kartının hemen altında, kartı ortalayarak
+                                const cardRect = card.getBoundingClientRect();
+                                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                                const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+                                
+                                // Panel genişliği 360px
+                                const panelWidth = 360;
+                                
+                                // Kartın merkezini bul
+                                const cardCenterX = cardRect.left + scrollLeft + (cardRect.width / 2);
+                                
+                                // Panel'in sol kenarı (kartın merkezinden panel genişliğinin yarısı kadar sola)
+                                let panelLeft = cardCenterX - (panelWidth / 2);
+                                
+                                // Ekran sınırlarını kontrol et
+                                const viewportWidth = window.innerWidth;
+                                const margin = 16;
+                                
+                                // Sağ taşma kontrolü
+                                if (panelLeft + panelWidth > viewportWidth - margin) {
+                                    panelLeft = viewportWidth - panelWidth - margin;
+                                }
+                                // Sol taşma kontrolü
+                                if (panelLeft < margin) {
+                                    panelLeft = margin;
+                                }
+                                
+                                // Panel pozisyonu: kartın hemen altında
+                                const panelTop = cardRect.bottom + scrollTop + 12; // 12px boşluk
+                                
+                                panel.style.position = 'absolute';
+                                panel.style.top = panelTop + 'px';
+                                panel.style.left = panelLeft + 'px';
+                                panel.style.transform = 'none';
+                                panel.style.width = panelWidth + 'px';
                                 panel.style.maxWidth = '92vw';
-                                panel.style.maxHeight = '90vh';
+                                panel.style.maxHeight = '80vh';
                                 panel.style.height = 'auto';
                                 panel.style.borderRadius = '16px';
                                 
@@ -2082,6 +2111,20 @@
                                     window.removeEventListener('resize', window._panelScrollHandler);
                                     window._panelScrollHandler = null;
                                 }
+                                
+                                // Panel görünür alana scroll et
+                                setTimeout(function() {
+                                    const panelRect = panel.getBoundingClientRect();
+                                    const viewportHeight = window.innerHeight;
+                                    // Panel ekranın altından taşıyorsa, panelin üst kısmı görünür olacak şekilde scroll et
+                                    if (panelRect.bottom > viewportHeight) {
+                                        const scrollAmount = panelRect.top - 100; // Üstten 100px boşluk bırak
+                                        window.scrollTo({
+                                            top: window.pageYOffset + scrollAmount,
+                                            behavior: 'smooth'
+                                        });
+                                    }
+                                }, 50);
                             }
                             panel.style.display = 'block';
                         });
