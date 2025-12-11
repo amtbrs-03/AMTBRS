@@ -4116,6 +4116,8 @@
                     /* --- Product management (dynamic rendering + persistence) --- */
                     const PRODUCTS_KEY = 'products_v1';
 
+                    /* initProducts() ve renderProducts() devre dışı bırakıldı
+                       Artık sadece loadProducts() (satır 1608) kullanılıyor - products.json'dan yükler
                     function initProducts() {
                         // If products already in localStorage, render them.
                         const raw = localStorage.getItem(PRODUCTS_KEY);
@@ -4187,6 +4189,7 @@
                             container.appendChild(card);
                         });
                     }
+                    */
 
                     // Minimal payment & IBAN helpers
                     function copyIban() {
@@ -4347,7 +4350,7 @@
                                 toRemove.forEach(n=>{ try{ if (n.parentNode) n.parentNode.removeChild(n); }catch(_){ } });
                             } catch(_) { }
                         }catch(e){ console.error('init error', e); }
-                        initProducts();
+                        // initProducts() kaldırıldı - loadProducts() DOMContentLoaded'da zaten çalışıyor
                         updateCartCount();
                         // Ürünleri GitHub'dan yüklemeyi dene (varsa)
                         // loadProductsFromGitHub kaldırıldı - loadProducts() zaten products.json yüklüyor
