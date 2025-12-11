@@ -261,6 +261,10 @@
             background-color: rgba(0,0,0,0.5);
             animation: fadeIn 0.3s;
         }
+        /* Account modal mobilde header üstünde */
+        #accountModal {
+            z-index: 2000;
+        }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         
         .modal-content {
@@ -774,8 +778,16 @@
                 top: 0; 
                 left: 0; 
                 right: 0; 
-                z-index: 1200; 
+                z-index: 100; /* Düşük z-index - içerik üstünde görünmesin */
                 padding: 0.5rem 1rem 1rem 1rem;
+                transition: opacity 0.3s ease, backdrop-filter 0.3s ease;
+            }
+            /* Scroll edildiğinde header bulanıklaşıp arkada kalır */
+            header.scrolled {
+                opacity: 0.7;
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                background: rgba(30, 143, 85, 0.4);
             }
             
             /* Logo en üstte tek başına, ortalanmış */
@@ -1737,6 +1749,28 @@
                     document.addEventListener('DOMContentLoaded', function(){
                         // Lightbox code removed as requested
                         loadProducts();
+                        
+                        // Mobilde scroll edildiğinde header bulanıklaştırma
+                        (function setupMobileHeaderScroll() {
+                            if (window.innerWidth > 700) return; // Sadece mobilde
+                            const header = document.querySelector('header');
+                            if (!header) return;
+                            
+                            let ticking = false;
+                            window.addEventListener('scroll', function() {
+                                if (!ticking) {
+                                    window.requestAnimationFrame(function() {
+                                        if (window.scrollY > 50) {
+                                            header.classList.add('scrolled');
+                                        } else {
+                                            header.classList.remove('scrolled');
+                                        }
+                                        ticking = false;
+                                    });
+                                    ticking = true;
+                                }
+                            });
+                        })();
                         
                         // İletişim bilgilerini site-settings.json'dan yükle
                         (async function loadContactInfo() {
