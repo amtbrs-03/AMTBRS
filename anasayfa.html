@@ -1084,9 +1084,10 @@
                 <div id="authModal" class="modal" style="z-index:3000;">
                     <div class="modal-content">
                         <span class="close" data-action="close-auth">&times;</span>
-                        <h2 style="margin-bottom: 1.5rem; color: #0b1220;">Hoşgeldiniz</h2>
+                        <div id="authContent">
+                        <h2 id="authTitle" style="margin-bottom: 1.5rem; color: #0b1220;">Hoşgeldiniz</h2>
             
-                        <div class="form-tabs">
+                        <div class="form-tabs" id="authTabs">
                             <button class="form-tab active" data-action="switch-tab" data-tab="login">Giriş</button>
                             <button class="form-tab" data-action="switch-tab" data-tab="register">Kayıt</button>
                         </div>
@@ -1242,6 +1243,7 @@
                                 <button data-action="register" type="submit" style="width: 100%; margin-top: 1rem;">Kayıt Ol</button>
                             </form>
                         </div>
+                        </div><!-- end authContent -->
 
                         <!-- Hesap / Adres Düzenleme -->
                         <div id="account" class="form-content">
@@ -2728,28 +2730,53 @@
                         try {
                             // Ensure auth modal is open
                             openAuthModal();
-                            // Switch to a simple reset form
-                            const authModal = document.getElementById('authModal');
-                            if (!authModal) return alert('Auth modal bulunamadı.');
+                            
+                            // Hide tabs and existing forms
+                            const authTabs = document.getElementById('authTabs');
+                            const loginForm = document.getElementById('login');
+                            const registerForm = document.getElementById('register');
+                            const authTitle = document.getElementById('authTitle');
+                            
+                            if (authTabs) authTabs.style.display = 'none';
+                            if (loginForm) loginForm.style.display = 'none';
+                            if (registerForm) registerForm.style.display = 'none';
+                            if (authTitle) authTitle.textContent = 'Parola Sıfırlama';
+                            
+                            // Remove old reset form if exists
+                            const oldReset = document.getElementById('forceResetForm');
+                            if (oldReset) oldReset.remove();
 
-                            // Build reset form HTML (keeps it lightweight)
-                            const resetHtml = `
-                                <div style="padding:1rem;">
-                                  <div style="font-weight:700;margin-bottom:0.5rem;">Parola Sıfırlama</div>
-                                  <div style="color:#6b7280;margin-bottom:0.75rem">${escapeHtml(email)} için yeni bir parola belirleyin.</div>
-                                  <input id="forceResetNew1" type="password" placeholder="Yeni parola" style="width:100%;padding:0.5rem;margin-bottom:0.5rem" />
-                                  <input id="forceResetNew2" type="password" placeholder="Yeni parolayı tekrar" style="width:100%;padding:0.5rem;margin-bottom:0.5rem" />
-                                  <div style="display:flex;gap:0.5rem;align-items:center"><button id="forceResetBtn" class="btn">Parolayı Sıfırla</button><button id="forceResetCancel" class="btn btn-ghost">Vazgeç</button></div>
-                                  <div id="forceResetMsg" style="margin-top:0.5rem;color:#6b7280"></div>
+                            // Build reset form HTML
+                            const resetDiv = document.createElement('div');
+                            resetDiv.id = 'forceResetForm';
+                            resetDiv.innerHTML = `
+                                <div style="padding:1rem 0;">
+                                  <div style="color:#6b7280;margin-bottom:1rem;">🔒 <strong>${escapeHtml(email)}</strong> için yeni bir parola belirleyin.</div>
+                                  <div class="form-group"><label>Yeni Parola</label><input id="forceResetNew1" type="password" placeholder="Yeni parola" style="width:100%;padding:0.8rem;border:1px solid rgba(10,12,30,0.1);border-radius:8px;font-size:1rem;" /></div>
+                                  <div class="form-group"><label>Yeni Parola Tekrar</label><input id="forceResetNew2" type="password" placeholder="Yeni parolayı tekrar" style="width:100%;padding:0.8rem;border:1px solid rgba(10,12,30,0.1);border-radius:8px;font-size:1rem;" /></div>
+                                  <div style="display:flex;gap:0.5rem;margin-top:1rem;"><button id="forceResetBtn" type="button" style="flex:1;padding:0.8rem;background:#10b981;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Parolayı Sıfırla</button><button id="forceResetCancel" type="button" style="flex:1;padding:0.8rem;background:#e5e7eb;color:#333;border:none;border-radius:8px;cursor:pointer;">Vazgeç</button></div>
+                                  <div id="forceResetMsg" style="margin-top:0.75rem;text-align:center;color:#6b7280"></div>
                                 </div>`;
-
-                            // Put into authContent area
+                            
+                            // Insert after authTitle
                             const authContent = document.getElementById('authContent');
-                            if (!authContent) return alert('Auth içeriği bulunamadı.');
-                            authContent.innerHTML = resetHtml;
+                            if (authContent) authContent.appendChild(resetDiv);
 
                             document.getElementById('forceResetCancel').onclick = function(){
-                                // return to login tab
+                                // Restore normal auth UI
+                                const authTabs = document.getElementById('authTabs');
+                                const loginForm = document.getElementById('login');
+                                const registerForm = document.getElementById('register');
+                                const authTitle = document.getElementById('authTitle');
+                                const resetForm = document.getElementById('forceResetForm');
+                                
+                                if (authTabs) authTabs.style.display = '';
+                                if (loginForm) loginForm.style.display = '';
+                                if (registerForm) registerForm.style.display = '';
+                                if (authTitle) authTitle.textContent = 'Hoşgeldiniz';
+                                if (resetForm) resetForm.remove();
+                                
+                                // Switch to login tab
                                 switchTab('login', document.querySelector('.form-tab'));
                             };
 
@@ -2785,8 +2812,21 @@
                                     localStorage.removeItem('failed_login_' + email);
 
                                     if (msg) msg.textContent = '✅ Parola sıfırlandı. Lütfen yeni parola ile giriş yapın.';
-                                    // switch back to login tab and prefill email
-                                    setTimeout(()=>{ switchTab('login', document.querySelector('.form-tab')); document.getElementById('loginEmail').value = email; }, 900);
+                                    // Restore UI and switch back to login tab
+                                    setTimeout(()=>{ 
+                                        const authTabs = document.getElementById('authTabs');
+                                        const loginForm = document.getElementById('login');
+                                        const authTitle = document.getElementById('authTitle');
+                                        const resetForm = document.getElementById('forceResetForm');
+                                        
+                                        if (authTabs) authTabs.style.display = '';
+                                        if (loginForm) loginForm.style.display = '';
+                                        if (authTitle) authTitle.textContent = 'Hoşgeldiniz';
+                                        if (resetForm) resetForm.remove();
+                                        
+                                        switchTab('login', document.querySelector('.form-tab')); 
+                                        document.getElementById('loginEmail').value = email; 
+                                    }, 1200);
                                 } catch(err) {
                                     console.error('forceReset error', err);
                                     if (msg) msg.textContent = 'Parola sıfırlama sırasında hata oluştu.';
