@@ -997,7 +997,7 @@
                                         <span>Hakkımızda</span><span style="margin-left:8px;opacity:0.9">▾</span>
                                     </button>
                                     <!-- Hakkımızda Dropdown Panel -->
-                                    <div id="aboutPanel" class="hidden" style="position:absolute;top:100%;right:0;margin-top:0.5rem;width:300px;max-width:92vw;background:rgba(255,255,255,0.98);border-radius:10px;box-shadow:0 12px 40px rgba(2,6,23,0.18);padding:0;z-index:1000;border:1.5px solid rgba(11,47,31,0.12);">
+                                    <div id="aboutPanel" class="hidden" style="position:absolute;top:100%;right:0;margin-top:0.5rem;min-width:200px;max-width:min(450px,92vw);width:auto;background:rgba(255,255,255,0.98);border-radius:10px;box-shadow:0 12px 40px rgba(2,6,23,0.18);padding:0;z-index:1000;border:1.5px solid rgba(11,47,31,0.12);">
                                         <button data-action="close-about" aria-label="Kapat" style="position:absolute;top:8px;right:8px;width:26px;height:26px;border:none;background:rgba(0,0,0,0.06);color:#555;font-size:16px;font-weight:bold;cursor:pointer;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background 0.2s;z-index:10;">&times;</button>
                                         <div id="aboutPanelContent" style="padding:0.9rem 1.1rem;">
                                             <strong style="display:block;margin-bottom:0.5rem;color:#0b1220;font-size:1.05rem;">Hakkımızda</strong>
@@ -1839,6 +1839,15 @@
                                         html += '</div>';
                                         
                                         aboutPanel.innerHTML = html;
+                                        
+                                        // Yazı uzunluğuna göre panel genişliğini ayarla
+                                        const textLen = (settings.aboutText || '').length;
+                                        let panelWidth = 220; // minimum
+                                        if (textLen > 50) panelWidth = 260;
+                                        if (textLen > 100) panelWidth = 300;
+                                        if (textLen > 200) panelWidth = 350;
+                                        if (textLen > 350) panelWidth = 420;
+                                        aboutPanel.style.width = panelWidth + 'px';
                                     }
                                 }
                             } catch (e) {
