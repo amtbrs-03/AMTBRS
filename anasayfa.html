@@ -2061,10 +2061,10 @@
                                                 }
                                             }
                                             if(window.addToCartWithQty) {
-                                                window.addToCartWithQty(id, name, price, qty);
+                                                window.addToCartWithQty(id, name, price, qty, mainImg);
                                             } else if(window.addToCart) {
                                                 // Fallback: eski fonksiyon
-                                                for(var i=0; i<qty; i++) window.addToCart({id:id, name:name, price:price});
+                                                for(var i=0; i<qty; i++) window.addToCart({id:id, name:name, price:price, image:mainImg});
                                             }
                                             showNotification(qty + ' adet ' + name + ' sepete eklendi!', {type: 'success', duration: 2500});
                                             // Paneli kapat ve event listener'ları temizle
@@ -3839,7 +3839,7 @@
                     }
 
                     // Adet ile sepete ekleme fonksiyonu (max 3 adet/ürün)
-                    function addToCartWithQty(id, name, price, qty) {
+                    function addToCartWithQty(id, name, price, qty, image) {
                         const MAX_QTY_PER_PRODUCT = 3;
                         const user = getCurrentUser();
                         if (!user) {
@@ -3864,10 +3864,12 @@
                             } else {
                                 existing.qty = newQty;
                             }
+                            // Resim bilgisi yoksa güncelle
+                            if (image && !existing.image) existing.image = image;
                         } else {
                             // Yeni ürün ekle
                             const addQty = Math.min(qty, MAX_QTY_PER_PRODUCT);
-                            cart.push({ id: id, name: name, price: price, qty: addQty });
+                            cart.push({ id: id, name: name, price: price, qty: addQty, image: image || '' });
                         }
                         
                         saveCart(cart);
@@ -3898,8 +3900,10 @@
                                 return; // değişiklik yok
                             }
                             existing.qty = (existing.qty || 1) + 1;
+                            // Resim bilgisi yoksa güncelle
+                            if (item.image && !existing.image) existing.image = item.image;
                         } else {
-                            cart.push({ id: item.id, name: item.name, price: item.price, qty: 1 });
+                            cart.push({ id: item.id, name: item.name, price: item.price, qty: 1, image: item.image || '' });
                         }
                         
                         saveCart(cart);
