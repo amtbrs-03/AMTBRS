@@ -796,23 +796,27 @@
       <form id="productEditForm" class="form-content">
         <!-- Üst: metin alanları (Ad, Fiyat, Rozet, Ürün ID) -->
         <div style="margin-bottom:16px;display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
-          <label>Ürün Adı
-            <input id="editProductName" type="text" required>
-          </label>
-          <label>Fiyat (₺)
-            <input id="editProductPrice" type="number" min="0" step="0.01" required>
-          </label>
-          <label>Rozet
-            <select id="editProductBadge">
+          <div>
+            <label for="editProductName" style="font-size:1rem;font-weight:600;color:#0f172a;margin-bottom:0.5rem;display:block;">Ürün Adı</label>
+            <input id="editProductName" type="text" required style="width:100%;padding:0.7rem;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;">
+          </div>
+          <div>
+            <label for="editProductPrice" style="font-size:1rem;font-weight:600;color:#0f172a;margin-bottom:0.5rem;display:block;">Fiyat (₺)</label>
+            <input id="editProductPrice" type="number" min="0" step="0.01" required style="width:100%;padding:0.7rem;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;">
+          </div>
+          <div>
+            <label for="editProductBadge" style="font-size:1rem;font-weight:600;color:#0f172a;margin-bottom:0.5rem;display:block;">Rozet</label>
+            <select id="editProductBadge" style="width:100%;padding:0.7rem;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;">
               <option value="">Yok</option>
               <option value="Yeni">Yeni</option>
               <option value="İndirim">İndirim</option>
               <option value="Popüler">Popüler</option>
             </select>
-          </label>
-          <label>Ürün ID
-            <input id="editProductId" type="text" required readonly>
-          </label>
+          </div>
+          <div>
+            <label for="editProductId" style="font-size:1rem;font-weight:600;color:#0f172a;margin-bottom:0.5rem;display:block;">Ürün ID</label>
+            <input id="editProductId" type="text" required readonly style="width:100%;padding:0.7rem;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;background:#f3f4f6;">
+          </div>
         </div>
 
         <!-- Alt: 3 görsel kutusu (Ana, Görsel-1, Görsel-2) -->
