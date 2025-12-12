@@ -1063,20 +1063,18 @@
                 
 
                 <!-- Contact dropdown panel (hidden by default) -->
-                <div id="contactPanel" class="contact-panel hidden" role="region" aria-hidden="true" aria-labelledby="contactBtn" style="position:fixed;left:0;top:0;transform:translate(-9999px,-9999px);background:rgba(255,255,255,0.98);border-radius:12px;box-shadow:0 20px 60px rgba(2,6,23,0.2);padding:0;z-index:1001;border:2px solid rgba(11,47,31,0.1);">
-                    <button data-action="close-contact" aria-label="Kapat" style="position:absolute;top:10px;right:10px;width:32px;height:32px;border:none;background:rgba(0,0,0,0.08);color:#333;font-size:20px;font-weight:bold;cursor:pointer;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background 0.2s;">&times;</button>
-                    <div style="padding:1.2rem 1.4rem; max-width:360px;">
-                        <strong id="contactPanelTitle" style="display:block; margin-bottom:0.6rem; color:#0b1220; font-size:1.3rem;">İletişim</strong>
-                        <div id="contactPanelDesc" style="font-size:1.05rem; color:#334155; margin-bottom:0.8rem; line-height:1.5;">Bizimle iletişime geçmek için aşağıdaki seçenekleri kullanabilirsiniz.</div>
-                        <div id="contactPanelBody" style="font-size:1.05rem; color:#0b1220; line-height:1.7;">
-                            <div style="margin-bottom:0.4rem;"><strong>E-posta:</strong> <a id="contactEmailLink" href="mailto:amtbrs@icloud.com" style="color:#2563eb;">amtbrs@icloud.com</a></div>
-                            <div style="margin-bottom:0.4rem;"><strong>Telefon:</strong> <span id="contactPhone">+90 5XX XXX XXXX</span></div>
-                            <div style="margin-bottom:0.4rem;"><strong>Adres:</strong> <span id="contactAddress">Adresiniz Caddesi 1, Şehir, TR</span></div>
-                            <div style="margin-top:0.6rem;"><strong>Çalışma Saatleri:</strong><div id="contactHours" style="font-size:1rem; color:#334155; margin-top:0.2rem;">Pzt-Cum 09:00-19:00</div></div>
+                <div id="contactPanel" class="contact-panel hidden" role="region" aria-hidden="true" aria-labelledby="contactBtn" style="position:fixed;left:0;top:0;transform:translate(-9999px,-9999px);background:rgba(255,255,255,0.98);border-radius:10px;box-shadow:0 12px 40px rgba(2,6,23,0.18);padding:0;z-index:1001;border:1.5px solid rgba(11,47,31,0.12);max-width:300px;">
+                    <button data-action="close-contact" aria-label="Kapat" style="position:absolute;top:8px;right:8px;width:26px;height:26px;border:none;background:rgba(0,0,0,0.06);color:#555;font-size:16px;font-weight:bold;cursor:pointer;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background 0.2s;">&times;</button>
+                    <div style="padding:0.9rem 1.1rem;">
+                        <strong id="contactPanelTitle" style="display:block;margin-bottom:0.5rem;color:#0b1220;font-size:1.05rem;">İletişim</strong>
+                        <div id="contactPanelDesc" style="font-size:0.85rem;color:#475569;margin-bottom:0.6rem;line-height:1.4;">Bize ulaşın:</div>
+                        <div id="contactPanelBody" style="font-size:0.88rem;color:#0f172a;line-height:1.55;">
+                            <div style="display:flex;align-items:center;gap:6px;margin-bottom:0.35rem;"><span style="font-weight:600;">📧</span> <a id="contactEmailLink" href="mailto:amtbrs@icloud.com" style="color:#2563eb;text-decoration:none;">amtbrs@icloud.com</a></div>
+                            <div style="display:flex;align-items:center;gap:6px;margin-bottom:0.35rem;"><span style="font-weight:600;">📞</span> <span id="contactPhone">+90 5XX XXX XXXX</span></div>
+                            <div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:0.35rem;"><span style="font-weight:600;">📍</span> <span id="contactAddress" style="flex:1;">Adresiniz Caddesi 1, Şehir</span></div>
+                            <div style="display:flex;align-items:flex-start;gap:6px;margin-top:0.5rem;padding-top:0.4rem;border-top:1px solid rgba(0,0,0,0.06);"><span style="font-weight:600;">🕐</span> <span id="contactHours" style="flex:1;font-size:0.82rem;color:#475569;">Pzt-Cum 09:00-19:00</span></div>
                         </div>
-                        <div style="margin-top:1rem;">
-                            <a id="contactEmailBtn" href="mailto:amtbrs@icloud.com?subject=İletişim%20-%20Web" style="display:block;background:#2563eb;color:#fff;padding:0.7rem;border-radius:8px;text-align:center;text-decoration:none;font-size:1.05rem;font-weight:600;">E-posta Gönder</a>
-                        </div>
+                        <a id="contactEmailBtn" href="mailto:amtbrs@icloud.com?subject=İletişim%20-%20Web" style="display:block;background:#2563eb;color:#fff;padding:0.55rem;border-radius:6px;text-align:center;text-decoration:none;font-size:0.88rem;font-weight:600;margin-top:0.7rem;">E-posta Gönder</a>
                     </div>
                 </div>
 
