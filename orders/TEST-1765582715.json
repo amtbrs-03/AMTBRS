@@ -1,0 +1,18 @@
+{
+  "id": "TEST-1765582715",
+  "date": 1765582715528,
+  "customerEmail": "amtbrs.03@gmail.com",
+  "customerName": "Test Müşteri",
+  "customerPhone": "+90 530 306 9081",
+  "address": "Test Adres",
+  "iban": "",
+  "status": "pending",
+  "items": [
+    {
+      "name": "Test Ürün",
+      "price": 100,
+      "qty": 1
+    }
+  ],
+  "total": "100.00"
+}
