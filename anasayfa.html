@@ -4109,36 +4109,25 @@
                         miniCartTimer = setTimeout(()=>{ el.classList.add('hidden'); el.setAttribute('aria-hidden','true'); miniCartTimer = null; }, delay);
                     }
 
-                    // attach hover/focus behavior without changing click action
+                    // attach click behavior only (hover removed for cleaner UX)
                     (function(){
                         try{
                             const cartBtn = document.getElementById('cartBtn');
                             const mini = document.getElementById('miniCart');
                             if (!cartBtn || !mini) return;
-                            cartBtn.addEventListener('mouseenter', showMiniCart);
-                            cartBtn.addEventListener('focus', showMiniCart);
-                            cartBtn.addEventListener('mouseleave', ()=>hideMiniCart(300));
-                            cartBtn.addEventListener('blur', ()=>hideMiniCart(300));
-                            // keep mini visible when hovering mini itself
-                            mini.addEventListener('mouseenter', showMiniCart);
-                            mini.addEventListener('mouseleave', ()=>hideMiniCart(200));
                             // hide when clicking outside
                             document.addEventListener('click', function(ev){
                                 const target = ev.target;
                                 if (!mini.contains(target) && target !== cartBtn && !cartBtn.contains(target)) hideMiniCart(100);
                             });
-                            // Intercept clicks on small screens: open mini-cart as bottom sheet instead of modal
+                            // Toggle mini cart on click
                             cartBtn.addEventListener('click', function(e){
                                 try{
-                                    if (window.innerWidth <= 480){
-                                        // Prevent inline onclick handlers (openCart) from running
-                                        e.stopImmediatePropagation();
-                                        e.preventDefault();
-                                        // Toggle mini cart visibility
-                                        const isHidden = mini.classList.contains('hidden');
-                                        if (isHidden) showMiniCart(); else hideMiniCart(100);
-                                        return false;
-                                    }
+                                    e.stopImmediatePropagation();
+                                    e.preventDefault();
+                                    const isHidden = mini.classList.contains('hidden');
+                                    if (isHidden) showMiniCart(); else hideMiniCart(100);
+                                    return false;
                                 }catch(err){ }
                             }, true);
                         }catch(e){ }
