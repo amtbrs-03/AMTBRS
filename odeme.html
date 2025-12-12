@@ -258,9 +258,54 @@
       } catch(_) {}
       // Numarayı WhatsApp formatına çevir
       phone = phone.replace(/\+/g, '');
+      
+      // Kullanıcı ve sepet bilgilerini topla
       const total = document.getElementById('total').textContent || '';
-      const message = encodeURIComponent('Merhaba, ödeme sayfasından yazıyorum. ' + total + ' tutarındaki siparişim hakkında bilgi almak istiyorum.');
-      window.open('https://wa.me/' + phone + '?text=' + message, '_blank');
+      const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
+      const userName = user ? user.name : 'Misafir';
+      const userEmail = user ? user.email : '-';
+      
+      // Sepet verilerini al
+      let cartItems = [];
+      let cartKey = user && user.email ? 'cart_' + user.email : 'cart_guest';
+      try {
+        cartItems = JSON.parse(localStorage.getItem(cartKey) || '[]');
+      } catch(_) {}
+      
+      // Ürün listesi oluştur
+      let productList = '';
+      if (cartItems.length > 0) {
+        productList = cartItems.map((item, i) => {
+          const qty = item.qty || item.quantity || 1;
+          const price = item.price || 0;
+          return `${i+1}. ${item.name} (${qty} adet - ₺${price})`;
+        }).join('\n');
+      }
+      
+      // Sipariş ID oluştur (tarih bazlı)
+      const orderId = 'SOR-' + Date.now().toString().slice(-8);
+      
+      // Sipariş notu
+      const orderNote = localStorage.getItem('orderNote') || '';
+      
+      // Detaylı mesaj oluştur
+      let message = `Merhaba, ERN-ÇİÇEK ödeme sayfasından yazıyorum.\n\n`;
+      message += `📋 Sorgu ID: ${orderId}\n`;
+      message += `👤 Müşteri: ${userName}\n`;
+      message += `📧 Email: ${userEmail}\n`;
+      message += `💰 ${total}\n\n`;
+      
+      if (productList) {
+        message += `🛒 Sepetteki Ürünler:\n${productList}\n\n`;
+      }
+      
+      if (orderNote) {
+        message += `📝 Sipariş Notu: ${orderNote}\n\n`;
+      }
+      
+      message += `Bu sipariş hakkında bilgi almak istiyorum.`;
+      
+      window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(message), '_blank');
     });
     
     document.getElementById('copyBtn').addEventListener('click', function(e){
