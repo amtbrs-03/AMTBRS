@@ -1,5 +1,5 @@
 {
-  "updatedAt": 1765323801141,
+  "updatedAt": 1765573797467,
   "items": [
     {
       "id": "IMG_1966.JPG",
@@ -29,7 +29,8 @@
       ],
       "potDiameter": "18",
       "height": "60",
-      "info": "Özel koleksiyon ürünü"
+      "info": "Özel koleksiyon ürünü",
+      "sortOrder": 1
     }
   ]
 }
