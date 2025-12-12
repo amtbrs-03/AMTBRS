@@ -4,32 +4,19 @@
   <meta charset="utf-8" />
   <title>Admin - ERN-ÇİÇEK</title>
   <script>
-    // Admin erişimi ve token bypass - localStorage kullan (sessionStorage yenileme sorununa neden oluyordu)
+    // Admin erişimi - süresiz oturum (çıkış butonuna basılmadığı sürece açık kalır)
     try {
       localStorage.setItem('admin_auth_ok', '1');
-      localStorage.setItem('admin_auth_until', (Date.now() + 24*3600*1000).toString()); // 24 saat geçerli
       localStorage.setItem('github_token', 'BYPASS');
     } catch(e){}
   (function(){
     try {
-      // Admin panel erişimi: config dosyası silinse bile admin erişimi engellenmesin
-      var bypass = false;
+      // Admin panel erişimi: çıkış yapılmadığı sürece oturum açık
       var ok = localStorage.getItem('admin_auth_ok') === '1';
-      var untilStr = localStorage.getItem('admin_auth_until');
-      var now = Date.now();
-      var valid = false;
-      if (ok && untilStr) {
-        var until = parseInt(untilStr, 10);
-        if (isFinite(until) && now < until) valid = true; else {
-          try { localStorage.removeItem('admin_auth_ok'); } catch(_){}
-          try { localStorage.removeItem('admin_auth_until'); } catch(_){}
-        }
-      }
-      // YAPI SİLİNSE BİLE: Admin paneli her durumda açılır, sadece uyarı gösterilir
+      // YAPI SİLİNSE BİLE: Admin paneli her durumda açılır
       document.addEventListener('DOMContentLoaded', function() {
         var adminUI = document.getElementById('adminUI');
         if (adminUI) adminUI.style.display = 'block';
-        // Uyarı gösterme - valid kontrolü kaldırıldı, her zaman erişim var
       });
     } catch(_){}
   })();
@@ -695,25 +682,11 @@
   <script>
     (function(){
       try {
-        // Bypass anahtarları: local ve config
-        var bypass = false;
+        // Admin oturumu - süresiz (çıkış yapılmadığı sürece açık)
         var ok = localStorage.getItem('admin_auth_ok') === '1';
-        var untilStr = localStorage.getItem('admin_auth_until');
-        var now = Date.now();
-        var valid = false;
-        if (ok && untilStr) {
-          var until = parseInt(untilStr, 10);
-          if (isFinite(until) && now < until) valid = true; else {
-            // süresi doldu, bayrakları temizle
-            try { localStorage.removeItem('admin_auth_ok'); } catch(_){}
-            try { localStorage.removeItem('admin_auth_until'); } catch(_){}
-          }
-        }
-        // Her zaman erişim sağla - valid kontrolü basitleştirildi
+        // Her zaman erişim sağla
         var adminUI = document.getElementById('adminUI');
         if (adminUI) adminUI.style.display = 'block';
-
-        // Config tabanlı bypass kaldırıldı; sadece skip_admin_auth anahtarı ile geçici baypas yapılır
       } catch(_){}
     })();
   </script>
@@ -1017,6 +990,8 @@
   }
   function performLogoutNow(){
     try {
+      // Admin oturumunu kapat
+      try { localStorage.removeItem('admin_auth_ok'); } catch(_){}
       try { sessionStorage.removeItem('admin_auth_ok'); } catch(_){}
       try { localStorage.removeItem('admin_logged_in'); } catch(_){}
       try { localStorage.removeItem('admin_passkey'); } catch(_){}
