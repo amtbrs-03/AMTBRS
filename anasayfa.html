@@ -540,7 +540,7 @@
                         #homeBtn { grid-area: home; }
                         #aboutBtn { grid-area: about; display: block; }
             }
-            .products-wrapper { padding: 0 0.3rem 0.8rem; }
+            .products-wrapper { padding: 0 0.3rem 0.8rem; padding-top: 80px; }
             .products { gap:0.4rem; grid-template-columns: 1fr; padding-top: 1.5rem; }
             .product-card { padding:.45rem; border-radius:8px }
             .product-name { font-size:1.1rem; font-weight:700; letter-spacing:0.1px; }
@@ -4885,8 +4885,12 @@ fetch('site-settings.json')
     if (!header || !productsWrapper) return;
     
     // Mobilde body'ye padding-top ekle (header fixed olduğu için)
+    const headerHeight = header.offsetHeight;
     document.body.classList.add('mobile-header-offset');
-    document.body.style.setProperty('--mobile-header-h', header.offsetHeight + 'px');
+    document.body.style.setProperty('--mobile-header-h', headerHeight + 'px');
+    
+    // Products-wrapper'a da padding-top uygula (CSS'te 80px varsayılan, JS ile dinamik yap)
+    productsWrapper.style.paddingTop = headerHeight + 'px';
     
     let lastScrollY = window.scrollY;
     let ticking = false;
