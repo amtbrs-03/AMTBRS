@@ -125,7 +125,8 @@
     <div style="margin-top:1rem;">
       <a id="copyBtn" class="btn" href="#">IBAN'ı Kopyala</a>
       <a id="notifyBtn" class="btn" href="#" style="background:#10b981;margin-left:8px">Siparişi Bildir</a>
-  <a id="backBtn" class="btn" href="/anasayfa.html" style="background:#6b7280;margin-left:8px">Siteye Dön</a>
+      <a id="askSellerBtn" class="btn" href="#" style="background:#25D366;margin-left:8px">💬 Satıcıya Sor</a>
+      <a id="backBtn" class="btn" href="/anasayfa.html" style="background:#6b7280;margin-left:8px">Siteye Dön</a>
     </div>
   </div>
 
@@ -213,6 +214,24 @@
       if(!t.match(/[.,]/)) t = Number(t).toFixed(2);
       document.getElementById('total').textContent = 'Toplam: ₺' + t;
     }
+    
+    // Satıcıya Sor - WhatsApp butonu
+    document.getElementById('askSellerBtn').addEventListener('click', async function(e){
+      e.preventDefault();
+      let phone = '+905304179081'; // Varsayılan numara
+      try {
+        const settings = await loadSettings();
+        if (settings && settings.phone) {
+          phone = settings.phone.replace(/\s+/g, '').replace(/-/g, '');
+        }
+      } catch(_) {}
+      // Numarayı WhatsApp formatına çevir
+      phone = phone.replace(/\+/g, '');
+      const total = document.getElementById('total').textContent || '';
+      const message = encodeURIComponent('Merhaba, ödeme sayfasından yazıyorum. ' + total + ' tutarındaki siparişim hakkında bilgi almak istiyorum.');
+      window.open('https://wa.me/' + phone + '?text=' + message, '_blank');
+    });
+    
     document.getElementById('copyBtn').addEventListener('click', function(e){
       e.preventDefault();
       const txt = document.getElementById('iban').textContent.trim();
