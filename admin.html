@@ -794,8 +794,8 @@
         </div>
       </div>
       <form id="productEditForm" class="form-content">
-        <!-- Üst: metin alanları (Ad, Fiyat, Rozet, Ürün ID) -->
-        <div style="margin-bottom:16px;display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
+        <!-- Üst: metin alanları (Ad, Fiyat, Rozet, Sıra No) -->
+        <div style="margin-bottom:16px;display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">
           <div>
             <label for="editProductName" style="font-size:1rem;font-weight:600;color:#0f172a;margin-bottom:0.5rem;display:block;">Ürün Adı</label>
             <input id="editProductName" type="text" required style="width:100%;padding:0.7rem;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;background:#fff;color:#0f172a;">
@@ -812,6 +812,10 @@
               <option value="İndirim">💸 İndirim</option>
               <option value="Popüler">⭐ Popüler</option>
             </select>
+          </div>
+          <div>
+            <label for="editProductSortOrder" style="font-size:1rem;font-weight:600;color:#0f172a;margin-bottom:0.5rem;display:block;">📍 Sıra No</label>
+            <input id="editProductSortOrder" type="number" min="1" step="1" style="width:100%;padding:0.7rem;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;background:#fff;color:#0f172a;" placeholder="1, 2, 3...">
           </div>
           <!-- Ürün ID gizli olarak tutuluyor, kullanıcıya gösterilmiyor -->
           <input id="editProductId" type="hidden" required>
@@ -1142,10 +1146,11 @@
     const image2=(document.getElementById('editProductImage2')?.value||'').trim();
     const image3=(document.getElementById('editProductImage3')?.value||'').trim();
     const image4=(document.getElementById('editProductImage4')?.value||'').trim();
-    // Ürün bilgileri - potDiameter, height ve info alanları
+    // Ürün bilgileri - potDiameter, height, info ve sortOrder alanları
     const potDiameter=(document.getElementById('editPotDiameter')?.value||'').trim();
     const height=(document.getElementById('editProductHeight')?.value||'').trim();
     const info=(document.getElementById('editProductInfo')?.value||'').trim();
+    const sortOrder=parseInt(document.getElementById('editProductSortOrder')?.value||'0',10)||0;
     const autoBind = true; // Her zaman arka planda otomatik bağla
     // GitHub Web Yükleme mantığına uy: görsel yolunu doğrula ve ID eşleşmesini case-insensitive yap
     try {
@@ -1222,7 +1227,7 @@
                 try { products = JSON.parse(txt); } catch(e){ throw new Error('products.json parse hatası'); }
                 if(!Array.isArray(products.items)) products.items = Array.isArray(products) ? products : [];
                 const imagesArr=[image].concat([image2,image3,image4].filter(Boolean));
-                const next = { id, name, price, badge, image: imagesArr[0], images: imagesArr, potDiameter: potDiameter || '', height: height || '', info: info || '' };
+                const next = { id, name, price, badge, image: imagesArr[0], images: imagesArr, potDiameter: potDiameter || '', height: height || '', info: info || '', sortOrder: sortOrder || 0 };
                 const idNorm = String(id).toLowerCase().replace(/\.(jpg|jpeg|png|webp)$/i,'');
                 let idx = -1;
                 if(Array.isArray(products.items)){
@@ -1251,7 +1256,7 @@
               }
               const data=await res.json(); let products=JSON.parse(fromBase64(data.content));
               const imagesArr=[image].concat([image2,image3,image4].filter(Boolean));
-              const next = { id, name, price, badge, image: imagesArr[0], images: imagesArr, potDiameter: potDiameter || '', height: height || '', info: info || '' };
+              const next = { id, name, price, badge, image: imagesArr[0], images: imagesArr, potDiameter: potDiameter || '', height: height || '', info: info || '', sortOrder: sortOrder || 0 };
               const idNorm = String(id).toLowerCase().replace(/\.(jpg|jpeg|png|webp)$/i,'');
               let idx = -1;
               if(Array.isArray(products.items)){
@@ -1363,7 +1368,37 @@
   }
   document.addEventListener('DOMContentLoaded', function(){ const btn=document.getElementById('refreshEditBtn'); if(btn){ btn.addEventListener('click', refreshCurrentEditProduct); } });
   function addEditButtonsToProductCards(){
-    document.querySelectorAll('.product-card').forEach(card=>{ if(!card.querySelector('.edit-btn')){ const btn=document.createElement('button'); btn.textContent='Düzenle'; btn.className='edit-btn'; btn.style='position:absolute;top:8px;right:8px;z-index:2;font-size:13px;'; btn.onclick=function(e){ e.stopPropagation(); const id=card.getAttribute('data-id'); fetch('products.json').then(r=>r.json()).then(products=>{ const p=products.items.find(x=>x.id===id); if(p) openProductEditPanel(p); }); }; card.appendChild(btn); } });
+    // Önce ürünleri sortOrder'a göre sırala ve numaraları ekle
+    fetch('products.json?v='+Date.now()).then(r=>r.json()).then(productsData=>{
+      const products = productsData.items || [];
+      document.querySelectorAll('.product-card').forEach(card=>{ 
+        const id = card.getAttribute('data-id');
+        const product = products.find(x=>x.id===id);
+        
+        // Sıra numarası badge'i ekle (sadece admin görecek)
+        if(!card.querySelector('.admin-sort-badge') && product){ 
+          const sortBadge = document.createElement('div');
+          sortBadge.className = 'admin-sort-badge';
+          sortBadge.style = 'position:absolute;top:8px;left:8px;z-index:3;background:#6366f1;color:#fff;font-size:12px;font-weight:700;padding:4px 8px;border-radius:6px;box-shadow:0 2px 4px rgba(0,0,0,0.2);';
+          sortBadge.textContent = '#' + (product.sortOrder || '—');
+          sortBadge.title = 'Sıra Numarası: ' + (product.sortOrder || 'Belirlenmemiş');
+          card.appendChild(sortBadge);
+        }
+        
+        // Düzenle butonu ekle
+        if(!card.querySelector('.edit-btn')){ 
+          const btn=document.createElement('button'); 
+          btn.textContent='Düzenle'; 
+          btn.className='edit-btn'; 
+          btn.style='position:absolute;top:8px;right:8px;z-index:2;font-size:13px;'; 
+          btn.onclick=function(e){ 
+            e.stopPropagation(); 
+            if(product) openProductEditPanel(product); 
+          }; 
+          card.appendChild(btn); 
+        } 
+      });
+    }).catch(e=>console.error('addEditButtonsToProductCards hata:', e));
   }
   window.addEventListener('DOMContentLoaded', addEditButtonsToProductCards);
   window.addEditButtonsToProductCards = addEditButtonsToProductCards;
@@ -1599,10 +1634,11 @@
           const im2 = document.getElementById('editProductImage2'); if(im2) im2.value = imgs[1]||'';
           const im3 = document.getElementById('editProductImage3'); if(im3) im3.value = imgs[2]||'';
           const im4 = document.getElementById('editProductImage4'); if(im4) im4.value = imgs[3]||'';
-          // Ürün bilgi alanlarını doldur (potDiameter, height, info)
+          // Ürün bilgi alanlarını doldur (potDiameter, height, info, sortOrder)
           const potDiameterEl = document.getElementById('editPotDiameter'); if(potDiameterEl) potDiameterEl.value = product.potDiameter||'';
           const heightEl = document.getElementById('editProductHeight'); if(heightEl) heightEl.value = product.height||'';
           const infoEl = document.getElementById('editProductInfo'); if(infoEl) infoEl.value = product.info||'';
+          const sortOrderEl = document.getElementById('editProductSortOrder'); if(sortOrderEl) sortOrderEl.value = product.sortOrder||'';
           document.getElementById('editProductMsg').textContent='';
 
           // Compute primary image

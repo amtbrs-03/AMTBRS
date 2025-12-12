@@ -1625,7 +1625,15 @@
                             const res = await fetch('products.json' + cacheBypass, {cache:'no-store'});
                             if(!res.ok) throw new Error('products.json yüklenemedi');
                             const listRaw = await res.json();
-                            const list = Array.isArray(listRaw) ? listRaw : (Array.isArray(listRaw.items) ? listRaw.items : []);
+                            let list = Array.isArray(listRaw) ? listRaw : (Array.isArray(listRaw.items) ? listRaw.items : []);
+                            
+                            // Ürünleri sortOrder'a göre sırala (küçükten büyüğe, sortOrder olmayanlar sona)
+                            list = list.slice().sort((a, b) => {
+                                const aOrder = a.sortOrder || 9999;
+                                const bOrder = b.sortOrder || 9999;
+                                return aOrder - bOrder;
+                            });
+                            
                             window._lastProductsList = list;
                             const grid = document.getElementById('products');
                             if(!grid) return;
