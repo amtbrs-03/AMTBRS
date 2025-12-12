@@ -144,17 +144,10 @@
                         padding-top: var(--mobile-header-h, 72px);
                     }
                 }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { height: 100%; }
-        <body>
-            <!-- Header, nav, hero, modals, etc. -->
-            <header> <!-- ...header content... --> </header>
-            <nav> <!-- ...nav content... --> </nav>
-            <!-- Hero section removed (big logo/title) per request -->
-            <!-- Other panels above product cards -->
-            <!-- Account, Cart, Payment, Bank modals, etc. -->
-            <!-- ...rest of content... -->
-            <div class="products-wrapper">
+        body {
             padding-bottom: 4rem;
         }
 
@@ -163,7 +156,7 @@
             color: white;
             padding: 1rem 0;
             position: sticky;
-            top: 0;
+            top: 10px;
             z-index: 100;
             backdrop-filter: blur(6px);
             border-bottom: 1px solid rgba(255,255,255,0.04);
@@ -4888,10 +4881,19 @@ fetch('site-settings.json')
     const productsWrapper = document.querySelector('.products-wrapper');
     if (!header || !productsWrapper) return;
     
-    let lastScrollY = window.scrollY;
+    // Mobilde body'ye padding-top ekle (header fixed olduğu için)
+    document.body.classList.add('mobile-header-offset');
+    document.body.style.setProperty('--mobile-header-h', header.offsetHeight + 'px');
+    
     let ticking = false;
+    let hasScrolled = false; // Kullanıcı scroll yapmadan header'ı gizleme
     
     function checkHeaderVisibility() {
+        if (!hasScrolled) {
+            ticking = false;
+            return;
+        }
+        
         const productsRect = productsWrapper.getBoundingClientRect();
         const headerHeight = header.offsetHeight;
         
@@ -4906,14 +4908,12 @@ fetch('site-settings.json')
     }
     
     window.addEventListener('scroll', function() {
+        hasScrolled = true;
         if (!ticking) {
             requestAnimationFrame(checkHeaderVisibility);
             ticking = true;
         }
     }, { passive: true });
-    
-    // Sayfa yüklendiğinde de kontrol et
-    checkHeaderVisibility();
 })();
 </script>
 </html>
