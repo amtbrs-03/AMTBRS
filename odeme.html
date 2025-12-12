@@ -118,8 +118,16 @@
 <body>
   <div class="box">
     <h1>Ödeme / Havale</h1>
-    <p>Lütfen aşağıdaki IBAN'a ödeme yapınız. Ödeme sonrası siteden "Siparişi Bildir" butonunu kullanınız.</p>
-    <div id="iban" class="iban">(IBAN yok)</div>
+    <p>Lütfen aşağıdaki banka hesabına ödeme yapınız. Ödeme sonrası "Siparişi Bildir" butonunu kullanınız.</p>
+    
+    <!-- Banka Bilgileri -->
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:1rem;margin:1rem 0;">
+      <div style="margin-bottom:0.5rem;"><span style="color:#6b7280;font-size:0.9rem;">🏦 Banka:</span> <strong id="bankName" style="color:#0b1220;">-</strong></div>
+      <div style="margin-bottom:0.5rem;"><span style="color:#6b7280;font-size:0.9rem;">👤 Alıcı:</span> <strong id="accountHolder" style="color:#0b1220;">-</strong></div>
+      <div><span style="color:#6b7280;font-size:0.9rem;">💳 IBAN:</span></div>
+      <div id="iban" class="iban" style="background:#fff;padding:0.5rem;border-radius:6px;margin-top:0.25rem;">(IBAN yok)</div>
+    </div>
+    
     <div id="total" class="muted">Toplam: ₺0.00</div>
     <div id="orderStatus" class="muted" aria-live="polite" style="margin-top:0.5rem;min-height:1.2em"></div>
     <div style="margin-top:1rem;">
@@ -205,6 +213,29 @@
     const total = qs('total') || qs('amount') || '';
     console.log('URL\'den IBAN:', iban);
     console.log('URL\'den Toplam:', total);
+    
+    // Site ayarlarından banka bilgilerini yükle
+    (async function loadBankInfo() {
+      try {
+        const settings = await loadSettings();
+        if (settings) {
+          // Banka adı
+          if (settings.bankName) {
+            document.getElementById('bankName').textContent = settings.bankName;
+          }
+          // Alıcı adı soyadı
+          if (settings.accountHolder) {
+            document.getElementById('accountHolder').textContent = settings.accountHolder;
+          }
+          // IBAN (URL'den gelmemişse ayarlardan al)
+          if (!iban && settings.iban) {
+            document.getElementById('iban').textContent = settings.iban;
+          }
+        }
+      } catch(e) {
+        console.log('Banka bilgileri yüklenemedi:', e);
+      }
+    })();
     
     if(iban){
       document.getElementById('iban').textContent = iban;
