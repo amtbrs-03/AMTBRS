@@ -4120,11 +4120,21 @@
                                 const target = ev.target;
                                 if (!mini.contains(target) && target !== cartBtn && !cartBtn.contains(target)) hideMiniCart(100);
                             });
-                            // Toggle mini cart on click
+                            // Toggle mini cart on click - requires login
                             cartBtn.addEventListener('click', function(e){
                                 try{
                                     e.stopImmediatePropagation();
                                     e.preventDefault();
+                                    // Check if user is logged in
+                                    const userStr = localStorage.getItem('currentUser');
+                                    if (!userStr) {
+                                        // Not logged in - show auth modal
+                                        showNotification('Sepeti görüntülemek için giriş yapmalısınız.', {type: 'warn', duration: 2500});
+                                        if (typeof openAuthModal === 'function') {
+                                            openAuthModal();
+                                        }
+                                        return false;
+                                    }
                                     const isHidden = mini.classList.contains('hidden');
                                     if (isHidden) showMiniCart(); else hideMiniCart(100);
                                     return false;
