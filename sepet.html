@@ -638,9 +638,9 @@
         return;
       }
       
-      // Check login
-      const user = JSON.parse(localStorage.getItem('user') || 'null');
-      if (!user) {
+      // Check login - anasayfa.html 'currentUser' key'i kullanıyor
+      const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
+      if (!user || !user.email) {
         alert('Satın almak için giriş yapmalısınız.');
         window.location.href = '/';
         return;
