@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Sepetim - ERN Çiçek</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    html, body { height: 100%; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: #0b2f1f;
+      background: radial-gradient(1200px 600px at 10% 10%, rgba(34,197,94,0.10), transparent),
+            radial-gradient(800px 400px at 90% 90%, rgba(16,185,129,0.08), transparent),
+            linear-gradient(180deg, #e6f7ec 0%, #064e3b 100%);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      min-height: 100%;
+      margin: 0;
+      padding-bottom: 4rem;
+    }
+    header {
+      background: rgba(30, 143, 85, 0.6);
+      color: white;
+      padding: 1rem 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(6px);
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 2rem;
+      position: relative;
+    }
+    .logo { 
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.12rem 0.5rem;
+      border-radius: 10px;
+      position: relative;
+      transform-style: preserve-3d;
+      perspective: 800px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+    }
+    .logo-icon { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; }
+    .logo-icon svg{ display:block; width:28px; height:28px; filter: drop-shadow(0 6px 10px rgba(3,37,18,0.06)); transform: translateZ(6px); animation: floatLogo 6s ease-in-out infinite; }
+    @keyframes floatLogo { 0% { transform: translateZ(6px) translateY(0) rotateZ(0deg); } 50% { transform: translateZ(8px) translateY(-4px) rotateZ(-2deg); } 100% { transform: translateZ(6px) translateY(0) rotateZ(0deg); } }
+    .logo-text { font-size: 1.05rem; font-weight: 800; letter-spacing: 0.4px; display:inline-block; line-height:1; background-image: linear-gradient(90deg, #ffffff 0%, #d4fff0 45%, #b8f4c9 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 10px 18px rgba(3,37,18,0.18), 0 2px 6px rgba(0,0,0,0.08); transition: transform 220ms cubic-bezier(.2,.9,.2,1), text-shadow 220ms; transform: translateZ(0); }
+    .logo:hover .logo-text{ transform: translateY(-4px) rotateX(6deg) scale(1.02); text-shadow: 0 20px 30px rgba(3,37,18,0.22); }
+    .nav-links { list-style: none; display: flex; gap: 1.5rem; align-items: center; margin: 0; padding: 0; }
+    .nav-btn {
+      background: linear-gradient(90deg,#10b981,#059669);
+      color: white;
+      padding: 0.45rem 1rem;
+      border-radius: 10px;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      font-weight: 700;
+      text-decoration: none;
+      box-shadow: 0 8px 22px rgba(16,185,129,0.18);
+      transition: all 0.2s;
+    }
+    .nav-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(16,185,129,0.28); }
+    
+    /* Cart Styles */
+    .cart-wrapper {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 2rem;
+    }
+    .cart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .cart-title {
+      color: #0b1220;
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .clear-btn {
+      background: #fee2e2;
+      color: #dc2626;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .clear-btn:hover { background: #fecaca; }
+    
+    /* Empty Cart */
+    .empty-cart {
+      text-align: center;
+      padding: 4rem 2rem;
+      background: rgba(255,255,255,0.95);
+      border-radius: 16px;
+      box-shadow: 0 4px 25px rgba(0,0,0,0.08);
+    }
+    .empty-cart-icon { font-size: 5rem; margin-bottom: 1rem; }
+    .empty-cart h3 { color: #0b1220; margin-bottom: 0.5rem; font-size: 1.5rem; }
+    .empty-cart p { color: #64748b; margin-bottom: 1.5rem; }
+    .shop-btn {
+      background: linear-gradient(90deg,#10b981,#059669);
+      color: #fff;
+      border: none;
+      padding: 0.85rem 2rem;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      box-shadow: 0 4px 15px rgba(16,185,129,0.3);
+      transition: all 0.2s;
+    }
+    .shop-btn:hover { transform: translateY(-2px); }
+    
+    /* Cart Content Grid */
+    .cart-content {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 2rem;
+    }
+    
+    /* Cart Items */
+    .cart-items {
+      background: rgba(255,255,255,0.95);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 25px rgba(0,0,0,0.08);
+    }
+    .cart-item {
+      display: grid;
+      grid-template-columns: 100px 1fr auto;
+      gap: 1.25rem;
+      padding: 1.25rem 0;
+      border-bottom: 1px solid #f1f5f9;
+      align-items: center;
+    }
+    .cart-item:first-child { padding-top: 0; }
+    .cart-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .cart-item-image {
+      width: 100px;
+      height: 100px;
+      border-radius: 12px;
+      background: #f1f5f9;
+      background-size: cover;
+      background-position: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+    .cart-item-info { display: flex; flex-direction: column; gap: 0.4rem; }
+    .cart-item-name { font-weight: 700; color: #0b1220; font-size: 1.1rem; }
+    .cart-item-price { color: #059669; font-weight: 700; font-size: 1.05rem; }
+    .cart-item-subtotal { color: #64748b; font-size: 0.9rem; }
+    .cart-item-badge { background: #10b981; color: #fff; font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; display: inline-block; width: fit-content; }
+    .cart-item-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 0.75rem; }
+    
+    /* Quantity Control */
+    .quantity-control {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 0.35rem;
+      border: 1px solid #e2e8f0;
+    }
+    .qty-btn {
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 8px;
+      background: #e2e8f0;
+      color: #475569;
+      font-weight: 700;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .qty-btn:hover { background: #cbd5e1; }
+    .qty-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .qty-value {
+      min-width: 45px;
+      text-align: center;
+      font-weight: 700;
+      color: #0b1220;
+      font-size: 1.1rem;
+    }
+    .remove-btn {
+      background: #fee2e2;
+      color: #dc2626;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.15s;
+    }
+    .remove-btn:hover { background: #fecaca; }
+    
+    /* Cart Summary */
+    .cart-summary {
+      background: rgba(255,255,255,0.95);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 25px rgba(0,0,0,0.08);
+      height: fit-content;
+      position: sticky;
+      top: 100px;
+    }
+    .summary-title {
+      color: #0b1220;
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin: 0 0 1.25rem 0;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+      color: #374151;
+      font-size: 0.95rem;
+    }
+    .summary-total {
+      display: flex;
+      justify-content: space-between;
+      padding: 1rem 0;
+      border-top: 2px solid #e5e7eb;
+      margin: 1rem 0;
+    }
+    .summary-total-label { font-weight: 700; color: #0b1220; font-size: 1.15rem; }
+    .summary-total-value { font-weight: 800; color: #059669; font-size: 1.4rem; }
+    
+    /* Coupon */
+    .coupon-section { margin-bottom: 1.25rem; }
+    .coupon-label { display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem; font-size: 0.95rem; }
+    .coupon-input-group { display: flex; gap: 0.5rem; }
+    .coupon-input {
+      flex: 1;
+      padding: 0.7rem;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 0.95rem;
+    }
+    .coupon-input:focus { outline: 2px solid #10b981; border-color: transparent; }
+    .coupon-btn {
+      background: #6366f1;
+      color: #fff;
+      border: none;
+      padding: 0.7rem 1.2rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .coupon-btn:hover { background: #4f46e5; }
+    .coupon-message { font-size: 0.85rem; margin-top: 0.4rem; }
+    
+    /* Order Note */
+    .note-section { margin-bottom: 1.25rem; }
+    .note-label { display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem; font-size: 0.95rem; }
+    .note-textarea {
+      width: 100%;
+      padding: 0.7rem;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      resize: vertical;
+      font-family: inherit;
+      min-height: 70px;
+    }
+    .note-textarea:focus { outline: 2px solid #10b981; border-color: transparent; }
+    
+    /* Delivery Info */
+    .delivery-info {
+      background: #f0fdf4;
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      color: #166534;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .delivery-icon { font-size: 1.5rem; }
+    
+    /* Action Buttons */
+    .checkout-btn {
+      width: 100%;
+      background: linear-gradient(90deg,#10b981,#059669);
+      color: #fff;
+      border: none;
+      padding: 1.1rem;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 1.1rem;
+      cursor: pointer;
+      margin-bottom: 0.75rem;
+      box-shadow: 0 6px 20px rgba(16,185,129,0.3);
+      transition: all 0.2s;
+    }
+    .checkout-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(16,185,129,0.4); }
+    .continue-btn {
+      width: 100%;
+      background: #f1f5f9;
+      color: #475569;
+      border: none;
+      padding: 0.85rem;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: block;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .continue-btn:hover { background: #e2e8f0; }
+    
+    /* Free Shipping Banner */
+    .shipping-banner {
+      background: linear-gradient(90deg, #fef3c7, #fde68a);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      margin-bottom: 1rem;
+      text-align: center;
+      color: #92400e;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .shipping-banner.free { background: linear-gradient(90deg, #d1fae5, #a7f3d0); color: #166534; }
+    
+    /* Responsive */
+    @media (max-width: 900px) {
+      .cart-content { grid-template-columns: 1fr; }
+      .cart-summary { position: static; }
+    }
+    @media (max-width: 600px) {
+      nav { padding: 0 1rem; }
+      .cart-wrapper { padding: 0 1rem; }
+      .cart-item { grid-template-columns: 80px 1fr; gap: 1rem; }
+      .cart-item-image { width: 80px; height: 80px; font-size: 2rem; }
+      .cart-item-actions { grid-column: 1 / -1; flex-direction: row; justify-content: space-between; align-items: center; }
+      .cart-title { font-size: 1.4rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav>
+      <div class="logo">
+        <a href="/" style="color:inherit;text-decoration:none;display:flex;align-items:center;gap:0.5rem;">
+          <span class="logo-icon" aria-hidden="true">
+            <svg viewBox="0 0 48 48" width="28" height="28" role="img" aria-label="ERN logo" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="g1" x1="0" x2="1" y1="0" y2="1">
+                  <stop offset="0%" stop-color="#8EE7A3" />
+                  <stop offset="100%" stop-color="#32A852" />
+                </linearGradient>
+                <linearGradient id="g2" x1="0" x2="1" y1="0" y2="1">
+                  <stop offset="0%" stop-color="#FFD6E0" />
+                  <stop offset="100%" stop-color="#FF9AB3" />
+                </linearGradient>
+              </defs>
+              <path d="M36.8 10.2c-6.6 1-13.6 5.5-18.6 10.6-5 5-8.6 11.9-7.6 18.5 6.7-1 13.8-5.6 18.9-10.7 5-5 8.6-11.8 7.3-18.4z" fill="url(#g1)" opacity="0.98"/>
+              <path d="M13 34c6-6 14-13 22-16" stroke="#0A6A2B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.9"/>
+              <g transform="translate(34,10)">
+                <circle cx="0" cy="0" r="3.2" fill="url(#g2)" stroke="#FF6F8E" stroke-width="0.6"/>
+                <path d="M-1.2 -1.2c1-1 2-1.2 2.8 0" stroke="#FF6F8E" stroke-width="0.6" stroke-linecap="round" fill="none"/>
+              </g>
+            </svg>
+          </span>
+          <span class="logo-text">ERN Tropikal Çiçek</span>
+        </a>
+      </div>
+      <ul class="nav-links">
+        <li><a class="nav-btn" href="/">🏠 Ana Sayfa</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <div class="cart-wrapper">
+      <div class="cart-header">
+        <h1 class="cart-title">🛒 Sepetim</h1>
+        <button id="clearCartBtn" class="clear-btn" onclick="clearCart()">🗑️ Sepeti Temizle</button>
+      </div>
+
+      <!-- Empty Cart -->
+      <div id="emptyCart" class="empty-cart" style="display:none;">
+        <div class="empty-cart-icon">🛒</div>
+        <h3>Sepetiniz Boş</h3>
+        <p>Henüz sepetinize ürün eklememişsiniz.</p>
+        <a href="/" class="shop-btn">🛍️ Alışverişe Başla</a>
+      </div>
+
+      <!-- Cart Content -->
+      <div id="cartContent" class="cart-content">
+        <!-- Cart Items -->
+        <div id="cartItems" class="cart-items">
+          <!-- Items will be rendered here -->
+        </div>
+
+        <!-- Cart Summary -->
+        <div class="cart-summary">
+          <h3 class="summary-title">📊 Sipariş Özeti</h3>
+          
+          <!-- Shipping Banner -->
+          <div id="shippingBanner" class="shipping-banner">
+            🚚 ₺500 üzeri siparişlerde kargo ücretsiz!
+          </div>
+          
+          <!-- Summary Rows -->
+          <div class="summary-row">
+            <span>Ara Toplam</span>
+            <span id="subtotal">₺0.00</span>
+          </div>
+          <div class="summary-row">
+            <span>🚚 Kargo</span>
+            <span id="shipping">₺29.90</span>
+          </div>
+          <div id="discountRow" class="summary-row" style="display:none;color:#10b981;">
+            <span>🎁 İndirim</span>
+            <span id="discount">-₺0.00</span>
+          </div>
+          
+          <!-- Total -->
+          <div class="summary-total">
+            <span class="summary-total-label">Toplam</span>
+            <span id="total" class="summary-total-value">₺0.00</span>
+          </div>
+
+          <!-- Coupon -->
+          <div class="coupon-section">
+            <label class="coupon-label">🎟️ Kupon Kodu</label>
+            <div class="coupon-input-group">
+              <input type="text" id="couponCode" class="coupon-input" placeholder="Kupon kodunuz">
+              <button onclick="applyCoupon()" class="coupon-btn">Uygula</button>
+            </div>
+            <div id="couponMessage" class="coupon-message"></div>
+          </div>
+
+          <!-- Order Note -->
+          <div class="note-section">
+            <label class="note-label">📝 Sipariş Notu</label>
+            <textarea id="orderNote" class="note-textarea" placeholder="Özel isteklerinizi yazabilirsiniz..."></textarea>
+          </div>
+
+          <!-- Delivery Info -->
+          <div class="delivery-info">
+            <span class="delivery-icon">📦</span>
+            <span>Tahmini Teslimat: 1-3 iş günü</span>
+          </div>
+
+          <!-- Action Buttons -->
+          <button onclick="goToCheckout()" class="checkout-btn">✅ Satın Al</button>
+          <a href="/" class="continue-btn">🔙 Alışverişe Devam Et</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // ========== CART DATA ==========
+    let cartData = [];
+    let appliedCoupon = null;
+    const FREE_SHIPPING_THRESHOLD = 500;
+    const SHIPPING_COST = 29.90;
+    
+    const coupons = {
+      'ERN10': { discount: 10, type: 'percent', desc: '%10 indirim' },
+      'ERN20': { discount: 20, type: 'percent', desc: '%20 indirim' },
+      'KARGO': { discount: 0, type: 'freeShipping', desc: 'Ücretsiz kargo' },
+      'HOSGELDIN': { discount: 15, type: 'percent', desc: '%15 hoşgeldin indirimi' },
+      'ERN50': { discount: 50, type: 'fixed', desc: '₺50 indirim' }
+    };
+
+    // Load cart from localStorage
+    function loadCart() {
+      try {
+        const user = JSON.parse(localStorage.getItem('user') || 'null');
+        if (user && user.email) {
+          const key = `cart_${user.email}`;
+          cartData = JSON.parse(localStorage.getItem(key) || '[]');
+        } else {
+          cartData = JSON.parse(localStorage.getItem('cart_guest') || '[]');
+        }
+      } catch (e) {
+        cartData = [];
+      }
+    }
+
+    // Save cart to localStorage
+    function saveCart() {
+      try {
+        const user = JSON.parse(localStorage.getItem('user') || 'null');
+        if (user && user.email) {
+          const key = `cart_${user.email}`;
+          localStorage.setItem(key, JSON.stringify(cartData));
+        } else {
+          localStorage.setItem('cart_guest', JSON.stringify(cartData));
+        }
+      } catch (e) {}
+    }
+
+    // Render cart
+    function renderCart() {
+      const itemsContainer = document.getElementById('cartItems');
+      const emptyCart = document.getElementById('emptyCart');
+      const cartContent = document.getElementById('cartContent');
+      const clearBtn = document.getElementById('clearCartBtn');
+      
+      if (!cartData.length) {
+        emptyCart.style.display = 'block';
+        cartContent.style.display = 'none';
+        clearBtn.style.display = 'none';
+        return;
+      }
+      
+      emptyCart.style.display = 'none';
+      cartContent.style.display = 'grid';
+      clearBtn.style.display = 'block';
+      
+      let html = '';
+      cartData.forEach((item, index) => {
+        const isImagePath = item.image && /\.(jpg|jpeg|png|webp)$/i.test(item.image);
+        const imageStyle = isImagePath 
+          ? `background-image:url(https://raw.githubusercontent.com/amtbrs-03/AMTBRS/site-release/${item.image});` 
+          : '';
+        const imageContent = isImagePath ? '' : (item.image || '🌺');
+        const subtotal = (item.price || 0) * (item.qty || 1);
+        
+        html += `
+          <div class="cart-item">
+            <div class="cart-item-image" style="${imageStyle}">${imageContent}</div>
+            <div class="cart-item-info">
+              ${item.badge ? `<span class="cart-item-badge">${item.badge}</span>` : ''}
+              <div class="cart-item-name">${item.name || 'Ürün'}</div>
+              <div class="cart-item-price">₺${(item.price || 0).toFixed(2)}</div>
+              <div class="cart-item-subtotal">Ara toplam: <strong>₺${subtotal.toFixed(2)}</strong></div>
+            </div>
+            <div class="cart-item-actions">
+              <div class="quantity-control">
+                <button class="qty-btn" onclick="updateQty(${index}, -1)" ${item.qty <= 1 ? 'disabled' : ''}>−</button>
+                <span class="qty-value">${item.qty || 1}</span>
+                <button class="qty-btn" onclick="updateQty(${index}, 1)">+</button>
+              </div>
+              <button class="remove-btn" onclick="removeItem(${index})">🗑️ Kaldır</button>
+            </div>
+          </div>
+        `;
+      });
+      
+      itemsContainer.innerHTML = html;
+      updateSummary();
+    }
+
+    // Update quantity
+    function updateQty(index, delta) {
+      if (cartData[index]) {
+        cartData[index].qty = Math.max(1, (cartData[index].qty || 1) + delta);
+        saveCart();
+        renderCart();
+      }
+    }
+
+    // Remove item
+    function removeItem(index) {
+      cartData.splice(index, 1);
+      saveCart();
+      renderCart();
+    }
+
+    // Clear cart
+    function clearCart() {
+      if (confirm('Sepeti temizlemek istediğinize emin misiniz?')) {
+        cartData = [];
+        appliedCoupon = null;
+        saveCart();
+        renderCart();
+        document.getElementById('couponCode').value = '';
+        document.getElementById('couponMessage').textContent = '';
+      }
+    }
+
+    // Update summary
+    function updateSummary() {
+      const subtotal = cartData.reduce((sum, item) => sum + (item.price || 0) * (item.qty || 1), 0);
+      let discount = 0;
+      let shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
+      
+      // Apply coupon
+      if (appliedCoupon && coupons[appliedCoupon]) {
+        const coupon = coupons[appliedCoupon];
+        if (coupon.type === 'percent') {
+          discount = subtotal * (coupon.discount / 100);
+        } else if (coupon.type === 'fixed') {
+          discount = Math.min(coupon.discount, subtotal);
+        } else if (coupon.type === 'freeShipping') {
+          shipping = 0;
+        }
+      }
+      
+      const total = subtotal - discount + shipping;
+      
+      // Update UI
+      document.getElementById('subtotal').textContent = `₺${subtotal.toFixed(2)}`;
+      document.getElementById('shipping').textContent = shipping === 0 ? 'Ücretsiz' : `₺${shipping.toFixed(2)}`;
+      document.getElementById('shipping').style.color = shipping === 0 ? '#10b981' : '#374151';
+      document.getElementById('shipping').style.fontWeight = shipping === 0 ? '700' : '400';
+      document.getElementById('total').textContent = `₺${total.toFixed(2)}`;
+      
+      // Discount row
+      const discountRow = document.getElementById('discountRow');
+      if (discount > 0) {
+        discountRow.style.display = 'flex';
+        document.getElementById('discount').textContent = `-₺${discount.toFixed(2)}`;
+      } else {
+        discountRow.style.display = 'none';
+      }
+      
+      // Shipping banner
+      const banner = document.getElementById('shippingBanner');
+      const remaining = FREE_SHIPPING_THRESHOLD - subtotal;
+      if (remaining > 0) {
+        banner.className = 'shipping-banner';
+        banner.innerHTML = `🚚 Ücretsiz kargo için <strong>₺${remaining.toFixed(2)}</strong> daha ekleyin!`;
+      } else {
+        banner.className = 'shipping-banner free';
+        banner.innerHTML = '🎉 Tebrikler! Ücretsiz kargo kazandınız!';
+      }
+    }
+
+    // Apply coupon
+    function applyCoupon() {
+      const code = document.getElementById('couponCode').value.trim().toUpperCase();
+      const msg = document.getElementById('couponMessage');
+      
+      if (!code) {
+        msg.textContent = '❌ Lütfen bir kupon kodu girin';
+        msg.style.color = '#dc2626';
+        return;
+      }
+      
+      if (coupons[code]) {
+        appliedCoupon = code;
+        msg.textContent = `✅ ${coupons[code].desc} uygulandı!`;
+        msg.style.color = '#10b981';
+        updateSummary();
+      } else {
+        appliedCoupon = null;
+        msg.textContent = '❌ Geçersiz kupon kodu';
+        msg.style.color = '#dc2626';
+        updateSummary();
+      }
+    }
+
+    // Go to checkout
+    function goToCheckout() {
+      if (!cartData.length) {
+        alert('Sepetiniz boş!');
+        return;
+      }
+      
+      // Check login
+      const user = JSON.parse(localStorage.getItem('user') || 'null');
+      if (!user) {
+        alert('Satın almak için giriş yapmalısınız.');
+        window.location.href = '/';
+        return;
+      }
+      
+      // Save order note
+      const note = document.getElementById('orderNote').value.trim();
+      if (note) {
+        localStorage.setItem('orderNote', note);
+      }
+      
+      // Save applied coupon
+      if (appliedCoupon) {
+        localStorage.setItem('appliedCoupon', appliedCoupon);
+      }
+      
+      window.location.href = 'odeme.html';
+    }
+
+    // Initialize
+    loadCart();
+    renderCart();
+  </script>
+</body>
+</html>
