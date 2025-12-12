@@ -4156,33 +4156,21 @@
                     function checkout() {
                         const cart = loadCart();
                         if (!cart.length) {
-                            console.log('Sepetiniz boş.');
+                            showNotification('Sepetiniz boş!', {type: 'warn', duration: 2000});
                             return;
                         }
                         // Hesapla
                         let total = 0;
                         cart.forEach(item => { total += (item.price || 0) * (item.qty || 0); });
 
-                        if (!(true)) return; // purchase confirmation suppressed: proceed
+                        // Mini cart'ı kapat
+                        try { hideMiniCart(0); } catch(e) {}
+                        try { closeCart(); } catch(e) {}
 
-                        // Öncelikle tam sayfa ödeme sayfasını açmaya çalış (popup bloklanmaya karşı modal fallback'i olacak)
-                        try {
-                            const iban = (document.getElementById('siteIban') && document.getElementById('siteIban').textContent) ? document.getElementById('siteIban').textContent.trim() : '';
-                            const url = '/odeme.html?iban=' + encodeURIComponent(iban) + '&total=' + encodeURIComponent(total.toFixed(2));
-                            const win = window.open(url, '_blank');
-                            if (win) {
-                                // Tarayıcı yeni sekme açtı - sepeti TEMİZLEME, sipariş kaydedilince temizlenecek
-                                closeCart();
-                                // silent: new tab opened for payment (no blocking alert)
-                                console.log('Ödeme sayfası yeni sekmede açıldı');
-                                return;
-                            }
-                        } catch (e) {
-                            console.warn('Popup açma denemesi başarısız veya hata oluştu', e);
-                        }
-
-                        // Eğer popup bloklandıysa veya açma başarısızsa modal ile devam et
-                        openBank();
+                        // Ödeme sayfasına yönlendir
+                        const iban = (document.getElementById('siteIban') && document.getElementById('siteIban').textContent) ? document.getElementById('siteIban').textContent.trim() : '';
+                        const url = 'odeme.html?iban=' + encodeURIComponent(iban) + '&total=' + encodeURIComponent(total.toFixed(2));
+                        window.location.href = url;
                     }
 
                     /* --- Utilities --- */
