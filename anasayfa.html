@@ -4896,13 +4896,13 @@ fetch('site-settings.json')
         const productsRect = productsWrapper.getBoundingClientRect();
         const headerHeight = header.offsetHeight;
         
-        // Ürün kartları header'ın üstüne geldiğinde VE aşağı scroll yapılıyorsa gizle
-        // Yukarı scroll yapılıyorsa göster
-        if (productsRect.top <= headerHeight && currentScrollY > lastScrollY) {
-            // Aşağı scroll - gizle
+        // Ürün kartları header'ın üstüne veya altına geldiğinde (yani header'ı kapladığında) gizle
+        // productsRect.top <= 0 demek ürün kartları ekranın en üstüne ulaşmış
+        if (productsRect.top <= headerHeight) {
+            // Ürün kartları header bölgesine girdi - header'ı gizle
             header.classList.add('header-hidden');
-        } else if (currentScrollY < lastScrollY) {
-            // Yukarı scroll - göster
+        } else {
+            // Ürün kartları henüz header'a ulaşmadı - header'ı göster
             header.classList.remove('header-hidden');
         }
         
@@ -4921,6 +4921,9 @@ fetch('site-settings.json')
             ticking = true;
         }
     }, { passive: true });
+    
+    // Sayfa yüklendiğinde de kontrol et
+    checkHeaderVisibility();
 })();
 </script>
 </html>
