@@ -802,18 +802,18 @@
       </div>
       <form id="productEditForm" class="form-content">
         <!-- Üst: metin alanları (Ad, Fiyat, Rozet) -->
-        <div style="margin-bottom:16px;display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
+        <div style="margin-bottom:16px;display:grid;gap:16px;grid-template-columns:repeat(3,1fr);align-items:end;">
           <div>
             <label for="editProductName" style="font-size:1rem;font-weight:600;color:#0f172a;margin-bottom:0.5rem;display:block;">Ürün Adı</label>
-            <input id="editProductName" type="text" required style="width:100%;padding:0.7rem;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;background:#fff;color:#0f172a;">
+            <input id="editProductName" type="text" required style="width:100%;padding:0.7rem;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;background:#fff;color:#0f172a;box-sizing:border-box;">
           </div>
           <div>
             <label for="editProductPrice" style="font-size:1rem;font-weight:600;color:#0f172a;margin-bottom:0.5rem;display:block;">Fiyat (₺)</label>
-            <input id="editProductPrice" type="number" min="0" step="0.01" required style="width:100%;padding:0.7rem;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;background:#fff;color:#0f172a;">
+            <input id="editProductPrice" type="number" min="0" step="0.01" required style="width:100%;padding:0.7rem;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;background:#fff;color:#0f172a;box-sizing:border-box;">
           </div>
           <div>
             <label for="editProductBadge" style="font-size:1rem;font-weight:600;color:#0f172a;margin-bottom:0.5rem;display:block;">Rozet</label>
-            <select id="editProductBadge" style="width:100%;padding:0.7rem;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;background:#fff;color:#0f172a;cursor:pointer;appearance:auto;">
+            <select id="editProductBadge" style="width:100%;padding:0.7rem;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;background:#fff;color:#0f172a;cursor:pointer;box-sizing:border-box;height:auto;">
               <option value="">Rozet Yok</option>
               <option value="Yeni">🆕 Yeni</option>
               <option value="İndirim">💸 İndirim</option>
