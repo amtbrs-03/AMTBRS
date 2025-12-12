@@ -3,15 +3,17 @@
   "phone": "+90 5384179081",
   "address": "Çağlayan Mah. Fevziçakmak Cad. No:47",
   "hours": "Pzt-Cum 09:00-19:00",
-  "iban": "TR33 0006 1005 1978 6457 8413 26",
+  "iban": "TRXX 0006 1005 1978 6457 8413 26",
+  "bankName": "N PARA BANK",
+  "accountHolder": "MURAT YILDIZ",
   "contactBtnText": "İletişim",
   "homepageTitle": "Hoşgeldiniz",
   "homepageSubtitle": "Çiçeklerle dolu bir dünya",
   "homepageBackground": "images/gallery/1.jpg",
   "aboutTitle": "TROPİKAL İKLİM EVİNİZDE",
   "aboutText": "Sedelik ve şıklık zerafetle birleşmesi",
-  "shippingCompany": "Yurtiçi Kargo",
-  "shippingTime": "1-3 iş günü",
-  "shippingCost": 29.90,
-  "freeShippingThreshold": 500
+  "shippingCompany": "",
+  "shippingTime": "",
+  "shippingCost": 0,
+  "freeShippingThreshold": 0
 }
