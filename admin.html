@@ -569,13 +569,15 @@
         }
       }
       // Sayfa ilk açıldığında token yoksa tekrar sor, varsa direkt erişim
+      // BYPASS değeri de kabul ediliyor - admin her zaman erişebilir
       document.addEventListener('DOMContentLoaded', function() {
         var token = localStorage.getItem('github_token');
-        if (!token || token === 'BYPASS') {
-          showTokenGate();
-        } else {
+        // Token varsa (BYPASS dahil) gate'i gösterme
+        if (token) {
           var gate = document.getElementById('tokenGate');
           if (gate) gate.style.display = 'none';
+        } else {
+          showTokenGate();
         }
       });
       // Artık tarayıcı kapatıldığında token silinmez, sadece 'Çıkış' butonuyla silinir.
