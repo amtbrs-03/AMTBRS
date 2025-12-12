@@ -835,7 +835,7 @@
   <script defer>
   window.addEventListener('DOMContentLoaded', function(){
     var adminUI = document.getElementById('adminUI');
-    if (sessionStorage.getItem('admin_auth_ok') === '1') {
+    if (localStorage.getItem('admin_auth_ok') === '1') {
       if (adminUI) adminUI.style.display = 'block';
     } else {
       // Kilidi göster
@@ -938,9 +938,8 @@
       try {
         const ok = await verifyAdminPassword(v);
         if(ok){
-          sessionStorage.setItem('admin_auth_ok','1');
-          // 30 dakika süreli oturum
-          try { sessionStorage.setItem('admin_auth_until', String(Date.now() + 30*60*1000)); } catch(_){}
+          localStorage.setItem('admin_auth_ok','1');
+          // Oturum kalıcı - logout yapılana kadar devam eder
           gate.classList.remove('active'); gate.style.display='none';
           const adminUI = document.getElementById('adminUI'); if (adminUI) adminUI.style.display = 'block';
           msg.textContent='';
