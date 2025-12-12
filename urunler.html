@@ -76,10 +76,106 @@
       border: 1px solid rgba(16,185,129,0.12);
     }
     .contact-btn:focus { outline: 3px solid rgba(16,185,129,0.18); }
+    /* Tab navigation styles */
+    .tab-btn {
+      background: rgba(255,255,255,0.9);
+      border: 1px solid #e5e7eb;
+      padding: 0.75rem 1.5rem;
+      border-radius: 10px 10px 0 0;
+      font-weight: 600;
+      color: #64748b;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 1rem;
+    }
+    .tab-btn:hover { background: #fff; color: #0b1220; }
+    .tab-btn.active {
+      background: #fff;
+      color: #059669;
+      border-bottom-color: #fff;
+      box-shadow: 0 -4px 15px rgba(0,0,0,0.05);
+    }
+    /* Cart item styles */
+    .cart-item {
+      display: grid;
+      grid-template-columns: 80px 1fr auto;
+      gap: 1rem;
+      padding: 1rem 0;
+      border-bottom: 1px solid #f1f5f9;
+      align-items: center;
+    }
+    .cart-item:last-child { border-bottom: none; }
+    .cart-item-image {
+      width: 80px;
+      height: 80px;
+      border-radius: 10px;
+      background: #f1f5f9;
+      background-size: cover;
+      background-position: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+    }
+    .cart-item-info { display: flex; flex-direction: column; gap: 0.25rem; }
+    .cart-item-name { font-weight: 600; color: #0b1220; font-size: 1rem; }
+    .cart-item-price { color: #059669; font-weight: 700; font-size: 0.95rem; }
+    .cart-item-subtotal { color: #64748b; font-size: 0.85rem; }
+    .cart-item-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem; }
+    .quantity-control {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 0.25rem;
+    }
+    .qty-btn {
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 6px;
+      background: #e2e8f0;
+      color: #475569;
+      font-weight: 700;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .qty-btn:hover { background: #cbd5e1; }
+    .qty-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .qty-value {
+      min-width: 40px;
+      text-align: center;
+      font-weight: 700;
+      color: #0b1220;
+      font-size: 1rem;
+    }
+    .remove-btn {
+      background: #fee2e2;
+      color: #dc2626;
+      border: none;
+      padding: 0.4rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .remove-btn:hover { background: #fecaca; }
+    @media (max-width: 900px) {
+      #cartContent { grid-template-columns: 1fr; }
+      .cart-summary { position: static; }
+    }
+    @media (max-width: 600px) {
+      .cart-item { grid-template-columns: 60px 1fr; gap: 0.75rem; }
+      .cart-item-image { width: 60px; height: 60px; font-size: 1.5rem; }
+      .cart-item-actions { grid-column: 1 / -1; flex-direction: row; justify-content: space-between; align-items: center; }
+      .tab-btn { padding: 0.6rem 1rem; font-size: 0.9rem; }
+    }
     /* Products grid and card styles from anasayfa */
     .products-wrapper {
       max-width: 1200px;
-      margin: 6rem auto 0;
+      margin: 1rem auto 0;
       padding: 0 2rem 3rem;
       perspective: 1400px;
     }
@@ -194,11 +290,104 @@
       </nav>
     </header>
     <main>
-      <div class="products-wrapper">
+      <!-- Tab Navigation -->
+      <div class="tab-nav" style="max-width:1200px;margin:2rem auto 0;padding:0 2rem;display:flex;gap:0.5rem;">
+        <button id="tabProducts" class="tab-btn active" onclick="showTab('products')">🛍️ Ürünler</button>
+        <button id="tabCart" class="tab-btn" onclick="showTab('cart')">🛒 Sepetim <span id="cartTabCount" style="background:#ef4444;color:#fff;border-radius:50%;padding:2px 7px;font-size:0.8rem;margin-left:6px;display:none;">0</span></button>
+      </div>
+
+      <!-- Products Tab -->
+      <div id="productsTab" class="products-wrapper">
         <div class="products-header"><span class="products-title">Ürünler</span></div>
         <div id="productsGrid" class="products"></div>
         <div id="errorMsg" style="color:#c00;margin-top:2rem;font-weight:600"></div>
       </div>
+
+      <!-- Cart Tab -->
+      <div id="cartTab" class="cart-wrapper" style="display:none;max-width:1200px;margin:2rem auto;padding:0 2rem;">
+        <div class="cart-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+          <h2 style="color:#0b1220;font-size:1.5rem;font-weight:700;margin:0;">🛒 Sepetim</h2>
+          <button onclick="clearCart()" style="background:#fee2e2;color:#dc2626;border:none;padding:0.5rem 1rem;border-radius:8px;font-weight:600;cursor:pointer;">🗑️ Sepeti Temizle</button>
+        </div>
+
+        <!-- Empty Cart Message -->
+        <div id="emptyCart" style="display:none;text-align:center;padding:3rem;background:rgba(255,255,255,0.95);border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+          <div style="font-size:4rem;margin-bottom:1rem;">🛒</div>
+          <h3 style="color:#0b1220;margin-bottom:0.5rem;">Sepetiniz Boş</h3>
+          <p style="color:#64748b;margin-bottom:1.5rem;">Henüz sepetinize ürün eklememişsiniz.</p>
+          <button onclick="showTab('products')" style="background:linear-gradient(90deg,#10b981,#059669);color:#fff;border:none;padding:0.75rem 1.5rem;border-radius:8px;font-weight:600;cursor:pointer;">🛍️ Alışverişe Başla</button>
+        </div>
+
+        <!-- Cart Content -->
+        <div id="cartContent" style="display:grid;grid-template-columns:1fr 380px;gap:2rem;">
+          <!-- Cart Items -->
+          <div id="cartItemsList" style="background:rgba(255,255,255,0.95);border-radius:12px;padding:1.5rem;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+            <!-- Items will be rendered here -->
+          </div>
+
+          <!-- Cart Summary -->
+          <div class="cart-summary" style="background:rgba(255,255,255,0.95);border-radius:12px;padding:1.5rem;box-shadow:0 4px 20px rgba(0,0,0,0.08);height:fit-content;position:sticky;top:100px;">
+            <h3 style="color:#0b1220;font-size:1.15rem;font-weight:700;margin:0 0 1rem 0;padding-bottom:0.75rem;border-bottom:1px solid #e5e7eb;">📊 Sipariş Özeti</h3>
+            
+            <!-- Subtotal -->
+            <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;color:#374151;">
+              <span>Ara Toplam</span>
+              <span id="cartSubtotal">₺0.00</span>
+            </div>
+            
+            <!-- Shipping -->
+            <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;color:#374151;">
+              <span>🚚 Kargo</span>
+              <span id="cartShipping" style="color:#10b981;font-weight:600;">Ücretsiz</span>
+            </div>
+            
+            <!-- Discount -->
+            <div id="discountRow" style="display:none;justify-content:space-between;margin-bottom:0.5rem;color:#10b981;">
+              <span>🎁 İndirim</span>
+              <span id="cartDiscount">-₺0.00</span>
+            </div>
+            
+            <!-- Total -->
+            <div style="display:flex;justify-content:space-between;padding:1rem 0;border-top:2px solid #e5e7eb;border-bottom:1px solid #e5e7eb;margin:0.75rem 0;">
+              <span style="font-weight:700;color:#0b1220;font-size:1.1rem;">Toplam</span>
+              <span id="cartTotal" style="font-weight:800;color:#059669;font-size:1.25rem;">₺0.00</span>
+            </div>
+
+            <!-- Coupon Code -->
+            <div style="margin-bottom:1rem;">
+              <label style="display:block;font-weight:600;color:#374151;margin-bottom:0.4rem;font-size:0.9rem;">🎟️ Kupon Kodu</label>
+              <div style="display:flex;gap:0.5rem;">
+                <input type="text" id="couponCode" placeholder="Kupon kodunuz" style="flex:1;padding:0.6rem;border:1px solid #d1d5db;border-radius:8px;font-size:0.95rem;">
+                <button onclick="applyCoupon()" style="background:#6366f1;color:#fff;border:none;padding:0.6rem 1rem;border-radius:8px;font-weight:600;cursor:pointer;white-space:nowrap;">Uygula</button>
+              </div>
+              <div id="couponMessage" style="font-size:0.85rem;margin-top:0.3rem;"></div>
+            </div>
+
+            <!-- Order Note -->
+            <div style="margin-bottom:1rem;">
+              <label style="display:block;font-weight:600;color:#374151;margin-bottom:0.4rem;font-size:0.9rem;">📝 Sipariş Notu</label>
+              <textarea id="orderNote" placeholder="Özel isteklerinizi yazabilirsiniz..." rows="2" style="width:100%;padding:0.6rem;border:1px solid #d1d5db;border-radius:8px;font-size:0.95rem;resize:vertical;font-family:inherit;"></textarea>
+            </div>
+
+            <!-- Delivery Info -->
+            <div style="background:#f0fdf4;border-radius:8px;padding:0.75rem;margin-bottom:1rem;">
+              <div style="display:flex;align-items:center;gap:0.5rem;color:#166534;font-weight:600;font-size:0.9rem;">
+                <span>📦</span>
+                <span>Tahmini Teslimat: 1-3 iş günü</span>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <button onclick="goToCheckout()" style="width:100%;background:linear-gradient(90deg,#10b981,#059669);color:#fff;border:none;padding:1rem;border-radius:10px;font-weight:700;font-size:1.05rem;cursor:pointer;margin-bottom:0.75rem;box-shadow:0 4px 15px rgba(16,185,129,0.3);">
+              ✅ Satın Al
+            </button>
+            <button onclick="showTab('products')" style="width:100%;background:#f1f5f9;color:#475569;border:none;padding:0.75rem;border-radius:8px;font-weight:600;cursor:pointer;">
+              🔙 Alışverişe Devam Et
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Ürün detay modalı -->
       <div id="productModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.18);z-index:99;align-items:center;justify-content:center;">
         <div id="productModalContent" style="background:#fff;border-radius:10px;box-shadow:0 2px 16px #0002;padding:24px 20px;max-width:340px;width:96vw;position:relative;">
@@ -309,6 +498,244 @@
       }
     }
     loadProducts();
+
+    // ========== CART FUNCTIONALITY ==========
+    let cartData = [];
+    let appliedCoupon = null;
+    const coupons = {
+      'ERN10': { discount: 10, type: 'percent', desc: '%10 indirim' },
+      'ERN20': { discount: 20, type: 'percent', desc: '%20 indirim' },
+      'KARGO': { discount: 0, type: 'freeShipping', desc: 'Ücretsiz kargo' },
+      'HOSGELDIN': { discount: 15, type: 'percent', desc: '%15 hoşgeldin indirimi' }
+    };
+
+    // Load cart from localStorage
+    function loadCart() {
+      try {
+        const user = JSON.parse(localStorage.getItem('user') || 'null');
+        if (user && user.email) {
+          const key = `cart_${user.email}`;
+          cartData = JSON.parse(localStorage.getItem(key) || '[]');
+        } else {
+          cartData = JSON.parse(localStorage.getItem('cart_guest') || '[]');
+        }
+      } catch (e) {
+        cartData = [];
+      }
+      updateCartTabCount();
+    }
+
+    // Save cart to localStorage
+    function saveCart() {
+      try {
+        const user = JSON.parse(localStorage.getItem('user') || 'null');
+        if (user && user.email) {
+          const key = `cart_${user.email}`;
+          localStorage.setItem(key, JSON.stringify(cartData));
+        } else {
+          localStorage.setItem('cart_guest', JSON.stringify(cartData));
+        }
+      } catch (e) {}
+      updateCartTabCount();
+    }
+
+    // Update cart tab count badge
+    function updateCartTabCount() {
+      const count = cartData.reduce((sum, item) => sum + (item.qty || 1), 0);
+      const badge = document.getElementById('cartTabCount');
+      if (badge) {
+        badge.textContent = count;
+        badge.style.display = count > 0 ? 'inline' : 'none';
+      }
+    }
+
+    // Show tab
+    function showTab(tab) {
+      const productsTab = document.getElementById('productsTab');
+      const cartTab = document.getElementById('cartTab');
+      const tabProducts = document.getElementById('tabProducts');
+      const tabCart = document.getElementById('tabCart');
+      
+      if (tab === 'products') {
+        productsTab.style.display = 'block';
+        cartTab.style.display = 'none';
+        tabProducts.classList.add('active');
+        tabCart.classList.remove('active');
+      } else {
+        productsTab.style.display = 'none';
+        cartTab.style.display = 'block';
+        tabProducts.classList.remove('active');
+        tabCart.classList.add('active');
+        renderCart();
+      }
+    }
+
+    // Render cart items
+    function renderCart() {
+      const itemsList = document.getElementById('cartItemsList');
+      const emptyCart = document.getElementById('emptyCart');
+      const cartContent = document.getElementById('cartContent');
+      
+      if (!cartData.length) {
+        emptyCart.style.display = 'block';
+        cartContent.style.display = 'none';
+        return;
+      }
+      
+      emptyCart.style.display = 'none';
+      cartContent.style.display = 'grid';
+      
+      let html = '';
+      cartData.forEach((item, index) => {
+        const isImagePath = item.image && /\.(jpg|jpeg|png|webp)$/i.test(item.image);
+        const imageStyle = isImagePath 
+          ? `background-image:url(https://raw.githubusercontent.com/amtbrs-03/AMTBRS/site-release/${item.image});` 
+          : '';
+        const imageContent = isImagePath ? '' : (item.image || '🌺');
+        const subtotal = (item.price || 0) * (item.qty || 1);
+        
+        html += `
+          <div class="cart-item">
+            <div class="cart-item-image" style="${imageStyle}">${imageContent}</div>
+            <div class="cart-item-info">
+              <div class="cart-item-name">${item.name || 'Ürün'}</div>
+              <div class="cart-item-price">₺${(item.price || 0).toFixed(2)}</div>
+              <div class="cart-item-subtotal">Ara toplam: ₺${subtotal.toFixed(2)}</div>
+            </div>
+            <div class="cart-item-actions">
+              <div class="quantity-control">
+                <button class="qty-btn" onclick="updateQty(${index}, -1)" ${item.qty <= 1 ? 'disabled' : ''}>−</button>
+                <span class="qty-value">${item.qty || 1}</span>
+                <button class="qty-btn" onclick="updateQty(${index}, 1)">+</button>
+              </div>
+              <button class="remove-btn" onclick="removeItem(${index})">🗑️ Kaldır</button>
+            </div>
+          </div>
+        `;
+      });
+      
+      itemsList.innerHTML = html;
+      updateCartSummary();
+    }
+
+    // Update quantity
+    function updateQty(index, delta) {
+      if (cartData[index]) {
+        cartData[index].qty = Math.max(1, (cartData[index].qty || 1) + delta);
+        saveCart();
+        renderCart();
+      }
+    }
+
+    // Remove item
+    function removeItem(index) {
+      cartData.splice(index, 1);
+      saveCart();
+      renderCart();
+    }
+
+    // Clear cart
+    function clearCart() {
+      if (confirm('Sepeti temizlemek istediğinize emin misiniz?')) {
+        cartData = [];
+        appliedCoupon = null;
+        saveCart();
+        renderCart();
+        document.getElementById('couponCode').value = '';
+        document.getElementById('couponMessage').textContent = '';
+        document.getElementById('discountRow').style.display = 'none';
+      }
+    }
+
+    // Update cart summary
+    function updateCartSummary() {
+      const subtotal = cartData.reduce((sum, item) => sum + (item.price || 0) * (item.qty || 1), 0);
+      let discount = 0;
+      let shipping = subtotal >= 500 ? 0 : 29.90;
+      
+      if (appliedCoupon) {
+        const coupon = coupons[appliedCoupon];
+        if (coupon) {
+          if (coupon.type === 'percent') {
+            discount = subtotal * (coupon.discount / 100);
+          } else if (coupon.type === 'freeShipping') {
+            shipping = 0;
+          }
+        }
+      }
+      
+      const total = subtotal - discount + shipping;
+      
+      document.getElementById('cartSubtotal').textContent = `₺${subtotal.toFixed(2)}`;
+      document.getElementById('cartShipping').textContent = shipping === 0 ? 'Ücretsiz' : `₺${shipping.toFixed(2)}`;
+      document.getElementById('cartShipping').style.color = shipping === 0 ? '#10b981' : '#374151';
+      document.getElementById('cartTotal').textContent = `₺${total.toFixed(2)}`;
+      
+      const discountRow = document.getElementById('discountRow');
+      if (discount > 0) {
+        discountRow.style.display = 'flex';
+        document.getElementById('cartDiscount').textContent = `-₺${discount.toFixed(2)}`;
+      } else {
+        discountRow.style.display = 'none';
+      }
+    }
+
+    // Apply coupon
+    function applyCoupon() {
+      const code = document.getElementById('couponCode').value.trim().toUpperCase();
+      const msg = document.getElementById('couponMessage');
+      
+      if (!code) {
+        msg.textContent = '❌ Lütfen bir kupon kodu girin';
+        msg.style.color = '#dc2626';
+        return;
+      }
+      
+      if (coupons[code]) {
+        appliedCoupon = code;
+        msg.textContent = `✅ ${coupons[code].desc} uygulandı!`;
+        msg.style.color = '#10b981';
+        updateCartSummary();
+      } else {
+        appliedCoupon = null;
+        msg.textContent = '❌ Geçersiz kupon kodu';
+        msg.style.color = '#dc2626';
+        updateCartSummary();
+      }
+    }
+
+    // Go to checkout
+    function goToCheckout() {
+      if (!cartData.length) {
+        alert('Sepetiniz boş!');
+        return;
+      }
+      
+      // Save order note
+      const note = document.getElementById('orderNote').value.trim();
+      if (note) {
+        localStorage.setItem('orderNote', note);
+      }
+      
+      // Save applied coupon
+      if (appliedCoupon) {
+        localStorage.setItem('appliedCoupon', appliedCoupon);
+      }
+      
+      window.location.href = 'odeme.html';
+    }
+
+    // Check URL hash for cart tab
+    function checkHash() {
+      if (window.location.hash === '#cart') {
+        showTab('cart');
+      }
+    }
+
+    // Initialize
+    loadCart();
+    checkHash();
+    window.addEventListener('hashchange', checkHash);
   </script>
 </body>
 </html>
