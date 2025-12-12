@@ -4892,30 +4892,31 @@ fetch('site-settings.json')
     // Products-wrapper'a da padding-top uygula (CSS'te 80px varsayılan, JS ile dinamik yap)
     productsWrapper.style.paddingTop = headerHeight + 'px';
     
-    let lastScrollY = window.scrollY;
     let ticking = false;
     
     function checkHeaderVisibility() {
-        const currentScrollY = window.scrollY;
-        const productsRect = productsWrapper.getBoundingClientRect();
-        const headerHeight = header.offsetHeight;
+        // İlk ürün kartını bul
+        const firstProductCard = productsWrapper.querySelector('.product-card');
+        if (!firstProductCard) {
+            ticking = false;
+            return;
+        }
         
-        // Ürün kartları header'ın üstüne veya altına geldiğinde (yani header'ı kapladığında) gizle
-        // productsRect.top <= 0 demek ürün kartları ekranın en üstüne ulaşmış
-        if (productsRect.top <= headerHeight) {
-            // Ürün kartları header bölgesine girdi - header'ı gizle
+        const cardRect = firstProductCard.getBoundingClientRect();
+        const hHeight = header.offsetHeight;
+        
+        // İlk ürün kartı header bölgesine girdiğinde (cardRect.top <= hHeight) header'ı gizle
+        if (cardRect.top <= hHeight) {
             header.classList.add('header-hidden');
         } else {
-            // Ürün kartları henüz header'a ulaşmadı - header'ı göster
             header.classList.remove('header-hidden');
         }
         
         // Sayfa en üstteyse her zaman göster
-        if (currentScrollY <= 10) {
+        if (window.scrollY <= 10) {
             header.classList.remove('header-hidden');
         }
         
-        lastScrollY = currentScrollY;
         ticking = false;
     }
     
@@ -4926,8 +4927,8 @@ fetch('site-settings.json')
         }
     }, { passive: true });
     
-    // Sayfa yüklendiğinde de kontrol et
-    checkHeaderVisibility();
+    // Sayfa yüklendiğinde de kontrol et (ürün kartları yüklendikten sonra)
+    setTimeout(checkHeaderVisibility, 500);
 })();
 </script>
 </html>
