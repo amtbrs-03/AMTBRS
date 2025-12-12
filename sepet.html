@@ -477,7 +477,8 @@
     // Load cart from localStorage
     function loadCart() {
       try {
-        const user = JSON.parse(localStorage.getItem('user') || 'null');
+        // anasayfa.html 'currentUser' key'i kullanıyor
+        const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
         if (user && user.email) {
           const key = `cart_${user.email}`;
           cartData = JSON.parse(localStorage.getItem(key) || '[]');
@@ -492,7 +493,8 @@
     // Save cart to localStorage
     function saveCart() {
       try {
-        const user = JSON.parse(localStorage.getItem('user') || 'null');
+        // anasayfa.html 'currentUser' key'i kullanıyor
+        const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
         if (user && user.email) {
           const key = `cart_${user.email}`;
           localStorage.setItem(key, JSON.stringify(cartData));
