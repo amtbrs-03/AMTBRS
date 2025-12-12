@@ -120,6 +120,9 @@
                         right: 0;
                         z-index: 1000; /* mobilde sabit başlık en üstte kalsın */
                         transition: transform 0.25s ease-out, opacity 0.25s ease-out;
+                        background: transparent !important;
+                        backdrop-filter: none !important;
+                        -webkit-backdrop-filter: none !important;
                     }
                     /* Header gizlendiğinde */
                     header.header-hidden {
@@ -4873,7 +4876,7 @@ fetch('site-settings.json')
         }
     });
 
-// Mobilde ürün kartları header'a yaklaştığında header'ı gizle
+// Mobilde scroll yönüne göre header gizle/göster
 (function() {
     if (window.innerWidth > 700) return; // Sadece mobilde çalışsın
     
@@ -4885,30 +4888,34 @@ fetch('site-settings.json')
     document.body.classList.add('mobile-header-offset');
     document.body.style.setProperty('--mobile-header-h', header.offsetHeight + 'px');
     
+    let lastScrollY = window.scrollY;
     let ticking = false;
-    let hasScrolled = false; // Kullanıcı scroll yapmadan header'ı gizleme
     
     function checkHeaderVisibility() {
-        if (!hasScrolled) {
-            ticking = false;
-            return;
-        }
-        
+        const currentScrollY = window.scrollY;
         const productsRect = productsWrapper.getBoundingClientRect();
         const headerHeight = header.offsetHeight;
         
-        // Ürün kartları header'a 20px veya daha yakınsa header'ı gizle
-        if (productsRect.top <= headerHeight + 20) {
+        // Ürün kartları header'ın üstüne geldiğinde VE aşağı scroll yapılıyorsa gizle
+        // Yukarı scroll yapılıyorsa göster
+        if (productsRect.top <= headerHeight && currentScrollY > lastScrollY) {
+            // Aşağı scroll - gizle
             header.classList.add('header-hidden');
-        } else {
+        } else if (currentScrollY < lastScrollY) {
+            // Yukarı scroll - göster
             header.classList.remove('header-hidden');
         }
         
+        // Sayfa en üstteyse her zaman göster
+        if (currentScrollY <= 10) {
+            header.classList.remove('header-hidden');
+        }
+        
+        lastScrollY = currentScrollY;
         ticking = false;
     }
     
     window.addEventListener('scroll', function() {
-        hasScrolled = true;
         if (!ticking) {
             requestAnimationFrame(checkHeaderVisibility);
             ticking = true;
