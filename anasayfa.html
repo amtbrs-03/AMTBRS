@@ -1747,7 +1747,7 @@
                                         if(idx>-1) all[idx] = p;
                                         window._lastProductsList = all;
                                         localStorage.setItem('products', JSON.stringify(all));
-                                        alert('Ürün güncellendi (localStorage)');
+                                        showNotification('✅ Ürün başarıyla güncellendi', {type: 'success', duration: 2500});
                                     };
                                     card.appendChild(adminForm);
                                 }
@@ -2403,7 +2403,7 @@
                             const existingUser = localStorage.getItem('user_' + email);
                             if (existingUser) {
                                 console.log('registerUser: User exists in localStorage');
-                                alert('Bu email adresi ile zaten bir kayıt bulunmaktadır. Lütfen giriş yapın.');
+                                showNotification('📧 Bu email ile kayıt mevcut. Lütfen giriş yapın.', {type: 'info', duration: 3500});
                                 switchTab('login', document.querySelector('.form-tab'));
                                 document.getElementById('loginEmail').value = email;
                                 return;
@@ -2532,14 +2532,14 @@
                             localStorage.setItem('___test','1');
                             localStorage.removeItem('___test');
                         } catch(e) {
-                            alert('Tarayıcıda localStorage devre dışı! Giriş yapılamayabilir. Gizli modda mısınız?');
+                            showNotification('⚠️ Tarayıcı depolama alanı devre dışı. Gizli mod kullanıyorsanız kapatın.', {type: 'warn', duration: 5000});
                             console.error('localStorage erişilemiyor:', e);
                         }
                         try {
                             sessionStorage.setItem('___test','1');
                             sessionStorage.removeItem('___test');
                         } catch(e) {
-                            alert('Tarayıcıda sessionStorage devre dışı! Giriş yapılamayabilir. Gizli modda mısınız?');
+                            showNotification('⚠️ Oturum depolama alanı devre dışı. Gizli modu kapatın.', {type: 'warn', duration: 5000});
                             console.error('sessionStorage erişilemiyor:', e);
                         }
                         
@@ -2604,7 +2604,7 @@
                                     }
                                 } else {
                                     console.error('loginUser: ⚠️ User not found in remote repo');
-                                    alert('Kullanıcı bulunamadı! Lütfen önce kayıt olun.');
+                                    showNotification('👤 Kullanıcı bulunamadı. Lütfen önce kayıt olun.', {type: 'error', duration: 3500});
                                     return;
                                 }
                             }catch(e){
@@ -2912,7 +2912,7 @@
                     function deleteAccount() {
                         const user = getCurrentUser();
                         if (!user || !user.email) {
-                            alert('Silinecek hesap bulunamadı.');
+                            showNotification('❌ Silinecek hesap bulunamadı', {type: 'error', duration: 3000});
                             return;
                         }
 
@@ -2951,7 +2951,7 @@
                         try{ closeAuthModal(); }catch(e){}
                         try{ closeCart(); }catch(e){}
 
-                        alert('Hesabınız başarıyla silindi.');
+                        showNotification('✅ Hesabınız başarıyla silindi', {type: 'success', duration: 3500});
                         
                         // Navigate to homepage
                         try{ scrollToSection && scrollToSection('home'); }catch(e){ window.location.href = 'anasayfa.html'; }
@@ -3412,7 +3412,7 @@
                         const isDefault = document.getElementById('newAddressDefault').checked;
                         
                         if (!title || !city || !district || !addressDetail) {
-                            alert('Lütfen zorunlu alanları doldurun (Başlık, İl, İlçe, Adres Detayı)');
+                            showNotification('⚠️ Başlık, İl, İlçe ve Adres Detayı zorunludur', {type: 'warn', duration: 3500});
                             return;
                         }
                         
@@ -3439,11 +3439,11 @@
                         
                         const success = await saveUserAddresses(addresses);
                         if (success) {
-                            alert('Adres başarıyla kaydedildi ve GitHub\'a senkronize edildi!');
+                            showNotification('✅ Adres başarıyla kaydedildi', {type: 'success', duration: 3000});
                             cancelAddAddress();
                             await loadUserAddresses();
                         } else {
-                            alert('Adres kaydedilemedi!');
+                            showNotification('❌ Adres kaydedilemedi', {type: 'error', duration: 3000});
                         }
                     }
                     
@@ -3455,7 +3455,7 @@
                         
                         const success = await saveUserAddresses(addresses);
                         if (success) {
-                            alert('Varsayılan adres güncellendi ve GitHub\'a senkronize edildi!');
+                            showNotification('✅ Varsayılan adres güncellendi', {type: 'success', duration: 2500});
                             await loadUserAddresses();
                         }
                     }
@@ -3475,7 +3475,7 @@
                         
                         const success = await saveUserAddresses(addresses);
                         if (success) {
-                            alert('Adres silindi ve GitHub\'dan kaldırıldı!');
+                            showNotification('🗑️ Adres silindi', {type: 'success', duration: 2500});
                             await loadUserAddresses();
                         }
                     }
@@ -3491,11 +3491,11 @@
                             const cu = getCurrentUser();
                             if (!cu || !cu.email){ alert('Lütfen önce giriş yapın.'); return; }
                             const input = document.getElementById('acctPhoneInput');
-                            if (!input){ alert('Telefon alanı bulunamadı.'); return; }
+                            if (!input){ showNotification('❌ Telefon alanı bulunamadı', {type: 'error', duration: 2500}); return; }
                             const phone = input.value.trim();
-                            if (!phone){ alert('Telefon numarası boş olamaz.'); return; }
+                            if (!phone){ showNotification('📱 Telefon numarası giriniz', {type: 'warn', duration: 2500}); return; }
                             const re = /^\+?\d[\d\s()-]{7,}$/;
-                            if (!re.test(phone)){ alert('Telefon numarası formatı geçersiz. Lütfen +90 530 000 00 00 gibi giriniz.'); return; }
+                            if (!re.test(phone)){ showNotification('⚠️ Geçersiz telefon formatı. Örnek: +90 530 000 00 00', {type: 'warn', duration: 4000}); return; }
                             // Full user record merge
                             let full = null;
                             try{ full = JSON.parse(localStorage.getItem('user_' + cu.email) || 'null'); }catch(_){ full = null; }
@@ -3512,8 +3512,8 @@
                                 const resp = await fetch(endpoint, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(full) });
                                 // ignore response body; commitFullUserToRepo already did the write
                             } catch(_){ }
-                            alert('Telefon numaranız kaydedildi ve sunucuya gönderildi. Değişiklikler senkronize edilecek.');
-                        }catch(e){ alert('Telefon kaydı sırasında hata: ' + (e && e.message ? e.message : e)); }
+                            showNotification('✅ Telefon numaranız kaydedildi', {type: 'success', duration: 3000});
+                        }catch(e){ showNotification('❌ Telefon kaydetme hatası: ' + (e && e.message ? e.message : e), {type: 'error', duration: 4000}); }
                     }
 
                     // Profil sekmesinden varsayılan adres güncelleme
@@ -3522,12 +3522,12 @@
                         function setStatus(t){ if(statusEl) statusEl.textContent = t; }
                         try{
                             const cu = getCurrentUser();
-                            if (!cu || !cu.email){ alert('Lütfen önce giriş yapın.'); return; }
+                            if (!cu || !cu.email){ showNotification('🔒 Lütfen önce giriş yapın', {type: 'warn', duration: 3000}); return; }
                             const city = (document.getElementById('acctCityInput')||{}).value?.trim?.() || '';
                             const district = (document.getElementById('acctDistrictInput')||{}).value?.trim?.() || '';
                             const addressDetail = (document.getElementById('acctAddressDetailInput')||{}).value?.trim?.() || '';
                             const postalCode = (document.getElementById('acctPostalCodeInput')||{}).value?.trim?.() || '';
-                            if (!city || !district || !addressDetail){ alert('Lütfen adres bilgilerini eksiksiz giriniz (İl, İlçe, Adres Detayı)'); return; }
+                            if (!city || !district || !addressDetail){ showNotification('📍 İl, İlçe ve Adres Detayı zorunludur', {type: 'warn', duration: 3000}); return; }
                             setStatus('Kaydediliyor...');
                             // Full record
                             let full = null;

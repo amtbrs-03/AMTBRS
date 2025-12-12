@@ -453,6 +453,58 @@
   </main>
 
   <script>
+    // ========== TOAST NOTIFICATION SYSTEM ==========
+    function showNotification(msg, opts = {}) {
+      const type = opts.type || 'info';
+      const duration = opts.duration || 3000;
+      
+      // Remove existing toast
+      const existing = document.querySelector('.toast-notification');
+      if (existing) existing.remove();
+      
+      const toast = document.createElement('div');
+      toast.className = 'toast-notification toast-' + type;
+      toast.innerHTML = `<span class="toast-icon">${type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warn' ? '⚠️' : 'ℹ️'}</span><span class="toast-msg">${msg}</span>`;
+      toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        left: 20px;
+        max-width: 400px;
+        margin: 0 auto;
+        padding: 16px 20px;
+        background: ${type === 'success' ? 'linear-gradient(135deg, #10b981, #059669)' : type === 'error' ? 'linear-gradient(135deg, #ef4444, #dc2626)' : type === 'warn' ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'linear-gradient(135deg, #3b82f6, #2563eb)'};
+        color: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        animation: toastSlideIn 0.3s ease-out;
+      `;
+      
+      // Add animation keyframes if not exists
+      if (!document.getElementById('toast-styles')) {
+        const style = document.createElement('style');
+        style.id = 'toast-styles';
+        style.textContent = `
+          @keyframes toastSlideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+          @keyframes toastSlideOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-20px); opacity: 0; } }
+        `;
+        document.head.appendChild(style);
+      }
+      
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.style.animation = 'toastSlideOut 0.3s ease-out forwards';
+        setTimeout(() => toast.remove(), 300);
+      }, duration);
+    }
+
     // ========== CART DATA ==========
     let cartData = [];
     let siteSettings = {};
@@ -634,15 +686,15 @@
     // Go to checkout
     function goToCheckout() {
       if (!cartData.length) {
-        alert('Sepetiniz boş!');
+        showNotification('🛒 Sepetiniz boş', {type: 'warn', duration: 2500});
         return;
       }
       
       // Check login - anasayfa.html 'currentUser' key'i kullanıyor
       const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
       if (!user || !user.email) {
-        alert('Satın almak için giriş yapmalısınız.');
-        window.location.href = '/';
+        showNotification('🔐 Satın almak için giriş yapmalısınız', {type: 'info', duration: 3500});
+        setTimeout(() => { window.location.href = '/'; }, 1500);
         return;
       }
       
