@@ -119,6 +119,13 @@
                         left: 0;
                         right: 0;
                         z-index: 1000; /* mobilde sabit başlık en üstte kalsın */
+                        transition: transform 0.25s ease-out, opacity 0.25s ease-out;
+                    }
+                    /* Header gizlendiğinde */
+                    header.header-hidden {
+                        transform: translateY(-100%);
+                        opacity: 0;
+                        pointer-events: none;
                     }
                     /* JSDOM test ortamı için aşağıdaki CSS özellikleri devre dışı bırakıldı */
                     /* header.blurred, .products-header.blurred {
@@ -4872,5 +4879,41 @@ fetch('site-settings.json')
             document.body.style.backgroundSize = 'cover';
         }
     });
+
+// Mobilde ürün kartları header'a yaklaştığında header'ı gizle
+(function() {
+    if (window.innerWidth > 700) return; // Sadece mobilde çalışsın
+    
+    const header = document.querySelector('header');
+    const productsWrapper = document.querySelector('.products-wrapper');
+    if (!header || !productsWrapper) return;
+    
+    let lastScrollY = window.scrollY;
+    let ticking = false;
+    
+    function checkHeaderVisibility() {
+        const productsRect = productsWrapper.getBoundingClientRect();
+        const headerHeight = header.offsetHeight;
+        
+        // Ürün kartları header'a 20px veya daha yakınsa header'ı gizle
+        if (productsRect.top <= headerHeight + 20) {
+            header.classList.add('header-hidden');
+        } else {
+            header.classList.remove('header-hidden');
+        }
+        
+        ticking = false;
+    }
+    
+    window.addEventListener('scroll', function() {
+        if (!ticking) {
+            requestAnimationFrame(checkHeaderVisibility);
+            ticking = true;
+        }
+    }, { passive: true });
+    
+    // Sayfa yüklendiğinde de kontrol et
+    checkHeaderVisibility();
+})();
 </script>
 </html>
