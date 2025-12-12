@@ -414,6 +414,9 @@
         }
       } catch(_){}
 
+      // Sipariş notunu localStorage'dan al
+      const orderNote = localStorage.getItem('orderNote') || '';
+
       const order = {
         id: 'ORD-' + Date.now(),
         date: Date.now(),
@@ -423,9 +426,13 @@
         items: cart,
         total: totalText,
         iban: ibanText,
+        note: orderNote,
         status: 'pending',
         address: buildDefaultAddressFor(addressEmailCandidate)
       };
+      
+      // Sipariş notunu temizle
+      localStorage.removeItem('orderNote');
       
       console.log('📋 Sipariş objesi oluşturuldu:');
       console.log('   ID:', order.id);

@@ -295,11 +295,11 @@
       html += '</tbody></table>';
       html += '</div>';
       
-      // Additional Info
-      if (order.iban) {
+      // Sipariş Notu
+      if (order.note) {
         html += '<div class="info-item">';
-        html += '<div class="info-label">🏦 IBAN</div>';
-        html += `<div class="info-value" style="font-family:monospace;">${escapeHtml(order.iban)}</div>`;
+        html += '<div class="info-label">📝 Sipariş Notu</div>';
+        html += `<div class="info-value" style="white-space:pre-wrap;background:#f9fafb;padding:0.75rem;border-radius:8px;border:1px solid #e5e7eb;">${escapeHtml(order.note)}</div>`;
         html += '</div>';
       }
       
