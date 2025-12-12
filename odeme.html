@@ -128,7 +128,22 @@
       <div id="iban" class="iban" style="background:#fff;padding:0.5rem;border-radius:6px;margin-top:0.25rem;">(IBAN yok)</div>
     </div>
     
-    <div id="total" class="muted">Toplam: ₺0.00</div>
+    <!-- Tutar Detayları -->
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:1rem;margin:1rem 0;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;">
+        <span style="color:#6b7280;">🛒 Ürün Tutarı:</span>
+        <strong id="productTotal" style="color:#0b1220;">₺0.00</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:0.75rem;padding-bottom:0.75rem;border-bottom:1px dashed #cbd5e1;">
+        <span style="color:#6b7280;">🚚 Kargo Tutarı:</span>
+        <strong id="shippingCost" style="color:#0b1220;">₺0.00</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:1.1rem;">
+        <span style="color:#064e3b;font-weight:600;">💰 Toplam:</span>
+        <strong id="grandTotal" style="color:#059669;font-size:1.2rem;">₺0.00</strong>
+      </div>
+    </div>
+    
     <div id="orderStatus" class="muted" aria-live="polite" style="margin-top:0.5rem;min-height:1.2em"></div>
     <div style="margin-top:1rem;">
       <a id="copyBtn" class="btn" href="#">IBAN'ı Kopyala</a>
@@ -214,10 +229,31 @@
     console.log('URL\'den IBAN:', iban);
     console.log('URL\'den Toplam:', total);
     
-    // Site ayarlarından banka bilgilerini yükle
-    (async function loadBankInfo() {
+    // Site ayarlarından banka bilgilerini ve kargo ücretini yükle
+    (async function loadBankInfoAndPricing() {
       try {
         const settings = await loadSettings();
+        
+        // Sepet verilerini al
+        const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
+        let cartKey = user && user.email ? 'cart_' + user.email : 'cart_guest';
+        let cartItems = [];
+        try {
+          cartItems = JSON.parse(localStorage.getItem(cartKey) || '[]');
+        } catch(_) {}
+        
+        // Ürün toplamını hesapla
+        let productTotal = 0;
+        cartItems.forEach(item => {
+          const qty = item.qty || item.quantity || 1;
+          const price = parseFloat(item.price) || 0;
+          productTotal += price * qty;
+        });
+        
+        // Kargo ücreti ayarlarından
+        let shippingCost = 0;
+        let freeShippingThreshold = 0;
+        
         if (settings) {
           // Banka adı
           if (settings.bankName) {
@@ -231,7 +267,33 @@
           if (!iban && settings.iban) {
             document.getElementById('iban').textContent = settings.iban;
           }
+          
+          // Kargo bilgileri
+          shippingCost = parseFloat(settings.shippingCost) || 0;
+          freeShippingThreshold = parseFloat(settings.freeShippingThreshold) || 0;
         }
+        
+        // Ücretsiz kargo kontrolü
+        let finalShippingCost = shippingCost;
+        if (freeShippingThreshold > 0 && productTotal >= freeShippingThreshold) {
+          finalShippingCost = 0;
+        }
+        
+        // Toplam tutar
+        const grandTotal = productTotal + finalShippingCost;
+        
+        // UI güncelle
+        document.getElementById('productTotal').textContent = '₺' + productTotal.toFixed(2);
+        
+        if (finalShippingCost === 0) {
+          document.getElementById('shippingCost').textContent = '🎉 Ücretsiz';
+          document.getElementById('shippingCost').style.color = '#10b981';
+        } else {
+          document.getElementById('shippingCost').textContent = '₺' + finalShippingCost.toFixed(2);
+        }
+        
+        document.getElementById('grandTotal').textContent = '₺' + grandTotal.toFixed(2);
+        
       } catch(e) {
         console.log('Banka bilgileri yüklenemedi:', e);
       }
@@ -239,11 +301,6 @@
     
     if(iban){
       document.getElementById('iban').textContent = iban;
-    }
-    if(total){
-      let t = total;
-      if(!t.match(/[.,]/)) t = Number(t).toFixed(2);
-      document.getElementById('total').textContent = 'Toplam: ₺' + t;
     }
     
     // Satıcıya Sor - WhatsApp butonu
@@ -640,10 +697,9 @@
             commitInfo: commitInfo,
             serverData: data
           });
-          setStatus('Sipariş alındı. No: ' + finalId + ' – ' + commitInfo, 'status-success');
+          setStatus('Sipariş alındı. No: ' + finalId, 'status-success');
           const successMsg = '<p><strong>Siparişiniz başarıyla kaydedildi!</strong></p>' +
             '<p>Sipariş No: <span class="code">' + finalId + '</span></p>' +
-            '<p>' + commitInfo + '</p>' +
             '<p>Ödemeniz kontrol edildikten sonra siparişiniz işleme alınacaktır.</p>';
           showNotification('✅ Başarılı', successMsg, 'success', () => {
             window.location.href = '/anasayfa.html';

@@ -90,7 +90,7 @@ export default {
         if (commitOk) {
           try {
             const toEmail = env.TO_EMAIL || '';
-            const fromEmail = env.FROM_EMAIL || 'no-reply@ern-cicek.com.tr';
+            const fromEmail = env.FROM_EMAIL || 'onboarding@resend.dev';
             const resendKey = env.RESEND_API_KEY || '';
             if (toEmail && resendKey) {
               // 1. Satıcıya bildirim e-postası

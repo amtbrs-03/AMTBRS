@@ -142,10 +142,6 @@
                         backdrop-filter: blur(8px) !important;
                         -webkit-backdrop-filter: blur(8px) !important;
                     } */
-                    /* İçerik, başlık tarafından örtülmesin; JS header yüksekliğini body padding-top'a yazar */
-                    body.mobile-header-offset {
-                        padding-top: var(--mobile-header-h, 72px);
-                    }
                 }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -540,7 +536,7 @@
                         #homeBtn { grid-area: home; }
                         #aboutBtn { grid-area: about; display: block; }
             }
-            .products-wrapper { padding: 0 0.3rem 0.8rem; padding-top: 80px; }
+            .products-wrapper { padding: 0 0.3rem 0.8rem; }
             .products { gap:0.4rem; grid-template-columns: 1fr; padding-top: 1.5rem; }
             .product-card { padding:.45rem; border-radius:8px }
             .product-name { font-size:1.1rem; font-weight:700; letter-spacing:0.1px; }
@@ -916,8 +912,8 @@
             
             /* Ürün kartları header'ın altından başlasın */
             .products-wrapper {
-                margin-top: 200px;
-                padding-top: 1rem;
+                margin-top: 0;
+                padding-top: 0;
             }
         }
         /* Mini cart dropdown */
@@ -4884,13 +4880,9 @@ fetch('site-settings.json')
     const productsWrapper = document.querySelector('.products-wrapper');
     if (!header || !productsWrapper) return;
     
-    // Mobilde body'ye padding-top ekle (header fixed olduğu için)
+    // Mobilde products-wrapper'a padding-top ekle (header fixed olduğu için)
     const headerHeight = header.offsetHeight;
-    document.body.classList.add('mobile-header-offset');
-    document.body.style.setProperty('--mobile-header-h', headerHeight + 'px');
-    
-    // Products-wrapper'a da padding-top uygula (CSS'te 80px varsayılan, JS ile dinamik yap)
-    productsWrapper.style.paddingTop = headerHeight + 'px';
+    productsWrapper.style.paddingTop = (headerHeight + 10) + 'px';
     
     let ticking = false;
     
@@ -4929,6 +4921,18 @@ fetch('site-settings.json')
     
     // Sayfa yüklendiğinde de kontrol et (ürün kartları yüklendikten sonra)
     setTimeout(checkHeaderVisibility, 500);
+    setTimeout(checkHeaderVisibility, 1000);
+    setTimeout(checkHeaderVisibility, 2000);
+    
+    // Ürün kartları dinamik yüklendiğinde de kontrol et
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.addedNodes.length > 0) {
+                setTimeout(checkHeaderVisibility, 100);
+            }
+        });
+    });
+    observer.observe(productsWrapper, { childList: true, subtree: true });
 })();
 </script>
 </html>
