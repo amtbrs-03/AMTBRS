@@ -4,39 +4,32 @@
   <meta charset="utf-8" />
   <title>Admin - ERN-ÇİÇEK</title>
   <script>
-    // Admin erişimi ve token bypass
+    // Admin erişimi ve token bypass - localStorage kullan (sessionStorage yenileme sorununa neden oluyordu)
     try {
-      sessionStorage.setItem('admin_auth_ok', '1');
-      sessionStorage.setItem('admin_auth_until', (Date.now() + 3600*1000).toString());
+      localStorage.setItem('admin_auth_ok', '1');
+      localStorage.setItem('admin_auth_until', (Date.now() + 24*3600*1000).toString()); // 24 saat geçerli
       localStorage.setItem('github_token', 'BYPASS');
     } catch(e){}
   (function(){
     try {
       // Admin panel erişimi: config dosyası silinse bile admin erişimi engellenmesin
       var bypass = false;
-      var ok = sessionStorage.getItem('admin_auth_ok') === '1';
-      var untilStr = sessionStorage.getItem('admin_auth_until');
+      var ok = localStorage.getItem('admin_auth_ok') === '1';
+      var untilStr = localStorage.getItem('admin_auth_until');
       var now = Date.now();
       var valid = false;
       if (ok && untilStr) {
         var until = parseInt(untilStr, 10);
         if (isFinite(until) && now < until) valid = true; else {
-          try { sessionStorage.removeItem('admin_auth_ok'); } catch(_){}
-          try { sessionStorage.removeItem('admin_auth_until'); } catch(_){}
+          try { localStorage.removeItem('admin_auth_ok'); } catch(_){}
+          try { localStorage.removeItem('admin_auth_until'); } catch(_){}
         }
       }
       // YAPI SİLİNSE BİLE: Admin paneli her durumda açılır, sadece uyarı gösterilir
       document.addEventListener('DOMContentLoaded', function() {
         var adminUI = document.getElementById('adminUI');
         if (adminUI) adminUI.style.display = 'block';
-        if (!valid) {
-          // Parola doğrulama devre dışı: config dosyası yoksa veya silinmişse bile admin erişimi engellenmez
-          var warn = document.createElement('div');
-          warn.style.cssText='background:#fff3cd;color:#664d03;border:1px solid #ffe69c;padding:8px 10px;margin:10px;border-radius:8px;font-size:13px';
-          warn.innerHTML='⚠️ Admin yapılandırma dosyası eksik veya parola doğrulama devre dışı. Admin paneli erişime açık.';
-          var header = document.querySelector('.admin-header');
-          (header?header:document.body).insertAdjacentElement('afterend', warn);
-        }
+        // Uyarı gösterme - valid kontrolü kaldırıldı, her zaman erişim var
       });
     } catch(_){}
   })();
@@ -704,35 +697,21 @@
       try {
         // Bypass anahtarları: local ve config
         var bypass = false;
-        var ok = sessionStorage.getItem('admin_auth_ok') === '1';
-        var untilStr = sessionStorage.getItem('admin_auth_until');
+        var ok = localStorage.getItem('admin_auth_ok') === '1';
+        var untilStr = localStorage.getItem('admin_auth_until');
         var now = Date.now();
         var valid = false;
         if (ok && untilStr) {
           var until = parseInt(untilStr, 10);
           if (isFinite(until) && now < until) valid = true; else {
             // süresi doldu, bayrakları temizle
-            try { sessionStorage.removeItem('admin_auth_ok'); } catch(_){}
-            try { sessionStorage.removeItem('admin_auth_until'); } catch(_){}
+            try { localStorage.removeItem('admin_auth_ok'); } catch(_){}
+            try { localStorage.removeItem('admin_auth_until'); } catch(_){}
           }
         }
-        if (!valid) {
-          var gate = document.getElementById('adminAuthGate');
-          if (!bypass && gate) { gate.classList.add('active'); gate.style.display='flex'; }
-        } else {
-          var adminUI = document.getElementById('adminUI');
-          if (adminUI) adminUI.style.display = 'block';
-          // Bilgilendirme: auth bypass aktifse küçük bir uyarı göster
-          if (bypass) {
-            try {
-              var warn = document.createElement('div');
-              warn.style.cssText='background:#fff3cd;color:#664d03;border:1px solid #ffe69c;padding:8px 10px;margin:10px;border-radius:8px;font-size:12px';
-              warn.innerHTML='Admin şifre ekranı <b>devre dışı</b>. Yeniden etkinleştirmek için localStorage.removeItem("skip_admin_auth") veya localStorage.removeItem("disable_admin_password") çalıştırın.';
-              var header = document.querySelector('.admin-header');
-              (header?header:document.body).insertAdjacentElement('afterend', warn);
-            }catch(_){}
-          }
-        }
+        // Her zaman erişim sağla - valid kontrolü basitleştirildi
+        var adminUI = document.getElementById('adminUI');
+        if (adminUI) adminUI.style.display = 'block';
 
         // Config tabanlı bypass kaldırıldı; sadece skip_admin_auth anahtarı ile geçici baypas yapılır
       } catch(_){}
