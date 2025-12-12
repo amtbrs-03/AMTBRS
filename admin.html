@@ -1732,6 +1732,14 @@
               }
             }
             const products = Array.isArray(productsData.items) ? productsData.items : (Array.isArray(productsData) ? productsData : []);
+            
+            // Ürünleri sortOrder'a göre sırala (küçükten büyüğe, sortOrder olmayanlar sona)
+            products.sort((a, b) => {
+              const aOrder = a.sortOrder || 9999;
+              const bOrder = b.sortOrder || 9999;
+              return aOrder - bOrder;
+            });
+            
             if (!products.length){ container.innerHTML = '<div style="color:#b91c1c">Hiç ürün bulunamadı.</div>'; return; }
             container.innerHTML = '';
             // TL yardımcıları
