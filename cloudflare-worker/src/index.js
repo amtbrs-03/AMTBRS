@@ -78,12 +78,14 @@ export default {
         }
         // Attempt email notification via Resend if order was committed
         let emailOk = false, emailError = null;
+        let customerEmailOk = false, customerEmailError = null;
         if (commitOk) {
           try {
             const toEmail = env.TO_EMAIL || '';
             const fromEmail = env.FROM_EMAIL || 'no-reply@ern-cicek.com.tr';
             const resendKey = env.RESEND_API_KEY || '';
             if (toEmail && resendKey) {
+              // 1. Satıcıya bildirim e-postası
               const emailBody = `
 Yeni Sipariş Received! 🎉
 
@@ -96,7 +98,7 @@ Adres: ${order.address}
 IBAN: ${order.iban}
 
 Ürünler:
-${order.items.map((item, i) => `  ${i + 1}. ${item.name} - ${item.quantity}x @ ${item.price}`).join('\n')}
+${order.items.map((item, i) => `  ${i + 1}. ${item.name} - ${item.qty || item.quantity || 1}x @ ₺${item.price}`).join('\n')}
 
 Toplam: ${order.total}
 
@@ -127,13 +129,74 @@ Yönetim Paneli: https://ern-cicek.com.tr/admin.html
                 emailError = await safeText(emailRes);
                 console.log('❌ Email send failed:', emailRes.status, emailError);
               }
+              
+              // 2. Müşteriye sipariş onay e-postası
+              if (order.customerEmail && order.customerEmail !== 'misafir@ern-cicek.com') {
+                try {
+                  const itemsList = order.items.map((item, i) => 
+                    `  • ${item.name} - ${item.qty || item.quantity || 1} adet @ ₺${item.price}`
+                  ).join('\n');
+                  
+                  const customerEmailBody = `
+Sayın ${order.customerName},
+
+Siparişiniz başarıyla alındı! 🌸
+
+Sipariş Numaranız: ${orderId}
+
+Satın Aldığınız Ürünler:
+${itemsList}
+
+Toplam Tutar: ₺${order.total}
+
+Teslimat Adresi:
+${order.address || 'Belirtilmedi'}
+
+Ödemeniz gerçekleştikten sonra ürünleriniz kargoyla adresinize gönderilecektir.
+
+Sorularınız için bize WhatsApp üzerinden ulaşabilirsiniz: +90 538 417 90 81
+
+Bizi tercih ettiğiniz için teşekkür ederiz! 🌺
+
+Saygılarımızla,
+ERN-ÇİÇEK Ekibi
+https://ern-cicek.com.tr
+                  `.trim();
+                  
+                  const customerRes = await fetch('https://api.resend.com/emails', {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Bearer ${resendKey}`,
+                      'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                      from: fromEmail,
+                      to: order.customerEmail,
+                      subject: `Siparişiniz Alındı - ${orderId} | ERN-ÇİÇEK`,
+                      text: customerEmailBody
+                    })
+                  });
+                  
+                  if (customerRes.ok) {
+                    customerEmailOk = true;
+                    const customerData = await customerRes.json();
+                    console.log('✅ Customer email sent:', customerData);
+                  } else {
+                    customerEmailError = await safeText(customerRes);
+                    console.log('❌ Customer email failed:', customerRes.status, customerEmailError);
+                  }
+                } catch (ce) {
+                  customerEmailError = (ce && ce.message) ? ce.message : String(ce);
+                  console.log('❌ Customer email exception:', customerEmailError);
+                }
+              }
             }
           } catch (e) {
             emailError = (e && e.message) ? e.message : String(e);
             console.log('❌ Email exception:', emailError);
           }
         }
-        const body = JSON.stringify({ ok: true, orderId, commitOk, commitStatus, commitError, emailOk, emailError, order });
+        const body = JSON.stringify({ ok: true, orderId, commitOk, commitStatus, commitError, emailOk, emailError, customerEmailOk, customerEmailError, order });
         return new Response(body, { status: commitOk ? 201 : 200, headers: jsonHeaders(allowOrigin) });
       }
 
