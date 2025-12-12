@@ -782,15 +782,15 @@
       <div id="productInfoFields" style="margin-bottom:18px;display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;align-items:start;">
         <div>
           <label for="editPotDiameter" style="font-size:1rem;font-weight:600;color:#0f172a;margin-bottom:0.5rem;display:block;">Saksı Çapı (cm)</label>
-          <input id="editPotDiameter" type="number" min="0" step="0.1" style="width:100%;padding:0.7rem;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;" placeholder="Örn: 14">
+          <input id="editPotDiameter" type="number" min="0" step="0.1" style="width:100%;padding:0.7rem;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;background:#fff;color:#0f172a;" placeholder="Örn: 14">
         </div>
         <div>
           <label for="editProductHeight" style="font-size:1rem;font-weight:600;color:#0f172a;margin-bottom:0.5rem;display:block;">Ürün Boyu (cm)</label>
-          <input id="editProductHeight" type="number" min="0" step="0.1" style="width:100%;padding:0.7rem;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;" placeholder="Örn: 45">
+          <input id="editProductHeight" type="number" min="0" step="0.1" style="width:100%;padding:0.7rem;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;background:#fff;color:#0f172a;" placeholder="Örn: 45">
         </div>
         <div>
           <label for="editProductInfo" style="font-size:1rem;font-weight:600;color:#0f172a;margin-bottom:0.5rem;display:block;">Ürün Hakkında</label>
-          <textarea id="editProductInfo" rows="3" style="width:100%;padding:0.7rem;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;resize:vertical;" placeholder="Ürün hakkında açıklama..."></textarea>
+          <textarea id="editProductInfo" rows="3" style="width:100%;padding:0.7rem;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;resize:vertical;background:#fff;color:#0f172a;" placeholder="Ürün hakkında açıklama..."></textarea>
         </div>
       </div>
       <form id="productEditForm" class="form-content">
@@ -798,53 +798,48 @@
         <div style="margin-bottom:16px;display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
           <div>
             <label for="editProductName" style="font-size:1rem;font-weight:600;color:#0f172a;margin-bottom:0.5rem;display:block;">Ürün Adı</label>
-            <input id="editProductName" type="text" required style="width:100%;padding:0.7rem;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;">
+            <input id="editProductName" type="text" required style="width:100%;padding:0.7rem;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;background:#fff;color:#0f172a;">
           </div>
           <div>
             <label for="editProductPrice" style="font-size:1rem;font-weight:600;color:#0f172a;margin-bottom:0.5rem;display:block;">Fiyat (₺)</label>
-            <input id="editProductPrice" type="number" min="0" step="0.01" required style="width:100%;padding:0.7rem;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;">
+            <input id="editProductPrice" type="number" min="0" step="0.01" required style="width:100%;padding:0.7rem;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;background:#fff;color:#0f172a;">
           </div>
           <div>
             <label for="editProductBadge" style="font-size:1rem;font-weight:600;color:#0f172a;margin-bottom:0.5rem;display:block;">Rozet</label>
-            <select id="editProductBadge" style="width:100%;padding:0.7rem;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;">
-              <option value="">Yok</option>
-              <option value="Yeni">Yeni</option>
-              <option value="İndirim">İndirim</option>
-              <option value="Popüler">Popüler</option>
+            <select id="editProductBadge" style="width:100%;padding:0.7rem;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;background:#fff;color:#0f172a;cursor:pointer;appearance:auto;">
+              <option value="">Rozet Yok</option>
+              <option value="Yeni">🆕 Yeni</option>
+              <option value="İndirim">💸 İndirim</option>
+              <option value="Popüler">⭐ Popüler</option>
             </select>
           </div>
-          <div>
-            <label for="editProductId" style="font-size:1rem;font-weight:600;color:#0f172a;margin-bottom:0.5rem;display:block;">Ürün ID</label>
-            <input id="editProductId" type="text" required readonly style="width:100%;padding:0.7rem;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;background:#f3f4f6;">
-          </div>
+          <!-- Ürün ID gizli olarak tutuluyor, kullanıcıya gösterilmiyor -->
+          <input id="editProductId" type="hidden" required>
         </div>
 
         <!-- Alt: 3 görsel kutusu (Ana, Görsel-1, Görsel-2) -->
         <div id="editTopVisuals" style="display:grid;grid-template-columns:repeat(3,minmax(220px,1fr));gap:12px;align-items:start">
           <div>
-            <div style="font-weight:600;margin-bottom:6px">Ana görsel</div>
+            <div style="font-weight:600;margin-bottom:6px;color:#0f172a;">Ana görsel</div>
             <div id="editImgBoxMain" style="width:100%;height:200px;border:1px solid #e5e7eb;border-radius:12px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;overflow:hidden">🖼️</div>
-            <div class="small" style="color:#64748b;margin-top:6px">Ürün ID: <span id="editImgBoxMainId">—</span></div>
             <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
-              <input id="editProductImage" type="text" placeholder="images/products/&lt;id&gt;.jpg" required style="flex:1;">
+              <input id="editProductImage" type="text" placeholder="images/products/..." required style="flex:1;padding:0.5rem;border-radius:6px;border:1px solid #d1d5db;background:#fff;color:#0f172a;">
               <button type="button" onclick="openGalleryPickerForProductFor('editProductImage')" class="btn btn-ghost" title="Galeriden seç">📸</button>
             </div>
           </div>
           <div>
-            <div style="font-weight:600;margin-bottom:6px">Görsel-1</div>
+            <div style="font-weight:600;margin-bottom:6px;color:#0f172a;">Görsel-1</div>
             <div id="editImgBox1" style="width:100%;height:200px;border:1px solid #e5e7eb;border-radius:12px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;overflow:hidden">🖼️</div>
-            <div class="small" style="color:#64748b;margin-top:6px">Ürün ID: <span id="editImgBox1Id">—</span></div>
             <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
-              <input id="editProductImage2" type="text" placeholder="images/products/&lt;id&gt;-2.jpg" style="flex:1;">
+              <input id="editProductImage2" type="text" placeholder="images/products/...-2" style="flex:1;padding:0.5rem;border-radius:6px;border:1px solid #d1d5db;background:#fff;color:#0f172a;">
               <button type="button" onclick="openGalleryPickerForProductFor('editProductImage2')" class="btn btn-ghost" title="Galeriden seç">📸</button>
             </div>
           </div>
           <div>
-            <div style="font-weight:600;margin-bottom:6px">Görsel-2</div>
+            <div style="font-weight:600;margin-bottom:6px;color:#0f172a;">Görsel-2</div>
             <div id="editImgBox2" style="width:100%;height:200px;border:1px solid #e5e7eb;border-radius:12px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;overflow:hidden">🖼️</div>
-            <div class="small" style="color:#64748b;margin-top:6px">Ürün ID: <span id="editImgBox2Id">—</span></div>
             <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
-              <input id="editProductImage3" type="text" placeholder="images/products/&lt;id&gt;-3.jpg" style="flex:1;">
+              <input id="editProductImage3" type="text" placeholder="images/products/...-3" style="flex:1;padding:0.5rem;border-radius:6px;border:1px solid #d1d5db;background:#fff;color:#0f172a;">
               <button type="button" onclick="openGalleryPickerForProductFor('editProductImage3')" class="btn btn-ghost" title="Galeriden seç">📸</button>
             </div>
           </div>
