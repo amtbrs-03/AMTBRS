@@ -25,6 +25,14 @@ export default {
     }
 
     try {
+      // Ana sayfa - hoş geldiniz mesajı
+      if (path === '/' && request.method === 'GET') {
+        return new Response('🌸 ERN-ÇİÇEK API - Aktif ve çalışıyor!', { 
+          status: 200, 
+          headers: { 'Content-Type': 'text/plain; charset=utf-8' } 
+        });
+      }
+      
       // Health check endpoint
       if (path === '/send-order' && request.method === 'GET') {
         return new Response(JSON.stringify({ ok: true, message: 'Worker is running' }), { 

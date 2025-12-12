@@ -780,16 +780,13 @@
                 right: 0; 
                 z-index: 1; /* Çok düşük z-index - içerik header üstünde görünsün */
                 padding: 0.5rem 1rem 1rem 1rem;
-                transition: opacity 0.3s ease, background 0.3s ease;
+                transition: opacity 0.4s ease, background 0.4s ease, visibility 0.4s ease;
             }
-            /* Scroll edildiğinde header tamamen şeffaflaşır ve arkada kalır */
+            /* Scroll edildiğinde header tamamen görünmez olur */
             header.scrolled {
-                opacity: 0.3;
-                background: transparent !important;
-                pointer-events: none; /* Tıklamalar geçsin */
-            }
-            header.scrolled * {
-                pointer-events: auto; /* Butonlar tıklanabilir kalsın */
+                opacity: 0;
+                visibility: hidden;
+                pointer-events: none;
             }
             
             /* Logo en üstte tek başına, ortalanmış */
