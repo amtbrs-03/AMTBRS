@@ -1045,6 +1045,16 @@
 
                 </header>
 
+                <!-- Kategori Filtreleri - Menü altında yatay -->
+                <div id="filterBar" style="background:linear-gradient(180deg,#f8fafc,#fff);border-bottom:1px solid rgba(11,47,31,0.08);padding:0.8rem 1rem;">
+                    <div style="max-width:1200px;margin:0 auto;display:flex;justify-content:center;gap:0.5rem;flex-wrap:wrap;">
+                        <button class="filter-btn active" data-category="all" onclick="filterByCategory('all', this)" style="padding:0.5rem 1.2rem;border:2px solid #0b2f1f;background:#0b2f1f;color:white;border-radius:20px;font-size:0.9rem;cursor:pointer;transition:all 0.2s;font-weight:600;">Tümü</button>
+                        <button class="filter-btn" data-category="Popüler" onclick="filterByCategory('Popüler', this)" style="padding:0.5rem 1.2rem;border:2px solid #f59e0b;background:white;color:#f59e0b;border-radius:20px;font-size:0.9rem;cursor:pointer;transition:all 0.2s;font-weight:600;">⭐ Popüler</button>
+                        <button class="filter-btn" data-category="Yeni" onclick="filterByCategory('Yeni', this)" style="padding:0.5rem 1.2rem;border:2px solid #3b82f6;background:white;color:#3b82f6;border-radius:20px;font-size:0.9rem;cursor:pointer;transition:all 0.2s;font-weight:600;">🆕 Yeni</button>
+                        <button class="filter-btn" data-category="İndirim" onclick="filterByCategory('İndirim', this)" style="padding:0.5rem 1.2rem;border:2px solid #ef4444;background:white;color:#ef4444;border-radius:20px;font-size:0.9rem;cursor:pointer;transition:all 0.2s;font-weight:600;">🏷️ İndirim</button>
+                    </div>
+                </div>
+
                 <!-- Products section placed directly under the Ürünler button -->
                 
 
@@ -1574,13 +1584,7 @@
                                 <span style="position:absolute;left:0.8rem;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:1.1rem;">🔍</span>
                             </div>
                             
-                            <!-- Kategori Filtreleri -->
-                            <div id="categoryFilters" style="display:flex;flex-wrap:wrap;gap:0.5rem;justify-content:center;">
-                                <button class="filter-btn active" data-category="all" style="padding:0.5rem 1rem;border:2px solid #0b2f1f;background:#0b2f1f;color:white;border-radius:20px;font-size:0.9rem;cursor:pointer;transition:all 0.2s;">Tümü</button>
-                                <button class="filter-btn" data-category="Popüler" style="padding:0.5rem 1rem;border:2px solid #0b2f1f;background:white;color:#0b2f1f;border-radius:20px;font-size:0.9rem;cursor:pointer;transition:all 0.2s;">⭐ Popüler</button>
-                                <button class="filter-btn" data-category="Yeni" style="padding:0.5rem 1rem;border:2px solid #16a34a;background:white;color:#16a34a;border-radius:20px;font-size:0.9rem;cursor:pointer;transition:all 0.2s;">🆕 Yeni</button>
-                                <button class="filter-btn" data-category="İndirim" style="padding:0.5rem 1rem;border:2px solid #dc2626;background:white;color:#dc2626;border-radius:20px;font-size:0.9rem;cursor:pointer;transition:all 0.2s;">🏷️ İndirim</button>
-                            </div>
+                            <!-- Kategori Filtreleri yukarıda filterBar'a taşındı -->
                         </div>
                         <!-- Sonuç sayısı -->
                         <p id="searchResultCount" style="text-align:center;color:#64748b;font-size:0.9rem;margin-top:0.8rem;display:none;"></p>
@@ -1816,37 +1820,58 @@
                         })();
                         
                         // ===== ARAMA VE FİLTRELEME =====
-                        (function setupSearchAndFilter() {
-                            const searchInput = document.getElementById('productSearch');
-                            const categoryButtons = document.querySelectorAll('.filter-btn');
-                            const resultCount = document.getElementById('searchResultCount');
-                            let activeCategory = 'all';
+                        let _activeCategory = 'all';
+                        
+                        // Global filterByCategory fonksiyonu
+                        window.filterByCategory = function(category, btn) {
+                            _activeCategory = category;
                             
-                            function filterProducts() {
-                                const searchTerm = (searchInput ? searchInput.value.toLowerCase().trim() : '');
-                                const cards = document.querySelectorAll('.product-card');
-                                let visibleCount = 0;
+                            // Tüm butonları güncelle
+                            document.querySelectorAll('#filterBar .filter-btn').forEach(b => {
+                                b.classList.remove('active');
+                                b.style.background = 'white';
+                                b.style.color = b.style.borderColor;
+                            });
+                            
+                            // Aktif butonu işaretle
+                            if (btn) {
+                                btn.classList.add('active');
+                                btn.style.background = btn.style.borderColor || '#0b2f1f';
+                                btn.style.color = 'white';
+                            }
+                            
+                            // Filtreleme uygula
+                            filterProducts();
+                        };
+                        
+                        function filterProducts() {
+                            const searchInput = document.getElementById('productSearch');
+                            const resultCount = document.getElementById('searchResultCount');
+                            const searchTerm = (searchInput ? searchInput.value.toLowerCase().trim() : '');
+                            const cards = document.querySelectorAll('.product-card');
+                            let visibleCount = 0;
+                            
+                            cards.forEach(card => {
+                                const name = (card.getAttribute('data-name') || '').toLowerCase();
+                                const badge = (card.getAttribute('data-badge') || '');
                                 
-                                cards.forEach(card => {
-                                    const name = (card.getAttribute('data-name') || '').toLowerCase();
-                                    const badge = (card.getAttribute('data-badge') || '');
-                                    
-                                    // Arama filtresi
-                                    const matchesSearch = !searchTerm || name.includes(searchTerm);
-                                    
-                                    // Kategori filtresi
-                                    const matchesCategory = activeCategory === 'all' || badge === activeCategory;
-                                    
-                                    if (matchesSearch && matchesCategory) {
-                                        card.style.display = '';
-                                        visibleCount++;
-                                    } else {
-                                        card.style.display = 'none';
-                                    }
-                                });
+                                // Arama filtresi
+                                const matchesSearch = !searchTerm || name.includes(searchTerm);
                                 
-                                // Sonuç sayısını göster
-                                if (searchTerm || activeCategory !== 'all') {
+                                // Kategori filtresi
+                                const matchesCategory = _activeCategory === 'all' || badge === _activeCategory;
+                                
+                                if (matchesSearch && matchesCategory) {
+                                    card.style.display = '';
+                                    visibleCount++;
+                                } else {
+                                    card.style.display = 'none';
+                                }
+                            });
+                            
+                            // Sonuç sayısını göster
+                            if (resultCount) {
+                                if (searchTerm || _activeCategory !== 'all') {
                                     resultCount.style.display = 'block';
                                     if (visibleCount === 0) {
                                         resultCount.textContent = '😔 Sonuç bulunamadı';
@@ -1857,29 +1882,15 @@
                                     resultCount.style.display = 'none';
                                 }
                             }
+                        }
+                        
+                        (function setupSearchAndFilter() {
+                            const searchInput = document.getElementById('productSearch');
                             
                             // Arama input olayı
                             if (searchInput) {
                                 searchInput.addEventListener('input', filterProducts);
                             }
-                            
-                            // Kategori buton olayları
-                            categoryButtons.forEach(btn => {
-                                btn.addEventListener('click', function() {
-                                    // Aktif sınıfı güncelle
-                                    categoryButtons.forEach(b => {
-                                        b.classList.remove('active');
-                                        b.style.background = 'white';
-                                        b.style.color = b.style.borderColor;
-                                    });
-                                    this.classList.add('active');
-                                    this.style.background = this.style.borderColor || '#0b2f1f';
-                                    this.style.color = 'white';
-                                    
-                                    activeCategory = this.getAttribute('data-category');
-                                    filterProducts();
-                                });
-                            });
                             
                             // Ürünler yüklendiğinde filtre uygula
                             const observer = new MutationObserver(() => {
