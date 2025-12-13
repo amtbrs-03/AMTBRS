@@ -66,13 +66,26 @@
     
     /* Sipariş Notu buton stilleri */
     #editNoteBtn.has-note {
-      background: #dc2626 !important;
+      background: #6b7280 !important;
       color: #fff !important;
-      animation: pulse-red 1.5s ease-in-out infinite;
     }
     #editNoteBtn.no-note {
       background: #10b981 !important;
       color: #fff !important;
+    }
+    
+    /* Müşteri notu buton stilleri */
+    #customerNoteBtn.has-unread-note {
+      background: #dc2626 !important;
+      color: #fff !important;
+      animation: pulse-red 1.5s ease-in-out infinite;
+    }
+    #customerNoteBtn.has-read-note {
+      background: #f59e0b !important;
+      color: #fff !important;
+    }
+    #customerNoteBtn.no-note {
+      display: none !important;
     }
     @keyframes pulse-red {
       0%, 100% { opacity: 1; transform: scale(1); }
@@ -93,7 +106,8 @@
         <button id="createInvoiceBtn" class="btn btn-orange">🧾 Fatura Oluştur</button>
         <a href="siparisler.html" class="btn btn-white">← Sipariş Listesine Dön</a>
         <button id="editOrderBtn" class="btn">✏️ Düzenle</button>
-        <button id="editNoteBtn" class="btn btn-white">📝 Sipariş Notu</button>
+        <button id="customerNoteBtn" class="btn no-note">💬 Müşteri Notu</button>
+        <button id="editNoteBtn" class="btn btn-white">📝 Admin Notu</button>
         <button id="deleteOrderBtn" class="btn btn-orange" style="background:#dc2626">🗑️ Sil</button>
       </div>
     </div>
@@ -315,11 +329,19 @@
       html += '</tbody></table>';
       html += '</div>';
       
-      // Sipariş Notu
+      // Müşteri Notu (ödeme sırasında müşterinin yazdığı not)
       if (order.note) {
         html += '<div class="info-item">';
-        html += '<div class="info-label">📝 Sipariş Notu</div>';
-        html += `<div class="info-value" style="white-space:pre-wrap;background:#f9fafb;padding:0.75rem;border-radius:8px;border:1px solid #e5e7eb;">${escapeHtml(order.note)}</div>`;
+        html += '<div class="info-label">💬 Müşteri Notu</div>';
+        html += `<div class="info-value" style="white-space:pre-wrap;background:#fffbeb;padding:0.75rem;border-radius:8px;border:1px solid #fbbf24;color:#92400e;">${escapeHtml(order.note)}</div>`;
+        html += '</div>';
+      }
+      
+      // Admin Notu (admin tarafından eklenen not)
+      if (order.adminNote) {
+        html += '<div class="info-item">';
+        html += '<div class="info-label">📝 Admin Notu</div>';
+        html += `<div class="info-value" style="white-space:pre-wrap;background:#f0fdf4;padding:0.75rem;border-radius:8px;border:1px solid #10b981;color:#065f46;">${escapeHtml(order.adminNote)}</div>`;
         html += '</div>';
       }
       
@@ -327,16 +349,33 @@
       
       document.getElementById('orderContent').innerHTML = html;
       
-      // Sipariş Notu butonunu güncelle
+      // Müşteri Notu butonunu güncelle
+      const customerNoteBtn = document.getElementById('customerNoteBtn');
+      if (customerNoteBtn) {
+        customerNoteBtn.classList.remove('has-unread-note', 'has-read-note', 'no-note');
+        if (order.note && order.note.trim()) {
+          if (order.noteRead) {
+            customerNoteBtn.classList.add('has-read-note');
+            customerNoteBtn.innerHTML = '💬 Müşteri Notu';
+          } else {
+            customerNoteBtn.classList.add('has-unread-note');
+            customerNoteBtn.innerHTML = '💬 Müşteri Notu (!)';
+          }
+        } else {
+          customerNoteBtn.classList.add('no-note');
+        }
+      }
+      
+      // Admin Notu butonunu güncelle
       const noteBtn = document.getElementById('editNoteBtn');
       if (noteBtn) {
         noteBtn.classList.remove('has-note', 'no-note');
-        if (order.note && order.note.trim()) {
+        if (order.adminNote && order.adminNote.trim()) {
           noteBtn.classList.add('has-note');
-          noteBtn.innerHTML = '📝 Sipariş Notu (!)';
+          noteBtn.innerHTML = '📝 Admin Notu (!)';
         } else {
           noteBtn.classList.add('no-note');
-          noteBtn.innerHTML = '📝 Sipariş Notu';
+          noteBtn.innerHTML = '📝 Admin Notu';
         }
       }
     }
@@ -879,6 +918,7 @@
     // Event Listeners (with null checks)
     document.getElementById('createInvoiceBtn')?.addEventListener('click', createInvoice);
     document.getElementById('editOrderBtn')?.addEventListener('click', editOrder);
+    document.getElementById('customerNoteBtn')?.addEventListener('click', viewCustomerNote);
     document.getElementById('editNoteBtn')?.addEventListener('click', openNoteEditor);
     document.getElementById('deleteOrderBtn')?.addEventListener('click', deleteOrder);
     // Inline address editor wiring (after first render, re-wire inside render)
@@ -1008,12 +1048,84 @@
       };
     }
 
-    // Sipariş Notu Düzenleme
+    // Müşteri Notunu Görüntüle ve Okundu olarak işaretle
+    async function viewCustomerNote() {
+      if (!currentOrder) { alert('Sipariş yüklenemedi.'); return; }
+      
+      const customerNote = currentOrder.note || '';
+      if (!customerNote) {
+        alert('Bu siparişte müşteri notu bulunmuyor.');
+        return;
+      }
+      
+      // Notu göster
+      alert(`💬 Müşteri Notu:\n\n${customerNote}`);
+      
+      // Zaten okunmuşsa tekrar kaydetme
+      if (currentOrder.noteRead) return;
+      
+      // noteRead olarak işaretle
+      try {
+        const token = getGitHubToken();
+        if (!token || token === 'BYPASS') {
+          console.warn('Token yok, noteRead güncellenemiyor');
+          return;
+        }
+        
+        const orderId = currentOrder.id;
+        const orderPath = `orders/${orderId}.json`;
+        
+        // Mevcut siparişi al
+        const getRes = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/${orderPath}?ref=site-release&t=${Date.now()}`, {
+          headers: { 'Accept': 'application/vnd.github.v3+json', 'Authorization': `token ${token}` }
+        });
+        
+        if (!getRes.ok) return;
+        
+        const fileData = await getRes.json();
+        let orderData;
+        try {
+          orderData = JSON.parse(atob(fileData.content));
+        } catch {
+          const dl = await fetch(fileData.download_url + `?t=${Date.now()}`);
+          orderData = await dl.json();
+        }
+        
+        // noteRead güncelle
+        orderData.noteRead = true;
+        
+        // GitHub'a kaydet
+        await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/${orderPath}`, {
+          method: 'PUT',
+          headers: { 'Accept': 'application/vnd.github.v3+json', 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: `admin: mark note as read ${orderId}`,
+            content: btoa(unescape(encodeURIComponent(JSON.stringify(orderData, null, 2)))),
+            sha: fileData.sha,
+            branch: 'site-release'
+          })
+        });
+        
+        // UI güncelle
+        currentOrder.noteRead = true;
+        const btn = document.getElementById('customerNoteBtn');
+        if (btn) {
+          btn.classList.remove('has-unread-note');
+          btn.classList.add('has-read-note');
+          btn.innerHTML = '💬 Müşteri Notu';
+        }
+        
+      } catch (e) {
+        console.warn('noteRead güncellenirken hata:', e);
+      }
+    }
+
+    // Admin Notu Düzenleme
     async function openNoteEditor() {
       if (!currentOrder) { alert('Sipariş yüklenemedi.'); return; }
       
-      const currentNote = currentOrder.note || '';
-      const newNote = prompt('📝 Sipariş Notu:', currentNote);
+      const currentNote = currentOrder.adminNote || '';
+      const newNote = prompt('📝 Admin Notu:', currentNote);
       
       if (newNote === null) return; // İptal edildi
       
@@ -1046,8 +1158,8 @@
           orderData = await dl.json();
         }
         
-        // Notu güncelle
-        orderData.note = newNote.trim();
+        // Admin notunu güncelle
+        orderData.adminNote = newNote.trim();
         
         // GitHub'a kaydet
         const putRes = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/${orderPath}`, {

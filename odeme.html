@@ -144,6 +144,12 @@
       </div>
     </div>
     
+    <!-- Sipariş Notu -->
+    <div style="margin:1rem 0;">
+      <label for="orderNoteInput" style="display:block;margin-bottom:0.5rem;color:#374151;font-weight:500;">📝 Sipariş Notu (isteğe bağlı)</label>
+      <textarea id="orderNoteInput" placeholder="Teslimat veya sipariş ile ilgili eklemek istediğiniz notlarınızı buraya yazabilirsiniz..." style="width:100%;min-height:80px;padding:0.75rem;border:1px solid #d1d5db;border-radius:8px;font-size:0.95rem;resize:vertical;font-family:inherit;"></textarea>
+    </div>
+    
     <div id="orderStatus" class="muted" aria-live="polite" style="margin-top:0.5rem;min-height:1.2em"></div>
     <div style="margin-top:1rem;">
       <a id="copyBtn" class="btn" href="#">IBAN'ı Kopyala</a>
@@ -548,8 +554,9 @@
         }
       } catch(_){}
 
-      // Sipariş notunu localStorage'dan al
-      const orderNote = localStorage.getItem('orderNote') || '';
+      // Sipariş notunu input'tan al
+      const orderNoteEl = document.getElementById('orderNoteInput');
+      const orderNote = orderNoteEl ? orderNoteEl.value.trim() : '';
 
       const order = {
         id: 'ORD-' + Date.now(),
@@ -565,8 +572,8 @@
         address: buildDefaultAddressFor(addressEmailCandidate)
       };
       
-      // Sipariş notunu temizle
-      localStorage.removeItem('orderNote');
+      // Sipariş notu input'u temizle
+      if (orderNoteEl) orderNoteEl.value = '';
       
       console.log('📋 Sipariş objesi oluşturuldu:');
       console.log('   ID:', order.id);

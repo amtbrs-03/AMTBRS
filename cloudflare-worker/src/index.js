@@ -54,6 +54,8 @@ export default {
           customerPhone: payload?.order?.customerPhone || payload?.customerPhone || '',
           address: payload?.order?.address || payload?.address || '',
           iban: payload?.order?.iban || payload?.iban || '',
+          note: payload?.order?.note || payload?.note || '',
+          noteRead: false,
           status: 'pending',
           items: Array.isArray(payload?.order?.items) ? payload.order.items : (Array.isArray(payload?.cart) ? payload.cart : []),
           total: payload?.order?.total || payload?.total || '0'
@@ -94,6 +96,7 @@ export default {
             const resendKey = env.RESEND_API_KEY || '';
             if (toEmail && resendKey) {
               // 1. Satıcıya bildirim e-postası
+              const noteSection = order.note ? `\n📝 MÜŞTERİ NOTU:\n${order.note}\n` : '';
               const emailBody = `
 Yeni Sipariş Received! 🎉
 
@@ -101,7 +104,7 @@ Sipariş ID: ${orderId}
 Müşteri: ${order.customerName}
 Email: ${order.customerEmail}
 Telefon: ${order.customerPhone}
-
+${noteSection}
 Adres: ${order.address}
 IBAN: ${order.iban}
 

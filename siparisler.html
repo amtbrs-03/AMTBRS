@@ -233,6 +233,19 @@
       transform:scale(1.01);
     }
     
+    /* Okunmamış müşteri notu olan siparişler */
+    #ordersTable tbody tr.has-unread-note{
+      background: linear-gradient(90deg, #fef2f2 0%, #fee2e2 50%, #fef2f2 100%);
+      animation: row-pulse-red 2s ease-in-out infinite;
+    }
+    #ordersTable tbody tr.has-unread-note td:first-child::before{
+      content: '💬 ';
+    }
+    @keyframes row-pulse-red {
+      0%, 100% { background: #fef2f2; }
+      50% { background: #fecaca; }
+    }
+    
     /* Faturası oluşan siparişler için soluk stil */
     #ordersTable tbody tr.has-invoice{
       opacity:0.5;
@@ -641,7 +654,11 @@
         
         // Check if order has invoice
         const hasInvoice = order.status === 'ready' || order.hasInvoice;
-        const rowClass = hasInvoice ? 'has-invoice' : '';
+        // Check if order has unread customer note
+        const hasUnreadNote = order.note && order.note.trim() && !order.noteRead;
+        let rowClass = '';
+        if (hasUnreadNote) rowClass += 'has-unread-note ';
+        if (hasInvoice) rowClass += 'has-invoice';
         
         html += '<tr class="' + rowClass + '" style="cursor:pointer;" onclick="window.location.href=\'siparis-detay.html?id=' + encodeURIComponent(order.id) + '\'">';
         // Fallback isim/email alanları (eski veya yeni şema farkı: payerEmail/customerEmail)
