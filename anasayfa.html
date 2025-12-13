@@ -759,7 +759,7 @@
                 right: 0 !important;
                 z-index: 1000 !important;
                 padding: 0.5rem 1rem 1rem 1rem;
-                transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1) !important;
+                transition: transform 0.3s ease-out, opacity 0.3s ease-out !important;
                 background: transparent !important;
                 backdrop-filter: none !important;
                 border-bottom: none !important;
@@ -4907,9 +4907,9 @@ fetch('site-settings.json')
         var currentY = e.touches[0].clientY;
         var diff = currentY - touchStartY;
         
-        if (diff > 15) {
+        if (diff > 20) {
             touchDirection = 1; // Parmak aşağı = yukarı scroll = göster
-        } else if (diff < -15) {
+        } else if (diff < -20) {
             touchDirection = -1; // Parmak yukarı = aşağı scroll = gizle
         }
         
@@ -4934,8 +4934,8 @@ fetch('site-settings.json')
         
         var scrollY = getScrollY();
         
-        // Sayfa en üstte (150px eşik)
-        if (scrollY <= 150) {
+        // Sayfa en üstte
+        if (scrollY <= 120) {
             show();
             lastScrollY = scrollY;
             requestAnimationFrame(checkScroll);
@@ -4952,10 +4952,10 @@ fetch('site-settings.json')
         else if (!isTouching) {
             var diff = scrollY - lastScrollY;
             
-            if (diff > 15) {
+            if (diff > 20) {
                 hide();
                 lastScrollY = scrollY;
-            } else if (diff < -15) {
+            } else if (diff < -20) {
                 show();
                 lastScrollY = scrollY;
             }
