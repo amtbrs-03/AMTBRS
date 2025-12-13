@@ -1,0 +1,12 @@
+{
+  "email": "test@test.com",
+  "name": "Test User",
+  "pw": {
+    "algo": "test",
+    "iterations": 1,
+    "salt": "test",
+    "hash": "test"
+  },
+  "phone": "+90 555 555 5555",
+  "createdAt": 1234567890
+}
