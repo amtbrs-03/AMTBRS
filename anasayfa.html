@@ -4886,55 +4886,47 @@ fetch('site-settings.json')
     const headerHeight = header.offsetHeight;
     productsWrapper.style.paddingTop = (headerHeight + 10) + 'px';
     
+    let lastScrollY = window.scrollY;
     let ticking = false;
+    const scrollThreshold = 5; // Minimum scroll miktarı (titreşimi önlemek için)
     
-    function checkHeaderVisibility() {
-        // İlk ürün kartını bul
-        const firstProductCard = productsWrapper.querySelector('.product-card');
-        if (!firstProductCard) {
+    function handleScroll() {
+        const currentScrollY = window.scrollY;
+        const scrollDiff = currentScrollY - lastScrollY;
+        
+        // Sayfa en üstteyse her zaman göster
+        if (currentScrollY <= 10) {
+            header.classList.remove('header-hidden');
+            lastScrollY = currentScrollY;
             ticking = false;
             return;
         }
         
-        const cardRect = firstProductCard.getBoundingClientRect();
-        const hHeight = header.offsetHeight;
+        // Threshold kontrolü - küçük hareketleri yoksay
+        if (Math.abs(scrollDiff) < scrollThreshold) {
+            ticking = false;
+            return;
+        }
         
-        // İlk ürün kartı header bölgesine girdiğinde (cardRect.top <= hHeight) header'ı gizle
-        if (cardRect.top <= hHeight) {
+        // Aşağı scroll - gizle
+        if (scrollDiff > 0) {
             header.classList.add('header-hidden');
-        } else {
+        }
+        // Yukarı scroll - göster
+        else {
             header.classList.remove('header-hidden');
         }
         
-        // Sayfa en üstteyse her zaman göster
-        if (window.scrollY <= 10) {
-            header.classList.remove('header-hidden');
-        }
-        
+        lastScrollY = currentScrollY;
         ticking = false;
     }
     
     window.addEventListener('scroll', function() {
         if (!ticking) {
-            requestAnimationFrame(checkHeaderVisibility);
+            requestAnimationFrame(handleScroll);
             ticking = true;
         }
     }, { passive: true });
-    
-    // Sayfa yüklendiğinde de kontrol et (ürün kartları yüklendikten sonra)
-    setTimeout(checkHeaderVisibility, 500);
-    setTimeout(checkHeaderVisibility, 1000);
-    setTimeout(checkHeaderVisibility, 2000);
-    
-    // Ürün kartları dinamik yüklendiğinde de kontrol et
-    const observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            if (mutation.addedNodes.length > 0) {
-                setTimeout(checkHeaderVisibility, 100);
-            }
-        });
-    });
-    observer.observe(productsWrapper, { childList: true, subtree: true });
 })();
 </script>
 </html>
