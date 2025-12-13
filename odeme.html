@@ -368,7 +368,17 @@
       
       message += `Bu sipariş hakkında bilgi almak istiyorum.`;
       
-      window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(message), '_blank');
+      // Mobilde WhatsApp uygulamasını aç, masaüstünde web versiyonu
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const waUrl = isMobile 
+        ? 'whatsapp://send?phone=' + phone + '&text=' + encodeURIComponent(message)
+        : 'https://wa.me/' + phone + '?text=' + encodeURIComponent(message);
+      
+      if (isMobile) {
+        window.location.href = waUrl;
+      } else {
+        window.open(waUrl, '_blank');
+      }
     });
     
     document.getElementById('copyBtn').addEventListener('click', function(e){
