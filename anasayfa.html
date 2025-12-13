@@ -4883,8 +4883,16 @@ fetch('site-settings.json')
     updatePadding();
     window.addEventListener('resize', updatePadding);
     
-    let lastScrollY = 0;
+    let lastScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
     let isHidden = false;
+    
+    // Sayfa yüklendiğinde scroll pozisyonuna göre header durumunu ayarla
+    if (isMobile() && lastScrollY > 50) {
+        header.style.transform = 'translateY(-100%)';
+        header.style.opacity = '0';
+        header.style.pointerEvents = 'none';
+        isHidden = true;
+    }
     
     function handleScroll() {
         // Sadece mobilde çalış
