@@ -619,6 +619,13 @@
         'shipped': { text: 'Gönderildi', class: 'status-shipped' }
       };
       
+      // En yeni sipariş en üstte olacak şekilde sırala
+      const sortedOrders = [...orders].sort((a, b) => {
+        const dateA = a.date ? new Date(a.date).getTime() : 0;
+        const dateB = b.date ? new Date(b.date).getTime() : 0;
+        return dateB - dateA; // Yeniden eskiye
+      });
+      
       let html = '<table id="ordersTable">';
       html += '<thead><tr>';
       html += '<th>🆔 Sipariş No</th>';
@@ -631,7 +638,7 @@
       html += '<th>📍 Adres</th>';
       html += '</tr></thead><tbody>';
       
-      orders.forEach(order => {
+      sortedOrders.forEach(order => {
         const orderDate = order.date 
           ? new Date(order.date).toLocaleDateString('tr-TR', {
               day:'2-digit', 
