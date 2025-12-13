@@ -3491,7 +3491,7 @@ try {
       const loadDefaultsSettingsBtn = document.getElementById('loadDefaultsSettings');
       if (loadDefaultsSettingsBtn) loadDefaultsSettingsBtn.addEventListener('click', (ev)=>{
         const btn = ev.currentTarget;
-        withProgress(btn, '⏳ Yükleniyor...', ()=>{
+        withProgress(btn, '⏳ Yükleniyor...', async ()=>{
           if (!confirm('Varsayılan site ayarları yüklensin mi?')) return;
           const defaults = {
             email: 'amtbrs@icloud.com',
