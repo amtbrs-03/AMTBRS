@@ -1042,6 +1042,8 @@
     }
     async function validateGitHubToken(tok){
       if(!tok) return false;
+      // BYPASS token her zaman geçerli kabul edilir
+      if(tok === 'BYPASS') return true;
       try {
         const res = await fetch('https://api.github.com/user', { headers: { 'Authorization': 'token '+tok } });
         return res.ok;
@@ -2581,6 +2583,8 @@ try {
     // Validate GitHub token with a lightweight authenticated request
     async function validateGitHubToken(token){
       if(!token) return { valid:false, status:0, reason:'Token bulunamadı' };
+      // BYPASS token her zaman geçerli kabul edilir
+      if(token === 'BYPASS') return { valid:true, status:200, reason:'BYPASS token' };
       try {
         const res = await fetch('https://api.github.com/rate_limit', {
           headers: { 'Accept':'application/vnd.github.v3+json', 'Authorization': 'token ' + token }
