@@ -63,6 +63,22 @@
     .total-row{ background:#f0fdf4 !important; font-weight:700; font-size:1.1rem; color:var(--green-dark); }
     .loading{ text-align:center; padding:3rem; color:var(--muted); font-size:1.1rem; }
     .error{ background:#fee; color:#c33; padding:1.5rem; border-radius:12px; border-left:4px solid #c33; }
+    
+    /* Sipariş Notu buton stilleri */
+    #editNoteBtn.has-note {
+      background: #dc2626 !important;
+      color: #fff !important;
+      animation: pulse-red 1.5s ease-in-out infinite;
+    }
+    #editNoteBtn.no-note {
+      background: #10b981 !important;
+      color: #fff !important;
+    }
+    @keyframes pulse-red {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.7; transform: scale(1.05); }
+    }
+    
     /* Print Styles */
     @media print{ body{ background:#fff; } .page-header, .header-actions, .btn{ display:none !important; } .detail-card{ box-shadow:none; page-break-inside:avoid; } }
     @media(max-width:768px){ .info-grid{ grid-template-columns:1fr; } .items-table{ font-size:0.85rem; } .items-table th, .items-table td{ padding:0.5rem; } }
@@ -306,6 +322,19 @@
       html += '</div>';
       
       document.getElementById('orderContent').innerHTML = html;
+      
+      // Sipariş Notu butonunu güncelle
+      const noteBtn = document.getElementById('editNoteBtn');
+      if (noteBtn) {
+        noteBtn.classList.remove('has-note', 'no-note');
+        if (order.note && order.note.trim()) {
+          noteBtn.classList.add('has-note');
+          noteBtn.innerHTML = '📝 Sipariş Notu (!)';
+        } else {
+          noteBtn.classList.add('no-note');
+          noteBtn.innerHTML = '📝 Sipariş Notu';
+        }
+      }
     }
 
     async function createInvoice() {
