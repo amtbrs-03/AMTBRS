@@ -2224,6 +2224,14 @@
                                                             loginUser();
                                                         });
                                                     }
+                                                    // Register form submit: prevent reload and call registerUser
+                                                    var registerForm = document.getElementById('registerForm');
+                                                    if (registerForm) {
+                                                        registerForm.addEventListener('submit', function(e) {
+                                                            e.preventDefault();
+                                                            registerUser();
+                                                        });
+                                                    }
                             const panel = document.createElement('div');
                             panel.id = 'productDetailPanel';
                             // Stil CSS ile yönetiliyor
