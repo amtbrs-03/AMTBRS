@@ -3439,8 +3439,14 @@ try {
         });
       });
 
-      // load settings when admin UI ready
-      (async function(){ try{ await loadSettingsIntoForm(); }catch(e){} })();
+      // load settings when admin UI ready - DOM hazır olunca çağır
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', async function(){ 
+          try{ await loadSettingsIntoForm(); }catch(e){ console.log('loadSettingsIntoForm error:', e); } 
+        });
+      } else {
+        (async function(){ try{ await loadSettingsIntoForm(); }catch(e){ console.log('loadSettingsIntoForm error:', e); } })();
+      }
 
       // Note: Orders admin moved to siparisler.html (separate page)
       // renderOrdersAdmin() function removed
