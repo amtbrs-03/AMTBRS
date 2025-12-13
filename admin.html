@@ -5,9 +5,10 @@
   <title>Admin - ERN-ÇİÇEK</title>
   <script>
     // Admin erişimi - süresiz oturum (çıkış butonuna basılmadığı sürece açık kalır)
+    // Token girilmemişse modal açılacak, girilmişse direkt erişim
     try {
       localStorage.setItem('admin_auth_ok', '1');
-      localStorage.setItem('github_token', 'BYPASS');
+      // Token'ı otomatik set etme - kullanıcı kendisi girsin
     } catch(e){}
   (function(){
     try {
