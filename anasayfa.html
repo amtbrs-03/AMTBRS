@@ -127,7 +127,8 @@
             border-bottom: 1px solid rgba(255,255,255,0.04);
         }
         
-        /* Mobilde header fixed ve gizlenebilir */
+        /* Mobilde header fixed ve gizlenebilir - BU BLOK KULLANILMIYOR, alttaki @media bloğu geçerli */
+        /*
         @media (max-width: 700px) {
             header {
                 position: fixed !important;
@@ -138,6 +139,7 @@
                 transition: transform 0.3s ease-out, opacity 0.3s ease-out !important;
             }
         }
+        */
         nav {
             display: flex;
             justify-content: space-between;
@@ -751,22 +753,24 @@
         /* Mobile: Yeni düzen - Logo üstte tek başına, menü satırları altında */
         @media (max-width: 700px) {
             header { 
-                position: fixed; 
-                top: 0; 
-                left: 0; 
-                right: 0; 
-                z-index: 1000; /* Yüksek z-index - header üstte görünsün */
+                position: fixed !important; 
+                top: 0 !important; 
+                left: 0 !important;
+                right: 0 !important;
+                z-index: 1000 !important;
                 padding: 0.5rem 1rem 1rem 1rem;
-                transition: transform 0.3s ease-out, opacity 0.3s ease-out;
-                background: transparent !important; /* Arka plan yok, sadece butonlar görünsün */
+                transition: transform 0.3s ease-out, opacity 0.3s ease-out !important;
+                background: transparent !important;
                 backdrop-filter: none !important;
                 border-bottom: none !important;
+                will-change: transform, opacity;
             }
-            /* Scroll edildiğinde header tamamen görünmez olur */
-            header.scrolled {
-                opacity: 0;
-                visibility: hidden;
-                pointer-events: none;
+            
+            /* Header gizlendiğinde */
+            header.header-hidden {
+                transform: translateY(-100%) !important;
+                opacity: 0 !important;
+                pointer-events: none !important;
             }
             
             /* Logo en üstte tek başına, ortalanmış */
@@ -4869,7 +4873,7 @@ fetch('site-settings.json')
         return;
     }
     
-    console.log('✅ Mobil header scroll başlatıldı');
+    console.log('✅ Mobil header scroll sistemi başlatıldı');
     
     // Mobilde products-wrapper'a padding-top ekle (header fixed olduğu için)
     function updatePadding() {
@@ -4886,12 +4890,25 @@ fetch('site-settings.json')
     let lastScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
     let isHidden = false;
     
+    function hideHeader() {
+        if (!isHidden) {
+            header.classList.add('header-hidden');
+            isHidden = true;
+            console.log('🔽 Header gizlendi');
+        }
+    }
+    
+    function showHeader() {
+        if (isHidden) {
+            header.classList.remove('header-hidden');
+            isHidden = false;
+            console.log('🔼 Header gösterildi');
+        }
+    }
+    
     // Sayfa yüklendiğinde scroll pozisyonuna göre header durumunu ayarla
     if (isMobile() && lastScrollY > 50) {
-        header.style.transform = 'translateY(-100%)';
-        header.style.opacity = '0';
-        header.style.pointerEvents = 'none';
-        isHidden = true;
+        hideHeader();
     }
     
     function handleScroll() {
@@ -4899,10 +4916,7 @@ fetch('site-settings.json')
         if (!isMobile()) {
             // Masaüstüne geçilirse header'ı resetle
             if (isHidden) {
-                header.style.transform = '';
-                header.style.opacity = '';
-                header.style.pointerEvents = '';
-                isHidden = false;
+                showHeader();
             }
             return;
         }
@@ -4911,37 +4925,26 @@ fetch('site-settings.json')
         
         // Sayfa en üstteyse her zaman göster
         if (currentScrollY <= 50) {
-            if (isHidden) {
-                header.style.transform = 'translateY(0)';
-                header.style.opacity = '1';
-                header.style.pointerEvents = 'auto';
-                isHidden = false;
-            }
+            showHeader();
             lastScrollY = currentScrollY;
             return;
         }
         
         const scrollDiff = currentScrollY - lastScrollY;
         
-        // Aşağı scroll (10px'den fazla) - gizle
-        if (scrollDiff > 10 && !isHidden) {
-            header.style.transform = 'translateY(-100%)';
-            header.style.opacity = '0';
-            header.style.pointerEvents = 'none';
-            isHidden = true;
+        // Aşağı scroll (15px'den fazla) - gizle
+        if (scrollDiff > 15 && !isHidden) {
+            hideHeader();
         }
-        // Yukarı scroll (10px'den fazla) - göster
-        else if (scrollDiff < -10 && isHidden) {
-            header.style.transform = 'translateY(0)';
-            header.style.opacity = '1';
-            header.style.pointerEvents = 'auto';
-            isHidden = false;
+        // Yukarı scroll (15px'den fazla) - göster
+        else if (scrollDiff < -15 && isHidden) {
+            showHeader();
         }
         
         lastScrollY = currentScrollY;
     }
     
-    // Passive scroll listener for better performance
+    // Scroll listener
     let ticking = false;
     window.addEventListener('scroll', function() {
         if (!ticking) {
@@ -4967,22 +4970,16 @@ fetch('site-settings.json')
         const diff = touchStartY - touchY;
         
         if (window.pageYOffset > 50) {
-            if (diff > 30 && !isHidden) {
-                // Yukarı kaydırma (aşağı scroll) - gizle
-                header.style.transform = 'translateY(-100%)';
-                header.style.opacity = '0';
-                header.style.pointerEvents = 'none';
-                isHidden = true;
-            } else if (diff < -30 && isHidden) {
-                // Aşağı kaydırma (yukarı scroll) - göster
-                header.style.transform = 'translateY(0)';
-                header.style.opacity = '1';
-                header.style.pointerEvents = 'auto';
-                isHidden = false;
+            if (diff > 40 && !isHidden) {
+                hideHeader();
+            } else if (diff < -40 && isHidden) {
+                showHeader();
             }
         }
         touchStartY = touchY;
     }, { passive: true });
+    
+    console.log('✅ Mobil header scroll sistemi hazır');
 })();
 </script>
 </html>
