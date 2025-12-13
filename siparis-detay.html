@@ -76,7 +76,7 @@
         <button id="createInvoiceBtn" class="btn btn-orange">🧾 Fatura Oluştur</button>
         <a href="siparisler.html" class="btn btn-white">← Sipariş Listesine Dön</a>
         <button id="editOrderBtn" class="btn">✏️ Düzenle</button>
-        <button id="refreshAddressBtn" class="btn btn-white">📥 Müşteri Adresini Çek</button>
+        <button id="editNoteBtn" class="btn btn-white">📝 Sipariş Notu</button>
         <button id="deleteOrderBtn" class="btn btn-orange" style="background:#dc2626">🗑️ Sil</button>
       </div>
     </div>
@@ -249,7 +249,6 @@
         // Edit controls
         html += '<div class="info-actions" style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">';
         html += '<button id="startEditAddressBtn" class="btn btn-white" type="button">✏️ Adresi Düzenle</button>';
-        html += '<button id="refreshAddressBtnInline" class="btn btn-white" type="button">📥 Müşteri Adresini Çek</button>';
         html += '</div>';
         // Hidden editor
         html += '<div id="addressEditor" style="margin-top:10px; display:none;">';
@@ -846,7 +845,7 @@
     // Event Listeners
     document.getElementById('createInvoiceBtn').addEventListener('click', createInvoice);
     document.getElementById('editOrderBtn').addEventListener('click', editOrder);
-    document.getElementById('refreshAddressBtn').addEventListener('click', refreshCustomerAddress);
+    document.getElementById('editNoteBtn').addEventListener('click', openNoteEditor);
     document.getElementById('deleteOrderBtn').addEventListener('click', deleteOrder);
     // Inline address editor wiring (after first render, re-wire inside render)
 
@@ -872,7 +871,6 @@
       cancelBtn.onclick = () => {
         editor.style.display = 'none';
       };
-      refreshInlineBtn && (refreshInlineBtn.onclick = () => refreshCustomerAddress());
 
       saveBtn.onclick = async () => {
         const newAddr = (ta.value || '').trim();
@@ -969,6 +967,74 @@
           alert('❌ Adres kaydedilirken bir hata oluştu.');
         }
       };
+    }
+
+    // Sipariş Notu Düzenleme
+    async function openNoteEditor() {
+      if (!currentOrder) { alert('Sipariş yüklenemedi.'); return; }
+      
+      const currentNote = currentOrder.note || '';
+      const newNote = prompt('📝 Sipariş Notu:', currentNote);
+      
+      if (newNote === null) return; // İptal edildi
+      
+      try {
+        const token = getGitHubToken();
+        if (!token || token === 'BYPASS') {
+          alert('⚠️ GitHub token gerekli. Admin panelinden token girin.');
+          return;
+        }
+        
+        const orderId = currentOrder.id;
+        const orderPath = `orders/${orderId}.json`;
+        
+        // Mevcut siparişi al
+        const getRes = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/${orderPath}?ref=site-release&t=${Date.now()}`, {
+          headers: { 'Accept': 'application/vnd.github.v3+json', 'Authorization': `token ${token}` }
+        });
+        
+        if (!getRes.ok) {
+          alert('❌ Sipariş dosyası bulunamadı.');
+          return;
+        }
+        
+        const fileData = await getRes.json();
+        let orderData;
+        try {
+          orderData = JSON.parse(atob(fileData.content));
+        } catch {
+          const dl = await fetch(fileData.download_url + `?t=${Date.now()}`);
+          orderData = await dl.json();
+        }
+        
+        // Notu güncelle
+        orderData.note = newNote.trim();
+        
+        // GitHub'a kaydet
+        const putRes = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/${orderPath}`, {
+          method: 'PUT',
+          headers: { 'Accept': 'application/vnd.github.v3+json', 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: `admin: update order note ${orderId}`,
+            content: btoa(unescape(encodeURIComponent(JSON.stringify(orderData, null, 2)))),
+            sha: fileData.sha,
+            branch: 'site-release'
+          })
+        });
+        
+        if (putRes.ok) {
+          alert('✅ Sipariş notu kaydedildi!');
+          currentOrder.note = newNote.trim();
+          renderOrderDetail(currentOrder);
+        } else {
+          const txt = await putRes.text();
+          console.error('Not güncelleme hatası:', putRes.status, txt);
+          alert('❌ Not kaydedilemedi.');
+        }
+      } catch (e) {
+        console.error('Not kaydetme hatası:', e);
+        alert('❌ Not kaydedilirken bir hata oluştu.');
+      }
     }
 
     // Re-wire after each render
