@@ -758,6 +758,9 @@
                 z-index: 1; /* Çok düşük z-index - içerik header üstünde görünsün */
                 padding: 0.5rem 1rem 1rem 1rem;
                 transition: opacity 0.4s ease, background 0.4s ease, visibility 0.4s ease;
+                background: transparent !important; /* Arka plan yok, sadece butonlar görünsün */
+                backdrop-filter: none !important;
+                border-bottom: none !important;
             }
             /* Scroll edildiğinde header tamamen görünmez olur */
             header.scrolled {
