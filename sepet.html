@@ -438,12 +438,6 @@
             </div>
           </div>
 
-          <!-- Order Note -->
-          <div class="note-section">
-            <label class="note-label">📝 Sipariş Notu</label>
-            <textarea id="orderNote" class="note-textarea" placeholder="Özel isteklerinizi yazabilirsiniz..."></textarea>
-          </div>
-
           <!-- Action Buttons -->
           <button onclick="goToCheckout()" class="checkout-btn">✅ Satın Al</button>
           <a href="/" class="continue-btn">🔙 Alışverişe Devam Et</a>
@@ -696,12 +690,6 @@
         showNotification('🔐 Satın almak için giriş yapmalısınız', {type: 'info', duration: 3500});
         setTimeout(() => { window.location.href = '/'; }, 1500);
         return;
-      }
-      
-      // Save order note
-      const note = document.getElementById('orderNote').value.trim();
-      if (note) {
-        localStorage.setItem('orderNote', note);
       }
       
       window.location.href = 'odeme.html';
