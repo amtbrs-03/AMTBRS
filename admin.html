@@ -111,6 +111,31 @@
       margin-top:0.25rem;
     }
 
+    /* Admin Logo - Anasayfa stili */
+    .admin-logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.8rem;
+      border-radius: 12px;
+      background: linear-gradient(180deg, #ff9800 0%, #ffb347 100%);
+      box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4);
+    }
+    .admin-logo-icon {
+      font-size: 1.5rem;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+    }
+    .admin-logo-text {
+      font-size: 1.1rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      background-image: linear-gradient(90deg, #ffffff 0%, #d4fff0 45%, #b8f4c9 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+
     /* 3D Green Buttons */
     .btn{
       cursor:pointer;
@@ -1369,9 +1394,16 @@
   </script>
   <div class="admin-header">
     <div class="admin-header-content">
-      <div>
-        <div class="title">🌸 ERN-ÇİÇEK Admin Paneli</div>
-        <div class="subtitle">Ürün, Kullanıcı ve Sipariş Yönetimi</div>
+      <div style="display:flex;align-items:center;gap:1rem;">
+        <!-- Logo - anasayfa stili -->
+        <div class="admin-logo">
+          <span class="admin-logo-icon">🌸</span>
+          <span class="admin-logo-text">[ERN-ÇİÇEK]</span>
+        </div>
+        <div>
+          <div class="title">Admin Paneli</div>
+          <div class="subtitle" id="adminUserInfo">Yönetici</div>
+        </div>
       </div>
       <div style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;">
         <a href="anasayfa.html" class="btn btn-ghost" title="Siteyi yeni sekmede aç">🏠 Siteyi Görüntüle</a>
@@ -1382,6 +1414,22 @@
       </div>
     </div>
   </div>
+  <script>
+    // Admin kullanıcı bilgisini GitHub'dan çek ve göster
+    (async function showAdminUser(){
+      try {
+        const token = localStorage.getItem('github_token');
+        if(token && token !== 'BYPASS'){
+          const res = await fetch('https://api.github.com/user', { headers: { 'Authorization': 'token '+token } });
+          if(res.ok){
+            const user = await res.json();
+            const el = document.getElementById('adminUserInfo');
+            if(el) el.textContent = user.name || user.login || 'Yönetici';
+          }
+        }
+      } catch(e){}
+    })();
+  </script>
   <script>
     // Çıkış butonu bağlama güvenliği: inline onclick yerine güvenli bağlama
     (function(){
