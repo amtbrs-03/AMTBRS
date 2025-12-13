@@ -1,0 +1,29 @@
+{
+  "id": "ORD-1765592933321",
+  "date": 1765592933321,
+  "customerEmail": "amtbrs@icloud.com",
+  "customerName": "AHMET BURSA",
+  "customerPhone": "+90 530 306 9081",
+  "address": "Fevziçakmak mah., çağlayan mahallesi, Kağıthane, İstanbul, Posta Kodu 34100",
+  "iban": "TRXX 0006 1005 1978 6457 8413 26",
+  "note": "test 2 3 4 5",
+  "noteRead": false,
+  "status": "pending",
+  "items": [
+    {
+      "id": "TEMP-1765322433131",
+      "name": "PEHELEYOTUYTERNA",
+      "price": 3000,
+      "qty": 4,
+      "image": "images/gallery/IMG_1967.JPG"
+    },
+    {
+      "id": "IMG_1966.JPG",
+      "name": "PHİLODENDRON FELİX",
+      "price": 1200,
+      "qty": 4,
+      "image": "images/products/IMG_1966.JPG"
+    }
+  ],
+  "total": "16920.00"
+}
