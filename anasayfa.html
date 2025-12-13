@@ -4919,12 +4919,12 @@ fetch('site-settings.json')
         }
         
         // Yukarı swipe (parmak yukarı = sayfa aşağı scroll) - GIZLE
-        if (touchDelta > 40) {
+        if (touchDelta > 30) {
             hide();
             touchStartY = touchY; // Reset
         }
         // Aşağı swipe (parmak aşağı = sayfa yukarı scroll) - GOSTER
-        else if (touchDelta < -40) {
+        else if (touchDelta < -80) {
             show();
             touchStartY = touchY; // Reset
         }
@@ -4960,8 +4960,8 @@ fetch('site-settings.json')
             if (currentScroll > lastCheck + 10) {
                 hide();
             }
-            // Yukarı gidiyorsa göster
-            else if (currentScroll < lastCheck - 10) {
+            // Yukarı gidiyorsa göster (daha fazla scroll gereksin)
+            else if (currentScroll < lastCheck - 30) {
                 show();
             }
             
