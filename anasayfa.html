@@ -1623,8 +1623,10 @@
                             if(!grid) return;
                             grid.innerHTML = '';
                             grid.style.display = 'grid';
-                            grid.style.gridTemplateColumns = 'repeat(2, 1fr)';
-                            grid.style.gap = '1.5rem';
+                            // Mobilde 1 sütun, masaüstünde 2 sütun
+                            const isMobileView = window.innerWidth <= 700;
+                            grid.style.gridTemplateColumns = isMobileView ? '1fr' : 'repeat(2, 1fr)';
+                            grid.style.gap = isMobileView ? '0.5rem' : '1.5rem';
                             grid.style.alignItems = 'stretch';
                             const fmt = new Intl.NumberFormat('tr-TR', {style:'currency', currency:'TRY'});
                             list.forEach((p, idx) => {
