@@ -3798,6 +3798,190 @@
                         }
                     }
                     
+                    // ===== SİPARİŞ GEÇMİŞİ FONKSİYONLARI =====
+                    async function loadUserOrders() {
+                        const ordersList = document.getElementById('ordersList');
+                        if (!ordersList) return;
+                        
+                        const cu = getCurrentUser();
+                        if (!cu || !cu.email) {
+                            ordersList.innerHTML = '<div style="color:#dc2626;padding:0.6rem">Siparişleri görmek için giriş yapmalısınız.</div>';
+                            return;
+                        }
+                        
+                        ordersList.innerHTML = '<div style="color:#6b7280;padding:0.6rem">Yükleniyor...</div>';
+                        
+                        try {
+                            // GitHub'dan orders klasöründeki dosyaları listele
+                            const owner = 'amtbrs-03';
+                            const repo = 'AMTBRS';
+                            const branch = 'site-release';
+                            const ordersPath = 'orders';
+                            
+                            const token = (localStorage.getItem('gh_token') || '').trim();
+                            const headers = { 'Accept': 'application/vnd.github+json' };
+                            if (token) headers['Authorization'] = 'Bearer ' + token;
+                            
+                            const listUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${ordersPath}?ref=${branch}`;
+                            const listRes = await fetch(listUrl, { headers });
+                            
+                            if (!listRes.ok) {
+                                ordersList.innerHTML = '<div style="color:#6b7280;padding:0.6rem">Siparişiniz bulunmuyor.</div>';
+                                return;
+                            }
+                            
+                            const files = await listRes.json();
+                            if (!Array.isArray(files) || files.length === 0) {
+                                ordersList.innerHTML = '<div style="color:#6b7280;padding:0.6rem">Siparişiniz bulunmuyor.</div>';
+                                return;
+                            }
+                            
+                            // JSON dosyalarını filtrele ve kullanıcının siparişlerini bul
+                            const orderFiles = files.filter(f => f.name.endsWith('.json') && f.name !== '.gitkeep');
+                            const userOrders = [];
+                            
+                            for (const file of orderFiles) {
+                                try {
+                                    const fileRes = await fetch(file.download_url);
+                                    if (fileRes.ok) {
+                                        const order = await fileRes.json();
+                                        // Kullanıcının siparişi mi kontrol et
+                                        if (order.customer && order.customer.email && 
+                                            order.customer.email.toLowerCase() === cu.email.toLowerCase()) {
+                                            userOrders.push(order);
+                                        }
+                                    }
+                                } catch(e) {
+                                    console.warn('Sipariş dosyası okunamadı:', file.name, e);
+                                }
+                            }
+                            
+                            if (userOrders.length === 0) {
+                                ordersList.innerHTML = '<div style="color:#6b7280;padding:0.6rem">Siparişiniz bulunmuyor.</div>';
+                                return;
+                            }
+                            
+                            // Tarihe göre sırala (en yeni en üstte)
+                            userOrders.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+                            
+                            // Siparişleri listele
+                            let html = '';
+                            const fmt = new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' });
+                            
+                            userOrders.forEach(order => {
+                                const orderId = order.id || 'N/A';
+                                const orderDate = order.createdAt ? new Date(order.createdAt).toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Tarih yok';
+                                const totalPrice = order.total || (order.items ? order.items.reduce((s, i) => s + (i.price * (i.qty || 1)), 0) : 0);
+                                const itemCount = order.items ? order.items.reduce((s, i) => s + (i.qty || 1), 0) : 0;
+                                
+                                // Durum renkleri
+                                let statusColor = '#f59e0b'; // Beklemede - amber
+                                let statusText = order.status || 'Beklemede';
+                                if (statusText === 'Onaylandı' || statusText === 'confirmed') { statusColor = '#10b981'; statusText = 'Onaylandı'; }
+                                else if (statusText === 'Kargoya verildi' || statusText === 'shipped') { statusColor = '#3b82f6'; statusText = 'Kargoya Verildi'; }
+                                else if (statusText === 'Teslim edildi' || statusText === 'delivered') { statusColor = '#059669'; statusText = 'Teslim Edildi'; }
+                                else if (statusText === 'İptal edildi' || statusText === 'cancelled') { statusColor = '#dc2626'; statusText = 'İptal Edildi'; }
+                                
+                                html += `
+                                    <div class="order-card" data-order-id="${orderId}" style="background:linear-gradient(135deg,#f8fafc,#f1f5f9);border:1px solid #e2e8f0;border-radius:12px;padding:1rem;margin-bottom:0.8rem;cursor:pointer;transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow='none'">
+                                        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:0.5rem;">
+                                            <div>
+                                                <div style="font-weight:700;color:#0f172a;font-size:1rem;">📦 ${orderId}</div>
+                                                <div style="font-size:0.85rem;color:#64748b;margin-top:0.3rem;">${orderDate}</div>
+                                                <div style="font-size:0.85rem;color:#334155;margin-top:0.2rem;">${itemCount} ürün</div>
+                                            </div>
+                                            <div style="text-align:right;">
+                                                <div style="font-weight:800;color:#16a34a;font-size:1.1rem;">${fmt.format(totalPrice)}</div>
+                                                <div style="display:inline-block;padding:0.25rem 0.6rem;border-radius:999px;font-size:0.75rem;font-weight:600;color:white;background:${statusColor};margin-top:0.3rem;">${statusText}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                            
+                            ordersList.innerHTML = html;
+                            
+                            // Sipariş kartlarına tıklama olayı ekle
+                            document.querySelectorAll('.order-card').forEach(card => {
+                                card.addEventListener('click', function() {
+                                    const orderId = this.getAttribute('data-order-id');
+                                    const order = userOrders.find(o => o.id === orderId);
+                                    if (order) showOrderDetail(order);
+                                });
+                            });
+                            
+                            // Siparişleri cache'e kaydet
+                            window._userOrders = userOrders;
+                            
+                        } catch (e) {
+                            console.error('Siparişler yüklenirken hata:', e);
+                            ordersList.innerHTML = '<div style="color:#dc2626;padding:0.6rem">Siparişler yüklenirken hata oluştu.</div>';
+                        }
+                    }
+                    
+                    function showOrderDetail(order) {
+                        const modal = document.getElementById('orderDetailModal');
+                        const body = document.getElementById('orderDetailBody');
+                        if (!modal || !body) return;
+                        
+                        const fmt = new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' });
+                        const orderDate = order.createdAt ? new Date(order.createdAt).toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Tarih yok';
+                        
+                        let itemsHtml = '';
+                        if (order.items && order.items.length > 0) {
+                            itemsHtml = '<table style="width:100%;border-collapse:collapse;margin-top:0.5rem;">';
+                            itemsHtml += '<thead><tr style="background:#f1f5f9;"><th style="padding:0.5rem;text-align:left;border-bottom:1px solid #e2e8f0;">Ürün</th><th style="padding:0.5rem;text-align:center;border-bottom:1px solid #e2e8f0;">Adet</th><th style="padding:0.5rem;text-align:right;border-bottom:1px solid #e2e8f0;">Birim Fiyat</th><th style="padding:0.5rem;text-align:right;border-bottom:1px solid #e2e8f0;">Toplam</th></tr></thead>';
+                            itemsHtml += '<tbody>';
+                            order.items.forEach(item => {
+                                const qty = item.qty || 1;
+                                const price = item.price || 0;
+                                const total = qty * price;
+                                itemsHtml += `<tr><td style="padding:0.5rem;border-bottom:1px solid #f1f5f9;">${item.name || 'Ürün'}</td><td style="padding:0.5rem;text-align:center;border-bottom:1px solid #f1f5f9;">${qty}</td><td style="padding:0.5rem;text-align:right;border-bottom:1px solid #f1f5f9;">${fmt.format(price)}</td><td style="padding:0.5rem;text-align:right;border-bottom:1px solid #f1f5f9;font-weight:600;">${fmt.format(total)}</td></tr>`;
+                            });
+                            itemsHtml += '</tbody></table>';
+                        }
+                        
+                        const grandTotal = order.total || (order.items ? order.items.reduce((s, i) => s + ((i.price || 0) * (i.qty || 1)), 0) : 0);
+                        
+                        let addressHtml = '';
+                        if (order.shippingAddress) {
+                            const addr = order.shippingAddress;
+                            addressHtml = `<div style="margin-top:1rem;padding:0.8rem;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;">
+                                <div style="font-weight:600;color:#0f172a;margin-bottom:0.3rem;">📍 Teslimat Adresi</div>
+                                <div style="color:#334155;font-size:0.9rem;">${addr.fullAddress || addr.address || ''}</div>
+                                <div style="color:#64748b;font-size:0.85rem;margin-top:0.2rem;">${addr.district || ''} / ${addr.city || ''}</div>
+                            </div>`;
+                        }
+                        
+                        body.innerHTML = `
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
+                                <div>
+                                    <div style="font-size:0.9rem;color:#64748b;">Sipariş No</div>
+                                    <div style="font-weight:700;color:#0f172a;">${order.id || 'N/A'}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size:0.9rem;color:#64748b;">Tarih</div>
+                                    <div style="font-weight:600;color:#334155;">${orderDate}</div>
+                                </div>
+                            </div>
+                            
+                            <div style="font-weight:600;color:#0f172a;margin-bottom:0.3rem;">🛒 Ürünler</div>
+                            ${itemsHtml}
+                            
+                            <div style="display:flex;justify-content:flex-end;margin-top:1rem;padding-top:0.8rem;border-top:2px solid #e2e8f0;">
+                                <div style="text-align:right;">
+                                    <div style="font-size:0.9rem;color:#64748b;">Toplam</div>
+                                    <div style="font-size:1.3rem;font-weight:800;color:#16a34a;">${fmt.format(grandTotal)}</div>
+                                </div>
+                            </div>
+                            
+                            ${addressHtml}
+                        `;
+                        
+                        modal.classList.remove('hidden');
+                        modal.style.display = 'flex';
+                    }
+                    
                     // Address Management Functions
                     function getUserAddresses() {
                         const cu = getCurrentUser();
