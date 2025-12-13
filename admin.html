@@ -1053,13 +1053,13 @@
         return res.ok;
       } catch(_){ return false; }
     }
-    // Sayfa yüklendiğinde token'ı bellekten al, geçerliyse kullan; değilse uyarı ver.
+    // Sayfa yüklendiğinde token'ı bellekten al, geçerliyse kullan; değilse sadece uyarı ver (token'ı silme).
     (async function initToken(){
       const tok = getGitHubToken();
       if(tok){
         const ok = await validateGitHubToken(tok);
         if(!ok){
-          try { localStorage.removeItem('github_token'); localStorage.removeItem('gh_token'); } catch(_){}
+          // Token geçersiz - sadece uyarı göster, token'ı silme (kullanıcı yenileyince tekrar denesin)
           const notice = document.getElementById('patNotice'); if(notice) notice.style.display='block';
         }
       } else {
