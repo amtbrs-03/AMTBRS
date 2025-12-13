@@ -116,11 +116,13 @@
     let currentOrder = null;
 
     async function loadOrderDetail() {
+      console.log('loadOrderDetail çağrıldı');
       const contentEl = document.getElementById('orderContent');
       
       // Get order ID from URL parameter
       const urlParams = new URLSearchParams(window.location.search);
       const orderId = urlParams.get('id');
+      console.log('orderId:', orderId);
       
       if (!orderId) {
         contentEl.innerHTML = '<div class="error">❌ Hata: Sipariş numarası bulunamadı.</div>';
@@ -136,6 +138,7 @@
         const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/orders/${fileName}`;
         console.log('Fetching order (raw):', rawUrl);
         let orderRes = await fetch(rawUrl + `?t=${Date.now()}`);
+        console.log('Raw fetch response:', orderRes.status, orderRes.ok);
         if (!orderRes.ok) {
           // Fallback to Contents API with Authorization token to increase rate limit
           const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/orders/${fileName}?ref=${branch}`;
