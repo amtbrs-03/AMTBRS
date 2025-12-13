@@ -616,6 +616,21 @@
             #aboutPanel p {
                 font-size: 0.8rem !important;
             }
+            
+            /* Mobil filtre çubuğu - sticky davranış */
+            #filterBar {
+                position: sticky;
+                top: 0;
+                z-index: 999;
+                margin-top: 0 !important;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            }
+            
+            #filterBar.sticky-active {
+                background: rgba(255,255,255,0.98) !important;
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+            }
         }
 
         /* Ensure images and SVG scale to container width */
@@ -1778,6 +1793,46 @@
                     document.addEventListener('DOMContentLoaded', function(){
                         // Lightbox code removed as requested
                         loadProducts();
+                        
+                        // ===== MOBİL FİLTRE ÇUBUĞU SCROLL DAVRANIŞI =====
+                        (function setupMobileFilterSticky() {
+                            const filterBar = document.getElementById('filterBar');
+                            const header = document.querySelector('header');
+                            if (!filterBar) return;
+                            
+                            let lastScrollY = 0;
+                            let filterBarTop = 0;
+                            
+                            function updateFilterBarPosition() {
+                                if (window.innerWidth > 480) {
+                                    // Masaüstünde sticky davranış yok
+                                    filterBar.classList.remove('sticky-active');
+                                    return;
+                                }
+                                
+                                const currentScrollY = window.scrollY;
+                                
+                                // Filtre çubuğunun orijinal konumunu hesapla
+                                if (filterBarTop === 0 && filterBar.offsetTop > 0) {
+                                    filterBarTop = filterBar.offsetTop;
+                                }
+                                
+                                // Scroll aşağı - filtre çubuğu sticky olsun
+                                if (currentScrollY > filterBarTop) {
+                                    filterBar.classList.add('sticky-active');
+                                } else {
+                                    filterBar.classList.remove('sticky-active');
+                                }
+                                
+                                lastScrollY = currentScrollY;
+                            }
+                            
+                            window.addEventListener('scroll', updateFilterBarPosition, { passive: true });
+                            window.addEventListener('resize', function() {
+                                filterBarTop = 0; // Reset on resize
+                                updateFilterBarPosition();
+                            });
+                        })();
                         
                         // ===== SİLİNMİŞ KULLANICI KONTROLÜ =====
                         (async function checkDeletedUser() {
