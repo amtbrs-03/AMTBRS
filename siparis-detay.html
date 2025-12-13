@@ -873,11 +873,11 @@
       }
     }
 
-    // Event Listeners
-    document.getElementById('createInvoiceBtn').addEventListener('click', createInvoice);
-    document.getElementById('editOrderBtn').addEventListener('click', editOrder);
-    document.getElementById('editNoteBtn').addEventListener('click', openNoteEditor);
-    document.getElementById('deleteOrderBtn').addEventListener('click', deleteOrder);
+    // Event Listeners (with null checks)
+    document.getElementById('createInvoiceBtn')?.addEventListener('click', createInvoice);
+    document.getElementById('editOrderBtn')?.addEventListener('click', editOrder);
+    document.getElementById('editNoteBtn')?.addEventListener('click', openNoteEditor);
+    document.getElementById('deleteOrderBtn')?.addEventListener('click', deleteOrder);
     // Inline address editor wiring (after first render, re-wire inside render)
 
     // Load order on page load
