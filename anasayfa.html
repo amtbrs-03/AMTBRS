@@ -110,40 +110,6 @@
 </script>
 
     <style>
-                /* Mobilde scroll ile bulanıklaşan başlık/menü */
-                @media (max-width:700px) {
-                    /* Header'ı sabitle ve gerçek yüksekliğini üst boşluğa uygula (JS ile ayarlanacak) */
-                    header {
-                        position: fixed;
-                        top: 0;
-                        left: 0;
-                        right: 0;
-                        z-index: 1000; /* mobilde sabit başlık en üstte kalsın */
-                        transition: transform 0.25s ease-out, opacity 0.25s ease-out;
-                        background: transparent !important;
-                        backdrop-filter: none !important;
-                        -webkit-backdrop-filter: none !important;
-                    }
-                    /* Header gizlendiğinde */
-                    header.header-hidden {
-                        transform: translateY(-100%);
-                        opacity: 0;
-                        pointer-events: none;
-                    }
-                    /* JSDOM test ortamı için aşağıdaki CSS özellikleri devre dışı bırakıldı */
-                    /* header.blurred, .products-header.blurred {
-                        background: rgba(30,143,85,0.55) !important;
-                        backdrop-filter: blur(8px) !important;
-                        -webkit-backdrop-filter: blur(8px) !important;
-                        transition: background 0.3s, backdrop-filter 0.3s;
-                    }
-                    .products-header.blurred {
-                        background: rgba(255,255,255,0.65) !important;
-                        backdrop-filter: blur(8px) !important;
-                        -webkit-backdrop-filter: blur(8px) !important;
-                    } */
-                }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { height: 100%; }
         body {
@@ -159,6 +125,18 @@
             z-index: 100;
             backdrop-filter: blur(6px);
             border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        
+        /* Mobilde header fixed ve gizlenebilir */
+        @media (max-width: 700px) {
+            header {
+                position: fixed !important;
+                top: 0 !important;
+                left: 0;
+                right: 0;
+                z-index: 1000 !important;
+                transition: transform 0.3s ease-out, opacity 0.3s ease-out !important;
+            }
         }
         nav {
             display: flex;
