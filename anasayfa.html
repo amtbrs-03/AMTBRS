@@ -2426,6 +2426,14 @@
                                     info = product.info || '';
                                 }
                             } catch(e) {}
+                            // Stok kontrolü
+                            let stock = null;
+                            try {
+                                const allProducts = window._lastProductsList || [];
+                                const product = allProducts.find(p => (p.id || ('P'+allProducts.indexOf(p))) == id);
+                                if(product) stock = product.stock;
+                            } catch(e) {}
+                            const isOutOfStock = stock !== null && stock !== undefined && stock <= 0;
                             if(images.length === 0) {
                                 const imgTags = card.querySelectorAll('img');
                                 imgTags.forEach(tag => images.push(tag.src));
@@ -2462,8 +2470,13 @@
                             html += `<span style='font-size:0.8rem;color:#6b7280;'>(Max: 3)</span>`;
                             html += `</div>`;
                             html += `<div id='panelQtyWarning' style='display:none;text-align:center;margin-bottom:0.5rem;padding:0.4rem;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;color:#dc2626;font-size:0.85rem;'>⚠️ Bu üründen en fazla 3 adet ekleyebilirsiniz.</div>`;
-                            // Sepete ekle butonu
-                            html += `<button id='panelAddToCartBtn' style='width:100%;background:#16a34a;color:#fff;padding:0.8rem;border:none;border-radius:10px;font-size:1.1rem;cursor:pointer;font-weight:700;'>Sepete Ekle</button>`;
+                            // Sepete ekle butonu - stok kontrolü
+                            if (isOutOfStock) {
+                                html += `<div style='text-align:center;margin-bottom:0.5rem;padding:0.6rem;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;color:#dc2626;font-size:0.95rem;font-weight:600;'>❌ Bu ürün şu an stokta yok</div>`;
+                                html += `<button id='panelAddToCartBtn' style='width:100%;background:#9ca3af;color:#fff;padding:0.8rem;border:none;border-radius:10px;font-size:1.1rem;cursor:not-allowed;font-weight:700;opacity:0.6;' disabled>Stok Tükendi</button>`;
+                            } else {
+                                html += `<button id='panelAddToCartBtn' style='width:100%;background:#16a34a;color:#fff;padding:0.8rem;border:none;border-radius:10px;font-size:1.1rem;cursor:pointer;font-weight:700;'>Sepete Ekle</button>`;
+                            }
                             html += `</div>`;
                             document.getElementById('productDetailContent').innerHTML = html;
                             // Küçük resme tıklanınca ana resim değişsin
@@ -5148,18 +5161,32 @@
                                 card.setAttribute('data-id', p.id || String(i+1));
                                 card.setAttribute('data-name', p.name || `Ürün ${i+1}`);
                                 card.setAttribute('data-price', String(p.price || 0));
+                                card.setAttribute('data-stock', String(p.stock !== null && p.stock !== undefined ? p.stock : ''));
                                 const badgeLabel = (p.badge||'').trim();
+                                const isOutOfStock = p.stock !== null && p.stock !== undefined && p.stock <= 0;
                                 const hasImg = !!(p.image && p.image.length);
                                 const imgHtml = hasImg
                                     ? `<img class=\"product-image\" src=\"/${p.image.replace(/^\//,'')}\" alt=\"${(p.name||'Ürün').replace(/"/g,'')}\" loading=\"lazy\"/>`
                                     : `<div class=\"product-image\">🛍️</div>`;
+                                // Rozet: Önce stok tükendiyse "Tükendi", değilse normal rozet
+                                let badgeHtml = '';
+                                if (isOutOfStock) {
+                                    badgeHtml = '<span class="badge" style="background:#dc2626;color:white;">Tükendi</span>';
+                                } else if (badgeLabel) {
+                                    badgeHtml = `<span class=\"badge${badgeLabel==='Yeni'?' badge-green':badgeLabel==='İndirim'?' badge-amber':''}\">${badgeLabel}</span>`;
+                                }
                                 card.innerHTML = `
-                                    ${badgeLabel ? `<span class=\"badge${badgeLabel==='Yeni'?' badge-green':badgeLabel==='İndirim'?' badge-amber':''}\">${badgeLabel}</span>`:''}
+                                    ${badgeHtml}
                                     ${imgHtml}
                                     <div class=\"product-info\">
                                         <div class=\"product-name\">${p.name||''}</div>
                                     </div>
                                 `;
+                                // Stok tükenmiş ürünlere stil ekle
+                                if (isOutOfStock) {
+                                    card.style.opacity = '0.6';
+                                    card.setAttribute('data-out-of-stock', 'true');
+                                }
                                 container.appendChild(card);
                             });
                         }catch(e){ console.error('applyProducts error', e); }
