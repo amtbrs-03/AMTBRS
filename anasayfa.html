@@ -4859,102 +4859,140 @@ fetch('site-settings.json')
         }
     });
 
-// Mobilde scroll yönüne göre header gizle/göster
-document.addEventListener('DOMContentLoaded', function() {
-    var header = document.querySelector('header');
-    if (!header) {
-        console.log('Header bulunamadi');
-        return;
-    }
+// Mobilde scroll yönüne göre header gizle/göster - iOS Safari uyumlu
+(function() {
+    'use strict';
     
-    var lastScrollTop = 0;
-    var scrollThreshold = 10;
+    var header = document.querySelector('header');
+    if (!header) return;
+    
+    var isHidden = false;
+    var touchStartY = 0;
+    var touchStartScrollTop = 0;
+    var lastKnownScrollY = 0;
     
     function isMobile() {
-        return window.innerWidth <= 768;
+        return window.innerWidth <= 768 || 'ontouchstart' in window;
     }
     
-    function hideHeader() {
-        header.style.transform = 'translateY(-100%)';
-        header.style.opacity = '0';
-        header.style.pointerEvents = 'none';
-    }
-    
-    function showHeader() {
-        header.style.transform = 'translateY(0)';
-        header.style.opacity = '1';
-        header.style.pointerEvents = 'auto';
-    }
-    
-    function onScroll() {
-        if (!isMobile()) {
-            header.style.transform = '';
-            header.style.opacity = '';
-            header.style.pointerEvents = '';
-            return;
-        }
-        
-        var scrollTop = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
-        
-        // Sayfa en üstte
-        if (scrollTop < 80) {
-            showHeader();
-            lastScrollTop = scrollTop;
-            return;
-        }
-        
-        var scrollDelta = scrollTop - lastScrollTop;
-        
-        // Aşağı scroll - gizle
-        if (scrollDelta > scrollThreshold) {
-            hideHeader();
-            lastScrollTop = scrollTop;
-        }
-        // Yukarı scroll - göster
-        else if (scrollDelta < -scrollThreshold) {
-            showHeader();
-            lastScrollTop = scrollTop;
+    function hide() {
+        if (!isHidden && isMobile()) {
+            header.style.transform = 'translateY(-100%)';
+            header.style.opacity = '0';
+            header.style.pointerEvents = 'none';
+            isHidden = true;
         }
     }
     
-    // Scroll dinleyicisi
-    var ticking = false;
-    window.addEventListener('scroll', function() {
-        if (!ticking) {
-            requestAnimationFrame(function() {
-                onScroll();
-                ticking = false;
-            });
-            ticking = true;
+    function show() {
+        if (isHidden || !isMobile()) {
+            header.style.transform = 'translateY(0)';
+            header.style.opacity = '1';
+            header.style.pointerEvents = 'auto';
+            isHidden = false;
         }
-    });
+    }
     
-    // Touch için ek destek (iOS Safari)
-    var startY = 0;
+    function getScrollTop() {
+        return window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    }
+    
+    // Touch başlangıcı
     document.addEventListener('touchstart', function(e) {
-        startY = e.touches[0].pageY;
+        if (!isMobile()) return;
+        touchStartY = e.touches[0].clientY;
+        touchStartScrollTop = getScrollTop();
     }, {passive: true});
     
+    // Touch hareket
     document.addEventListener('touchmove', function(e) {
         if (!isMobile()) return;
-        var scrollTop = window.scrollY || window.pageYOffset;
-        if (scrollTop < 80) return;
         
-        var currentY = e.touches[0].pageY;
-        var deltaY = startY - currentY;
+        var touchY = e.touches[0].clientY;
+        var scrollTop = getScrollTop();
+        var touchDelta = touchStartY - touchY; // Pozitif = yukarı swipe (aşağı scroll)
         
-        // Yukarı swipe (aşağı scroll) - gizle
-        if (deltaY > 30) {
-            hideHeader();
+        // Sayfa en üstte ise göster
+        if (scrollTop <= 100) {
+            show();
+            return;
         }
-        // Aşağı swipe (yukarı scroll) - göster
-        else if (deltaY < -30) {
-            showHeader();
+        
+        // Yukarı swipe (parmak yukarı = sayfa aşağı scroll) - GIZLE
+        if (touchDelta > 40) {
+            hide();
+            touchStartY = touchY; // Reset
         }
-        startY = currentY;
+        // Aşağı swipe (parmak aşağı = sayfa yukarı scroll) - GOSTER
+        else if (touchDelta < -40) {
+            show();
+            touchStartY = touchY; // Reset
+        }
+        
+        lastKnownScrollY = scrollTop;
     }, {passive: true});
     
-    console.log('Mobil header scroll sistemi aktif');
-});
+    // Touch bitti - momentum scroll kontrolü
+    document.addEventListener('touchend', function() {
+        if (!isMobile()) return;
+        
+        // Momentum scroll için interval ile kontrol
+        var checkCount = 0;
+        var lastCheck = getScrollTop();
+        
+        var intervalId = setInterval(function() {
+            var currentScroll = getScrollTop();
+            
+            // Sayfa en üstte
+            if (currentScroll <= 100) {
+                show();
+                clearInterval(intervalId);
+                return;
+            }
+            
+            // Scroll durdu mu?
+            if (Math.abs(currentScroll - lastCheck) < 2) {
+                clearInterval(intervalId);
+                return;
+            }
+            
+            // Aşağı gidiyorsa gizle
+            if (currentScroll > lastCheck + 10) {
+                hide();
+            }
+            // Yukarı gidiyorsa göster
+            else if (currentScroll < lastCheck - 10) {
+                show();
+            }
+            
+            lastCheck = currentScroll;
+            checkCount++;
+            
+            // Max 50 kontrol (2.5 saniye)
+            if (checkCount > 50) {
+                clearInterval(intervalId);
+            }
+        }, 50);
+    }, {passive: true});
+    
+    // Masaüstü için normal scroll (opsiyonel fallback)
+    var scrollTimeout;
+    window.addEventListener('scroll', function() {
+        if (isMobile()) return; // Mobilde touch events kullan
+        
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(function() {
+            var scrollTop = getScrollTop();
+            if (scrollTop > lastKnownScrollY + 20) {
+                hide();
+            } else if (scrollTop < lastKnownScrollY - 20) {
+                show();
+            }
+            lastKnownScrollY = scrollTop;
+        }, 50);
+    }, {passive: true});
+    
+    console.log('Header scroll sistemi aktif (iOS uyumlu)');
+})();
 </script>
 </html>
