@@ -1045,13 +1045,22 @@
 
                 </header>
 
-                <!-- Kategori Filtreleri - Menü altında yatay -->
-                <div id="filterBar" style="background:linear-gradient(180deg,#f8fafc,#fff);border-bottom:1px solid rgba(11,47,31,0.08);padding:0.8rem 1rem;">
-                    <div style="max-width:1200px;margin:0 auto;display:flex;justify-content:center;gap:0.5rem;flex-wrap:wrap;">
-                        <button class="filter-btn active" data-category="all" onclick="filterByCategory('all', this)" style="padding:0.5rem 1.2rem;border:2px solid #0b2f1f;background:#0b2f1f;color:white;border-radius:20px;font-size:0.9rem;cursor:pointer;transition:all 0.2s;font-weight:600;">Tümü</button>
-                        <button class="filter-btn" data-category="Popüler" onclick="filterByCategory('Popüler', this)" style="padding:0.5rem 1.2rem;border:2px solid #f59e0b;background:white;color:#f59e0b;border-radius:20px;font-size:0.9rem;cursor:pointer;transition:all 0.2s;font-weight:600;">⭐ Popüler</button>
-                        <button class="filter-btn" data-category="Yeni" onclick="filterByCategory('Yeni', this)" style="padding:0.5rem 1.2rem;border:2px solid #3b82f6;background:white;color:#3b82f6;border-radius:20px;font-size:0.9rem;cursor:pointer;transition:all 0.2s;font-weight:600;">🆕 Yeni</button>
-                        <button class="filter-btn" data-category="İndirim" onclick="filterByCategory('İndirim', this)" style="padding:0.5rem 1.2rem;border:2px solid #ef4444;background:white;color:#ef4444;border-radius:20px;font-size:0.9rem;cursor:pointer;transition:all 0.2s;font-weight:600;">🏷️ İndirim</button>
+                <!-- Kategori Filtreleri + Arama - Menü altında kompakt -->
+                <div id="filterBar" style="background:linear-gradient(180deg,#f8fafc,#fff);border-bottom:1px solid rgba(11,47,31,0.08);padding:0.5rem 1rem;">
+                    <!-- Filtre Butonları - Tek sıra, küçük -->
+                    <div style="max-width:800px;margin:0 auto;display:flex;justify-content:center;gap:0.4rem;flex-wrap:nowrap;">
+                        <button class="filter-btn active" data-category="all" onclick="filterByCategory('all', this)" style="padding:0.3rem 0.7rem;border:1.5px solid #0b2f1f;background:#0b2f1f;color:white;border-radius:15px;font-size:0.75rem;cursor:pointer;transition:all 0.2s;font-weight:600;white-space:nowrap;">Tümü</button>
+                        <button class="filter-btn" data-category="Popüler" onclick="filterByCategory('Popüler', this)" style="padding:0.3rem 0.7rem;border:1.5px solid #f59e0b;background:white;color:#f59e0b;border-radius:15px;font-size:0.75rem;cursor:pointer;transition:all 0.2s;font-weight:600;white-space:nowrap;">⭐ Popüler</button>
+                        <button class="filter-btn" data-category="Yeni" onclick="filterByCategory('Yeni', this)" style="padding:0.3rem 0.7rem;border:1.5px solid #3b82f6;background:white;color:#3b82f6;border-radius:15px;font-size:0.75rem;cursor:pointer;transition:all 0.2s;font-weight:600;white-space:nowrap;">🆕 Yeni</button>
+                        <button class="filter-btn" data-category="İndirim" onclick="filterByCategory('İndirim', this)" style="padding:0.3rem 0.7rem;border:1.5px solid #ef4444;background:white;color:#ef4444;border-radius:15px;font-size:0.75rem;cursor:pointer;transition:all 0.2s;font-weight:600;white-space:nowrap;">🏷️ İndirim</button>
+                    </div>
+                    <!-- Arama Kutusu - Altında tek -->
+                    <div style="max-width:350px;margin:0.5rem auto 0;position:relative;">
+                        <input type="text" id="productSearchHeader" placeholder="🔍 Ürün ara..." 
+                            style="width:100%;padding:0.4rem 0.8rem;border:1.5px solid rgba(11,47,31,0.15);border-radius:10px;font-size:0.85rem;background:white;transition:all 0.2s;outline:none;"
+                            onfocus="this.style.borderColor='#16a34a';this.style.boxShadow='0 0 0 2px rgba(22,163,74,0.15)'"
+                            onblur="this.style.borderColor='rgba(11,47,31,0.15)';this.style.boxShadow='none'"
+                            oninput="filterProducts()">
                     </div>
                 </div>
 
@@ -1845,7 +1854,7 @@
                         };
                         
                         function filterProducts() {
-                            const searchInput = document.getElementById('productSearch');
+                            const searchInput = document.getElementById('productSearchHeader') || document.getElementById('productSearch');
                             const resultCount = document.getElementById('searchResultCount');
                             const searchTerm = (searchInput ? searchInput.value.toLowerCase().trim() : '');
                             const cards = document.querySelectorAll('.product-card');
