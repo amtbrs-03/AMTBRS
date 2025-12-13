@@ -249,6 +249,7 @@
         // Edit controls
         html += '<div class="info-actions" style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">';
         html += '<button id="startEditAddressBtn" class="btn btn-white" type="button">✏️ Adresi Düzenle</button>';
+        html += '<button id="refreshAddressBtnInline" class="btn btn-white" type="button">📥 Müşteri Adresini Çek</button>';
         html += '</div>';
         // Hidden editor
         html += '<div id="addressEditor" style="margin-top:10px; display:none;">';
@@ -871,6 +872,12 @@
       cancelBtn.onclick = () => {
         editor.style.display = 'none';
       };
+      
+      // Müşteri adresini çek butonu
+      const refreshInlineBtn = document.getElementById('refreshAddressBtnInline');
+      if (refreshInlineBtn) {
+        refreshInlineBtn.onclick = () => refreshCustomerAddress();
+      }
 
       saveBtn.onclick = async () => {
         const newAddr = (ta.value || '').trim();
