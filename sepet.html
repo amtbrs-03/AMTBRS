@@ -601,7 +601,7 @@
               <div class="quantity-control">
                 <button class="qty-btn" onclick="updateQty(${index}, -1)" ${item.qty <= 1 ? 'disabled' : ''}>−</button>
                 <span class="qty-value">${item.qty || 1}</span>
-                <button class="qty-btn" onclick="updateQty(${index}, 1)">+</button>
+                <button class="qty-btn" onclick="updateQty(${index}, 1)" ${item.qty >= 3 ? 'disabled' : ''}>+</button>
               </div>
               <button class="remove-btn" onclick="removeItem(${index})">🗑️ Kaldır</button>
             </div>
@@ -613,10 +613,17 @@
       updateSummary();
     }
 
-    // Update quantity
+    // Update quantity (max 3 per item)
+    const MAX_QTY_PER_ITEM = 3;
+    
     function updateQty(index, delta) {
       if (cartData[index]) {
-        cartData[index].qty = Math.max(1, (cartData[index].qty || 1) + delta);
+        const newQty = (cartData[index].qty || 1) + delta;
+        if (newQty > MAX_QTY_PER_ITEM) {
+          showNotification(`Bir üründen en fazla ${MAX_QTY_PER_ITEM} adet alabilirsiniz`, {type: 'warn', duration: 2500});
+          return;
+        }
+        cartData[index].qty = Math.max(1, newQty);
         saveCart();
         renderCart();
       }
