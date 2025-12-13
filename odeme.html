@@ -470,7 +470,8 @@
       }
 
       const ibanText = (document.getElementById('iban').textContent || '').trim();
-      const totalText = (document.getElementById('total').textContent || '').replace(/[^0-9.,]/g, '');
+      const totalEl = document.getElementById('grandTotal') || document.getElementById('total');
+      const totalText = totalEl ? (totalEl.textContent || '').replace(/[^0-9.,]/g, '') : '0';
       
       // Kullanıcı varsayılan adresini çöz (varsa)
       function buildDefaultAddressFor(email){
