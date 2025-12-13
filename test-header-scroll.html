@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Header Scroll Test</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 300vh;
+        }
+        
+        /* TEST HEADER */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(255,255,255,0.95);
+            padding: 15px 20px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #764ba2;
+        }
+        
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .nav-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .btn-green { background: #10b981; color: white; }
+        .btn-orange { background: #f59e0b; color: white; }
+        
+        /* İçerik */
+        .content {
+            padding-top: 100px;
+            padding: 120px 20px 50px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 { color: #333; margin-bottom: 10px; }
+        .card p { color: #666; line-height: 1.6; }
+        
+        /* Debug panel */
+        #debug {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.9);
+            color: #0f0;
+            padding: 15px;
+            border-radius: 12px;
+            font-family: monospace;
+            font-size: 12px;
+            z-index: 9999;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        #debug .line { margin: 3px 0; }
+        #debug .success { color: #0f0; }
+        #debug .error { color: #f00; }
+        #debug .info { color: #0ff; }
+        #debug .warn { color: #ff0; }
+        
+        /* Method selector */
+        #methodSelector {
+            position: fixed;
+            top: 80px;
+            right: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 999;
+        }
+        
+        #methodSelector select {
+            padding: 8px;
+            font-size: 14px;
+            border-radius: 4px;
+        }
+        
+        #methodSelector button {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background: #764ba2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <header id="mainHeader">
+        <div class="header-content">
+            <div class="logo">🌸 Test</div>
+            <div class="nav-buttons">
+                <button class="nav-btn btn-green">Sepet</button>
+                <button class="nav-btn btn-orange">İletişim</button>
+            </div>
+        </div>
+    </header>
+    
+    <div id="methodSelector">
+        <strong>Scroll Yöntemi:</strong><br>
+        <select id="scrollMethod">
+            <option value="1">1: Basic scroll event</option>
+            <option value="2">2: requestAnimationFrame</option>
+            <option value="3">3: Touch events only</option>
+            <option value="4">4: Intersection Observer</option>
+            <option value="5">5: CSS scroll-behavior</option>
+            <option value="6">6: Hybrid (scroll + touch)</option>
+        </select>
+        <button onclick="applyMethod()">Uygula</button>
+    </div>
+    
+    <div class="content">
+        <div class="card">
+            <h2>📱 Mobil Header Scroll Test</h2>
+            <p>Bu sayfa farklı scroll yöntemlerini test etmek için oluşturuldu.</p>
+            <p>Aşağı scroll yapınca header kaybolmalı, yukarı scroll yapınca gelmeli.</p>
+        </div>
+        
+        <!-- Çok sayıda kart -->
+        <div class="card"><h2>Kart 1</h2><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p></div>
+        <div class="card"><h2>Kart 2</h2><p>Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p></div>
+        <div class="card"><h2>Kart 3</h2><p>Ut enim ad minim veniam, quis nostrud exercitation.</p></div>
+        <div class="card"><h2>Kart 4</h2><p>Duis aute irure dolor in reprehenderit in voluptate.</p></div>
+        <div class="card"><h2>Kart 5</h2><p>Excepteur sint occaecat cupidatat non proident.</p></div>
+        <div class="card"><h2>Kart 6</h2><p>Sunt in culpa qui officia deserunt mollit anim id est laborum.</p></div>
+        <div class="card"><h2>Kart 7</h2><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p></div>
+        <div class="card"><h2>Kart 8</h2><p>Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p></div>
+        <div class="card"><h2>Kart 9</h2><p>Ut enim ad minim veniam, quis nostrud exercitation.</p></div>
+        <div class="card"><h2>Kart 10</h2><p>Duis aute irure dolor in reprehenderit in voluptate.</p></div>
+    </div>
+    
+    <div id="debug">
+        <div class="line info">Debug Console Hazır</div>
+    </div>
+
+    <script>
+        var header = document.getElementById('mainHeader');
+        var debug = document.getElementById('debug');
+        var currentMethod = null;
+        var scrollListeners = [];
+        
+        function log(msg, type) {
+            type = type || 'info';
+            var line = document.createElement('div');
+            line.className = 'line ' + type;
+            line.textContent = new Date().toLocaleTimeString() + ' - ' + msg;
+            debug.insertBefore(line, debug.firstChild);
+            if (debug.children.length > 50) {
+                debug.removeChild(debug.lastChild);
+            }
+        }
+        
+        function hideHeader() {
+            header.style.transform = 'translateY(-100%)';
+            header.style.opacity = '0';
+            log('Header GİZLENDİ', 'warn');
+        }
+        
+        function showHeader() {
+            header.style.transform = 'translateY(0)';
+            header.style.opacity = '1';
+            log('Header GÖSTERİLDİ', 'success');
+        }
+        
+        function clearListeners() {
+            scrollListeners.forEach(function(item) {
+                window.removeEventListener(item.event, item.fn);
+                document.removeEventListener(item.event, item.fn);
+            });
+            scrollListeners = [];
+            log('Eski listener\'lar temizlendi', 'info');
+        }
+        
+        // ========== YÖNTEM 1: Basic Scroll Event ==========
+        function method1() {
+            log('Yöntem 1: Basic scroll event', 'info');
+            var lastScrollTop = 0;
+            
+            function onScroll() {
+                var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                
+                if (scrollTop < 80) {
+                    showHeader();
+                    lastScrollTop = scrollTop;
+                    return;
+                }
+                
+                if (scrollTop > lastScrollTop + 10) {
+                    hideHeader();
+                } else if (scrollTop < lastScrollTop - 10) {
+                    showHeader();
+                }
+                lastScrollTop = scrollTop;
+            }
+            
+            window.addEventListener('scroll', onScroll, false);
+            scrollListeners.push({event: 'scroll', fn: onScroll});
+        }
+        
+        // ========== YÖNTEM 2: requestAnimationFrame ==========
+        function method2() {
+            log('Yöntem 2: requestAnimationFrame', 'info');
+            var lastScrollTop = 0;
+            var ticking = false;
+            
+            function update() {
+                var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                
+                if (scrollTop < 80) {
+                    showHeader();
+                } else if (scrollTop > lastScrollTop + 10) {
+                    hideHeader();
+                } else if (scrollTop < lastScrollTop - 10) {
+                    showHeader();
+                }
+                lastScrollTop = scrollTop;
+                ticking = false;
+            }
+            
+            function onScroll() {
+                if (!ticking) {
+                    requestAnimationFrame(update);
+                    ticking = true;
+                }
+            }
+            
+            window.addEventListener('scroll', onScroll, {passive: true});
+            scrollListeners.push({event: 'scroll', fn: onScroll});
+        }
+        
+        // ========== YÖNTEM 3: Touch Events Only ==========
+        function method3() {
+            log('Yöntem 3: Touch events only', 'info');
+            var startY = 0;
+            var lastY = 0;
+            
+            function onTouchStart(e) {
+                startY = e.touches[0].pageY;
+                lastY = startY;
+            }
+            
+            function onTouchMove(e) {
+                var currentY = e.touches[0].pageY;
+                var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                
+                if (scrollTop < 80) {
+                    showHeader();
+                    lastY = currentY;
+                    return;
+                }
+                
+                var delta = lastY - currentY;
+                
+                // Yukarı swipe (aşağı scroll) - gizle
+                if (delta > 20) {
+                    hideHeader();
+                    lastY = currentY;
+                }
+                // Aşağı swipe (yukarı scroll) - göster
+                else if (delta < -20) {
+                    showHeader();
+                    lastY = currentY;
+                }
+            }
+            
+            document.addEventListener('touchstart', onTouchStart, {passive: true});
+            document.addEventListener('touchmove', onTouchMove, {passive: true});
+            scrollListeners.push({event: 'touchstart', fn: onTouchStart});
+            scrollListeners.push({event: 'touchmove', fn: onTouchMove});
+        }
+        
+        // ========== YÖNTEM 4: Intersection Observer ==========
+        function method4() {
+            log('Yöntem 4: Intersection Observer', 'info');
+            
+            // Sentinel element oluştur
+            var sentinel = document.createElement('div');
+            sentinel.id = 'scroll-sentinel';
+            sentinel.style.cssText = 'position:absolute;top:150px;left:0;right:0;height:1px;';
+            document.body.insertBefore(sentinel, document.body.firstChild);
+            
+            var observer = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        showHeader();
+                    } else {
+                        hideHeader();
+                    }
+                });
+            }, {threshold: 0});
+            
+            observer.observe(sentinel);
+            log('Sentinel element oluşturuldu', 'info');
+        }
+        
+        // ========== YÖNTEM 5: CSS scroll-behavior (scroll snap) ==========
+        function method5() {
+            log('Yöntem 5: CSS + scroll event', 'info');
+            
+            // CSS class toggle
+            var lastScrollTop = 0;
+            
+            function onScroll() {
+                var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                
+                if (scrollTop < 80) {
+                    header.classList.remove('hidden');
+                } else if (scrollTop > lastScrollTop) {
+                    header.classList.add('hidden');
+                } else {
+                    header.classList.remove('hidden');
+                }
+                lastScrollTop = scrollTop;
+            }
+            
+            // CSS ekle
+            var style = document.createElement('style');
+            style.id = 'method5-style';
+            style.textContent = 'header.hidden { transform: translateY(-100%) !important; opacity: 0 !important; }';
+            document.head.appendChild(style);
+            
+            window.addEventListener('scroll', onScroll, {passive: true});
+            scrollListeners.push({event: 'scroll', fn: onScroll});
+        }
+        
+        // ========== YÖNTEM 6: Hybrid (scroll + touch) ==========
+        function method6() {
+            log('Yöntem 6: Hybrid (scroll + touch)', 'info');
+            
+            var lastScrollTop = window.pageYOffset || 0;
+            var touchStartY = 0;
+            var isHidden = false;
+            
+            function hide() {
+                if (!isHidden) {
+                    header.style.transform = 'translateY(-100%)';
+                    header.style.opacity = '0';
+                    header.style.pointerEvents = 'none';
+                    isHidden = true;
+                    log('HIDDEN', 'warn');
+                }
+            }
+            
+            function show() {
+                if (isHidden) {
+                    header.style.transform = 'translateY(0)';
+                    header.style.opacity = '1';
+                    header.style.pointerEvents = 'auto';
+                    isHidden = false;
+                    log('SHOWN', 'success');
+                }
+            }
+            
+            // Scroll event
+            function onScroll() {
+                var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                
+                if (scrollTop <= 80) {
+                    show();
+                    lastScrollTop = scrollTop;
+                    return;
+                }
+                
+                var delta = scrollTop - lastScrollTop;
+                
+                if (delta > 8) {
+                    hide();
+                    lastScrollTop = scrollTop;
+                } else if (delta < -8) {
+                    show();
+                    lastScrollTop = scrollTop;
+                }
+            }
+            
+            // Touch events
+            function onTouchStart(e) {
+                touchStartY = e.touches[0].clientY;
+            }
+            
+            function onTouchMove(e) {
+                var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                if (scrollTop <= 80) {
+                    show();
+                    return;
+                }
+                
+                var touchY = e.touches[0].clientY;
+                var delta = touchStartY - touchY;
+                
+                if (delta > 25) {
+                    hide();
+                    touchStartY = touchY;
+                } else if (delta < -25) {
+                    show();
+                    touchStartY = touchY;
+                }
+            }
+            
+            window.addEventListener('scroll', onScroll, {passive: true});
+            document.addEventListener('touchstart', onTouchStart, {passive: true});
+            document.addEventListener('touchmove', onTouchMove, {passive: true});
+            
+            scrollListeners.push({event: 'scroll', fn: onScroll});
+            scrollListeners.push({event: 'touchstart', fn: onTouchStart});
+            scrollListeners.push({event: 'touchmove', fn: onTouchMove});
+        }
+        
+        // Yöntemi uygula
+        function applyMethod() {
+            clearListeners();
+            showHeader();
+            
+            // Eski style'ı temizle
+            var oldStyle = document.getElementById('method5-style');
+            if (oldStyle) oldStyle.remove();
+            var oldSentinel = document.getElementById('scroll-sentinel');
+            if (oldSentinel) oldSentinel.remove();
+            header.classList.remove('hidden');
+            
+            var method = document.getElementById('scrollMethod').value;
+            log('=== YÖNTEM ' + method + ' UYGULANIYIOR ===', 'success');
+            
+            switch(method) {
+                case '1': method1(); break;
+                case '2': method2(); break;
+                case '3': method3(); break;
+                case '4': method4(); break;
+                case '5': method5(); break;
+                case '6': method6(); break;
+            }
+        }
+        
+        // Sayfa yüklendiğinde varsayılan yöntemi uygula
+        document.addEventListener('DOMContentLoaded', function() {
+            log('Sayfa yüklendi', 'success');
+            log('Cihaz: ' + navigator.userAgent.substring(0, 50), 'info');
+            log('Ekran: ' + window.innerWidth + 'x' + window.innerHeight, 'info');
+            
+            // Varsayılan olarak Yöntem 6'yı uygula
+            document.getElementById('scrollMethod').value = '6';
+            applyMethod();
+        });
+    </script>
+</body>
+</html>
