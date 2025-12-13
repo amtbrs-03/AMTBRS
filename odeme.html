@@ -701,6 +701,8 @@
           const successMsg = '<p><strong>Siparişiniz başarıyla kaydedildi!</strong></p>' +
             '<p>Sipariş No: <span class="code">' + finalId + '</span></p>' +
             '<p>Ödemeniz kontrol edildikten sonra siparişiniz işleme alınacaktır.</p>';
+          btn.textContent = 'Siparişi Bildir';
+          btn.disabled = false;
           showNotification('✅ Başarılı', successMsg, 'success', () => {
             window.location.href = '/anasayfa.html';
           });
