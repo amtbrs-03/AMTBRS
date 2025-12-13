@@ -20,11 +20,14 @@
       });
     } catch(_){}
   })();
-  
-      [/â€™/g,"'"],[/â€œ/g,'"'],[/â€�/g,'"'],[/â€“/g,'–'],[/â€”/g,'—'],
-      [/ğŸ’¾/g,'💾'],[/ğŸ”„/g,'🔄'],[/ğŸ‘¥/g,'👥'],[/ğŸ“¦/g,'📦'],[/ğŸ§¾/g,'🧾'],[/â•/g,'➕'],[/ğŸŒ¹/g,'🌹'],[/ğŸŒ¸/g,'🌸'],[/ğŸ“Œ/g,'🖼️'],[/ğŸ›ï¸/g,'🛠️']
+  // Mojibake düzeltici - Türkçe karakterleri düzelt
+  (function(){
+    const root = document.documentElement;
+    const mapSeq = [
+      [/Ã¼/g,'ü'],[/Ã¶/g,'ö'],[/ÅŸ/g,'ş'],[/Ä±/g,'ı'],[/ÄŸ/g,'ğ'],[/Ã§/g,'ç'],
+      [/Ãœ/g,'Ü'],[/Ã–/g,'Ö'],[/Åž/g,'Ş'],[/Ä°/g,'İ'],[/Äž/g,'Ğ'],[/Ã‡/g,'Ç']
     ];
-    function needsFix(str){ return /Ã|Ä|Å|â‚º|ğŸ|â•/.test(str); }
+    function needsFix(str){ return /Ã|Ä|Å/.test(str); }
     function byteReDecode(str){
       try { const bytes = new Uint8Array(str.length); for (let i=0;i<str.length;i++) bytes[i]=str.charCodeAt(i)&0xFF; return new TextDecoder().decode(bytes);}catch(e){return str;}
     }
@@ -40,8 +43,8 @@
         const n=walker.currentNode; const t=n.nodeValue; if(t && needsFix(t)){ const f=fix(t); if(f!==t) n.nodeValue=f; }
       }
     }
-    function reveal(){ root.classList.remove('__fixing'); }
-    function runAll(){ sweep(); // birkaç tekrar ile geç yüklenenleri de yakala
+    function reveal(){ if(root) root.classList.remove('__fixing'); }
+    function runAll(){ sweep();
       let c=0; const timer=setInterval(()=>{ sweep(); if(++c>2){ clearInterval(timer); reveal(); } },150); }
     if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', runAll); else runAll();
   })();
