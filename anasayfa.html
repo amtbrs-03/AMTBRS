@@ -755,9 +755,9 @@
                 top: 0; 
                 left: 0; 
                 right: 0; 
-                z-index: 1; /* Çok düşük z-index - içerik header üstünde görünsün */
+                z-index: 1000; /* Yüksek z-index - header üstte görünsün */
                 padding: 0.5rem 1rem 1rem 1rem;
-                transition: opacity 0.4s ease, background 0.4s ease, visibility 0.4s ease;
+                transition: transform 0.3s ease-out, opacity 0.3s ease-out;
                 background: transparent !important; /* Arka plan yok, sadece butonlar görünsün */
                 backdrop-filter: none !important;
                 border-bottom: none !important;
@@ -4857,12 +4857,10 @@ fetch('site-settings.json')
 
 // Mobilde scroll yönüne göre header gizle/göster
 (function() {
-    // Mobil kontrolü - resize'da da çalışsın
+    // Mobil kontrolü
     function isMobile() {
         return window.innerWidth <= 700;
     }
-    
-    if (!isMobile()) return;
     
     const header = document.querySelector('header');
     const productsWrapper = document.querySelector('.products-wrapper');
@@ -4874,15 +4872,33 @@ fetch('site-settings.json')
     console.log('✅ Mobil header scroll başlatıldı');
     
     // Mobilde products-wrapper'a padding-top ekle (header fixed olduğu için)
-    if (productsWrapper) {
-        const headerHeight = header.offsetHeight;
-        productsWrapper.style.paddingTop = (headerHeight + 10) + 'px';
+    function updatePadding() {
+        if (productsWrapper && isMobile()) {
+            const headerHeight = header.offsetHeight;
+            productsWrapper.style.paddingTop = (headerHeight + 10) + 'px';
+        } else if (productsWrapper) {
+            productsWrapper.style.paddingTop = '';
+        }
     }
+    updatePadding();
+    window.addEventListener('resize', updatePadding);
     
     let lastScrollY = 0;
     let isHidden = false;
     
     function handleScroll() {
+        // Sadece mobilde çalış
+        if (!isMobile()) {
+            // Masaüstüne geçilirse header'ı resetle
+            if (isHidden) {
+                header.style.transform = '';
+                header.style.opacity = '';
+                header.style.pointerEvents = '';
+                isHidden = false;
+            }
+            return;
+        }
+        
         const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
         
         // Sayfa en üstteyse her zaman göster
@@ -4932,10 +4948,13 @@ fetch('site-settings.json')
     // Touch events for iOS
     let touchStartY = 0;
     document.addEventListener('touchstart', function(e) {
+        if (!isMobile()) return;
         touchStartY = e.touches[0].clientY;
     }, { passive: true });
     
     document.addEventListener('touchmove', function(e) {
+        if (!isMobile()) return;
+        
         const touchY = e.touches[0].clientY;
         const diff = touchStartY - touchY;
         
