@@ -619,11 +619,21 @@
             
             /* Mobil filtre çubuğu - sticky davranış */
             #filterBar {
+                position: -webkit-sticky;
                 position: sticky;
                 top: 0;
                 z-index: 999;
                 margin-top: 0 !important;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                background: rgba(255,255,255,0.98) !important;
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+            }
+            
+            /* Sticky için products-wrapper'dan perspective kaldır */
+            .products-wrapper {
+                perspective: none !important;
+                transform-style: flat !important;
             }
             
             #filterBar.sticky-active {
