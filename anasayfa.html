@@ -4859,127 +4859,52 @@ fetch('site-settings.json')
         }
     });
 
-// Mobilde scroll yönüne göre header gizle/göster
+// Mobilde scroll yönüne göre header gizle/göster - BASİT VERSİYON
 (function() {
+    'use strict';
+    
     // Mobil kontrolü
     function isMobile() {
         return window.innerWidth <= 700;
     }
     
-    const header = document.querySelector('header');
-    const productsWrapper = document.querySelector('.products-wrapper');
-    if (!header) {
-        console.log('❌ Header bulunamadı');
-        return;
-    }
+    var header = document.querySelector('header');
+    if (!header) return;
     
-    console.log('✅ Mobil header scroll sistemi başlatıldı');
+    var lastScrollTop = 0;
+    var headerHeight = header.offsetHeight;
     
-    // Mobilde products-wrapper'a padding-top ekle (header fixed olduğu için)
-    function updatePadding() {
-        if (productsWrapper && isMobile()) {
-            const headerHeight = header.offsetHeight;
-            productsWrapper.style.paddingTop = (headerHeight + 10) + 'px';
-        } else if (productsWrapper) {
-            productsWrapper.style.paddingTop = '';
-        }
-    }
-    updatePadding();
-    window.addEventListener('resize', updatePadding);
-    
-    let lastScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
-    let isHidden = false;
-    
-    function hideHeader() {
-        if (!isHidden) {
-            header.classList.add('header-hidden');
-            isHidden = true;
-            console.log('🔽 Header gizlendi');
-        }
-    }
-    
-    function showHeader() {
-        if (isHidden) {
-            header.classList.remove('header-hidden');
-            isHidden = false;
-            console.log('🔼 Header gösterildi');
-        }
-    }
-    
-    // Sayfa yüklendiğinde scroll pozisyonuna göre header durumunu ayarla
-    if (isMobile() && lastScrollY > 50) {
-        hideHeader();
-    }
-    
-    function handleScroll() {
-        // Sadece mobilde çalış
-        if (!isMobile()) {
-            // Masaüstüne geçilirse header'ı resetle
-            if (isHidden) {
-                showHeader();
-            }
-            return;
-        }
-        
-        const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
-        
-        // Sayfa en üstteyse her zaman göster
-        if (currentScrollY <= 50) {
-            showHeader();
-            lastScrollY = currentScrollY;
-            return;
-        }
-        
-        const scrollDiff = currentScrollY - lastScrollY;
-        
-        // Aşağı scroll (15px'den fazla) - gizle
-        if (scrollDiff > 15 && !isHidden) {
-            hideHeader();
-        }
-        // Yukarı scroll (15px'den fazla) - göster
-        else if (scrollDiff < -15 && isHidden) {
-            showHeader();
-        }
-        
-        lastScrollY = currentScrollY;
-    }
-    
-    // Scroll listener
-    let ticking = false;
+    // Scroll olayını dinle
     window.addEventListener('scroll', function() {
-        if (!ticking) {
-            window.requestAnimationFrame(function() {
-                handleScroll();
-                ticking = false;
-            });
-            ticking = true;
+        if (!isMobile()) {
+            header.style.display = '';
+            header.style.transform = '';
+            return;
         }
-    }, { passive: true });
-    
-    // Touch events for iOS
-    let touchStartY = 0;
-    document.addEventListener('touchstart', function(e) {
-        if (!isMobile()) return;
-        touchStartY = e.touches[0].clientY;
-    }, { passive: true });
-    
-    document.addEventListener('touchmove', function(e) {
-        if (!isMobile()) return;
         
-        const touchY = e.touches[0].clientY;
-        const diff = touchStartY - touchY;
+        var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
         
-        if (window.pageYOffset > 50) {
-            if (diff > 40 && !isHidden) {
-                hideHeader();
-            } else if (diff < -40 && isHidden) {
-                showHeader();
-            }
+        // Sayfa en üstte ise göster
+        if (scrollTop < 100) {
+            header.style.display = '';
+            header.style.transform = 'translateY(0)';
+            lastScrollTop = scrollTop;
+            return;
         }
-        touchStartY = touchY;
-    }, { passive: true });
-    
-    console.log('✅ Mobil header scroll sistemi hazır');
+        
+        // Aşağı scroll - gizle
+        if (scrollTop > lastScrollTop + 20) {
+            header.style.transform = 'translateY(-100%)';
+            header.style.opacity = '0';
+            lastScrollTop = scrollTop;
+        }
+        // Yukarı scroll - göster
+        else if (scrollTop < lastScrollTop - 20) {
+            header.style.transform = 'translateY(0)';
+            header.style.opacity = '1';
+            lastScrollTop = scrollTop;
+        }
+    }, false);
 })();
 </script>
 </html>
