@@ -64,16 +64,6 @@
     .loading{ text-align:center; padding:3rem; color:var(--muted); font-size:1.1rem; }
     .error{ background:#fee; color:#c33; padding:1.5rem; border-radius:12px; border-left:4px solid #c33; }
     
-    /* Sipariş Notu buton stilleri */
-    #editNoteBtn.has-note {
-      background: #6b7280 !important;
-      color: #fff !important;
-    }
-    #editNoteBtn.no-note {
-      background: #10b981 !important;
-      color: #fff !important;
-    }
-    
     /* Müşteri notu buton stilleri */
     #customerNoteBtn.has-unread-note {
       background: #dc2626 !important;
@@ -107,7 +97,6 @@
         <a href="siparisler.html" class="btn btn-white">← Sipariş Listesine Dön</a>
         <button id="editOrderBtn" class="btn">✏️ Düzenle</button>
         <button id="customerNoteBtn" class="btn no-note">💬 Müşteri Notu</button>
-        <button id="editNoteBtn" class="btn btn-white">📝 Admin Notu</button>
         <button id="deleteOrderBtn" class="btn btn-orange" style="background:#dc2626">🗑️ Sil</button>
       </div>
     </div>
@@ -337,14 +326,6 @@
         html += '</div>';
       }
       
-      // Admin Notu (admin tarafından eklenen not)
-      if (order.adminNote) {
-        html += '<div class="info-item">';
-        html += '<div class="info-label">📝 Admin Notu</div>';
-        html += `<div class="info-value" style="white-space:pre-wrap;background:#f0fdf4;padding:0.75rem;border-radius:8px;border:1px solid #10b981;color:#065f46;">${escapeHtml(order.adminNote)}</div>`;
-        html += '</div>';
-      }
-      
       html += '</div>';
       
       document.getElementById('orderContent').innerHTML = html;
@@ -363,19 +344,6 @@
           }
         } else {
           customerNoteBtn.classList.add('no-note');
-        }
-      }
-      
-      // Admin Notu butonunu güncelle
-      const noteBtn = document.getElementById('editNoteBtn');
-      if (noteBtn) {
-        noteBtn.classList.remove('has-note', 'no-note');
-        if (order.adminNote && order.adminNote.trim()) {
-          noteBtn.classList.add('has-note');
-          noteBtn.innerHTML = '📝 Admin Notu (!)';
-        } else {
-          noteBtn.classList.add('no-note');
-          noteBtn.innerHTML = '📝 Admin Notu';
         }
       }
     }
@@ -919,7 +887,6 @@
     document.getElementById('createInvoiceBtn')?.addEventListener('click', createInvoice);
     document.getElementById('editOrderBtn')?.addEventListener('click', editOrder);
     document.getElementById('customerNoteBtn')?.addEventListener('click', viewCustomerNote);
-    document.getElementById('editNoteBtn')?.addEventListener('click', openNoteEditor);
     document.getElementById('deleteOrderBtn')?.addEventListener('click', deleteOrder);
     // Inline address editor wiring (after first render, re-wire inside render)
 
@@ -1117,74 +1084,6 @@
         
       } catch (e) {
         console.warn('noteRead güncellenirken hata:', e);
-      }
-    }
-
-    // Admin Notu Düzenleme
-    async function openNoteEditor() {
-      if (!currentOrder) { alert('Sipariş yüklenemedi.'); return; }
-      
-      const currentNote = currentOrder.adminNote || '';
-      const newNote = prompt('📝 Admin Notu:', currentNote);
-      
-      if (newNote === null) return; // İptal edildi
-      
-      try {
-        const token = getGitHubToken();
-        if (!token || token === 'BYPASS') {
-          alert('⚠️ GitHub token gerekli. Admin panelinden token girin.');
-          return;
-        }
-        
-        const orderId = currentOrder.id;
-        const orderPath = `orders/${orderId}.json`;
-        
-        // Mevcut siparişi al
-        const getRes = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/${orderPath}?ref=site-release&t=${Date.now()}`, {
-          headers: { 'Accept': 'application/vnd.github.v3+json', 'Authorization': `token ${token}` }
-        });
-        
-        if (!getRes.ok) {
-          alert('❌ Sipariş dosyası bulunamadı.');
-          return;
-        }
-        
-        const fileData = await getRes.json();
-        let orderData;
-        try {
-          orderData = JSON.parse(atob(fileData.content));
-        } catch {
-          const dl = await fetch(fileData.download_url + `?t=${Date.now()}`);
-          orderData = await dl.json();
-        }
-        
-        // Admin notunu güncelle
-        orderData.adminNote = newNote.trim();
-        
-        // GitHub'a kaydet
-        const putRes = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/${orderPath}`, {
-          method: 'PUT',
-          headers: { 'Accept': 'application/vnd.github.v3+json', 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            message: `admin: update order note ${orderId}`,
-            content: btoa(unescape(encodeURIComponent(JSON.stringify(orderData, null, 2)))),
-            sha: fileData.sha,
-            branch: 'site-release'
-          })
-        });
-        
-        if (putRes.ok) {
-          alert('✅ Sipariş notu kaydedildi!');
-          currentOrder.note = newNote.trim();
-          renderOrderDetail(currentOrder);
-        } else {
-          const txt = await putRes.text();
-          console.error('Not güncelleme hatası:', putRes.status, txt);
-          alert('❌ Not kaydedilemedi.');
-        }
-      } catch (e) {
-        console.error('Not kaydetme hatası:', e);
-        alert('❌ Not kaydedilirken bir hata oluştu.');
       }
     }
 
