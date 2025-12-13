@@ -4,10 +4,10 @@
   "customerEmail": "amtbrs@icloud.com",
   "customerName": "AHMET BURSA",
   "customerPhone": "+90 530 306 9081",
-  "address": "Fevziçakmak mah., çağlayan mahallesi, Kağıthane, İstanbul, Posta Kodu 34100",
+  "address": "FevziÃ§akmak mah., Ã§aÄlayan mahallesi, KaÄÄ±thane, Ä°stanbul, Posta Kodu 34100",
   "iban": "TRXX 0006 1005 1978 6457 8413 26",
   "note": "test 2 3 4 5",
-  "noteRead": false,
+  "noteRead": true,
   "status": "pending",
   "items": [
     {
@@ -19,7 +19,7 @@
     },
     {
       "id": "IMG_1966.JPG",
-      "name": "PHİLODENDRON FELİX",
+      "name": "PHÄ°LODENDRON FELÄ°X",
       "price": 1200,
       "qty": 4,
       "image": "images/products/IMG_1966.JPG"
