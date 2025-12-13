@@ -174,6 +174,68 @@ ERN-ÇİÇEK Ekibi
 https://ern-cicek.com.tr
                   `.trim();
                   
+                  // HTML version for better presentation
+                  const itemsHtml = order.items.map((item) => 
+                    `<tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">${item.name}</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;text-align:center;">${item.qty || item.quantity || 1}</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;text-align:right;">₺${item.price}</td></tr>`
+                  ).join('');
+                  
+                  const customerEmailHtml = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f8f6f3;margin:0;padding:20px;">
+  <div style="max-width:600px;margin:0 auto;background:white;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.1);">
+    <div style="background:linear-gradient(135deg,#0b2f1f,#1a4a35);color:white;padding:30px;text-align:center;">
+      <h1 style="margin:0;font-size:24px;">🌸 ERN-ÇİÇEK</h1>
+      <p style="margin:10px 0 0;opacity:0.9;">Siparişiniz Alındı!</p>
+    </div>
+    <div style="padding:30px;">
+      <p style="color:#475569;font-size:16px;">Sayın <strong>${order.customerName}</strong>,</p>
+      <p style="color:#475569;">Siparişiniz başarıyla oluşturuldu. Aşağıda sipariş detaylarınızı bulabilirsiniz.</p>
+      
+      <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:15px;margin:20px 0;">
+        <p style="margin:0;color:#166534;font-weight:600;">✅ Sipariş Numarası: ${orderId}</p>
+      </div>
+      
+      <h3 style="color:#0b2f1f;margin:20px 0 10px;">📦 Sipariş Detayları</h3>
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="background:#f1f5f9;">
+            <th style="padding:10px;text-align:left;color:#475569;">Ürün</th>
+            <th style="padding:10px;text-align:center;color:#475569;">Adet</th>
+            <th style="padding:10px;text-align:right;color:#475569;">Fiyat</th>
+          </tr>
+        </thead>
+        <tbody>${itemsHtml}</tbody>
+        <tfoot>
+          <tr style="background:#0b2f1f;color:white;">
+            <td colspan="2" style="padding:12px;font-weight:600;">TOPLAM</td>
+            <td style="padding:12px;text-align:right;font-weight:600;">₺${order.total}</td>
+          </tr>
+        </tfoot>
+      </table>
+      
+      <h3 style="color:#0b2f1f;margin:25px 0 10px;">📍 Teslimat Adresi</h3>
+      <p style="color:#475569;background:#f8fafc;padding:15px;border-radius:8px;margin:0;">${order.address || 'Belirtilmedi'}</p>
+      
+      <div style="background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;padding:15px;margin:25px 0;">
+        <p style="margin:0;color:#92400e;font-size:14px;">💳 <strong>Önemli:</strong> Ödemeniz gerçekleştikten sonra ürünleriniz kargoyla adresinize gönderilecektir.</p>
+      </div>
+      
+      <p style="color:#475569;margin-top:25px;">Sorularınız için bize ulaşabilirsiniz:</p>
+      <p style="margin:5px 0;"><a href="https://wa.me/905384179081" style="color:#16a34a;text-decoration:none;">📱 WhatsApp: +90 538 417 90 81</a></p>
+      <p style="margin:5px 0;"><a href="mailto:amtbrs@icloud.com" style="color:#2563eb;text-decoration:none;">📧 Email: amtbrs@icloud.com</a></p>
+      
+      <p style="color:#475569;margin-top:30px;">Bizi tercih ettiğiniz için teşekkür ederiz! 🌺</p>
+      <p style="color:#0b2f1f;font-weight:600;">ERN-ÇİÇEK Ekibi</p>
+    </div>
+    <div style="background:#f8fafc;padding:20px;text-align:center;border-top:1px solid #e2e8f0;">
+      <p style="margin:0;color:#94a3b8;font-size:12px;">© 2025 ERN-ÇİÇEK — <a href="https://ern-cicek.com.tr" style="color:#16a34a;">ern-cicek.com.tr</a></p>
+    </div>
+  </div>
+</body>
+</html>`.trim();
+                  
                   const customerRes = await fetch('https://api.resend.com/emails', {
                     method: 'POST',
                     headers: {
@@ -184,7 +246,8 @@ https://ern-cicek.com.tr
                       from: fromEmail,
                       to: order.customerEmail,
                       subject: `Siparişiniz Alındı - ${orderId} | ERN-ÇİÇEK`,
-                      text: customerEmailBody
+                      text: customerEmailBody,
+                      html: customerEmailHtml
                     })
                   });
                   
