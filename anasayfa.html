@@ -1768,6 +1768,12 @@
                                     document.getElementById('userContainer').classList.add('hidden');
                                     
                                     showNotification('⚠️ Hesabınız silinmiş veya devre dışı bırakılmış. Lütfen tekrar kayıt olun.', {type: 'warn', duration: 5000});
+                                    
+                                    // Kayıt formuna yönlendir
+                                    setTimeout(function() {
+                                        openAuthModal();
+                                        switchTab('register', document.querySelector('.form-tab'));
+                                    }, 1000);
                                 }
                             } catch(e) {
                                 console.log('checkDeletedUser: Could not verify user (network error)');
@@ -3018,7 +3024,9 @@
                                         console.log('loginUser: ⚠️ User deleted from GitHub - blocking login');
                                         localStorage.removeItem('user_' + email);
                                         localStorage.removeItem('currentUser');
-                                        showNotification('❌ Bu hesap silinmiş veya devre dışı bırakılmış.', {type: 'error', duration: 4000});
+                                        showNotification('❌ Bu hesap silinmiş veya devre dışı bırakılmış. Lütfen tekrar kayıt olun.', {type: 'error', duration: 4000});
+                                        // Kayıt formuna yönlendir
+                                        switchTab('register', document.querySelector('.form-tab'));
                                         return;
                                     }
                                     // Remote'daki güncel veriyi kullan
