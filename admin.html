@@ -3265,10 +3265,16 @@ try {
       }
       function setSiteSettings(s){ localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); }
       
-      // GitHub'dan site-settings.json yükle ve localStorage'a kaydet
+      // GitHub'dan site-settings.json yükle ve localStorage'a kaydet (cache'i atla)
       async function fetchAndSyncSettings(){
         try {
-          const res = await fetch('/site-settings.json?t=' + Date.now());
+          // Raw GitHub URL cache bypass için kullan
+          const rawUrl = 'https://raw.githubusercontent.com/amtbrs-03/AMTBRS/site-release/site-settings.json?t=' + Date.now();
+          let res = await fetch(rawUrl);
+          if(!res.ok){
+            // Fallback to local path
+            res = await fetch('/site-settings.json?t=' + Date.now());
+          }
           if(res.ok){
             const data = await res.json();
             setSiteSettings(data);
