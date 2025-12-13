@@ -4872,13 +4872,11 @@ fetch('site-settings.json')
     if (!header) return;
     
     var lastScrollTop = 0;
-    var headerHeight = header.offsetHeight;
     
     // Scroll olayını dinle
     window.addEventListener('scroll', function() {
         if (!isMobile()) {
-            header.style.display = '';
-            header.style.transform = '';
+            header.style.cssText = '';
             return;
         }
         
@@ -4886,25 +4884,30 @@ fetch('site-settings.json')
         
         // Sayfa en üstte ise göster
         if (scrollTop < 100) {
-            header.style.display = '';
-            header.style.transform = 'translateY(0)';
+            header.style.setProperty('transform', 'translateY(0)', 'important');
+            header.style.setProperty('opacity', '1', 'important');
+            header.style.setProperty('visibility', 'visible', 'important');
             lastScrollTop = scrollTop;
             return;
         }
         
         // Aşağı scroll - gizle
-        if (scrollTop > lastScrollTop + 20) {
-            header.style.transform = 'translateY(-100%)';
-            header.style.opacity = '0';
+        if (scrollTop > lastScrollTop + 15) {
+            header.style.setProperty('transform', 'translateY(-100%)', 'important');
+            header.style.setProperty('opacity', '0', 'important');
+            header.style.setProperty('visibility', 'hidden', 'important');
             lastScrollTop = scrollTop;
         }
         // Yukarı scroll - göster
-        else if (scrollTop < lastScrollTop - 20) {
-            header.style.transform = 'translateY(0)';
-            header.style.opacity = '1';
+        else if (scrollTop < lastScrollTop - 15) {
+            header.style.setProperty('transform', 'translateY(0)', 'important');
+            header.style.setProperty('opacity', '1', 'important');
+            header.style.setProperty('visibility', 'visible', 'important');
             lastScrollTop = scrollTop;
         }
     }, false);
+    
+    console.log('📱 Mobil header scroll aktif');
 })();
 </script>
 </html>
