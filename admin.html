@@ -3264,9 +3264,23 @@ try {
         try{ return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {} }catch(e){ return {}; }
       }
       function setSiteSettings(s){ localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); }
+      
+      // GitHub'dan site-settings.json yükle ve localStorage'a kaydet
+      async function fetchAndSyncSettings(){
+        try {
+          const res = await fetch('/site-settings.json?t=' + Date.now());
+          if(res.ok){
+            const data = await res.json();
+            setSiteSettings(data);
+            return data;
+          }
+        } catch(e){ console.log('site-settings.json fetch error:', e); }
+        return getSiteSettings();
+      }
 
-      function loadSettingsIntoForm(){
-        const s = getSiteSettings();
+      async function loadSettingsIntoForm(){
+        // Önce GitHub'dan güncel veriyi çek
+        const s = await fetchAndSyncSettings();
         const elEmail = document.getElementById('siteEmail'); if(elEmail) elEmail.value = s.email || 'amtbrs@icloud.com';
         const elPhone = document.getElementById('sitePhone'); if(elPhone) elPhone.value = s.phone || '+90 5XX XXX XXXX';
         const elAddr = document.getElementById('siteAddress'); if(elAddr) elAddr.value = s.address || 'Adresiniz Caddesi 1, Şehir, TR';
@@ -3411,13 +3425,13 @@ try {
             homepageBackground: 'images/gallery/floral-bg.jpg'
           };
           setSiteSettings(defaults);
-          loadSettingsIntoForm();
+          await loadSettingsIntoForm();
           showNotification('Varsayılan ayarlar yüklendi ve kaydedildi', {type: 'success'});
         });
       });
 
       // load settings when admin UI ready
-      try{ loadSettingsIntoForm(); }catch(e){}
+      (async function(){ try{ await loadSettingsIntoForm(); }catch(e){} })();
 
       // Note: Orders admin moved to siparisler.html (separate page)
       // renderOrdersAdmin() function removed
