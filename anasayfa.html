@@ -4859,7 +4859,7 @@ fetch('site-settings.json')
         }
     });
 
-// Mobilde header gizle/göster - İlk ürün kartına göre
+// Mobilde scroll yönüne göre header gizle/göster - iOS Safari uyumlu
 (function() {
     'use strict';
     
@@ -4867,6 +4867,9 @@ fetch('site-settings.json')
     if (!header) return;
     
     var isHidden = false;
+    var touchStartY = 0;
+    var touchStartScrollTop = 0;
+    var lastKnownScrollY = 0;
     
     function isMobile() {
         return window.innerWidth <= 768 || 'ontouchstart' in window;
@@ -4890,39 +4893,100 @@ fetch('site-settings.json')
         }
     }
     
-    // İlk ürün kartını bul
-    var firstProductCard = document.querySelector('.product-card');
-    
-    if (!firstProductCard) {
-        console.log('Ürün kartı bulunamadı');
-        return;
+    function getScrollTop() {
+        return window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
     }
     
-    // Intersection Observer - ilk ürün kartı görünür mü?
-    var observer = new IntersectionObserver(function(entries) {
-        entries.forEach(function(entry) {
-            if (!isMobile()) {
+    // Touch başlangıcı
+    document.addEventListener('touchstart', function(e) {
+        if (!isMobile()) return;
+        touchStartY = e.touches[0].clientY;
+        touchStartScrollTop = getScrollTop();
+    }, {passive: true});
+    
+    // Touch hareket
+    document.addEventListener('touchmove', function(e) {
+        if (!isMobile()) return;
+        
+        var touchY = e.touches[0].clientY;
+        var scrollTop = getScrollTop();
+        var touchDelta = touchStartY - touchY; // Pozitif = yukarı swipe (aşağı scroll)
+        
+        // SADECE sayfa en üstte ise göster (50px altında)
+        if (scrollTop <= 50) {
+            show();
+            return;
+        }
+        
+        // Yukarı swipe (parmak yukarı = sayfa aşağı scroll) - GIZLE
+        if (touchDelta > 25) {
+            hide();
+            touchStartY = touchY; // Reset
+        }
+        // Aşağı swipe - header gösterME (sadece en üstte göster)
+        // else if (touchDelta < -80) { show(); } KALDIRILDI
+        
+        lastKnownScrollY = scrollTop;
+    }, {passive: true});
+    
+    // Touch bitti - momentum scroll kontrolü
+    document.addEventListener('touchend', function() {
+        if (!isMobile()) return;
+        
+        // Momentum scroll için interval ile kontrol
+        var checkCount = 0;
+        var lastCheck = getScrollTop();
+        
+        var intervalId = setInterval(function() {
+            var currentScroll = getScrollTop();
+            
+            // SADECE sayfa en üstte ise göster
+            if (currentScroll <= 50) {
                 show();
+                clearInterval(intervalId);
                 return;
             }
             
-            // İlk ürün kartı görünüyorsa → header göster
-            if (entry.isIntersecting) {
-                show();
-            } 
-            // İlk ürün kartı görünmüyorsa → header gizle
-            else {
+            // Scroll durdu mu?
+            if (Math.abs(currentScroll - lastCheck) < 2) {
+                clearInterval(intervalId);
+                return;
+            }
+            
+            // Aşağı gidiyorsa gizle
+            if (currentScroll > lastCheck + 8) {
                 hide();
             }
-        });
-    }, {
-        threshold: 0,
-        rootMargin: '-100px 0px 0px 0px' // Header yüksekliği kadar offset
-    });
+            // Yukarı scroll - header gösterME (sadece en üstte göster)
+            
+            lastCheck = currentScroll;
+            checkCount++;
+            
+            // Max 50 kontrol (2.5 saniye)
+            if (checkCount > 50) {
+                clearInterval(intervalId);
+            }
+        }, 50);
+    }, {passive: true});
     
-    observer.observe(firstProductCard);
+    // Masaüstü için normal scroll (opsiyonel fallback)
+    var scrollTimeout;
+    window.addEventListener('scroll', function() {
+        if (isMobile()) return; // Mobilde touch events kullan
+        
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(function() {
+            var scrollTop = getScrollTop();
+            if (scrollTop > lastKnownScrollY + 20) {
+                hide();
+            } else if (scrollTop <= 50) {
+                show();
+            }
+            lastKnownScrollY = scrollTop;
+        }, 50);
+    }, {passive: true});
     
-    console.log('Header: İlk ürün kartına göre kontrol aktif');
+    console.log('Header: sadece sayfa başında göster');
 })();
 </script>
 </html>
