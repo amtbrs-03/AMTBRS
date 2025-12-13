@@ -2877,8 +2877,26 @@
                             remoteSuccess = await commitFullUserToRepo(stored);
                             if (remoteSuccess) {
                                 console.log('registerUser: ✓ GitHub kaydı başarılı');
-                                // Kayıt başarılı - giriş yapabilir
-                                showNotification('Kayıt başarıyla tamamlandı! Şimdi giriş yapabilirsiniz.', {type: 'success', duration: 3000});
+                                // Kayıt başarılı - formu temizle
+                                document.getElementById('registerName').value = '';
+                                document.getElementById('registerEmail').value = '';
+                                document.getElementById('registerPassword').value = '';
+                                document.getElementById('registerPassword2').value = '';
+                                document.getElementById('registerPhone').value = '';
+                                document.getElementById('registerCity').value = '';
+                                document.getElementById('registerDistrict').innerHTML = '<option value="">Önce il seçiniz</option>';
+                                document.getElementById('registerNeighborhood').value = '';
+                                document.getElementById('registerAddressDetail').value = '';
+                                document.getElementById('registerPostalCode').value = '';
+                                // Tüm ikonları temizle
+                                document.querySelectorAll('#registerForm .validation-icon').forEach(icon => icon.remove());
+                                document.querySelectorAll('#registerForm input, #registerForm select, #registerForm textarea').forEach(el => {
+                                    el.style.borderColor = '';
+                                    el.style.boxShadow = '';
+                                });
+                                
+                                // Giriş sekmesine geç ve email'i doldur
+                                showNotification('✅ Kayıt başarıyla tamamlandı! Şimdi giriş yapabilirsiniz.', {type: 'success', duration: 3000});
                                 switchTab('login', document.querySelector('.form-tab'));
                                 document.getElementById('loginEmail').value = email;
                                 return;
