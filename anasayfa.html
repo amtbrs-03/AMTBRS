@@ -4859,55 +4859,102 @@ fetch('site-settings.json')
         }
     });
 
-// Mobilde scroll yönüne göre header gizle/göster - BASİT VERSİYON
-(function() {
-    'use strict';
-    
-    // Mobil kontrolü
-    function isMobile() {
-        return window.innerWidth <= 700;
+// Mobilde scroll yönüne göre header gizle/göster
+document.addEventListener('DOMContentLoaded', function() {
+    var header = document.querySelector('header');
+    if (!header) {
+        console.log('Header bulunamadi');
+        return;
     }
     
-    var header = document.querySelector('header');
-    if (!header) return;
-    
     var lastScrollTop = 0;
+    var scrollThreshold = 10;
     
-    // Scroll olayını dinle
-    window.addEventListener('scroll', function() {
+    function isMobile() {
+        return window.innerWidth <= 768;
+    }
+    
+    function hideHeader() {
+        header.style.transform = 'translateY(-100%)';
+        header.style.opacity = '0';
+        header.style.pointerEvents = 'none';
+    }
+    
+    function showHeader() {
+        header.style.transform = 'translateY(0)';
+        header.style.opacity = '1';
+        header.style.pointerEvents = 'auto';
+    }
+    
+    function onScroll() {
         if (!isMobile()) {
-            header.style.cssText = '';
+            header.style.transform = '';
+            header.style.opacity = '';
+            header.style.pointerEvents = '';
             return;
         }
         
-        var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        var scrollTop = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
         
-        // Sayfa en üstte ise göster
-        if (scrollTop < 100) {
-            header.style.setProperty('transform', 'translateY(0)', 'important');
-            header.style.setProperty('opacity', '1', 'important');
-            header.style.setProperty('visibility', 'visible', 'important');
+        // Sayfa en üstte
+        if (scrollTop < 80) {
+            showHeader();
             lastScrollTop = scrollTop;
             return;
         }
         
+        var scrollDelta = scrollTop - lastScrollTop;
+        
         // Aşağı scroll - gizle
-        if (scrollTop > lastScrollTop + 15) {
-            header.style.setProperty('transform', 'translateY(-100%)', 'important');
-            header.style.setProperty('opacity', '0', 'important');
-            header.style.setProperty('visibility', 'hidden', 'important');
+        if (scrollDelta > scrollThreshold) {
+            hideHeader();
             lastScrollTop = scrollTop;
         }
         // Yukarı scroll - göster
-        else if (scrollTop < lastScrollTop - 15) {
-            header.style.setProperty('transform', 'translateY(0)', 'important');
-            header.style.setProperty('opacity', '1', 'important');
-            header.style.setProperty('visibility', 'visible', 'important');
+        else if (scrollDelta < -scrollThreshold) {
+            showHeader();
             lastScrollTop = scrollTop;
         }
-    }, false);
+    }
     
-    console.log('📱 Mobil header scroll aktif');
-})();
+    // Scroll dinleyicisi
+    var ticking = false;
+    window.addEventListener('scroll', function() {
+        if (!ticking) {
+            requestAnimationFrame(function() {
+                onScroll();
+                ticking = false;
+            });
+            ticking = true;
+        }
+    });
+    
+    // Touch için ek destek (iOS Safari)
+    var startY = 0;
+    document.addEventListener('touchstart', function(e) {
+        startY = e.touches[0].pageY;
+    }, {passive: true});
+    
+    document.addEventListener('touchmove', function(e) {
+        if (!isMobile()) return;
+        var scrollTop = window.scrollY || window.pageYOffset;
+        if (scrollTop < 80) return;
+        
+        var currentY = e.touches[0].pageY;
+        var deltaY = startY - currentY;
+        
+        // Yukarı swipe (aşağı scroll) - gizle
+        if (deltaY > 30) {
+            hideHeader();
+        }
+        // Aşağı swipe (yukarı scroll) - göster
+        else if (deltaY < -30) {
+            showHeader();
+        }
+        startY = currentY;
+    }, {passive: true});
+    
+    console.log('Mobil header scroll sistemi aktif');
+});
 </script>
 </html>
