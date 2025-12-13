@@ -1861,6 +1861,107 @@
                             console.log('İl-İlçe seçici aktif');
                         })();
                         
+                        // ===== EMAIL VE TELEFON CANLI KONTROL =====
+                        (function setupLiveValidation() {
+                            const emailInput = document.getElementById('registerEmail');
+                            const phoneInput = document.getElementById('registerPhone');
+                            
+                            let emailCheckTimeout = null;
+                            let phoneCheckTimeout = null;
+                            
+                            // Email canlı kontrol
+                            if (emailInput) {
+                                emailInput.addEventListener('blur', async function() {
+                                    const email = this.value.trim().toLowerCase();
+                                    if (!email) return;
+                                    
+                                    // Email formatı kontrolü
+                                    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                                        return; // Format yanlışsa kontrol etme
+                                    }
+                                    
+                                    // Mevcut kullanıcı kontrolü
+                                    try {
+                                        const existingUser = await fetchUserFromRepo(email);
+                                        if (existingUser) {
+                                            showNotification('📧 Bu email adresi zaten kayıtlı! Giriş yapmayı deneyin.', {type: 'info', duration: 4000});
+                                            emailInput.style.borderColor = '#f59e0b';
+                                            emailInput.style.boxShadow = '0 0 0 3px rgba(245, 158, 11, 0.2)';
+                                        } else {
+                                            emailInput.style.borderColor = '#10b981';
+                                            emailInput.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.2)';
+                                        }
+                                    } catch(e) {
+                                        // Kullanıcı bulunamadı - bu iyi
+                                        emailInput.style.borderColor = '#10b981';
+                                        emailInput.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.2)';
+                                    }
+                                });
+                                
+                                // Focus çıkınca normal renge dön (gecikmeli)
+                                emailInput.addEventListener('focus', function() {
+                                    this.style.borderColor = '';
+                                    this.style.boxShadow = '';
+                                });
+                            }
+                            
+                            // Telefon canlı kontrol - tüm kullanıcıları kontrol et
+                            if (phoneInput) {
+                                phoneInput.addEventListener('blur', async function() {
+                                    const phone = this.value.trim().replace(/[\s()-]/g, '');
+                                    if (!phone || phone.length < 10) return;
+                                    
+                                    // Telefon formatı temizle
+                                    const cleanPhone = phone.replace(/[^\d+]/g, '');
+                                    
+                                    try {
+                                        // users/ klasöründeki tüm dosyaları listele
+                                        const listUrl = 'https://api.github.com/repos/amtbrs-03/AMTBRS/contents/users?ref=site-release';
+                                        const res = await fetch(listUrl, {
+                                            headers: { 'Accept': 'application/vnd.github.v3+json' }
+                                        });
+                                        
+                                        if (res.ok) {
+                                            const files = await res.json();
+                                            const userFiles = files.filter(f => f.name.endsWith('_full.json'));
+                                            
+                                            // Her kullanıcıyı kontrol et
+                                            for (const file of userFiles) {
+                                                try {
+                                                    const userRes = await fetch(file.download_url);
+                                                    if (userRes.ok) {
+                                                        const userData = await userRes.json();
+                                                        const userPhone = (userData.phone || '').replace(/[\s()-]/g, '').replace(/[^\d+]/g, '');
+                                                        
+                                                        if (userPhone && (userPhone === cleanPhone || userPhone.endsWith(cleanPhone.slice(-10)) || cleanPhone.endsWith(userPhone.slice(-10)))) {
+                                                            showNotification('📱 Bu telefon numarası zaten kayıtlı! Farklı bir numara deneyin.', {type: 'info', duration: 4000});
+                                                            phoneInput.style.borderColor = '#f59e0b';
+                                                            phoneInput.style.boxShadow = '0 0 0 3px rgba(245, 158, 11, 0.2)';
+                                                            return;
+                                                        }
+                                                    }
+                                                } catch(e) { /* devam et */ }
+                                            }
+                                            
+                                            // Telefon benzersiz
+                                            phoneInput.style.borderColor = '#10b981';
+                                            phoneInput.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.2)';
+                                        }
+                                    } catch(e) {
+                                        console.log('Telefon kontrol hatası:', e);
+                                        // Hata olsa da devam et
+                                    }
+                                });
+                                
+                                phoneInput.addEventListener('focus', function() {
+                                    this.style.borderColor = '';
+                                    this.style.boxShadow = '';
+                                });
+                            }
+                            
+                            console.log('Email/Telefon canlı kontrol aktif');
+                        })();
+                        
                         // Mobilde scroll edildiğinde header bulanıklaştırma
                         (function setupMobileHeaderScroll() {
                             if (window.innerWidth > 700) return; // Sadece mobilde
