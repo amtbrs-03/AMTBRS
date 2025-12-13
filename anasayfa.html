@@ -1915,11 +1915,34 @@
                                 input.style.boxShadow = '0 0 0 3px rgba(245, 158, 11, 0.2)';
                             }
                             
+                            function setErrorIcon(input) {
+                                if (!input) return;
+                                const parent = input.parentElement;
+                                let icon = parent.querySelector('.valid-icon');
+                                if (icon) icon.remove();
+                                
+                                icon = document.createElement('span');
+                                icon.className = 'valid-icon';
+                                icon.innerHTML = '✗';
+                                icon.style.cssText = 'position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#ef4444;font-size:1.2rem;font-weight:bold;pointer-events:none;';
+                                parent.style.position = 'relative';
+                                input.style.paddingRight = '2.5rem';
+                                parent.appendChild(icon);
+                                input.style.borderColor = '#ef4444';
+                                input.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.2)';
+                            }
+                            
                             // Ad Soyad kontrolü
                             if (nameInput) {
                                 nameInput.addEventListener('blur', function() {
                                     const val = this.value.trim();
-                                    setValidIcon(this, val.length >= 3);
+                                    if (val.length >= 3) {
+                                        setValidIcon(this, true);
+                                    } else if (val.length > 0) {
+                                        setErrorIcon(this);
+                                    } else {
+                                        setValidIcon(this, false);
+                                    }
                                 });
                                 nameInput.addEventListener('focus', function() {
                                     setValidIcon(this, false);
@@ -1937,7 +1960,7 @@
                                     
                                     // Email formatı kontrolü
                                     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                                        setValidIcon(this, false);
+                                        setErrorIcon(this);
                                         return;
                                     }
                                     
@@ -1965,7 +1988,11 @@
                             if (phoneInput) {
                                 phoneInput.addEventListener('blur', async function() {
                                     const phone = this.value.trim().replace(/[\s()-]/g, '');
-                                    if (!phone || phone.length < 10) {
+                                    if (phone && phone.length < 10) {
+                                        setErrorIcon(this);
+                                        return;
+                                    }
+                                    if (!phone) {
                                         setValidIcon(this, false);
                                         return;
                                     }
@@ -2016,7 +2043,13 @@
                             // Şifre kontrolü
                             if (passwordInput) {
                                 passwordInput.addEventListener('blur', function() {
-                                    setValidIcon(this, this.value.length >= 6);
+                                    if (this.value.length > 0 && this.value.length < 6) {
+                                        setErrorIcon(this);
+                                    } else if (this.value.length >= 6) {
+                                        setValidIcon(this, true);
+                                    } else {
+                                        setValidIcon(this, false);
+                                    }
                                 });
                                 passwordInput.addEventListener('focus', function() {
                                     setValidIcon(this, false);
@@ -2028,7 +2061,13 @@
                                 password2Input.addEventListener('blur', function() {
                                     const pass1 = passwordInput ? passwordInput.value : '';
                                     const pass2 = this.value;
-                                    setValidIcon(this, pass2.length >= 6 && pass1 === pass2);
+                                    if (pass2.length > 0 && (pass2.length < 6 || pass1 !== pass2)) {
+                                        setErrorIcon(this);
+                                    } else if (pass2.length >= 6 && pass1 === pass2) {
+                                        setValidIcon(this, true);
+                                    } else {
+                                        setValidIcon(this, false);
+                                    }
                                 });
                                 password2Input.addEventListener('focus', function() {
                                     setValidIcon(this, false);
@@ -2052,7 +2091,14 @@
                             // Adres detayı kontrolü
                             if (addressInput) {
                                 addressInput.addEventListener('blur', function() {
-                                    setValidIcon(this, this.value.trim().length >= 10);
+                                    const len = this.value.trim().length;
+                                    if (len > 0 && len < 10) {
+                                        setErrorIcon(this);
+                                    } else if (len >= 10) {
+                                        setValidIcon(this, true);
+                                    } else {
+                                        setValidIcon(this, false);
+                                    }
                                 });
                                 addressInput.addEventListener('focus', function() {
                                     setValidIcon(this, false);
