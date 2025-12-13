@@ -1746,6 +1746,34 @@
                         // Lightbox code removed as requested
                         loadProducts();
                         
+                        // ===== SİLİNMİŞ KULLANICI KONTROLÜ =====
+                        (async function checkDeletedUser() {
+                            const currentUser = localStorage.getItem('currentUser');
+                            if (!currentUser) return;
+                            
+                            try {
+                                const user = JSON.parse(currentUser);
+                                if (!user || !user.email) return;
+                                
+                                console.log('checkDeletedUser: Verifying user exists in GitHub...');
+                                const remoteUser = await fetchUserFromRepo(user.email);
+                                
+                                if (!remoteUser) {
+                                    console.log('checkDeletedUser: User deleted - logging out');
+                                    localStorage.removeItem('currentUser');
+                                    localStorage.removeItem('user_' + user.email);
+                                    
+                                    // UI güncelle
+                                    document.getElementById('authContainer').classList.remove('hidden');
+                                    document.getElementById('userContainer').classList.add('hidden');
+                                    
+                                    showNotification('⚠️ Hesabınız silinmiş veya devre dışı bırakılmış. Lütfen tekrar kayıt olun.', {type: 'warn', duration: 5000});
+                                }
+                            } catch(e) {
+                                console.log('checkDeletedUser: Could not verify user (network error)');
+                            }
+                        })();
+                        
                         // ===== İL-İLÇE SEÇİMİ =====
                         (function setupCityDistrictSelector() {
                             const DISTRICTS = {
@@ -2981,6 +3009,25 @@
                             try {
                                 userData = JSON.parse(userStr);
                                 console.log('loginUser: ✓ Parse successful');
+                                
+                                // Kullanıcı silinmiş mi kontrol et (GitHub'dan doğrula)
+                                console.log('loginUser: Verifying user still exists in GitHub...');
+                                try {
+                                    const remoteUser = await fetchUserFromRepo(email);
+                                    if (!remoteUser) {
+                                        console.log('loginUser: ⚠️ User deleted from GitHub - blocking login');
+                                        localStorage.removeItem('user_' + email);
+                                        localStorage.removeItem('currentUser');
+                                        showNotification('❌ Bu hesap silinmiş veya devre dışı bırakılmış.', {type: 'error', duration: 4000});
+                                        return;
+                                    }
+                                    // Remote'daki güncel veriyi kullan
+                                    userData = remoteUser;
+                                    console.log('loginUser: ✓ User verified in GitHub');
+                                } catch(e) {
+                                    console.log('loginUser: Could not verify with GitHub, using cached data');
+                                }
+                                
                                 console.log('loginUser: Data structure:', {
                                     hasName: !!userData.name,
                                     hasEmail: !!userData.email,
