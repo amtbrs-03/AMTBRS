@@ -460,11 +460,12 @@
         button { background: linear-gradient(180deg,#16a34a,#15803d); color: white; border: none; padding: .7rem 1rem; border-radius:10px; cursor:pointer; transition: transform 220ms, box-shadow 220ms; width:100%; box-shadow:0 4px 12px rgba(22,163,74,0.25); font-weight:600 }
         button:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(22,163,74,0.35) }
 
-        footer { background: transparent; color: rgba(255,255,255,0.85); text-align:center; padding:1.2rem 2rem; position:fixed; bottom:0; left:0; right:0; z-index:9999; pointer-events: none; }
+        footer { background: transparent; color: rgba(255,255,255,0.6); text-align:center; padding:0.8rem 2rem; position:fixed; bottom:0; left:0; right:0; z-index:100; pointer-events: none; transition: all 0.3s ease; opacity: 0.5; }
+        footer:hover { background: linear-gradient(135deg, rgba(15,23,42,0.95), rgba(30,41,59,0.95)); color: rgba(255,255,255,0.95); z-index:99999; pointer-events: auto; opacity: 1; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); box-shadow: 0 -8px 32px rgba(0,0,0,0.25); border-top: 1px solid rgba(22,163,74,0.3); }
         footer > * { pointer-events: auto; }
         
         /* Footer sabit olduğu için sayfa içeriğine alt boşluk */
-        body { padding-bottom: 180px; }
+        body { padding-bottom: 80px; }
 
         .hidden { display: none }
         .cart-items { list-style:none; margin:0; padding:0 }
@@ -572,8 +573,9 @@
             header nav { padding: 0 0.8rem; }
             .nav-links { gap:0.5rem; }
             #paymentWidget { left: 0.6rem; right:0.6rem; width:auto; bottom:0.8rem; }
-            footer { padding: 0.8rem 1rem; }
-            body { padding-bottom: 160px; }
+            footer { padding: 0.6rem 0.8rem; background: linear-gradient(135deg, rgba(15,23,42,0.92), rgba(30,41,59,0.92)); color: rgba(255,255,255,0.9); opacity: 1; z-index:99999; pointer-events: auto; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid rgba(22,163,74,0.25); }
+            footer:hover { box-shadow: 0 -4px 16px rgba(0,0,0,0.2); }
+            body { padding-bottom: 70px; }
 
             /* Hide heavy decorative background on very small screens */
             #floral-bg { display: none; }
