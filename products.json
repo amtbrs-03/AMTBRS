@@ -1,5 +1,5 @@
 {
-  "updatedAt": 1765832879260,
+  "updatedAt": 1765832992716,
   "items": [
     {
       "id": "TEMP-1765831765562",
@@ -23,9 +23,10 @@
       "name": "PHİLODENDRON FELİX",
       "price": 620,
       "badge": "Yeni",
-      "image": "images/gallery/IMG_2035.JPG",
+      "image": "images/gallery/IMG_2038.JPG",
       "images": [
-        "images/gallery/IMG_2035.JPG"
+        "images/gallery/IMG_2038.JPG",
+        "images/gallery/IMG_2039.JPG"
       ],
       "potDiameter": "15",
       "height": "30",
