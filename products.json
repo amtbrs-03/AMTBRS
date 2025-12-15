@@ -1,4 +1,22 @@
 {
-  "updatedAt": 1765831485806,
-  "items": []
+  "updatedAt": 1765831902313,
+  "items": [
+    {
+      "id": "TEMP-1765831765562",
+      "name": "PHİLODENDRON FELİX",
+      "price": 1100,
+      "badge": "Yeni",
+      "image": "images/gallery/IMG_2037.JPG",
+      "images": [
+        "images/gallery/IMG_2037.JPG",
+        "images/gallery/IMG_2036.JPG",
+        "images/gallery/IMG_2035.JPG"
+      ],
+      "potDiameter": "15",
+      "height": "30",
+      "stock": 3,
+      "info": "GÖRSELDEKİ TEPE FİDE GÖNDERİLECEKTİR",
+      "sortOrder": 0
+    }
+  ]
 }
