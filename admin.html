@@ -725,22 +725,39 @@
   <!-- Admin erişim için parola kapısı -->
   <!-- Admin parola kapısı kaldırıldı: doğrudan erişim -->
   <!-- Reinserted product edit modal moved from top for proper early charset detection -->
-  <!-- Logout Confirmation Modal -->
+  <!-- Logout Confirmation Modal - Progress ile -->
   <section id="logoutConfirmModal" class="modal" style="display:none">
-    <div class="modal-content small-modal" style="max-width:560px;">
-      <div class="modal-header" style="justify-content:center;">
-        <h2 style="margin:0;color:#064e3b;">🚪 Oturumu Kapat</h2>
+    <div class="modal-content small-modal" style="max-width:480px;">
+      <div class="modal-header" style="justify-content:center;background:linear-gradient(135deg,#fef2f2,#fff7ed);border-bottom:2px solid #fed7aa;">
+        <h2 id="logoutModalTitle" style="margin:0;color:#c2410c;">🚪 Oturumu Kapat</h2>
       </div>
-      <div class="modal-body" style="margin-bottom:0.5rem;">
-        <div class="card" style="background:rgba(255,255,255,0.98);border:1px solid rgba(16,185,129,0.15);">
-          <div style="font-weight:700;color:#0f172a;margin-bottom:0.25rem;">Emin misiniz?</div>
+      <!-- Onay İçeriği -->
+      <div id="logoutConfirmContent" class="modal-body" style="margin-bottom:0.5rem;padding:1.5rem;">
+        <div style="text-align:center;margin-bottom:1rem;">
+          <div style="width:64px;height:64px;background:linear-gradient(135deg,#fff7ed,#ffedd5);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:0.5rem;border:2px solid #fed7aa;">
+            <span style="font-size:1.8rem;">🚪</span>
+          </div>
+          <div style="font-weight:700;color:#0f172a;font-size:1.1rem;margin-bottom:0.25rem;">Emin misiniz?</div>
           <div class="small" style="color:#64748b;line-height:1.6;">
-            Oturumu kapatırsanız yönetici erişimi sona erer ve tarayıcıya kaydedilen anahtarlar temizlenir.
+            Oturumu kapatırsanız yönetici erişimi sona erer<br>ve tarayıcıya kaydedilen anahtarlar temizlenir.
           </div>
         </div>
       </div>
-      <div class="form-actions" style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:6px">
-        <button type="button" class="btn btn-danger" onclick="performLogoutNow()">Evet, Çıkış Yap</button>
+      <!-- Çıkış Progress İçeriği -->
+      <div id="logoutProgressContent" style="display:none;padding:2rem;text-align:center;">
+        <div style="width:80px;height:80px;margin:0 auto 1rem;position:relative;">
+          <svg viewBox="0 0 100 100" style="width:100%;height:100%;transform:rotate(-90deg);">
+            <circle cx="50" cy="50" r="45" fill="none" stroke="#ffedd5" stroke-width="8"/>
+            <circle id="logoutProgressCircle" cx="50" cy="50" r="45" fill="none" stroke="#ea580c" stroke-width="8" stroke-linecap="round" stroke-dasharray="283" stroke-dashoffset="283" style="transition:stroke-dashoffset 0.3s;"/>
+          </svg>
+          <div id="logoutProgressPercent" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:1.2rem;font-weight:800;color:#ea580c;">0%</div>
+        </div>
+        <div id="logoutProgressTitle" style="font-weight:700;color:#c2410c;font-size:1.1rem;margin-bottom:0.5rem;">🚪 Çıkış yapılıyor...</div>
+        <div id="logoutProgressStatus" style="color:#64748b;font-size:0.9rem;">Oturum sonlandırılıyor...</div>
+      </div>
+      <!-- Butonlar -->
+      <div id="logoutConfirmButtons" class="form-actions" style="display:flex;gap:0.5rem;justify-content:center;padding:1rem;background:#f9fafb;border-top:1px solid #e5e7eb;border-radius:0 0 12px 12px;">
+        <button type="button" class="btn btn-danger" onclick="performLogoutWithProgress()">🚪 Evet, Çıkış Yap</button>
         <button type="button" class="btn btn-ghost" onclick="closeLogoutConfirmModal()">Vazgeç</button>
       </div>
     </div>
@@ -1179,23 +1196,122 @@
       logoutBtn.addEventListener('click', logoutAdminSession);
     }
   });
+  let _logoutInProgress = false;
+  
   function openLogoutConfirmModal(){
+    if (_logoutInProgress) return;
     const m = document.getElementById('logoutConfirmModal');
     if(!m) return;
+    // Reset modal
+    resetLogoutModal();
     m.classList.add('active');
     m.style.display='flex';
     document.body.style.overflow='hidden';
   }
   function closeLogoutConfirmModal(){
+    if (_logoutInProgress) return;
     const m = document.getElementById('logoutConfirmModal');
     if(!m) return;
     m.classList.remove('active');
     m.style.display='none';
     document.body.style.overflow='';
   }
+  
+  function showLogoutProgress() {
+    _logoutInProgress = true;
+    const confirm = document.getElementById('logoutConfirmContent');
+    const progress = document.getElementById('logoutProgressContent');
+    const buttons = document.getElementById('logoutConfirmButtons');
+    if (confirm) confirm.style.display = 'none';
+    if (progress) progress.style.display = 'block';
+    if (buttons) buttons.style.display = 'none';
+    const modal = document.getElementById('logoutConfirmModal');
+    if (modal) modal.style.pointerEvents = 'none';
+    const modalContent = modal?.querySelector('.modal-content');
+    if (modalContent) modalContent.style.pointerEvents = 'auto';
+  }
+  
+  function updateLogoutProgress(percent, status) {
+    const circle = document.getElementById('logoutProgressCircle');
+    const percentEl = document.getElementById('logoutProgressPercent');
+    const statusEl = document.getElementById('logoutProgressStatus');
+    if (circle) {
+      const offset = 283 - (283 * percent / 100);
+      circle.style.strokeDashoffset = offset;
+    }
+    if (percentEl) percentEl.textContent = Math.round(percent) + '%';
+    if (statusEl) statusEl.textContent = status;
+  }
+  
+  function resetLogoutModal() {
+    _logoutInProgress = false;
+    const confirm = document.getElementById('logoutConfirmContent');
+    const progress = document.getElementById('logoutProgressContent');
+    const buttons = document.getElementById('logoutConfirmButtons');
+    if (confirm) confirm.style.display = 'block';
+    if (progress) progress.style.display = 'none';
+    if (buttons) buttons.style.display = 'flex';
+    updateLogoutProgress(0, '');
+    const modal = document.getElementById('logoutConfirmModal');
+    if (modal) modal.style.pointerEvents = '';
+  }
+  
+  async function performLogoutWithProgress() {
+    showLogoutProgress();
+    updateLogoutProgress(10, 'Oturum sonlandırılıyor...');
+    
+    try {
+      await new Promise(r => setTimeout(r, 300));
+      updateLogoutProgress(30, 'Token temizleniyor...');
+      
+      // Token temizle
+      try { localStorage.removeItem('github_token'); } catch(_){}
+      try { localStorage.removeItem('gh_token'); } catch(_){}
+      try { localStorage.removeItem('admin_auth'); } catch(_){}
+      try { localStorage.removeItem('admin_auth_ok'); } catch(_){}
+      try { localStorage.removeItem('admin_logged_in'); } catch(_){}
+      try { localStorage.removeItem('admin_passkey'); } catch(_){}
+      try { sessionStorage.removeItem('admin_auth_ok'); } catch(_){}
+      try { sessionStorage.clear(); } catch(_){}
+      
+      await new Promise(r => setTimeout(r, 300));
+      updateLogoutProgress(50, 'Önbellek temizleniyor...');
+      
+      // Diğer admin verilerini temizle
+      try { localStorage.removeItem('products_override'); } catch(_){}
+      try { localStorage.removeItem('pending_user_edits'); } catch(_){}
+      
+      await new Promise(r => setTimeout(r, 300));
+      updateLogoutProgress(70, 'Oturum verileri siliniyor...');
+      
+      // Tarayıcı geçmişini temizle
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+      
+      await new Promise(r => setTimeout(r, 300));
+      updateLogoutProgress(90, 'Yönlendirme hazırlanıyor...');
+      
+      await new Promise(r => setTimeout(r, 400));
+      updateLogoutProgress(100, '✅ Çıkış başarılı!');
+      
+      await new Promise(r => setTimeout(r, 500));
+      
+      // Yönlendir
+      window.location.href = 'anasayfa.html';
+      
+    } catch(e) {
+      updateLogoutProgress(0, '❌ Hata: ' + (e.message || e));
+      await new Promise(r => setTimeout(r, 2000));
+      resetLogoutModal();
+      closeLogoutConfirmModal();
+    }
+  }
+  
   window.openLogoutConfirmModal = openLogoutConfirmModal;
   window.closeLogoutConfirmModal = closeLogoutConfirmModal;
-  window.performLogoutNow = performLogoutNow;
+  window.performLogoutNow = performLogoutWithProgress; // Eski fonksiyon adı uyumluluğu
+  window.performLogoutWithProgress = performLogoutWithProgress;
   // Parola doğrulama ve GitHub'dan config çekme
   async function sha256Hex(str){
     const enc = new TextEncoder();
@@ -1321,26 +1437,8 @@
     // Eski confirm yerine özel modal aç
     try { openLogoutConfirmModal(); } catch(e){ showNotification('Çıkış penceresi açılamadı: ' + (e.message||e), {type: 'error'}); }
   }
-  function performLogoutNow(){
-    try {
-      // Admin oturumunu kapat
-      try { localStorage.removeItem('admin_auth_ok'); } catch(_){}
-      try { sessionStorage.removeItem('admin_auth_ok'); } catch(_){}
-      try { localStorage.removeItem('admin_logged_in'); } catch(_){}
-      try { localStorage.removeItem('admin_passkey'); } catch(_){}
-      try { localStorage.removeItem('github_token'); } catch(_){}
-      try { localStorage.removeItem('pending_user_edits'); } catch(_){}
-      // Tarayıcı geçmişini temizle (mümkün olan en iyi yöntem)
-      if (window.history && window.history.replaceState) {
-        window.history.replaceState(null, '', window.location.pathname);
-      }
-      closeLogoutConfirmModal();
-      location.reload();
-    } catch(e){ showNotification('Çıkış sırasında hata: ' + (e.message||e), {type: 'error'}); }
-  }
   // Inline onclick ile çağrı için global bağlama
   window.logoutAdminSession = logoutAdminSession;
-  window.performLogoutNow = performLogoutNow;
   function safeInput(str) {
     return String(str).replace(/[<>&"']/g, function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;','\'':'&#39;'}[c]; });
   }
@@ -2066,30 +2164,48 @@
         window.closeProductEditPanel = closeProductEditPanel;
         
         // Global ürün listeleme (canonical)
-        async function renderAdminProducts(){
+        async function renderAdminProducts(showModal = false){
           const container = document.getElementById('products');
           if (!container) return;
-          container.innerHTML = '<div style="color:#64748b">⏳ Ürünler yükleniyor...</div>';
+          
+          // Modal ile yükleme
+          if (showModal) {
+            openRefreshModal({
+              title: '📦 Ürünler Yükleniyor',
+              progressTitle: '📦 Ürün listesi hazırlanıyor...'
+            });
+            updateRefreshProgress(10, 'Başlatılıyor...');
+          } else {
+            container.innerHTML = '<div style="color:#64748b">⏳ Ürünler yükleniyor...</div>';
+          }
+          
           try {
+            if (showModal) updateRefreshProgress(20, 'Önbellek kontrol ediliyor...');
+            
             // Lokal override varsa önce onu kullan
             let override = null;
             try { const raw = localStorage.getItem('products_override'); if(raw) override = JSON.parse(raw); } catch(_){ override = null; }
             let productsData;
             if(override && (Array.isArray(override.items) || Array.isArray(override))){
               productsData = override;
+              if (showModal) updateRefreshProgress(40, 'Lokal önbellek kullanılıyor...');
             } else {
+              if (showModal) updateRefreshProgress(30, 'Sunucuya bağlanılıyor...');
               // Primary: same-origin products.json
               let res = await fetch('products.json?' + Date.now(), { cache:'no-store' });
               if (!res.ok){
+                if (showModal) updateRefreshProgress(40, 'Alternatif kaynak deneniyor...');
                 // Fallback 1: without cache-busting
                 try { res = await fetch('products.json', { cache:'no-store' }); } catch(_){}
               }
               if(!res.ok){
+                if (showModal) updateRefreshProgress(50, 'GitHub raw deneniyor...');
                 // Fallback 2: raw.githubusercontent.com
                 const rawUrl = 'https://raw.githubusercontent.com/amtbrs-03/AMTBRS/site-release/products.json?_=' + Date.now();
                 try { res = await fetch(rawUrl, { cache:'no-store' }); } catch(_){}
               }
               if (!res.ok) throw new Error('products.json alınamadı! ('+res.status+')');
+              if (showModal) updateRefreshProgress(60, 'Veriler işleniyor...');
               try { productsData = await res.json(); }
               catch(_){
                 // If raw returns text, parse it
@@ -2097,6 +2213,8 @@
                 try { productsData = JSON.parse(txt); } catch(e){ throw new Error('products.json parse hatası'); }
               }
             }
+            
+            if (showModal) updateRefreshProgress(70, 'Liste oluşturuluyor...');
             const products = Array.isArray(productsData.items) ? productsData.items : (Array.isArray(productsData) ? productsData : []);
             
             // Ürünleri sortOrder'a göre sırala (küçükten büyüğe, sortOrder olmayanlar sona)
@@ -2106,7 +2224,13 @@
               return aOrder - bOrder;
             });
             
-            if (!products.length){ container.innerHTML = '<div style="color:#b91c1c">Hiç ürün bulunamadı.</div>'; return; }
+            if (showModal) updateRefreshProgress(80, 'Ekrana aktarılıyor...');
+            
+            if (!products.length){ 
+              container.innerHTML = '<div style="color:#b91c1c">Hiç ürün bulunamadı.</div>'; 
+              if (showModal) finishRefreshSuccess('Ürün listesi boş');
+              return; 
+            }
             container.innerHTML = '';
             // TL yardımcıları
             function formatTL(n){
@@ -2243,8 +2367,21 @@
                 }
               });
             }, 0);
+            
+            // Modal ile yükleme tamamlandı
+            if (showModal) {
+              updateRefreshProgress(100, '✅ Tamamlandı!');
+              setTimeout(() => {
+                finishRefreshSuccess(`${products.length} ürün başarıyla yüklendi`);
+              }, 300);
+            }
+            
           } catch(err){
-            container.innerHTML = '<div style="color:#b91c1c">Hata: ' + err.message + '</div>';
+            if (showModal) {
+              finishRefreshError(err.message || err);
+            } else {
+              container.innerHTML = '<div style="color:#b91c1c">Hata: ' + err.message + '</div>';
+            }
           }
         }
 
@@ -2366,60 +2503,8 @@
         
         // Ürünleri Modal ile Yenile
         async function refreshProductsWithModal() {
-          openRefreshModal({
-            title: '📦 Ürünler Yenileniyor',
-            progressTitle: '📦 Ürün listesi alınıyor...'
-          });
-          
-          try {
-            updateRefreshProgress(10, 'Sunucuya bağlanılıyor...');
-            
-            // Lokal override varsa önce onu kullan
-            let override = null;
-            try { const raw = localStorage.getItem('products_override'); if(raw) override = JSON.parse(raw); } catch(_){ override = null; }
-            let productsData;
-            
-            updateRefreshProgress(30, 'Ürün dosyası alınıyor...');
-            
-            if(override && (Array.isArray(override.items) || Array.isArray(override))){
-              productsData = override;
-              updateRefreshProgress(50, 'Lokal önbellek kullanılıyor...');
-            } else {
-              // Primary: same-origin products.json
-              let res = await fetch('products.json?' + Date.now(), { cache:'no-store' });
-              if (!res.ok){
-                updateRefreshProgress(40, 'Alternatif kaynak deneniyor...');
-                try { res = await fetch('products.json', { cache:'no-store' }); } catch(_){}
-              }
-              if(!res.ok){
-                updateRefreshProgress(50, 'GitHub raw deneniyor...');
-                const rawUrl = 'https://raw.githubusercontent.com/amtbrs-03/AMTBRS/site-release/products.json?_=' + Date.now();
-                try { res = await fetch(rawUrl, { cache:'no-store' }); } catch(_){}
-              }
-              if (!res.ok) throw new Error('products.json alınamadı! ('+res.status+')');
-              
-              updateRefreshProgress(60, 'Veriler işleniyor...');
-              try { productsData = await res.json(); }
-              catch(_){
-                const txt = await res.text();
-                try { productsData = JSON.parse(txt); } catch(e){ throw new Error('products.json parse hatası'); }
-              }
-            }
-            
-            updateRefreshProgress(80, 'Liste güncelleniyor...');
-            
-            const products = Array.isArray(productsData.items) ? productsData.items : (Array.isArray(productsData) ? productsData : []);
-            
-            updateRefreshProgress(90, 'Ekran yenileniyor...');
-            
-            // Listeyi yenile
-            await renderAdminProducts();
-            
-            finishRefreshSuccess(`${products.length} ürün başarıyla yenilendi`);
-            
-          } catch(e) {
-            finishRefreshError(e.message || e);
-          }
+          // renderAdminProducts fonksiyonunu modal ile çağır
+          await renderAdminProducts(true);
         }
         window.refreshProductsWithModal = refreshProductsWithModal;
         
@@ -2487,7 +2572,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', ()=>{
-          renderAdminProducts();
+          renderAdminProducts(true); // Modal ile ilk yükleme
                     // Düzenleme modalındaki görsel inputlarına değişiklik dinleyicisi ekle
                     const imgInputs = ['editProductImage','editProductImage2','editProductImage3'];
                     imgInputs.forEach(id=>{
@@ -2688,6 +2773,7 @@
         <label style="display:flex;align-items:center;gap:0.5rem;font-weight:500;">
           <input id="pushSettingsToGithub" type="checkbox" checked /> GitHub'a da kaydet
         </label>
+        <button id="refreshSettingsBtn" class="btn btn-ghost" type="button" onclick="loadSettingsIntoForm(true)">🔄 Yenile</button>
         <button id="loadDefaultsSettings" class="btn btn-ghost" type="button">Varsayılanları Yükle</button>
       </div>
       <div class="small meta" style="margin-top:0.75rem">💾 Ayarlar tarayıcıda saklanır. "GitHub'a da kaydet" seçili ise site-settings.json güncellenir.</div>
@@ -3469,12 +3555,8 @@ try {
       }
     }
 
-    // Load users from GitHub - now opens modal
+    // Load users from GitHub - now opens modal and uses refreshUsersList
     document.getElementById('loadUsersBtn').addEventListener('click', async ()=>{
-      const btn = document.getElementById('loadUsersBtn');
-      const origText = btn.innerHTML;
-      btn.innerHTML = '⏳ Yükleniyor...';
-      btn.disabled = true;
       // Modalı güvenli şekilde aç (fonksiyon henüz tanımlı değilse inline aç)
       try{
         if (typeof openUsersModal === 'function') {
@@ -3485,147 +3567,8 @@ try {
         }
       }catch(e){ console.warn('users modal açılamadı', e); }
       
-      const countEl = document.getElementById('userCountModal');
-      const listEl = document.getElementById('usersListModal');
-      
-      btn.textContent = 'Yükleniyor...';
-      btn.disabled = true;
-      listEl.innerHTML = '<p style="color:#6b7280; text-align:center; padding:2rem;">Kullanıcılar GitHub\'dan çekiliyor...</p>';
-      
-      try {
-        // Fetch list of user files from GitHub API
-        const owner = 'amtbrs-03';
-        const repo = 'AMTBRS';
-        const branch = 'site-release';
-        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/users?ref=${branch}`;
-        
-        console.log('Kullanıcılar çekiliyor (URL):', apiUrl);
-        
-        const res = await fetch(apiUrl, {
-          headers: { 'Accept': 'application/vnd.github.v3+json' }
-        });
-        
-        console.log('GitHub API yanıtı:', res.status, res.statusText);
-        
-        if (!res.ok) {
-          if (res.status === 404) {
-            listEl.innerHTML = '<p style="color:#6b7280;">Henüz kayıtlı kullanıcı yok. (users/ klasörü bulunamadı)</p>';
-            if (countEl) countEl.textContent = '0 kullanıcı';
-            return;
-          }
-          const errorText = await res.text().catch(() => '');
-          console.error('GitHub API hatası:', res.status, errorText);
-          throw new Error(`GitHub API ${res.status} döndürdü: ${res.statusText}`);
-        }
-        
-        const files = await res.json();
-        console.log('users/ klasöründeki dosya sayısı:', files.length, files.map(f => f.name));
-        
-        const userFiles = files.filter(f => f.name.endsWith('_full.json'));
-        console.log('Kullanıcı dosyaları:', userFiles.length);
-        
-        if (userFiles.length === 0) {
-          listEl.innerHTML = '<p style="color:#6b7280;">Henüz kayıtlı kullanıcı yok. (users/ klasöründe _full.json dosyası bulunamadı)</p>';
-          if (countEl) countEl.textContent = '0 kullanıcı';
-          return;
-        }
-        
-        // Fetch each user file
-        const users = [];
-        for (const file of userFiles) {
-          try {
-            console.log('Kullanıcı dosyası çekiliyor:', file.name, file.download_url);
-            const userRes = await fetch(file.download_url);
-            if (userRes.ok) {
-              const userData = await userRes.json();
-              console.log('Kullanıcı yüklendi:', userData.email);
-              users.push(userData);
-            } else {
-              console.error('Kullanıcı dosyası çekilemedi:', file.name, userRes.status);
-            }
-          } catch(e) {
-            console.error('Kullanıcı yüklenemedi:', file.name, e);
-          }
-        }
-        
-        // Display users
-        if (countEl) countEl.textContent = `${users.length} kullanıcı`;
-        
-        if (users.length === 0) {
-          listEl.innerHTML = '<p style="color:#6b7280;">Kullanıcı verileri yüklenemedi. Console\'u kontrol edin.</p>';
-          return;
-        }
-        
-        console.log('Toplam yüklenen kullanıcı:', users.length);
-        
-        // Helper: format user's address from various shapes
-        const formatUserAddress = (userObj) => {
-          try{
-            let s = '';
-            if (Array.isArray(userObj.addresses) && userObj.addresses.length) {
-              const def = userObj.addresses.find(a=>a && a.default) || userObj.addresses[0];
-              if (def && typeof def === 'object') {
-                const parts = [def.addressDetail, def.neighborhood, def.district, def.city, def.postalCode ? ('PK: ' + def.postalCode) : ''].filter(Boolean);
-                s = parts.join(', ');
-              } else if (typeof def === 'string') {
-                s = def;
-              }
-            } else if (userObj.address && typeof userObj.address === 'object') {
-              const a = userObj.address;
-              const parts = [a.addressDetail, a.neighborhood, a.district, a.city, a.postalCode ? ('PK: ' + a.postalCode) : ''].filter(Boolean);
-              s = parts.join(', ');
-            } else if (typeof userObj.address === 'string') {
-              s = userObj.address;
-            }
-            s = String(s||'');
-            // Adres metnini olduğu gibi bırak (çift decode sorunlarını engelle)
-            // Yalnızca gereksiz boşlukları sadeleştir
-            return s.replace(/\s+/g,' ').trim();
-          }catch(_){ return ''; }
-        };
-
-        // Cache users for detail popover
-        window.__adminUsersCache = users.slice();
-
-        let html = '<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.1); border-radius:8px; overflow:hidden; table-layout:fixed;">';
-        html += '<thead><tr style="background:linear-gradient(135deg, var(--green-primary), var(--green-dark)); color:white;">';
-        html += '<th style="width:18%; padding:0.9rem 0.75rem; text-align:center; font-weight:700; font-size:0.95rem; border-bottom:2px solid rgba(255,255,255,0.2);">👤 Ad</th>';
-        html += '<th style="width:22%; padding:0.9rem 0.75rem; text-align:center; font-weight:700; font-size:0.95rem; border-bottom:2px solid rgba(255,255,255,0.2);">📧 Email</th>';
-        html += '<th style="width:28%; padding:0.9rem 0.75rem; text-align:center; font-weight:700; font-size:0.95rem; border-bottom:2px solid rgba(255,255,255,0.2);">📍 Adres</th>';
-        html += '<th style="width:16%; padding:0.9rem 0.75rem; text-align:center; font-weight:700; font-size:0.95rem; border-bottom:2px solid rgba(255,255,255,0.2);">📅 Kayıt Tarihi</th>';
-        html += '<th style="width:16%; padding:0.9rem 0.75rem; text-align:center; font-weight:700; font-size:0.95rem; border-bottom:2px solid rgba(255,255,255,0.2);">🕐 Son Giriş</th>';
-        html += '</tr></thead><tbody>';
-        
-        users.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-        
-        users.forEach((user, idx) => {
-          const createdDate = user.createdAt ? new Date(user.createdAt).toLocaleDateString('tr-TR', {day:'2-digit', month:'2-digit', year:'numeric'}) : '-';
-          const lastLogin = user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('tr-TR', {day:'2-digit', month:'2-digit', year:'numeric'}) : '-';
-          const rowBg = idx % 2 === 0 ? '#f9fafb' : '#ffffff';
-          
-          html += `<tr style="background:${rowBg}; transition:all 0.2s ease; cursor:pointer;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='${rowBg}'" onclick="openUserDetail(${idx})">`;
-          html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; font-weight:500;">${escapeHtml(user.name || '-')}</td>`;
-          html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; color:#6b7280;">${escapeHtml(user.email || '-')}</td>`;
-          const addr = formatUserAddress(user);
-          const addrShort = addr && addr.length > 60 ? (addr.slice(0,57) + '...') : (addr || '-')
-          html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; color:#6b7280;" title="${escapeHtml(addr || '')}">${escapeHtml(addrShort)}</td>`;
-          html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; color:#6b7280;">${createdDate}</td>`;
-          html += `<td style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; color:#6b7280;">${lastLogin}</td>`;
-          html += '</tr>';
-        });
-        
-        html += '</tbody></table></div>';
-        listEl.innerHTML = html;
-        
-      } catch(err) {
-        console.error('Failed to load users:', err);
-        console.error('Error stack:', err.stack);
-        listEl.innerHTML = `<p style="color:#e53e3e;">Hata: ${escapeHtml(err.message)}</p><p style="color:#6b7280; font-size:0.9rem;">Console\'da detayları kontrol edin (F12)</p>`;
-        if (countEl) countEl.textContent = '';
-      } finally {
-        btn.textContent = '👥 Kullanıcıları Yükle';
-        btn.disabled = false;
-      }
+      // Modal ile kullanıcıları yükle
+      await refreshUsersList();
     });
   </script>
 
@@ -3860,30 +3803,54 @@ try {
         return getSiteSettings();
       }
 
-      async function loadSettingsIntoForm(){
-        // Önce GitHub'dan güncel veriyi çek
-        const s = await fetchAndSyncSettings();
-        const elEmail = document.getElementById('siteEmail'); if(elEmail) elEmail.value = s.email || 'amtbrs@icloud.com';
-        const elPhone = document.getElementById('sitePhone'); if(elPhone) elPhone.value = s.phone || '+90 5XX XXX XXXX';
-        const elAddr = document.getElementById('siteAddress'); if(elAddr) elAddr.value = s.address || 'Adresiniz Caddesi 1, Şehir, TR';
-        const elHours = document.getElementById('siteHours'); if(elHours) elHours.value = s.hours || 'Pzt-Cum 09:00-19:00';
-        const elIban = document.getElementById('siteIbanIn'); if(elIban) elIban.value = s.iban || 'TR33 0006 1005 1978 6457 8413 26';
-        const elBankName = document.getElementById('bankName'); if(elBankName) elBankName.value = s.bankName || '';
-        const elAccountHolder = document.getElementById('accountHolder'); if(elAccountHolder) elAccountHolder.value = s.accountHolder || '';
-        const elBtn = document.getElementById('contactBtnText'); if(elBtn) elBtn.value = s.contactBtnText || 'İletişim';
-        const elHomeTitle = document.getElementById('homepageTitle'); if (elHomeTitle) elHomeTitle.value = s.homepageTitle || 'Hoşgeldiniz';
-        const elHomeSubtitle = document.getElementById('homepageSubtitle'); if (elHomeSubtitle) elHomeSubtitle.value = s.homepageSubtitle || 'Çiçeklerle dolu bir dünya';
-        const elHomeBg = document.getElementById('homepageBackground'); if (elHomeBg) elHomeBg.value = s.homepageBackground || 'images/gallery/floral-bg.jpg';
-        const prev = document.getElementById('homepageBackgroundPreview'); if (prev) prev.style.backgroundImage = `url('${elHomeBg ? elHomeBg.value : (s.homepageBackground||'images/gallery/floral-bg.jpg')}')`;
-        // Hakkımızda alanları
-        const elAboutTitle = document.getElementById('aboutTitle'); if (elAboutTitle) elAboutTitle.value = s.aboutTitle || '';
-        const elAboutText = document.getElementById('aboutText'); if (elAboutText) elAboutText.value = s.aboutText || '';
-        // Kargo alanları
-        const elShippingCompany = document.getElementById('shippingCompany'); if (elShippingCompany) elShippingCompany.value = s.shippingCompany || '';
-        const elShippingTime = document.getElementById('shippingTime'); if (elShippingTime) elShippingTime.value = s.shippingTime || '';
-        const elShippingCost = document.getElementById('shippingCost'); if (elShippingCost) elShippingCost.value = s.shippingCost || '';
-        const elFreeShippingThreshold = document.getElementById('freeShippingThreshold'); if (elFreeShippingThreshold) elFreeShippingThreshold.value = s.freeShippingThreshold || '';
+      async function loadSettingsIntoForm(showModal = false){
+        if (showModal) {
+          openRefreshModal({
+            title: '⚙️ Ayarlar Yükleniyor',
+            progressTitle: '⚙️ Site ayarları alınıyor...'
+          });
+          updateRefreshProgress(10, 'Başlatılıyor...');
+        }
+        
+        try {
+          if (showModal) updateRefreshProgress(30, 'GitHub\'dan ayarlar çekiliyor...');
+          
+          // Önce GitHub'dan güncel veriyi çek
+          const s = await fetchAndSyncSettings();
+          
+          if (showModal) updateRefreshProgress(60, 'Form doldurulıyor...');
+          
+          const elEmail = document.getElementById('siteEmail'); if(elEmail) elEmail.value = s.email || 'amtbrs@icloud.com';
+          const elPhone = document.getElementById('sitePhone'); if(elPhone) elPhone.value = s.phone || '+90 5XX XXX XXXX';
+          const elAddr = document.getElementById('siteAddress'); if(elAddr) elAddr.value = s.address || 'Adresiniz Caddesi 1, Şehir, TR';
+          const elHours = document.getElementById('siteHours'); if(elHours) elHours.value = s.hours || 'Pzt-Cum 09:00-19:00';
+          const elIban = document.getElementById('siteIbanIn'); if(elIban) elIban.value = s.iban || 'TR33 0006 1005 1978 6457 8413 26';
+          const elBankName = document.getElementById('bankName'); if(elBankName) elBankName.value = s.bankName || '';
+          const elAccountHolder = document.getElementById('accountHolder'); if(elAccountHolder) elAccountHolder.value = s.accountHolder || '';
+          const elBtn = document.getElementById('contactBtnText'); if(elBtn) elBtn.value = s.contactBtnText || 'İletişim';
+          const elHomeTitle = document.getElementById('homepageTitle'); if (elHomeTitle) elHomeTitle.value = s.homepageTitle || 'Hoşgeldiniz';
+          const elHomeSubtitle = document.getElementById('homepageSubtitle'); if (elHomeSubtitle) elHomeSubtitle.value = s.homepageSubtitle || 'Çiçeklerle dolu bir dünya';
+          const elHomeBg = document.getElementById('homepageBackground'); if (elHomeBg) elHomeBg.value = s.homepageBackground || 'images/gallery/floral-bg.jpg';
+          const prev = document.getElementById('homepageBackgroundPreview'); if (prev) prev.style.backgroundImage = `url('${elHomeBg ? elHomeBg.value : (s.homepageBackground||'images/gallery/floral-bg.jpg')}')`;
+          // Hakkımızda alanları
+          const elAboutTitle = document.getElementById('aboutTitle'); if (elAboutTitle) elAboutTitle.value = s.aboutTitle || '';
+          const elAboutText = document.getElementById('aboutText'); if (elAboutText) elAboutText.value = s.aboutText || '';
+          // Kargo alanları
+          const elShippingCompany = document.getElementById('shippingCompany'); if (elShippingCompany) elShippingCompany.value = s.shippingCompany || '';
+          const elShippingTime = document.getElementById('shippingTime'); if (elShippingTime) elShippingTime.value = s.shippingTime || '';
+          const elShippingCost = document.getElementById('shippingCost'); if (elShippingCost) elShippingCost.value = s.shippingCost || '';
+          const elFreeShippingThreshold = document.getElementById('freeShippingThreshold'); if (elFreeShippingThreshold) elFreeShippingThreshold.value = s.freeShippingThreshold || '';
+          
+          if (showModal) finishRefreshSuccess('Ayarlar başarıyla yüklendi');
+          
+        } catch(e) {
+          if (showModal) finishRefreshError(e.message || e);
+          else console.error('loadSettingsIntoForm error:', e);
+        }
       }
+      
+      // Global scope'a ekle
+      window.loadSettingsIntoForm = loadSettingsIntoForm;
 
       // Backward compatibility: define global token accessor (eski tarayıcılar için block-scope düzeltmesi)
       if (!('getToken' in window)) {
@@ -4763,14 +4730,27 @@ try {
         dEl.textContent = `Son snapshot: ${st.email} • durum: ${st.committed ? '✓ yazıldı' : '× yazılamadı'} • ${ago} önce`;
       }
 
-      async function loadLiveCarts(){
+      async function loadLiveCarts(showModal = false){
         try{
-          setStatus('Yükleniyor...', true);
+          if (showModal) {
+            openRefreshModal({
+              title: '🛒 Sepetler Yükleniyor',
+              progressTitle: '🛒 Canlı sepetler alınıyor...'
+            });
+            updateRefreshProgress(10, 'Başlatılıyor...');
+          } else {
+            setStatus('Yükleniyor...', true);
+          }
+          
           if(listEl) listEl.innerHTML = '';
+          
+          if (showModal) updateRefreshProgress(20, 'GitHub API\'ye bağlanılıyor...');
+          
           const url = `https://api.github.com/repos/${owner}/${repo}/contents/carts?ref=${encodeURIComponent(branch)}`;
           let res = await fetch(url, { headers:{ 'Accept':'application/vnd.github.v3+json' }, cache:'no-store' });
           // Private repo 404 olabilir; token varsa tekrar dene
           if(res.status === 404){
+            if (showModal) updateRefreshProgress(30, 'Token ile tekrar deneniyor...');
             const token404 = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
             if(token404){
               const res2 = await fetch(url, { headers:{ 'Accept':'application/vnd.github.v3+json', 'Authorization': `token ${token404}` }, cache:'no-store' });
@@ -4792,19 +4772,44 @@ try {
                 extra = ' Limit sıfırlanacak: ' + dt.toLocaleTimeString('tr-TR');
               }
               if(listEl) listEl.innerHTML = '<div style="padding:0.5rem;color:#b91c1c">403: Erişim reddedildi. GitHub token gerekli veya limit doldu.'+extra+'</div>';
-              setStatus('403 hata', false);
+              if (showModal) finishRefreshError('Erişim reddedildi (403)' + extra);
+              else setStatus('403 hata', false);
               return;
             }
           }
-          if(res.status === 404){ if(listEl) listEl.innerHTML = '<div style="padding:0.5rem;color:#6b7280">Henüz sepet snapshotı yok veya erişim yok (token gerekli olabilir).</div>'; setStatus('Boş', true); renderSnapshotDiag(); return; }
+          if(res.status === 404){ 
+            if(listEl) listEl.innerHTML = '<div style="padding:0.5rem;color:#6b7280">Henüz sepet snapshotı yok veya erişim yok (token gerekli olabilir).</div>'; 
+            if (showModal) finishRefreshSuccess('Sepet bulunamadı');
+            else setStatus('Boş', true); 
+            renderSnapshotDiag(); 
+            return; 
+          }
           if(!res.ok){ throw new Error('Liste alınamadı: '+res.status); }
+          
+          if (showModal) updateRefreshProgress(40, 'Dosya listesi alındı...');
+          
           const files = await res.json();
           const cartFiles = Array.isArray(files) ? files.filter(f=>/\.json$/i.test(f.name)) : [];
-          if(!cartFiles.length){ if(listEl) listEl.innerHTML = '<div style="padding:0.5rem;color:#6b7280">Sepet dosyası bulunamadı.</div>'; setStatus('Boş', true); renderSnapshotDiag(); return; }
+          if(!cartFiles.length){ 
+            if(listEl) listEl.innerHTML = '<div style="padding:0.5rem;color:#6b7280">Sepet dosyası bulunamadı.</div>'; 
+            if (showModal) finishRefreshSuccess('Sepet dosyası bulunamadı');
+            else setStatus('Boş', true); 
+            renderSnapshotDiag(); 
+            return; 
+          }
+          
+          if (showModal) updateRefreshProgress(50, `${cartFiles.length} sepet dosyası bulundu...`);
+          
           window.__liveCartsCache = []; // reset cache
           let rowsHtml = '<table style="width:100%;border-collapse:collapse;font-size:0.75rem;">';
           rowsHtml += '<thead><tr style="background:#f3f4f6"><th style="text-align:left;padding:4px;">Email</th><th style="text-align:left;padding:4px;">Ad</th><th style="text-align:left;padding:4px;">Ürünler</th><th style="padding:4px;">Adet</th><th style="padding:4px;">Toplam</th><th style="padding:4px;">Güncellendi</th></tr></thead><tbody>';
-          for(const f of cartFiles){
+          
+          for(let i = 0; i < cartFiles.length; i++){
+            const f = cartFiles[i];
+            if (showModal) {
+              const progress = 50 + Math.round((i / cartFiles.length) * 35);
+              updateRefreshProgress(progress, `Sepet ${i+1}/${cartFiles.length} yükleniyor...`);
+            }
             try{
               const dRes = await fetch(f.download_url, { cache:'no-store' });
               if(!dRes.ok) continue;
@@ -4824,10 +4829,15 @@ try {
           }
           rowsHtml += '</tbody></table>';
           if(listEl) listEl.innerHTML = rowsHtml;
-          setStatus('Güncel', true);
+          
+          if (showModal) finishRefreshSuccess(`${window.__liveCartsCache.length} sepet başarıyla yüklendi`);
+          else setStatus('Güncel', true);
+          
           renderSnapshotDiag();
         }catch(e){
-          console.error('loadLiveCarts hata', e); setStatus('Hata', false);
+          console.error('loadLiveCarts hata', e); 
+          if (showModal) finishRefreshError(e.message || e);
+          else setStatus('Hata', false);
           if(listEl) listEl.innerHTML = '<div style="padding:0.5rem;color:#b91c1c">Yükleme hatası: '+escapeHtml(e.message||String(e))+'</div>';
           renderSnapshotDiag();
         }
@@ -4883,12 +4893,12 @@ try {
       function startAuto(){ if(autoTimer) clearInterval(autoTimer); autoTimer = setInterval(loadLiveCarts, 30000); }
       function stopAuto(){ if(autoTimer) { clearInterval(autoTimer); autoTimer = null; } }
 
-      if(btn) btn.addEventListener('click', async ()=>{ const origText = btn.innerHTML; btn.innerHTML = '⏳ Yükleniyor...'; btn.disabled = true; try { await loadLiveCarts(); renderSnapshotDiag(); } finally { btn.innerHTML = origText; btn.disabled = false; } });
+      if(btn) btn.addEventListener('click', async ()=>{ await loadLiveCarts(true); renderSnapshotDiag(); });
       const cleanupBtn = document.getElementById('liveCartsCleanup'); if(cleanupBtn) cleanupBtn.addEventListener('click', async ()=>{ const origText = cleanupBtn.innerHTML; cleanupBtn.innerHTML = '⏳ Temizleniyor...'; cleanupBtn.disabled = true; try { await cleanupOldCarts(); } finally { cleanupBtn.innerHTML = origText; cleanupBtn.disabled = false; } });
       const dummyBtn = document.getElementById('liveCartsCreateDummy'); if(dummyBtn) dummyBtn.addEventListener('click', async ()=>{ const origText = dummyBtn.innerHTML; dummyBtn.innerHTML = '⏳ Oluşturuluyor...'; dummyBtn.disabled = true; try { await createDummyCartSnapshot(); } finally { dummyBtn.innerHTML = origText; dummyBtn.disabled = false; } });
       if(autoChk) autoChk.addEventListener('change', ()=>{ if(autoChk.checked){ startAuto(); loadLiveCarts(); } else { stopAuto(); } });
-      // İlk yükleme (auth sonrası görülebilir)
-      setTimeout(()=>{ loadLiveCarts(); renderSnapshotDiag(); }, 1500);
+      // İlk yükleme (auth sonrası görülebilir) - modal gösterme
+      setTimeout(()=>{ loadLiveCarts(false); renderSnapshotDiag(); }, 1500);
     })();
 
     async function createDummyCartSnapshot(){
