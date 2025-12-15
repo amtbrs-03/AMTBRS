@@ -745,6 +745,30 @@
       </div>
     </div>
   </section>
+  <!-- Product Delete Confirmation Modal -->
+  <section id="productDeleteModal" class="modal" style="display:none">
+    <div class="modal-content small-modal" style="max-width:480px;">
+      <div class="modal-header" style="justify-content:center;background:linear-gradient(135deg,#fef2f2,#fee2e2);border-bottom:2px solid #fecaca;">
+        <h2 style="margin:0;color:#991b1b;">🗑️ Ürün Silme</h2>
+      </div>
+      <div class="modal-body" style="margin-bottom:0.5rem;padding:1.5rem;">
+        <div style="text-align:center;margin-bottom:1rem;">
+          <div style="width:64px;height:64px;background:linear-gradient(135deg,#fef2f2,#fee2e2);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:0.5rem;border:2px solid #fecaca;">
+            <span style="font-size:1.8rem;">⚠️</span>
+          </div>
+          <div style="font-weight:700;color:#0f172a;font-size:1.1rem;margin-bottom:0.25rem;">Emin misiniz?</div>
+          <div id="productDeleteName" style="color:#dc2626;font-weight:600;font-size:1rem;margin-bottom:0.5rem;"></div>
+          <div class="small" style="color:#64748b;line-height:1.6;">
+            Bu ürün kalıcı olarak silinecektir.<br>Bu işlem geri alınamaz!
+          </div>
+        </div>
+      </div>
+      <div class="form-actions" style="display:flex;gap:0.5rem;justify-content:center;padding:1rem;background:#f9fafb;border-top:1px solid #e5e7eb;border-radius:0 0 12px 12px;">
+        <button type="button" class="btn btn-danger" id="confirmDeleteProductBtn" style="padding:0.6rem 1.5rem;">🗑️ Evet, Sil</button>
+        <button type="button" class="btn btn-ghost" onclick="closeProductDeleteModal()" style="padding:0.6rem 1.5rem;">Vazgeç</button>
+      </div>
+    </div>
+  </section>
   <section id="productEditPanel" class="modal" style="display:none">
     <div class="modal-content">
       <!-- Sketch-like header: image, name, price, badge -->
@@ -1817,7 +1841,7 @@
                 </div>
                 <div class='actions'>
                   <button type='button' class='btn' data-action='edit' aria-expanded='false' data-id='${p.id}'>Düzenle</button>
-                  <button type='button' class='btn btn-danger' data-action='delete' data-id='${p.id}'>Sil</button>
+                  <button type='button' class='btn btn-danger' data-action='delete' data-id='${p.id}' data-name='${(p.name || '').replace(/'/g, "\\'")}'>Sil</button>
                 </div>
                 <div class='prod-edit-panel' id='edit-panel-${p.id}' style='display:none;margin-top:8px;padding:10px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;'>
                   <div style='display:grid;gap:6px;'>
@@ -1888,7 +1912,8 @@
                       }catch(err){ console.warn('[admin] inline fallback failed', err); }
                       break;
                     case 'delete':
-                      if(typeof deleteAdminProduct==='function') deleteAdminProduct(id);
+                      const productName = btn.getAttribute('data-name') || id;
+                      if(typeof deleteAdminProduct==='function') deleteAdminProduct(id, productName);
                       break;
                     case 'verify-img':
                       if(typeof verifyInlineImagePath==='function') verifyInlineImagePath(id);
@@ -1919,8 +1944,40 @@
         }
 
         // Ürün sil (GitHub products.json güncelle)
-        async function deleteAdminProduct(id){
-          if (!confirm('Bu ürünü silmek istediğinize emin misiniz?')) return;
+        let _pendingDeleteId = null;
+        
+        function openProductDeleteModal(id, name) {
+          _pendingDeleteId = id;
+          const nameEl = document.getElementById('productDeleteName');
+          if (nameEl) nameEl.textContent = name || id;
+          const m = document.getElementById('productDeleteModal');
+          if (m) m.style.display = 'flex';
+        }
+        
+        function closeProductDeleteModal() {
+          _pendingDeleteId = null;
+          const m = document.getElementById('productDeleteModal');
+          if (m) m.style.display = 'none';
+        }
+        
+        // Modal confirm butonu event listener
+        document.addEventListener('DOMContentLoaded', function() {
+          const confirmBtn = document.getElementById('confirmDeleteProductBtn');
+          if (confirmBtn) {
+            confirmBtn.addEventListener('click', function() {
+              if (_pendingDeleteId) {
+                performDeleteProduct(_pendingDeleteId);
+                closeProductDeleteModal();
+              }
+            });
+          }
+        });
+        
+        async function deleteAdminProduct(id, name){
+          openProductDeleteModal(id, name);
+        }
+        
+        async function performDeleteProduct(id){
           try {
             const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
             if (!token) throw new Error('GitHub token gerekli!');
@@ -2008,7 +2065,8 @@
                   break;
                 case 'delete':
                   e.preventDefault();
-                  if(typeof deleteAdminProduct==='function') deleteAdminProduct(id);
+                  const pName = btn.getAttribute('data-name') || id;
+                  if(typeof deleteAdminProduct==='function') deleteAdminProduct(id, pName);
                   break;
                 case 'verify-img':
                   if(typeof verifyInlineImagePath==='function') verifyInlineImagePath(id);
