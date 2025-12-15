@@ -1,5 +1,5 @@
 {
-  "updatedAt": 1765596097645,
+  "updatedAt": 1765823922093,
   "items": [
     {
       "id": "IMG_1966.JPG",
@@ -58,20 +58,6 @@
       "potDiameter": "11",
       "height": "34",
       "info": "ŞOKKK",
-      "sortOrder": 0
-    },
-    {
-      "id": "TEMP-1765596068978",
-      "name": "DDDDDDDDD",
-      "price": 67899,
-      "badge": "Yeni",
-      "image": "images/gallery/IMG_1972.JPG",
-      "images": [
-        "images/gallery/IMG_1972.JPG"
-      ],
-      "potDiameter": "33",
-      "height": "55",
-      "info": "FHYHGBB",
       "sortOrder": 0
     }
   ]
