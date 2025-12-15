@@ -2257,9 +2257,6 @@
         <button id="openGalleryBtn" class="btn" type="button" title="Galeriye git, resimleri görüntüle, sil ve yönet" style="background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);box-shadow:0 4px 15px rgba(139,92,246,0.4);">
           📸 Galeri Yönetimi
         </button>
-        <button id="openGalleryUploadBtn" class="btn" type="button" title="images/gallery klasörüne resim yüklemek için GitHub yükleme sayfasını açar" style="background:linear-gradient(135deg,#10b981 0%,#059669 100%);box-shadow:0 4px 15px rgba(16,185,129,0.4);">
-          🖼️ Galeriyi GitHub'da aç ve resim yükle
-        </button>
       </div>
 
 
@@ -5873,9 +5870,8 @@ try {
       </div>
       
       <div style="display:flex;gap:0.75rem;margin-bottom:1rem;flex-wrap:wrap;">
-        <button id="refreshGalleryBtn" class="btn" onclick="refreshGalleryWithModal()">🔄 Yenile</button>
-        <button id="uploadToGalleryBtn" class="btn" onclick="openGitHubGalleryUpload()">⬆️ GitHub'da Yükle</button>
-        <button id="toggleGalleryGridBtn" class="btn btn-ghost" onclick="toggleGalleryView()">🔲 Görünüm</button>
+        <button id="uploadToGalleryBtn" class="btn" onclick="openGitHubGalleryUpload()" style="background:linear-gradient(135deg,#10b981 0%,#059669 100%);box-shadow:0 4px 15px rgba(16,185,129,0.4);">⬆️ GitHub'da Yükle</button>
+        <button id="refreshGalleryBtn" class="btn btn-ghost" onclick="refreshGalleryWithModal()">🔄 Yenile</button>
       </div>
       
       <div id="galleryStatus" class="small" style="color:#64748b;margin-bottom:0.5rem;min-height:1.2rem;"></div>
