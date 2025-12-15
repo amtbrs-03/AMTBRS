@@ -764,7 +764,7 @@
         </div>
       </div>
       <div class="form-actions" style="display:flex;gap:0.5rem;justify-content:center;padding:1rem;background:#f9fafb;border-top:1px solid #e5e7eb;border-radius:0 0 12px 12px;">
-        <button type="button" class="btn btn-danger" id="confirmDeleteProductBtn" style="padding:0.6rem 1.5rem;">🗑️ Evet, Sil</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteProductBtn" onclick="confirmProductDelete()" style="padding:0.6rem 1.5rem;">🗑️ Evet, Sil</button>
         <button type="button" class="btn btn-ghost" onclick="closeProductDeleteModal()" style="padding:0.6rem 1.5rem;">Vazgeç</button>
       </div>
     </div>
@@ -1960,18 +1960,18 @@
           if (m) m.style.display = 'none';
         }
         
-        // Modal confirm butonu event listener
-        document.addEventListener('DOMContentLoaded', function() {
-          const confirmBtn = document.getElementById('confirmDeleteProductBtn');
-          if (confirmBtn) {
-            confirmBtn.addEventListener('click', function() {
-              if (_pendingDeleteId) {
-                performDeleteProduct(_pendingDeleteId);
-                closeProductDeleteModal();
-              }
-            });
+        // Silme onayı - onclick ile çağrılıyor
+        function confirmProductDelete() {
+          if (_pendingDeleteId) {
+            performDeleteProduct(_pendingDeleteId);
+            closeProductDeleteModal();
           }
-        });
+        }
+        
+        // Global erişim için
+        window.openProductDeleteModal = openProductDeleteModal;
+        window.closeProductDeleteModal = closeProductDeleteModal;
+        window.confirmProductDelete = confirmProductDelete;
         
         async function deleteAdminProduct(id, name){
           openProductDeleteModal(id, name);
