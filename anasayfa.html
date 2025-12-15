@@ -573,7 +573,8 @@
             header nav { padding: 0 0.8rem; }
             .nav-links { gap:0.5rem; }
             #paymentWidget { left: 0.6rem; right:0.6rem; width:auto; bottom:0.8rem; }
-            footer { padding: 0.6rem 0.8rem; background: linear-gradient(135deg, rgba(15,23,42,0.92), rgba(30,41,59,0.92)); color: rgba(255,255,255,0.9); opacity: 1; z-index:99999; pointer-events: auto; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid rgba(22,163,74,0.25); }
+            footer { padding: 0.6rem 0.8rem; background: linear-gradient(135deg, rgba(15,23,42,0.92), rgba(30,41,59,0.92)); color: rgba(255,255,255,0.9); opacity: 1; z-index:99999; pointer-events: auto; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid rgba(22,163,74,0.25); transition: transform 0.3s ease, opacity 0.3s ease; }
+            footer.footer-hidden { transform: translateY(100%); opacity: 0; pointer-events: none; }
             footer:hover { box-shadow: 0 -4px 16px rgba(0,0,0,0.2); }
             body { padding-bottom: 70px; }
 
@@ -1836,6 +1837,56 @@
                     document.addEventListener('DOMContentLoaded', function(){
                         // Lightbox code removed as requested
                         loadProducts();
+                        
+                        // ===== MOBİL FOOTER SCROLL DAVRANIŞI =====
+                        (function setupMobileFooterScroll() {
+                            const footer = document.querySelector('footer');
+                            if (!footer) return;
+                            
+                            let lastScrollY = window.scrollY;
+                            let ticking = false;
+                            
+                            function updateFooterVisibility() {
+                                // Sadece mobil cihazlarda çalış
+                                if (window.innerWidth > 700) {
+                                    footer.classList.remove('footer-hidden');
+                                    return;
+                                }
+                                
+                                const currentScrollY = window.scrollY;
+                                const scrollDiff = currentScrollY - lastScrollY;
+                                
+                                // Sayfa en altına yakınsa footer görünsün
+                                const nearBottom = (window.innerHeight + currentScrollY) >= (document.body.scrollHeight - 100);
+                                
+                                if (nearBottom) {
+                                    footer.classList.remove('footer-hidden');
+                                } else if (scrollDiff > 5) {
+                                    // Aşağı kaydırılıyor - gizle
+                                    footer.classList.add('footer-hidden');
+                                } else if (scrollDiff < -5) {
+                                    // Yukarı kaydırılıyor - göster
+                                    footer.classList.remove('footer-hidden');
+                                }
+                                
+                                lastScrollY = currentScrollY;
+                                ticking = false;
+                            }
+                            
+                            window.addEventListener('scroll', function() {
+                                if (!ticking) {
+                                    requestAnimationFrame(updateFooterVisibility);
+                                    ticking = true;
+                                }
+                            }, { passive: true });
+                            
+                            // Resize'da sıfırla
+                            window.addEventListener('resize', function() {
+                                if (window.innerWidth > 700) {
+                                    footer.classList.remove('footer-hidden');
+                                }
+                            });
+                        })();
                         
                         // ===== MOBİL FİLTRE ÇUBUĞU SCROLL DAVRANIŞI =====
                         (function setupMobileFilterSticky() {
