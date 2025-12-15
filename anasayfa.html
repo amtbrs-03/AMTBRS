@@ -460,7 +460,10 @@
         button { background: linear-gradient(180deg,#16a34a,#15803d); color: white; border: none; padding: .7rem 1rem; border-radius:10px; cursor:pointer; transition: transform 220ms, box-shadow 220ms; width:100%; box-shadow:0 4px 12px rgba(22,163,74,0.25); font-weight:600 }
         button:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(22,163,74,0.35) }
 
-        footer { background: rgba(28,36,50,0.6); color: rgba(255,255,255,0.85); text-align:center; padding:2rem; margin-top:3rem; border-top:1px solid rgba(255,255,255,0.03); position:relative; transform:translateZ(10px) }
+        footer { background: rgba(28,36,50,0.95); color: rgba(255,255,255,0.85); text-align:center; padding:1.2rem 2rem; border-top:1px solid rgba(255,255,255,0.03); position:fixed; bottom:0; left:0; right:0; z-index:9999; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); box-shadow:0 -4px 20px rgba(0,0,0,0.15); }
+        
+        /* Footer sabit olduğu için sayfa içeriğine alt boşluk */
+        body { padding-bottom: 180px; }
 
         .hidden { display: none }
         .cart-items { list-style:none; margin:0; padding:0 }
@@ -568,7 +571,8 @@
             header nav { padding: 0 0.8rem; }
             .nav-links { gap:0.5rem; }
             #paymentWidget { left: 0.6rem; right:0.6rem; width:auto; bottom:0.8rem; }
-            footer { padding: 1rem; }
+            footer { padding: 0.8rem 1rem; }
+            body { padding-bottom: 160px; }
 
             /* Hide heavy decorative background on very small screens */
             #floral-bg { display: none; }
@@ -771,8 +775,11 @@
                 padding-bottom: 80px;
             }
             #productDetailPanel #panelMainImgWrap {
-                height: 220px !important;
-                max-width: 100% !important;
+                max-height: 45vh !important;
+                width: 100% !important;
+            }
+            #productDetailPanel #panelMainImg {
+                max-height: 45vh !important;
             }
             #productDetailPanel #closeProductDetailPanel {
                 position: fixed !important;
@@ -2540,12 +2547,12 @@
                             }
                             // Panel içeriğini oluştur (modern layout)
                             let mainImg = images[0] || '';
-                            let html = `<div style='width:100%;max-width:320px;margin:0 auto;'>`;
+                            let html = `<div style='width:100%;margin:0 auto;'>`;
                             // Ürün adı - kompakt, tek satır, estetik
                             html += `<div style='width:100%;text-align:center;margin-bottom:0.6rem;padding-bottom:0.5rem;border-bottom:1px solid #e5e7eb;'><span style='font-size:1.1rem;font-weight:700;color:#1e293b;letter-spacing:0.3px;line-height:1.3;display:block;word-wrap:break-word;'>${name}</span></div>`;
-                            // Resim
-                            html += `<div id='panelMainImgWrap' style='width:100%;height:280px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:14px;box-shadow:0 4px 18px rgba(30,143,85,0.13);margin-bottom:0.8rem;overflow:hidden;'>`;
-                            html += `<img id='panelMainImg' src='${mainImg}' alt='${name}' style='width:100%;height:100%;object-fit:contain;border-radius:12px;background:#fff;'/>`;
+                            // Resim - panel genişliği kadar, oran korunarak
+                            html += `<div id='panelMainImgWrap' style='width:100%;max-height:50vh;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:14px;box-shadow:0 4px 18px rgba(30,143,85,0.13);margin-bottom:0.8rem;overflow:hidden;'>`;
+                            html += `<img id='panelMainImg' src='${mainImg}' alt='${name}' style='width:100%;height:auto;max-height:50vh;object-fit:contain;border-radius:12px;background:#fff;'/>`;
                             html += `</div>`;
                             // Küçük resimler
                             if(images.length > 1) {
