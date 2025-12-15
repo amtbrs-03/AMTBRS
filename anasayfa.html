@@ -460,11 +460,11 @@
         button { background: linear-gradient(180deg,#16a34a,#15803d); color: white; border: none; padding: .7rem 1rem; border-radius:10px; cursor:pointer; transition: transform 220ms, box-shadow 220ms; width:100%; box-shadow:0 4px 12px rgba(22,163,74,0.25); font-weight:600 }
         button:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(22,163,74,0.35) }
 
-        footer { background: transparent; color: rgba(255,255,255,0.85); text-align:center; padding:1.2rem 2rem; position:fixed; bottom:0; left:0; right:0; z-index:9999; pointer-events: none; }
+        footer { background: transparent; color: rgba(255,255,255,0.85); text-align:center; padding:0.8rem 2rem; position:fixed; bottom:0; left:0; right:0; z-index:9999; pointer-events: none; }
         footer > * { pointer-events: auto; }
         
         /* Footer sabit olduğu için sayfa içeriğine alt boşluk */
-        body { padding-bottom: 180px; }
+        body { padding-bottom: 80px; }
 
         .hidden { display: none }
         .cart-items { list-style:none; margin:0; padding:0 }
@@ -572,8 +572,8 @@
             header nav { padding: 0 0.8rem; }
             .nav-links { gap:0.5rem; }
             #paymentWidget { left: 0.6rem; right:0.6rem; width:auto; bottom:0.8rem; }
-            footer { padding: 0.8rem 1rem; }
-            body { padding-bottom: 160px; }
+            footer { padding: 0.6rem 1rem; }
+            body { padding-bottom: 70px; }
 
             /* Hide heavy decorative background on very small screens */
             #floral-bg { display: none; }
@@ -1661,15 +1661,8 @@
 
                 <footer>
                     <div style="display:flex;flex-direction:column;gap:0.5rem;align-items:center;">
-                        <div style="display:flex;gap:1.5rem;flex-wrap:wrap;justify-content:center;align-items:center;">
-                            <div style="padding:1.2rem 2rem;background:linear-gradient(135deg,#ffffff,#f3f4f6);border-radius:12px;border:2px solid rgba(11,47,31,0.2);box-shadow:0 4px 12px rgba(0,0,0,0.1);transition:all 0.3s ease;cursor:pointer;min-width:220px;text-align:center;" onmouseover="this.style.background='linear-gradient(135deg,#fee2e2,#fecaca)';this.style.borderColor='#dc2626';this.style.transform='translateY(-4px)';this.style.boxShadow='0 8px 20px rgba(220,38,38,0.3)';" onmouseout="this.style.background='linear-gradient(135deg,#ffffff,#f3f4f6)';this.style.borderColor='rgba(11,47,31,0.2)';this.style.transform='translateY(0)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';">
-                                <div style="font-size:1.1rem;font-weight:800;color:#0b2f1f;margin-bottom:0.3rem;">💳 Ödeme</div>
-                                <div style="font-size:0.95rem;font-weight:700;color:#334155;">Havale / EFT</div>
-                                <div style="font-size:0.85rem;color:#6b7280;margin-top:0.2rem;">Güvenli ödeme sağlanır</div>
-                            </div>
-                        </div>
                         <!-- Yasal Linkler -->
-                        <div style="display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;margin-top:0.8rem;font-size:0.85rem;">
+                        <div style="display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;font-size:0.85rem;">
                             <a href="kvkk.html" style="color:rgba(255,255,255,0.7);text-decoration:none;transition:color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.7)'">KVKK</a>
                             <span style="color:rgba(255,255,255,0.3);">|</span>
                             <a href="gizlilik.html" style="color:rgba(255,255,255,0.7);text-decoration:none;transition:color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.7)'">Gizlilik</a>
