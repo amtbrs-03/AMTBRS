@@ -1792,7 +1792,10 @@
   document.getElementById('productEditForm').onsubmit = async function(e){
     e.preventDefault();
     const msgEl=document.getElementById('editProductMsg');
-    msgEl.textContent='⏳ Değişiklikler kaydediliyor (canlıya alma arka planda)...';
+    msgEl.textContent='';
+    // Progress modal aç
+    openRefreshModal({ title: '💾 Ürün Kaydediliyor', canClose: false });
+    updateRefreshProgress(10, 'Başlatılıyor...');
     const id=document.getElementById('editProductId').value.trim();
     const name=document.getElementById('editProductName').value.trim();
     const price=parseFloat(document.getElementById('editProductPrice').value);
@@ -1809,6 +1812,7 @@
     const sortOrder=parseInt(document.getElementById('editProductSortOrder')?.value||'0',10)||0;
     const autoBind = true; // Her zaman arka planda otomatik bağla
     // GitHub Web Yükleme mantığına uy: görsel yolunu doğrula ve ID eşleşmesini case-insensitive yap
+    updateRefreshProgress(15, 'Görseller doğrulanıyor...');
     try {
       // Helper: verify with optional auto-bind polling
       async function ensurePathExists(pth){
@@ -1828,17 +1832,18 @@
         return true;
       }
       // Check main + extra images if provided
-      if(!(await ensurePathExists(image))){ msgEl.textContent = 'Dosya GitHub’da bulunamadı: '+image; return; }
-      if(image2 && !(await ensurePathExists(image2))){ msgEl.textContent = 'Dosya GitHub’da bulunamadı: '+image2; return; }
-      if(image3 && !(await ensurePathExists(image3))){ msgEl.textContent = 'Dosya GitHub’da bulunamadı: '+image3; return; }
-      if(image4 && !(await ensurePathExists(image4))){ msgEl.textContent = 'Dosya GitHub’da bulunamadı: '+image4; return; }
+      if(!(await ensurePathExists(image))){ finishRefreshError('Dosya GitHub'da bulunamadı: '+image); return; }
+      if(image2 && !(await ensurePathExists(image2))){ finishRefreshError('Dosya GitHub'da bulunamadi: '+image2); return; }
+      if(image3 && !(await ensurePathExists(image3))){ finishRefreshError('Dosya GitHub'da bulunamadi: '+image3); return; }
+      if(image4 && !(await ensurePathExists(image4))){ finishRefreshError('Dosya GitHub'da bulunamadi: '+image4); return; }
     } catch(_){ /* path check errors ignored */ }
+    updateRefreshProgress(25, 'Görsel formatı kontrol ediliyor...');
     // Görsel yolu doğrulama: optional baştaki '/', products|gallery, uzantı case-insensitive
     const imgRe=/^\/?images\/(products|gallery)\/[A-Za-z0-9._-]+\.(jpg|jpeg|png|webp)$/i;
-    if(!imgRe.test(image)){ msgEl.textContent='Geçerli ana görsel yolu girin! (ör. images/products/IMG_1966.jpg)'; return; }
-    if(image2 && !imgRe.test(image2)){ msgEl.textContent='Ek Görsel 1 için geçerli yol girin!'; return; }
-    if(image3 && !imgRe.test(image3)){ msgEl.textContent='Ek Görsel 2 için geçerli yol girin!'; return; }
-    if(image4 && !imgRe.test(image4)){ msgEl.textContent='Ek Görsel 3 için geçerli yol girin!'; return; }
+    if(!imgRe.test(image)){ finishRefreshError('Geçerli ana görsel yolu girin! (ör. images/products/IMG_1966.jpg)'); return; }
+    if(image2 && !imgRe.test(image2)){ finishRefreshError('Ek Görsel 1 için geçerli yol girin!'); return; }
+    if(image3 && !imgRe.test(image3)){ finishRefreshError('Ek Görsel 2 için geçerli yol girin!'); return; }
+    if(image4 && !imgRe.test(image4)){ finishRefreshError('Ek Görsel 3 için geçerli yol girin!'); return; }
     // küçük önizlemeleri güncelle
     try {
       const ids=['editProductImage','editProductImage2','editProductImage3','editProductImage4'];
@@ -1848,6 +1853,7 @@
         if(holder){ holder.innerHTML = val ? `<img src="${val.replace(/^images\//,'') ? val : val}" alt="${id}" style="width:100%;height:100%;object-fit:cover">` : '' }
       });
     } catch(_){/* ignore preview errors */}
+    updateRefreshProgress(30, 'GitHub\'dan veriler alınıyor...');
     // --- OPTIMIZED: Async commit, instant UI, CDN cache bypass ---
     (async function(){
       try {
@@ -1857,6 +1863,7 @@
         // Prepare product data
         const token=localStorage.github_token||localStorage.gh_token;
         const repo='amtbrs-03/AMTBRS'; const branch='site-release';
+        updateRefreshProgress(40, 'GitHub commit hazırlanıyor...');
         // Async commit logic
         function commitToGitHub(products, idx, actionMsg, sha){
           return fetch(`https://api.github.com/repos/${repo}/contents/products.json`, {
@@ -1867,6 +1874,7 @@
         }
         // Main logic (unchanged, but commit is async)
         let attempt=0; const maxAttempts=3; let lastError=null;
+        updateRefreshProgress(50, 'GitHub\'a bağlanılıyor...');
         (async function backgroundCommit(){
           while(attempt < maxAttempts){
             attempt++;
@@ -1891,23 +1899,30 @@
                 }
                 if(idx===-1){ products.items.push(next); } else { products.items[idx]=next; }
                 products.updatedAt=Date.now();
+                updateRefreshProgress(70, 'GitHub\'a kaydediliyor...');
                 if(token){
                   // Async commit
                   commitToGitHub(products, idx, (idx===-1?'yeni ürün eklendi':'ürün güncellendi'), null).then(async putRes=>{
                     if(!putRes.ok){
                       const t=await putRes.text().catch(()=> '');
                       if(putRes.status===403){
-                        msgEl.innerHTML = `❌ GitHub kaydı başarısız (403).<br><div class="small" style="color:#64748b;margin-top:6px">Olası nedenler:<ul style="margin:6px 0;"><li>Token kapsamı yetersiz: <b>repo</b> (classic) veya <b>fine-grained</b> token için bu repoya "Contents: Read & Write" izni verin.</li><li>Reponun yazma izni yok: Token sahibi hesabın <b>amtbrs-03/AMTBRS</b> reposunda yazma yetkisi olmalı.</li><li>Dal koruması: <b>site-release</b> dalı korumalıysa doğrudan yazmaya izin verilmeyebilir.</li><li>Kurumsal SSO: Organizasyon token’ı için SSO yetkilendirmesi gerekiyor.</li></ul></div>`;
+                        finishRefreshError('GitHub kaydi basarisiz (403). Token izinlerini kontrol edin.');
                       }
                     } else {
-                      msgEl.textContent='✅ Değişiklikler canlıya alındı!';
+                      updateRefreshProgress(90, 'Tamamlanıyor...');
+                      finishRefreshSuccess('✅ Ürün başarıyla kaydedildi!', function(){
+                        try{ renderAdminProducts(); }catch(_){}
+                        closeProductEditPanel();
+                      });
                     }
                   });
                 } else {
                   try { localStorage.setItem('products_override', JSON.stringify(products)); } catch(_){}
-                  msgEl.textContent='✅ Yerel olarak kaydedildi (GitHub token yok)';
+                  finishRefreshSuccess('✅ Yerel olarak kaydedildi (GitHub token yok)', function(){
+                    try{ renderAdminProducts(); }catch(_){}
+                    closeProductEditPanel();
+                  });
                 }
-                setTimeout(()=>{ try{ renderAdminProducts(); }catch(_){} closeProductEditPanel(); }, 800);
                 return;
               }
               const data=await res.json(); let products=JSON.parse(fromBase64(data.content));
@@ -1921,32 +1936,42 @@
               if(!Array.isArray(products.items)) products.items = Array.isArray(products) ? products : [];
               if(idx===-1){ products.items.push(next); } else { products.items[idx]=next; }
               products.updatedAt=Date.now();
+              updateRefreshProgress(70, 'GitHub\'a kaydediliyor...');
               if(token){
                 // Async commit
                 commitToGitHub(products, idx, (idx===-1?'yeni ürün eklendi':'ürün güncellendi'), data.sha).then(async putRes=>{
                   if(putRes.status===409 && attempt<maxAttempts){
-                    msgEl.textContent=`⚠️ Çakışma algılandı, ${500*attempt}ms sonra tekrar...`;
+                    updateRefreshProgress(60, 'Çakışma algılandı, tekrar deneniyor...');
                     await new Promise(r=>setTimeout(r,500*attempt));
                     return;
                   }
                   if(!putRes.ok){
                     const t=await putRes.text().catch(()=> '');
                     if(putRes.status===403){
-                      msgEl.innerHTML = `❌ GitHub kaydı başarısız (403).<br><div class="small" style="color:#64748b;margin-top:6px">Olası nedenler:<ul style="margin:6px 0;"><li>Token kapsamı yetersiz: <b>repo</b> (classic) veya <b>fine-grained</b> token için bu repoya "Contents: Read & Write" izni verin.</li><li>Reponun yazma izni yok: Token sahibi hesabın <b>amtbrs-03/AMTBRS</b> reposunda yazma yetkisi olmalı.</li><li>Dal koruması: <b>site-release</b> dalı korumalıysa doğrudan yazmaya izin verilmeyebilir.</li><li>Kurumsal SSO: Organizasyon token’ı için SSO yetkilendirmesi gerekiyor.</li></ul></div>`;
+                      finishRefreshError('GitHub kaydi basarisiz (403). Token izinlerini kontrol edin.');
+                    } else {
+                      finishRefreshError('GitHub kaydi basarisiz: '+putRes.status);
                     }
                   } else {
-                    msgEl.textContent='✅ Değişiklikler canlıya alındı!';
+                    updateRefreshProgress(90, 'Tamamlanıyor...');
+                    finishRefreshSuccess('✅ Ürün başarıyla kaydedildi!', function(){
+                      try{ renderAdminProducts(); }catch(_){}
+                      closeProductEditPanel();
+                    });
                   }
                 });
               } else {
                 try { localStorage.setItem('products_override', JSON.stringify(products)); } catch(_){}
-                msgEl.textContent='✅ Yerel olarak kaydedildi (GitHub token yok)';
+                finishRefreshSuccess('✅ Yerel olarak kaydedildi (GitHub token yok)', function(){
+                  try{ renderAdminProducts(); }catch(_){}
+                  closeProductEditPanel();
+                });
               }
               break;
             }catch(err){
               lastError=err;
               if(err.message.includes('409') && attempt<maxAttempts){
-                msgEl.textContent=`⚠️ Çakışma (${attempt}), ${500*attempt}ms sonra tekrar...`;
+                updateRefreshProgress(60, 'Çakışma ('+attempt+'), tekrar deneniyor...');
                 await new Promise(r=>setTimeout(r,500*attempt));
                 continue;
               }
@@ -1954,18 +1979,8 @@
             }
           }
           if(attempt>=maxAttempts && lastError) throw lastError;
-          setTimeout(()=>{
-            try{ renderAdminProducts(); }catch(_){/* ignore */}
-            try {
-              const main = document.getElementById('editProductImage')?.value.trim();
-              if(main) updateEditImagePreview('editProductImage', main);
-              const im2 = document.getElementById('editProductImage2')?.value.trim(); if(im2) updateEditImagePreview('editProductImage2', im2);
-              const im3 = document.getElementById('editProductImage3')?.value.trim(); if(im3) updateEditImagePreview('editProductImage3', im3);
-            } catch(_){ }
-            closeProductEditPanel();
-          }, 800);
         })();
-      } catch(err){ msgEl.textContent='Hata: '+err.message; }
+      } catch(err){ finishRefreshError('Hata: '+err.message); }
     })();
   };
   // Edit panel: refresh current product from GitHub and update fields - Modal ile
@@ -2238,9 +2253,12 @@
         <a href="faturalar.html" class="btn" style="text-decoration:none;background:linear-gradient(135deg,#f59e0b 0%,#d97706 100%);box-shadow:0 4px 15px rgba(245,158,11,0.4);">🧾 Faturalar</a>
       </div>
       <!-- Gallery image upload quick action (under Users load) -->
-      <div class="action-bar" style="margin-top:8px">
-        <button id="openGalleryUploadBtn" class="btn" type="button" title="images/gallery klasörüne resim yüklemek için GitHub yükleme sayfasını açar">
-          🖼️ Galeriyi GitHub’da aç ve resim yükle
+      <div class="action-bar" style="margin-top:8px;display:flex;gap:0.5rem;flex-wrap:wrap;">
+        <button id="openGalleryBtn" class="btn" type="button" title="Galeriye git, resimleri görüntüle, sil ve yönet" style="background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);box-shadow:0 4px 15px rgba(139,92,246,0.4);">
+          📸 Galeri Yönetimi
+        </button>
+        <button id="openGalleryUploadBtn" class="btn" type="button" title="images/gallery klasörüne resim yüklemek için GitHub yükleme sayfasını açar" style="background:linear-gradient(135deg,#10b981 0%,#059669 100%);box-shadow:0 4px 15px rgba(16,185,129,0.4);">
+          🖼️ Galeriyi GitHub'da aç ve resim yükle
         </button>
       </div>
 
@@ -3343,7 +3361,9 @@ try {
         }
         async function saveInlineEdit(id){
           const msg = document.getElementById('ep-msg-'+id);
-          if(msg) msg.textContent='⏳ Kaydediliyor...';
+          // Progress modal aç
+          openRefreshModal({ title: '💾 Ürün Kaydediliyor', canClose: false });
+          updateRefreshProgress(10, 'Başlatılıyor...');
           try {
             const nameEl=document.getElementById('ep-name-'+id);
             const priceEl=document.getElementById('ep-price-'+id);
@@ -3365,11 +3385,13 @@ try {
             if(isNaN(price) || price < 0) throw new Error('Geçersiz fiyat');
             const badge=badgeEl.value.trim();
             const image=imageEl.value.trim();
+            updateRefreshProgress(20, 'Görsel doğrulanıyor...');
             // Görsel doğrulama (sadece repo içi standart yol ise)
             if(/^images\/products\/.+\.(jpg|jpeg|png|webp)$/i.test(image)){
               const chk = await verifyGitHubPathExists(image);
               if(!chk.exists) throw new Error('Görsel bulunamadı: '+image);
             }
+            updateRefreshProgress(30, 'Ürün listesi alınıyor...');
             const res = await fetch('products.json?' + Date.now()); if(!res.ok) throw new Error('products.json alınamadı');
             const data = await res.json();
             const products = Array.isArray(data.items) ? data.items : (Array.isArray(data)?data:[]);
@@ -3377,14 +3399,16 @@ try {
             products[idx].name=name; products[idx].price=price; products[idx].badge=badge; products[idx].image=image;
             const token = getGitHubToken();
             if(token){
+              updateRefreshProgress(50, 'GitHub\'a bağlanılıyor...');
               // Commit remote update with retry on 409
               const owner='amtbrs-03'; const repo='AMTBRS';
               const apiUrl=`https://api.github.com/repos/${owner}/${repo}/contents/products.json`;
               let attempt=0; const maxAttempts=3; let lastError=null;
               while(attempt < maxAttempts){
                 attempt++;
-                if(attempt>1 && msg) msg.textContent=`⏳ Yeniden deneniyor (${attempt}/${maxAttempts})...`;
+                if(attempt>1) updateRefreshProgress(55, 'Yeniden deneniyor ('+attempt+'/'+maxAttempts+')...');
                 try{
+                  updateRefreshProgress(60, 'GitHub\'dan veri alınıyor...');
                   const getRes = await fetch(apiUrl+`?ref=site-release&_=${Date.now()}`, { headers:{ 'Accept':'application/vnd.github.v3+json','Authorization':'token '+token }, cache:'no-store' });
                   if(!getRes.ok) throw new Error('Remote products.json alınamadı');
                   const meta = await getRes.json();
@@ -3393,19 +3417,23 @@ try {
                   const ridx = list.findIndex(p=>String(p.id)===String(id)); if(ridx!==-1){ list[ridx]={ ...list[ridx], name, price, badge, image }; }
                   if(remoteObj.items) remoteObj.items=list; else remoteObj=list;
                   remoteObj.updatedAt=Date.now();
+                  updateRefreshProgress(80, 'GitHub\'a kaydediliyor...');
                   const putRes = await fetch(apiUrl, { method:'PUT', headers:{ 'Content-Type':'application/json','Authorization':'token '+token }, body: JSON.stringify({ message:`chore(admin): inline ürün güncelle (${id})`, content: toBase64(JSON.stringify(remoteObj,null,2)), branch:'site-release', sha: meta.sha }) });
                   if(putRes.status===409 && attempt<maxAttempts){ 
-                    if(msg) msg.textContent=`⚠️ Çakışma algılandı, ${500*attempt}ms sonra tekrar...`; 
+                    updateRefreshProgress(55, 'Çakışma algılandı, tekrar deneniyor...');
                     await new Promise(r=>setTimeout(r,500*attempt)); 
                     continue; 
                   }
                   if(!putRes.ok){ const t=await putRes.text().catch(()=> ''); throw new Error('GitHub güncelleme başarısız: '+putRes.status+' '+t); }
-                  if(msg) msg.textContent='✅ Güncellendi (GitHub + lokal)';
+                  updateRefreshProgress(95, 'Tamamlanıyor...');
+                  finishRefreshSuccess('✅ Ürün güncellendi (GitHub + lokal)', function(){
+                    renderAdminProducts();
+                  });
                   break;
                 }catch(err){ 
                   lastError=err;
                   if(err.message.includes('409') && attempt<maxAttempts){ 
-                    if(msg) msg.textContent=`⚠️ Çakışma (${attempt}), ${500*attempt}ms sonra tekrar...`;
+                    updateRefreshProgress(55, 'Çakışma ('+attempt+'), tekrar deneniyor...');
                     await new Promise(r=>setTimeout(r,500*attempt)); 
                     continue; 
                   } 
@@ -3414,10 +3442,11 @@ try {
               }
               if(attempt>=maxAttempts && lastError) throw lastError;
             } else {
-              if(msg) msg.textContent='✅ Lokal güncellendi (GitHub token yok)';
+              finishRefreshSuccess('✅ Lokal güncellendi (GitHub token yok)', function(){
+                renderAdminProducts();
+              });
             }
-            setTimeout(()=>{ renderAdminProducts(); }, 600);
-          } catch(e){ if(msg) msg.textContent='Hata: '+(e.message||e); }
+          } catch(e){ finishRefreshError('Hata: '+(e.message||e)); }
         }
         async function verifyInlineImagePath(id){
           const msg = document.getElementById('ep-msg-'+id);
