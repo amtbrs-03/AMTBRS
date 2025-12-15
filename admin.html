@@ -673,6 +673,69 @@
       .modal-content{ padding:1rem; margin:0.5rem auto; }
       .form-group label{ font-size:0.85rem; }
     }
+    
+    /* Token Missing Alert - Yanıp Sönen */
+    #tokenMissingAlert {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 99998;
+      display: none;
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+      color: white;
+      padding: 12px 20px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 0.95rem;
+      box-shadow: 0 4px 20px rgba(220, 38, 38, 0.4);
+      animation: tokenAlertPulse 1.5s ease-in-out infinite;
+    }
+    #tokenMissingAlert.active {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+    #tokenMissingAlert .alert-icon {
+      font-size: 1.3rem;
+      animation: tokenAlertShake 0.5s ease-in-out infinite;
+    }
+    #tokenMissingAlert .alert-text {
+      flex: 1;
+    }
+    #tokenMissingAlert .alert-close {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    #tokenMissingAlert .alert-close:hover {
+      background: rgba(255,255,255,0.3);
+      transform: scale(1.1);
+    }
+    @keyframes tokenAlertPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    @keyframes tokenAlertShake {
+      0%, 100% { transform: rotate(0deg); }
+      25% { transform: rotate(-10deg); }
+      75% { transform: rotate(10deg); }
+    }
+    
+    /* Token alert açıkken body padding */
+    body.token-alert-active {
+      padding-top: 48px;
+    }
   </style>
   <script>
   // Lightweight diagnostics: shows runtime JS errors and logs edit-button clicks
@@ -854,6 +917,58 @@
       } catch(_){}
     })();
   </script>
+  
+  <!-- Token Missing Alert - Yanıp Sönen -->
+  <div id="tokenMissingAlert">
+    <span class="alert-icon">⚠️</span>
+    <span class="alert-text">🔑 <strong>Token Yüklenmedi!</strong> Admin işlemleri için GitHub Token gereklidir.</span>
+    <button class="alert-close" onclick="closeTokenAlert()" title="Kapat">✕</button>
+  </div>
+  
+  <script>
+    // Token Missing Alert Kontrolü
+    (function checkTokenOnLoad(){
+      function checkToken(){
+        try {
+          const token = localStorage.getItem('github_token') || localStorage.getItem('gh_token') || '';
+          const alert = document.getElementById('tokenMissingAlert');
+          if (!alert) return;
+          
+          // Token yoksa veya BYPASS ise uyarı göster
+          if (!token || token === '' || token === 'BYPASS') {
+            alert.classList.add('active');
+            document.body.classList.add('token-alert-active');
+          } else {
+            alert.classList.remove('active');
+            document.body.classList.remove('token-alert-active');
+          }
+        } catch(e) { console.warn('Token check error:', e); }
+      }
+      
+      // Sayfa yüklendiğinde kontrol et
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', checkToken);
+      } else {
+        checkToken();
+      }
+      
+      // Her 5 saniyede bir kontrol et
+      setInterval(checkToken, 5000);
+      
+      // Global fonksiyon
+      window.checkTokenAlert = checkToken;
+    })();
+    
+    function closeTokenAlert() {
+      const alert = document.getElementById('tokenMissingAlert');
+      if (alert) {
+        alert.classList.remove('active');
+        document.body.classList.remove('token-alert-active');
+      }
+    }
+    window.closeTokenAlert = closeTokenAlert;
+  </script>
+  
   <!-- PAT Missing Notice -->
   <div id="patNotice" style="display:none; background:#fff3cd; color:#664d03; border:1px solid #ffe69c; padding:10px 12px; margin:10px; border-radius:8px;">
     <strong>GitHub Token eksik:</strong> Değişiklikler şu an <em>yerel olarak</em> kaydediliyor ve canlı siteye aktarılmıyor.
