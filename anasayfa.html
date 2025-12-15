@@ -736,21 +736,21 @@
         .contact-btn:active { transform: translateY(0); box-shadow: 0 8px 18px rgba(16,185,129,0.22); }
         .contact-btn:focus { outline: 3px solid rgba(16,185,129,0.18); outline-offset: 2px; }
         
-        /* Ürün detay paneli - Kompakt, resim genişliğinde */
+        /* Ürün detay paneli - Ürün kartı genişliğinde */
         #productDetailPanel {
             display: none;
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 360px;
+            width: 420px;
             max-width: 92vw;
             max-height: 90vh;
             z-index: 2000;
             background: rgba(255,255,255,0.99);
             box-shadow: 0 8px 48px rgba(30,143,85,0.18), 0 0 0 1px rgba(0,0,0,0.05);
             overflow-y: auto;
-            padding: 1.2rem;
+            padding: 1.5rem;
             border-radius: 16px;
         }
         
@@ -2596,16 +2596,16 @@
                             let mainImg = images[0] || '';
                             let html = `<div style='width:100%;margin:0 auto;'>`;
                             // Ürün adı - kompakt, tek satır, estetik
-                            html += `<div style='width:100%;text-align:center;margin-bottom:0.6rem;padding-bottom:0.5rem;border-bottom:1px solid #e5e7eb;'><span style='font-size:1.1rem;font-weight:700;color:#1e293b;letter-spacing:0.3px;line-height:1.3;display:block;word-wrap:break-word;'>${name}</span></div>`;
+                            html += `<div style='width:100%;text-align:center;margin-bottom:0.8rem;padding-bottom:0.6rem;border-bottom:1px solid #e5e7eb;'><span style='font-size:1.2rem;font-weight:700;color:#1e293b;letter-spacing:0.3px;line-height:1.3;display:block;word-wrap:break-word;'>${name}</span></div>`;
                             // Resim - panel genişliği kadar, oran korunarak
-                            html += `<div id='panelMainImgWrap' style='width:100%;max-height:50vh;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:14px;box-shadow:0 4px 18px rgba(30,143,85,0.13);margin-bottom:0.8rem;overflow:hidden;'>`;
-                            html += `<img id='panelMainImg' src='${mainImg}' alt='${name}' style='width:100%;height:auto;max-height:50vh;object-fit:contain;border-radius:12px;background:#fff;'/>`;
+                            html += `<div id='panelMainImgWrap' style='width:100%;max-height:55vh;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:14px;box-shadow:0 4px 18px rgba(30,143,85,0.13);margin-bottom:1rem;overflow:hidden;'>`;
+                            html += `<img id='panelMainImg' src='${mainImg}' alt='${name}' style='width:100%;height:auto;max-height:55vh;object-fit:contain;border-radius:12px;background:#fff;'/>`;
                             html += `</div>`;
                             // Küçük resimler
                             if(images.length > 1) {
-                                html += `<div style='display:flex;gap:0.5rem;justify-content:center;margin-bottom:0.8rem;'>`;
+                                html += `<div style='display:flex;gap:0.6rem;justify-content:center;margin-bottom:1rem;flex-wrap:wrap;'>`;
                                 images.forEach((src, i) => {
-                                    html += `<img src='${src}' alt='${name}' data-idx='${i}' class='panelThumbImg' style='width:48px;height:48px;object-fit:cover;border-radius:6px;box-shadow:0 2px 6px rgba(30,143,85,0.10);cursor:pointer;border:2px solid ${i===0?'#16a34a':'#e5e7eb'};background:#fff;'/>`;
+                                    html += `<img src='${src}' alt='${name}' data-idx='${i}' class='panelThumbImg' style='width:56px;height:56px;object-fit:cover;border-radius:8px;box-shadow:0 2px 8px rgba(30,143,85,0.12);cursor:pointer;border:2px solid ${i===0?'#16a34a':'#e5e7eb'};background:#fff;transition:border-color 0.2s, transform 0.2s;'/>`;
                                 });
                                 html += `</div>`;
                             }
