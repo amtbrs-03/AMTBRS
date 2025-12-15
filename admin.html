@@ -4150,8 +4150,12 @@ try {
 
       const saveSettingsBtn = document.getElementById('saveSettings');
       if (saveSettingsBtn) saveSettingsBtn.addEventListener('click', async (ev)=>{
-        const btn = ev.currentTarget;
-        await withProgress(btn, '⏳ Ayarlar kaydediliyor...', async ()=>{
+        // Progress modal aç
+        openRefreshModal({ title: '⚙️ Ayarlar Kaydediliyor', canClose: false });
+        updateRefreshProgress(10, 'Başlatılıyor...');
+        
+        try {
+          updateRefreshProgress(20, 'Ayarlar toplanıyor...');
           const s = {
             email: (document.getElementById('siteEmail')?.value || '').trim(),
             phone: (document.getElementById('sitePhone')?.value || '').trim(),
@@ -4171,79 +4175,85 @@ try {
             shippingCost: parseFloat(document.getElementById('shippingCost')?.value) || 0,
             freeShippingThreshold: parseFloat(document.getElementById('freeShippingThreshold')?.value) || 0
           };
+          
+          updateRefreshProgress(30, 'Tarayıcıya kaydediliyor...');
           setSiteSettings(s);
           
           const push = !!document.getElementById('pushSettingsToGithub') && document.getElementById('pushSettingsToGithub').checked;
           
           if (!push) {
-            showNotification('Ayarlar tarayıcıda kaydedildi', {type: 'success'});
+            finishRefreshSuccess('Ayarlar tarayıcıda kaydedildi');
             return;
           }
 
           // Save to GitHub using Contents API
-          try{
-            console.log('Saving site settings to GitHub...');
-            const token = getToken();
-            if (!token) {
-              showNotification('GitHub token bulunamadı. Ayarlar sadece tarayıcıda kaydedildi.', {type: 'warning'});
-              return;
-            }
-
-            const owner = 'amtbrs-03';
-            const repo = 'AMTBRS';
-            const branch = 'site-release';
-            const fileName = 'site-settings.json';
-            const json = JSON.stringify(s, null, 2);
-            const contentBase64 = toBase64(json);
-
-            // Get current file SHA (if exists)
-            const getUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${fileName}?ref=${branch}`;
-            let sha = undefined;
-            try {
-              const resGet = await fetch(getUrl, { headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }, cache: 'no-store' });
-              if (resGet.ok) {
-                const data = await resGet.json();
-                if (data && data.sha) sha = data.sha;
-              } else if (resGet.status !== 404) {
-                const txt = await resGet.text().catch(()=> '');
-                return { ok: false, error: `İçerik alınamadı: Durum ${resGet.status} ${txt}` };
-              }
-            } catch(err) {
-              return { ok: false, error: 'İçerik sorgusu hatası: ' + (err && err.message ? err.message : err) };
-            }
-
-            // PUT to GitHub
-            const putUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${fileName}`;
-            const putBody = {
-              message: 'admin: update site-settings.json via admin panel',
-              content: contentBase64,
-              branch: branch
-            };
-            if (sha) putBody.sha = sha;
-
-            const putRes = await fetch(putUrl, {
-              method: 'PUT',
-              headers: {
-                'Accept': 'application/vnd.github.v3+json',
-                'Authorization': `token ${token}`,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify(putBody)
-            });
-
-            if (putRes.ok) {
-              console.log('✓ Site settings saved to GitHub');
-              showNotification('Ayarlar tarayıcıda ve GitHub\'da kaydedildi', {type: 'success'});
-            } else {
-              const errorText = await putRes.text();
-              console.error('GitHub save failed:', putRes.status, errorText);
-              showNotification('Ayarlar tarayıcıda kaydedildi ancak GitHub\'a kaydedilemedi: ' + putRes.status, {type: 'warning'});
-            }
-          }catch(err){ 
-            console.error('GitHub save error', err); 
-            showNotification('Ayarlar tarayıcıda kaydedildi ancak GitHub\'a kaydederken hata oluştu: ' + err.message, {type: 'warning'}); 
+          updateRefreshProgress(40, 'GitHub token kontrol ediliyor...');
+          const token = getToken();
+          if (!token) {
+            finishRefreshSuccess('Ayarlar tarayıcıda kaydedildi (GitHub token yok)');
+            return;
           }
-        });
+
+          const owner = 'amtbrs-03';
+          const repo = 'AMTBRS';
+          const branch = 'site-release';
+          const fileName = 'site-settings.json';
+          const json = JSON.stringify(s, null, 2);
+          const contentBase64 = toBase64(json);
+
+          updateRefreshProgress(50, 'Mevcut dosya kontrol ediliyor...');
+          
+          // Get current file SHA (if exists)
+          const getUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${fileName}?ref=${branch}`;
+          let sha = undefined;
+          try {
+            const resGet = await fetch(getUrl, { headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }, cache: 'no-store' });
+            if (resGet.ok) {
+              const data = await resGet.json();
+              if (data && data.sha) sha = data.sha;
+            } else if (resGet.status !== 404) {
+              const txt = await resGet.text().catch(()=> '');
+              throw new Error('İçerik alınamadı: Durum ' + resGet.status);
+            }
+          } catch(err) {
+            throw new Error('İçerik sorgusu hatası: ' + (err && err.message ? err.message : err));
+          }
+
+          updateRefreshProgress(70, 'GitHub\'a kaydediliyor...');
+          
+          // PUT to GitHub
+          const putUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${fileName}`;
+          const putBody = {
+            message: 'admin: update site-settings.json via admin panel',
+            content: contentBase64,
+            branch: branch
+          };
+          if (sha) putBody.sha = sha;
+
+          const putRes = await fetch(putUrl, {
+            method: 'PUT',
+            headers: {
+              'Accept': 'application/vnd.github.v3+json',
+              'Authorization': `token ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(putBody)
+          });
+
+          updateRefreshProgress(90, 'Doğrulanıyor...');
+
+          if (putRes.ok) {
+            console.log('✓ Site settings saved to GitHub');
+            finishRefreshSuccess('Ayarlar tarayıcıda ve GitHub\'da kaydedildi');
+          } else {
+            const errorText = await putRes.text();
+            console.error('GitHub save failed:', putRes.status, errorText);
+            finishRefreshError('GitHub kaydetme hatası: ' + putRes.status);
+          }
+        } catch(err) { 
+          console.error('GitHub save error', err); 
+          finishRefreshError('Hata: ' + (err.message || err));
+        }
       });
 
       const loadDefaultsSettingsBtn = document.getElementById('loadDefaultsSettings');
