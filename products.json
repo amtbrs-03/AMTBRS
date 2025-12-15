@@ -1,5 +1,5 @@
 {
-  "updatedAt": 1765824365349,
+  "updatedAt": 1765825037806,
   "items": [
     {
       "id": "IMG_1966.JPG",
@@ -28,20 +28,6 @@
       "potDiameter": "15",
       "height": "65",
       "info": "güzel",
-      "sortOrder": 0
-    },
-    {
-      "id": "TEMP-1765596001480",
-      "name": "SDAJCNKFDMJCND",
-      "price": 1234,
-      "badge": "Yeni",
-      "image": "images/gallery/IMG_1974.JPG",
-      "images": [
-        "images/gallery/IMG_1974.JPG"
-      ],
-      "potDiameter": "11",
-      "height": "34",
-      "info": "ŞOKKK",
       "sortOrder": 0
     }
   ]
