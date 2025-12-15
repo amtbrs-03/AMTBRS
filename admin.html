@@ -745,22 +745,22 @@
       </div>
     </div>
   </section>
-  <!-- Product Delete Confirmation Modal -->
-  <section id="productDeleteModal" class="modal" style="display:none">
+  <!-- Genel Silme Onay Modal (Ürün, Kullanıcı, Galeri vs. için) -->
+  <section id="deleteModal" class="modal" style="display:none">
     <div class="modal-content small-modal" style="max-width:480px;">
       <div class="modal-header" style="justify-content:center;background:linear-gradient(135deg,#fef2f2,#fee2e2);border-bottom:2px solid #fecaca;">
-        <h2 style="margin:0;color:#991b1b;">🗑️ Ürün Silme</h2>
+        <h2 id="deleteModalTitle" style="margin:0;color:#991b1b;">🗑️ Silme Onayı</h2>
       </div>
       <!-- Onay İçeriği -->
       <div id="deleteConfirmContent" class="modal-body" style="margin-bottom:0.5rem;padding:1.5rem;">
         <div style="text-align:center;margin-bottom:1rem;">
           <div style="width:64px;height:64px;background:linear-gradient(135deg,#fef2f2,#fee2e2);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:0.5rem;border:2px solid #fecaca;">
-            <span style="font-size:1.8rem;">⚠️</span>
+            <span id="deleteModalIcon" style="font-size:1.8rem;">⚠️</span>
           </div>
           <div style="font-weight:700;color:#0f172a;font-size:1.1rem;margin-bottom:0.25rem;">Emin misiniz?</div>
-          <div id="productDeleteName" style="color:#dc2626;font-weight:600;font-size:1rem;margin-bottom:0.5rem;"></div>
-          <div class="small" style="color:#64748b;line-height:1.6;">
-            Bu ürün kalıcı olarak silinecektir.<br>Bu işlem geri alınamaz!
+          <div id="deleteModalName" style="color:#dc2626;font-weight:600;font-size:1rem;margin-bottom:0.5rem;"></div>
+          <div id="deleteModalDesc" class="small" style="color:#64748b;line-height:1.6;">
+            Bu öğe kalıcı olarak silinecektir.<br>Bu işlem geri alınamaz!
           </div>
         </div>
       </div>
@@ -773,16 +773,159 @@
           </svg>
           <div id="deleteProgressPercent" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:1.2rem;font-weight:800;color:#dc2626;">0%</div>
         </div>
-        <div style="font-weight:700;color:#991b1b;font-size:1.1rem;margin-bottom:0.5rem;">🗑️ Siliniyor...</div>
+        <div id="deleteProgressTitle" style="font-weight:700;color:#991b1b;font-size:1.1rem;margin-bottom:0.5rem;">🗑️ Siliniyor...</div>
         <div id="deleteProgressStatus" style="color:#64748b;font-size:0.9rem;">Sunucuya bağlanılıyor...</div>
       </div>
       <!-- Butonlar -->
       <div id="deleteConfirmButtons" class="form-actions" style="display:flex;gap:0.5rem;justify-content:center;padding:1rem;background:#f9fafb;border-top:1px solid #e5e7eb;border-radius:0 0 12px 12px;">
-        <button type="button" class="btn btn-danger" id="confirmDeleteProductBtn" onclick="confirmProductDelete()" style="padding:0.6rem 1.5rem;">🗑️ Evet, Sil</button>
-        <button type="button" class="btn btn-ghost" onclick="closeProductDeleteModal()" style="padding:0.6rem 1.5rem;">Vazgeç</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteBtn" style="padding:0.6rem 1.5rem;">🗑️ Evet, Sil</button>
+        <button type="button" class="btn btn-ghost" onclick="closeDeleteModal()" style="padding:0.6rem 1.5rem;">Vazgeç</button>
       </div>
     </div>
   </section>
+  <!-- Eski productDeleteModal uyumluluğu için alias -->
+  <script>
+    // Genel Silme Modal Sistemi
+    let _deleteInProgress = false;
+    let _pendingDeleteCallback = null;
+    let _pendingDeleteType = '';
+    let _pendingDeleteData = {};
+    
+    function openDeleteModal(options = {}) {
+      if (_deleteInProgress) return;
+      
+      const title = options.title || '🗑️ Silme Onayı';
+      const icon = options.icon || '⚠️';
+      const name = options.name || '';
+      const desc = options.desc || 'Bu öğe kalıcı olarak silinecektir.<br>Bu işlem geri alınamaz!';
+      const progressTitle = options.progressTitle || '🗑️ Siliniyor...';
+      const callback = options.onConfirm;
+      const type = options.type || 'generic';
+      const data = options.data || {};
+      
+      _pendingDeleteCallback = callback;
+      _pendingDeleteType = type;
+      _pendingDeleteData = data;
+      
+      document.getElementById('deleteModalTitle').innerHTML = title;
+      document.getElementById('deleteModalIcon').textContent = icon;
+      document.getElementById('deleteModalName').textContent = name;
+      document.getElementById('deleteModalDesc').innerHTML = desc;
+      document.getElementById('deleteProgressTitle').innerHTML = progressTitle;
+      
+      // Reset modal state
+      resetDeleteModal();
+      
+      const m = document.getElementById('deleteModal');
+      if (m) m.style.display = 'flex';
+    }
+    
+    function closeDeleteModal() {
+      if (_deleteInProgress) return;
+      _pendingDeleteCallback = null;
+      _pendingDeleteType = '';
+      _pendingDeleteData = {};
+      const m = document.getElementById('deleteModal');
+      if (m) m.style.display = 'none';
+    }
+    
+    function showDeleteProgress() {
+      _deleteInProgress = true;
+      const confirm = document.getElementById('deleteConfirmContent');
+      const progress = document.getElementById('deleteProgressContent');
+      const buttons = document.getElementById('deleteConfirmButtons');
+      if (confirm) confirm.style.display = 'none';
+      if (progress) progress.style.display = 'block';
+      if (buttons) buttons.style.display = 'none';
+      const modal = document.getElementById('deleteModal');
+      if (modal) modal.style.pointerEvents = 'none';
+      const modalContent = modal?.querySelector('.modal-content');
+      if (modalContent) modalContent.style.pointerEvents = 'auto';
+    }
+    
+    function updateDeleteProgress(percent, status) {
+      const circle = document.getElementById('deleteProgressCircle');
+      const percentEl = document.getElementById('deleteProgressPercent');
+      const statusEl = document.getElementById('deleteProgressStatus');
+      if (circle) {
+        const offset = 283 - (283 * percent / 100);
+        circle.style.strokeDashoffset = offset;
+      }
+      if (percentEl) percentEl.textContent = Math.round(percent) + '%';
+      if (statusEl) statusEl.textContent = status;
+    }
+    
+    function resetDeleteModal() {
+      _deleteInProgress = false;
+      const confirm = document.getElementById('deleteConfirmContent');
+      const progress = document.getElementById('deleteProgressContent');
+      const buttons = document.getElementById('deleteConfirmButtons');
+      if (confirm) confirm.style.display = 'block';
+      if (progress) progress.style.display = 'none';
+      if (buttons) buttons.style.display = 'flex';
+      updateDeleteProgress(0, '');
+      const modal = document.getElementById('deleteModal');
+      if (modal) modal.style.pointerEvents = '';
+    }
+    
+    function finishDeleteSuccess(message) {
+      updateDeleteProgress(100, '✅ ' + (message || 'Başarıyla silindi!'));
+      setTimeout(() => {
+        resetDeleteModal();
+        closeDeleteModal();
+        showNotification(message || 'Başarıyla silindi', {type: 'success'});
+      }, 800);
+    }
+    
+    function finishDeleteError(message) {
+      updateDeleteProgress(0, '❌ Hata: ' + message);
+      setTimeout(() => {
+        resetDeleteModal();
+        closeDeleteModal();
+        showNotification('Hata: ' + message, {type: 'error'});
+      }, 2000);
+    }
+    
+    // Onay butonu click handler
+    document.getElementById('confirmDeleteBtn').onclick = function() {
+      if (_deleteInProgress) return;
+      if (typeof _pendingDeleteCallback === 'function') {
+        _pendingDeleteCallback(_pendingDeleteData);
+      }
+    };
+    
+    // Eski productDeleteModal uyumluluk alias'ları
+    function openProductDeleteModal(id, name) {
+      openDeleteModal({
+        title: '🗑️ Ürün Silme',
+        icon: '⚠️',
+        name: name || id,
+        desc: 'Bu ürün kalıcı olarak silinecektir.<br>Bu işlem geri alınamaz!',
+        progressTitle: '🗑️ Ürün Siliniyor...',
+        type: 'product',
+        data: { id, name },
+        onConfirm: () => performDeleteProduct(id)
+      });
+    }
+    function closeProductDeleteModal() { closeDeleteModal(); }
+    function confirmProductDelete() { 
+      if (_pendingDeleteType === 'product' && _pendingDeleteData.id) {
+        performDeleteProduct(_pendingDeleteData.id);
+      }
+    }
+    
+    // Global erişim
+    window.openDeleteModal = openDeleteModal;
+    window.closeDeleteModal = closeDeleteModal;
+    window.showDeleteProgress = showDeleteProgress;
+    window.updateDeleteProgress = updateDeleteProgress;
+    window.resetDeleteModal = resetDeleteModal;
+    window.finishDeleteSuccess = finishDeleteSuccess;
+    window.finishDeleteError = finishDeleteError;
+    window.openProductDeleteModal = openProductDeleteModal;
+    window.closeProductDeleteModal = closeProductDeleteModal;
+    window.confirmProductDelete = confirmProductDelete;
+  </script>
   <section id="productEditPanel" class="modal" style="display:none">
     <div class="modal-content">
       <!-- Sketch-like header: image, name, price, badge -->
@@ -1957,85 +2100,18 @@
           }
         }
 
-        // Ürün sil (GitHub products.json güncelle)
-        let _pendingDeleteId = null;
-        
-        function openProductDeleteModal(id, name) {
-          _pendingDeleteId = id;
-          const nameEl = document.getElementById('productDeleteName');
-          if (nameEl) nameEl.textContent = name || id;
-          const m = document.getElementById('productDeleteModal');
-          if (m) m.style.display = 'flex';
-        }
-        
-        let _deleteInProgress = false; // Silme kilidi
-        
-        function closeProductDeleteModal() {
-          // Silme işlemi devam ediyorsa kapatma!
-          if (_deleteInProgress) return;
-          _pendingDeleteId = null;
-          const m = document.getElementById('productDeleteModal');
-          if (m) m.style.display = 'none';
-        }
-        
-        // Silme onayı - onclick ile çağrılıyor
-        function confirmProductDelete() {
-          if (_pendingDeleteId && !_deleteInProgress) {
-            performDeleteProduct(_pendingDeleteId);
-          }
-        }
-        
-        // Progress göster ve ekranı kilitle
-        function showDeleteProgress() {
-          _deleteInProgress = true;
-          const confirm = document.getElementById('deleteConfirmContent');
-          const progress = document.getElementById('deleteProgressContent');
-          const buttons = document.getElementById('deleteConfirmButtons');
-          if (confirm) confirm.style.display = 'none';
-          if (progress) progress.style.display = 'block';
-          if (buttons) buttons.style.display = 'none';
-          // Modal dışına tıklamayı engelle
-          const modal = document.getElementById('productDeleteModal');
-          if (modal) modal.style.pointerEvents = 'none';
-          const modalContent = modal?.querySelector('.modal-content');
-          if (modalContent) modalContent.style.pointerEvents = 'auto';
-        }
-        
-        // Progress güncelle
-        function updateDeleteProgress(percent, status) {
-          const circle = document.getElementById('deleteProgressCircle');
-          const percentEl = document.getElementById('deleteProgressPercent');
-          const statusEl = document.getElementById('deleteProgressStatus');
-          if (circle) {
-            const offset = 283 - (283 * percent / 100);
-            circle.style.strokeDashoffset = offset;
-          }
-          if (percentEl) percentEl.textContent = Math.round(percent) + '%';
-          if (statusEl) statusEl.textContent = status;
-        }
-        
-        // Modal'ı resetle ve kilidi aç
-        function resetDeleteModal() {
-          _deleteInProgress = false;
-          const confirm = document.getElementById('deleteConfirmContent');
-          const progress = document.getElementById('deleteProgressContent');
-          const buttons = document.getElementById('deleteConfirmButtons');
-          if (confirm) confirm.style.display = 'block';
-          if (progress) progress.style.display = 'none';
-          if (buttons) buttons.style.display = 'flex';
-          updateDeleteProgress(0, '');
-          // Modal tıklamayı geri aç
-          const modal = document.getElementById('productDeleteModal');
-          if (modal) modal.style.pointerEvents = '';
-        }
-        
-        // Global erişim için
-        window.openProductDeleteModal = openProductDeleteModal;
-        window.closeProductDeleteModal = closeProductDeleteModal;
-        window.confirmProductDelete = confirmProductDelete;
-        
+        // Ürün sil - Genel deleteModal sistemini kullan
         async function deleteAdminProduct(id, name){
-          openProductDeleteModal(id, name);
+          openDeleteModal({
+            title: '🗑️ Ürün Silme',
+            icon: '⚠️',
+            name: name || id,
+            desc: 'Bu ürün kalıcı olarak silinecektir.<br>Bu işlem geri alınamaz!',
+            progressTitle: '🗑️ Ürün Siliniyor...',
+            type: 'product',
+            data: { id, name },
+            onConfirm: () => performDeleteProduct(id)
+          });
         }
         
         async function performDeleteProduct(id){
@@ -2121,7 +2197,7 @@
             
             setTimeout(() => {
               resetDeleteModal();
-              closeProductDeleteModal();
+              closeDeleteModal();
               showNotification('Ürün başarıyla silindi ve doğrulandı', {type: 'success'});
               renderAdminProducts();
             }, 800);
@@ -2131,7 +2207,7 @@
             updateDeleteProgress(0, '❌ Hata: ' + msg);
             setTimeout(() => {
               resetDeleteModal();
-              closeProductDeleteModal();
+              closeDeleteModal();
               showNotification('Hata: ' + msg, {type: 'error'});
             }, 2000);
           }
@@ -3062,16 +3138,29 @@ try {
       }
     }
 
-    // Delete user from GitHub (Contents API)
+    // Delete user from GitHub (Contents API) - Yeni modal sistemi ile
     async function deleteUser(email, name, btnEl) {
-      if (!confirm(`"${name}" (${email}) kullanıcısını silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz!`)) {
-        return;
-      }
+      openDeleteModal({
+        title: '👤 Kullanıcı Silme',
+        icon: '👤',
+        name: `${name} (${email})`,
+        desc: 'Bu kullanıcı kalıcı olarak silinecektir.<br>Bu işlem geri alınamaz!',
+        progressTitle: '👤 Kullanıcı Siliniyor...',
+        type: 'user',
+        data: { email, name },
+        onConfirm: () => performDeleteUser(email, name)
+      });
+    }
+    
+    async function performDeleteUser(email, name) {
+      showDeleteProgress();
+      updateDeleteProgress(10, 'Sunucuya bağlanılıyor...');
 
-      let originalText = '';
       try {
         const token = getGitHubToken();
-        if (!token) { showNotification('GitHub token bulunamadı. Lütfen ayarlarda token tanımlayın.', {type: 'warning'}); return; }
+        if (!token) throw new Error('GitHub token bulunamadı!');
+        
+        updateDeleteProgress(20, 'Token doğrulandı...');
 
         const owner = 'amtbrs-03';
         const repo = 'AMTBRS';
@@ -3079,26 +3168,24 @@ try {
 
         console.log('Deleting user:', email);
 
-        // UI: disable button and show progress
-        if (btnEl) {
-          originalText = btnEl.textContent;
-          btnEl.disabled = true;
-          btnEl.style.opacity = '0.7';
-          btnEl.style.cursor = 'not-allowed';
-          btnEl.textContent = '⏳ Siliniyor...';
-        }
-
         // Get file SHA first
         const fileName = `${email}_full.json`;
         const getUrl = `https://api.github.com/repos/${owner}/${repo}/contents/users/${encodeURIComponent(fileName)}?ref=${encodeURIComponent(branch)}`;
         
-        // Avoid CORS preflight issues by not sending Authorization on GET (public repo read)
-        const getResponse = await fetch(getUrl);
+        updateDeleteProgress(30, 'Kullanıcı dosyası alınıyor...');
+        
+        const getResponse = await fetch(getUrl, {
+          headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }
+        });
 
         if (getResponse.status === 404) {
-          showNotification('Kullanıcı dosyası bulunamadı (zaten silinmiş olabilir)', {type: 'warning'});
-          // Yine de listeyi yenileyelim
-          const btn = document.getElementById('loadUsersBtn'); if (btn) btn.click();
+          updateDeleteProgress(100, '✅ Kullanıcı zaten silinmiş!');
+          setTimeout(() => {
+            resetDeleteModal();
+            closeDeleteModal();
+            showNotification('Kullanıcı dosyası bulunamadı (zaten silinmiş olabilir)', {type: 'warning'});
+            const btn = document.getElementById('loadUsersBtn'); if (btn) btn.click();
+          }, 800);
           return;
         }
         if (!getResponse.ok) {
@@ -3106,10 +3193,14 @@ try {
           throw new Error(`Kullanıcı dosyası alınamadı: Durum ${getResponse.status} ${txt}`);
         }
 
+        updateDeleteProgress(50, 'Dosya bilgisi alındı...');
+        
         const fileData = await getResponse.json();
         const sha = fileData && fileData.sha;
         if (!sha) throw new Error('Dosya SHA bilgisi alınamadı');
 
+        updateDeleteProgress(60, 'Kullanıcı siliniyor...');
+        
         // Delete the file
         const deleteUrl = `https://api.github.com/repos/${owner}/${repo}/contents/users/${encodeURIComponent(fileName)}`;
         const deleteResponse = await fetch(deleteUrl, {
@@ -3126,27 +3217,48 @@ try {
           })
         });
 
+        updateDeleteProgress(80, 'Sunucu yanıtı bekleniyor...');
+
         if (!deleteResponse.ok) {
           const errorText = await deleteResponse.text().catch(()=> '');
           throw new Error(`Silme başarısız: Durum ${deleteResponse.status} ${errorText}`);
         }
 
-        console.log('User deleted successfully');
-        showNotification(`"${name}" kullanıcısı başarıyla silindi!`, {type: 'success'});
+        // UZAK SUNUCUDAN DOĞRULAMA
+        updateDeleteProgress(90, '🔍 Uzak sunucudan doğrulanıyor...');
         
-        // Reload users list
-        const btn = document.getElementById('loadUsersBtn'); if (btn) btn.click();
+        await new Promise(r => setTimeout(r, 1000));
+        
+        const verifyRes = await fetch(getUrl + '&t=' + Date.now(), {
+          headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' },
+          cache: 'no-store'
+        });
+        
+        // 404 = başarıyla silindi
+        if (verifyRes.status !== 404) {
+          throw new Error('Kullanıcı uzak sunucuda hala mevcut! Lütfen tekrar deneyin.');
+        }
+        
+        updateDeleteProgress(100, '✅ Silme doğrulandı!');
+
+        console.log('User deleted successfully');
+        
+        setTimeout(() => {
+          resetDeleteModal();
+          closeDeleteModal();
+          showNotification(`"${name}" kullanıcısı başarıyla silindi ve doğrulandı!`, {type: 'success'});
+          const btn = document.getElementById('loadUsersBtn'); if (btn) btn.click();
+        }, 800);
 
       } catch(err) {
         console.error('Delete user error:', err);
-        showNotification(`Hata: ${err && err.message ? err.message : err}`, {type: 'error'});
-      } finally {
-        if (btnEl) {
-          btnEl.disabled = false;
-          btnEl.style.opacity = '';
-          btnEl.style.cursor = 'pointer';
-          btnEl.textContent = originalText || '🗑️ Sil';
-        }
+        const msg = err && err.message ? err.message : err;
+        updateDeleteProgress(0, '❌ Hata: ' + msg);
+        setTimeout(() => {
+          resetDeleteModal();
+          closeDeleteModal();
+          showNotification(`Hata: ${msg}`, {type: 'error'});
+        }, 2000);
       }
     }
 
@@ -4841,16 +4953,34 @@ try {
   }
   
   async function deleteGalleryImage(filename, sha) {
-    if (!confirm(`"${filename}" resmini silmek istediğinize emin misiniz?`)) return;
+    openDeleteModal({
+      title: '🖼️ Resim Silme',
+      icon: '🖼️',
+      name: filename,
+      desc: 'Bu resim kalıcı olarak silinecektir.<br>Bu işlem geri alınamaz!',
+      progressTitle: '🖼️ Resim Siliniyor...',
+      type: 'gallery',
+      data: { filename, sha },
+      onConfirm: () => performDeleteGalleryImage(filename, sha)
+    });
+  }
+  
+  async function performDeleteGalleryImage(filename, sha) {
+    showDeleteProgress();
+    updateDeleteProgress(10, 'Sunucuya bağlanılıyor...');
     
     try {
       const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token') || '');
       if (!token) throw new Error('GitHub token gerekli!');
       
+      updateDeleteProgress(20, 'Token doğrulandı...');
+      
       const owner = 'amtbrs-03';
       const repo = 'AMTBRS';
       const branch = 'site-release';
       const path = `images/gallery/${filename}`;
+      
+      updateDeleteProgress(40, 'Resim siliniyor...');
       
       const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
       const res = await fetch(url, {
@@ -4866,12 +4996,42 @@ try {
         })
       });
       
+      updateDeleteProgress(70, 'Sunucu yanıtı bekleniyor...');
+      
       if (!res.ok) throw new Error('Silme başarısız: ' + res.status);
       
-      showToast('✅ Resim silindi: ' + filename);
-      loadGalleryImages();
+      // UZAK SUNUCUDAN DOĞRULAMA
+      updateDeleteProgress(85, '🔍 Uzak sunucudan doğrulanıyor...');
+      
+      await new Promise(r => setTimeout(r, 1000));
+      
+      const verifyRes = await fetch(url + '?t=' + Date.now(), {
+        headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github.v3+json' },
+        cache: 'no-store'
+      });
+      
+      // 404 = başarıyla silindi
+      if (verifyRes.status !== 404) {
+        throw new Error('Resim uzak sunucuda hala mevcut! Lütfen tekrar deneyin.');
+      }
+      
+      updateDeleteProgress(100, '✅ Silme doğrulandı!');
+      
+      setTimeout(() => {
+        resetDeleteModal();
+        closeDeleteModal();
+        showNotification('Resim başarıyla silindi ve doğrulandı: ' + filename, {type: 'success'});
+        loadGalleryImages();
+      }, 800);
+      
     } catch (e) {
-      showToast('❌ Hata: ' + (e.message || e));
+      const msg = e.message || e;
+      updateDeleteProgress(0, '❌ Hata: ' + msg);
+      setTimeout(() => {
+        resetDeleteModal();
+        closeDeleteModal();
+        showNotification('Hata: ' + msg, {type: 'error'});
+      }, 2000);
     }
   }
   
