@@ -1,5 +1,5 @@
 {
-  "updatedAt": 1765833036610,
+  "updatedAt": 1765833727088,
   "items": [
     {
       "id": "TEMP-1765831765562",
@@ -33,6 +33,22 @@
       "stock": 3,
       "info": "GÖRSELDEKİ ÜRÜN GÖNDERİLECEKTİR",
       "sortOrder": 2
+    },
+    {
+      "id": "TEMP-1765833593053",
+      "name": "PHİLODENDRON DOMESTİCUM VERİAGATA",
+      "price": 750,
+      "badge": "Yeni",
+      "image": "images/gallery/IMG_2040.JPG",
+      "images": [
+        "images/gallery/IMG_2040.JPG",
+        "images/gallery/IMG_2041.JPG"
+      ],
+      "potDiameter": "15",
+      "height": "30",
+      "stock": 3,
+      "info": "GÖRSELDEKİ ARA ÇELİK GÖNDERİLECEKTİR",
+      "sortOrder": 0
     }
   ]
 }
