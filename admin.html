@@ -926,6 +926,124 @@
     window.closeProductDeleteModal = closeProductDeleteModal;
     window.confirmProductDelete = confirmProductDelete;
   </script>
+  
+  <!-- Genel Yenileme/Loading Modal -->
+  <section id="refreshModal" class="modal" style="display:none">
+    <div class="modal-content small-modal" style="max-width:420px;">
+      <div class="modal-header" style="justify-content:center;background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-bottom:2px solid #86efac;">
+        <h2 id="refreshModalTitle" style="margin:0;color:#166534;">🔄 Yenileniyor</h2>
+      </div>
+      <div id="refreshProgressContent" style="padding:2rem;text-align:center;">
+        <div style="width:80px;height:80px;margin:0 auto 1rem;position:relative;">
+          <svg viewBox="0 0 100 100" style="width:100%;height:100%;transform:rotate(-90deg);">
+            <circle cx="50" cy="50" r="45" fill="none" stroke="#dcfce7" stroke-width="8"/>
+            <circle id="refreshProgressCircle" cx="50" cy="50" r="45" fill="none" stroke="#22c55e" stroke-width="8" stroke-linecap="round" stroke-dasharray="283" stroke-dashoffset="283" style="transition:stroke-dashoffset 0.3s;"/>
+          </svg>
+          <div id="refreshProgressPercent" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:1.2rem;font-weight:800;color:#22c55e;">0%</div>
+        </div>
+        <div id="refreshProgressTitle" style="font-weight:700;color:#166534;font-size:1.1rem;margin-bottom:0.5rem;">🔄 Yenileniyor...</div>
+        <div id="refreshProgressStatus" style="color:#64748b;font-size:0.9rem;">Sunucuya bağlanılıyor...</div>
+      </div>
+    </div>
+  </section>
+  
+  <script>
+    // Genel Yenileme Modal Sistemi
+    let _refreshInProgress = false;
+    
+    function openRefreshModal(options = {}) {
+      if (_refreshInProgress) return;
+      _refreshInProgress = true;
+      
+      const title = options.title || '🔄 Yenileniyor';
+      const progressTitle = options.progressTitle || '🔄 Yenileniyor...';
+      
+      document.getElementById('refreshModalTitle').innerHTML = title;
+      document.getElementById('refreshProgressTitle').innerHTML = progressTitle;
+      updateRefreshProgress(0, 'Başlatılıyor...');
+      
+      const m = document.getElementById('refreshModal');
+      if (m) {
+        m.style.display = 'flex';
+        m.style.pointerEvents = 'none';
+        const modalContent = m.querySelector('.modal-content');
+        if (modalContent) modalContent.style.pointerEvents = 'auto';
+      }
+    }
+    
+    function closeRefreshModal() {
+      _refreshInProgress = false;
+      const m = document.getElementById('refreshModal');
+      if (m) {
+        m.style.display = 'none';
+        m.style.pointerEvents = '';
+      }
+    }
+    
+    function updateRefreshProgress(percent, status) {
+      const circle = document.getElementById('refreshProgressCircle');
+      const percentEl = document.getElementById('refreshProgressPercent');
+      const statusEl = document.getElementById('refreshProgressStatus');
+      if (circle) {
+        const offset = 283 - (283 * percent / 100);
+        circle.style.strokeDashoffset = offset;
+      }
+      if (percentEl) percentEl.textContent = Math.round(percent) + '%';
+      if (statusEl) statusEl.textContent = status;
+    }
+    
+    function finishRefreshSuccess(message, callback) {
+      updateRefreshProgress(100, '✅ ' + (message || 'Yenileme tamamlandı!'));
+      setTimeout(() => {
+        closeRefreshModal();
+        if (typeof showNotification === 'function') {
+          showNotification(message || 'Yenileme tamamlandı', {type: 'success'});
+        }
+        if (typeof callback === 'function') callback();
+      }, 600);
+    }
+    
+    function finishRefreshError(message) {
+      updateRefreshProgress(0, '❌ Hata: ' + message);
+      setTimeout(() => {
+        closeRefreshModal();
+        if (typeof showNotification === 'function') {
+          showNotification('Hata: ' + message, {type: 'error'});
+        }
+      }, 2000);
+    }
+    
+    // Global erişim
+    window.openRefreshModal = openRefreshModal;
+    window.closeRefreshModal = closeRefreshModal;
+    window.updateRefreshProgress = updateRefreshProgress;
+    window.finishRefreshSuccess = finishRefreshSuccess;
+    window.finishRefreshError = finishRefreshError;
+    window._refreshInProgress = false;
+    
+    // Sayfa Yenileme Modal ile
+    async function refreshPageWithModal() {
+      openRefreshModal({
+        title: '🔄 Sayfa Yenileniyor',
+        progressTitle: '🔄 Admin paneli yeniden yükleniyor...'
+      });
+      
+      updateRefreshProgress(20, 'Veriler temizleniyor...');
+      await new Promise(r => setTimeout(r, 300));
+      
+      updateRefreshProgress(50, 'Önbellek temizleniyor...');
+      await new Promise(r => setTimeout(r, 300));
+      
+      updateRefreshProgress(80, 'Sayfa yeniden yükleniyor...');
+      await new Promise(r => setTimeout(r, 400));
+      
+      updateRefreshProgress(100, '✅ Yönlendiriliyor...');
+      await new Promise(r => setTimeout(r, 300));
+      
+      window.location.reload();
+    }
+    window.refreshPageWithModal = refreshPageWithModal;
+  </script>
   <section id="productEditPanel" class="modal" style="display:none">
     <div class="modal-content">
       <!-- Sketch-like header: image, name, price, badge -->
@@ -1487,20 +1605,36 @@
       } catch(err){ msgEl.textContent='Hata: '+err.message; }
     })();
   };
-  // Edit panel: refresh current product from GitHub and update fields
+  // Edit panel: refresh current product from GitHub and update fields - Modal ile
   async function refreshCurrentEditProduct(){
+    openRefreshModal({
+      title: '📦 Ürün Yenileniyor',
+      progressTitle: '📦 Ürün bilgileri alınıyor...'
+    });
+    
     try{
+      updateRefreshProgress(10, 'Başlatılıyor...');
+      
       const msgEl = document.getElementById('editProductMsg');
       if(msgEl) msgEl.textContent = '⏳ Yükleniyor...';
       const id = document.getElementById('editProductId')?.value.trim();
-      if(!id){ if(msgEl) msgEl.textContent='Ürün ID bulunamadı'; return; }
+      if(!id){ 
+        if(msgEl) msgEl.textContent='Ürün ID bulunamadı'; 
+        finishRefreshError('Ürün ID bulunamadı');
+        return; 
+      }
+      
+      updateRefreshProgress(20, 'Ürün dosyası alınıyor...');
+      
       // Try same-origin first
       let data = null;
       try{
         const res = await fetch('products.json?' + Date.now(), { cache:'no-store' });
         if(res.ok){ data = await res.json(); }
       }catch(_){ /* ignore */ }
+      
       if(!data){
+        updateRefreshProgress(40, 'Alternatif kaynak deneniyor...');
         // Fallbacks
         const urls = [
           `https://raw.githubusercontent.com/amtbrs-03/AMTBRS/site-release/products.json?t=${Date.now()}`,
@@ -1510,10 +1644,20 @@
           try{ const r = await fetch(url, { cache:'no-store' }); if(r.ok){ data = await r.json(); break; } }catch(_){ }
         }
       }
+      
+      updateRefreshProgress(60, 'Veriler işleniyor...');
+      
       if(!data){ throw new Error('products.json alınamadı'); }
       const products = Array.isArray(data.items) ? data.items : (Array.isArray(data) ? data : []);
       const p = products.find(x=> String(x.id) === String(id));
-      if(!p){ if(msgEl) msgEl.textContent='Ürün bulunamadı: '+id; return; }
+      if(!p){ 
+        if(msgEl) msgEl.textContent='Ürün bulunamadı: '+id; 
+        finishRefreshError('Ürün bulunamadı: '+id);
+        return; 
+      }
+      
+      updateRefreshProgress(80, 'Form güncelleniyor...');
+      
       // Update inputs
       document.getElementById('editProductName').value = p.name || '';
       document.getElementById('editProductPrice').value = p.price || '';
@@ -1536,9 +1680,13 @@
         const box2 = document.getElementById('editImgBox2'); if(box2) box2.innerHTML = imgs[2] ? `<img src="${imgs[2]}" alt="img2" style="width:100%;height:100%;object-fit:cover">` : '🖼️';
       }catch(_){ }
       if(msgEl) msgEl.textContent = '✅ Güncellendi';
+      
+      finishRefreshSuccess('Ürün bilgileri güncellendi: ' + (p.name || id));
+      
     }catch(e){
       const msgEl = document.getElementById('editProductMsg');
       if(msgEl) msgEl.textContent = '❌ Hata: ' + (e.message||e);
+      finishRefreshError(e.message || e);
     }
   }
   document.addEventListener('DOMContentLoaded', function(){ const btn=document.getElementById('refreshEditBtn'); if(btn){ btn.addEventListener('click', refreshCurrentEditProduct); } });
@@ -1617,7 +1765,7 @@
         <a href="anasayfa.html" class="btn btn-ghost" title="Siteyi yeni sekmede aç">🏠 Siteyi Görüntüle</a>
         <!-- Küçük Token butonu: başlık ile aksiyon bar arasındaki bölgeye, sol tarafa yerleştirildi -->
         <button id="openTokenModalBtn" class="btn btn-ghost" type="button" title="GitHub Token Ayarı">🔑 Token</button>
-        <button id="pageRefreshBtn" class="btn btn-ghost" type="button" title="Admin sayfasını yenile" onclick="window.location.reload()">🔄 Yenile</button>
+        <button id="pageRefreshBtn" class="btn btn-ghost" type="button" title="Admin sayfasını yenile" onclick="refreshPageWithModal()">🔄 Yenile</button>
         <button id="adminLogoutBtn" class="btn btn-danger" type="button" title="Oturumu kapat">🚪 Çıkış</button>
       </div>
     </div>
@@ -2215,6 +2363,66 @@
 
         window.renderAdminProducts = renderAdminProducts;
         window.deleteAdminProduct = deleteAdminProduct;
+        
+        // Ürünleri Modal ile Yenile
+        async function refreshProductsWithModal() {
+          openRefreshModal({
+            title: '📦 Ürünler Yenileniyor',
+            progressTitle: '📦 Ürün listesi alınıyor...'
+          });
+          
+          try {
+            updateRefreshProgress(10, 'Sunucuya bağlanılıyor...');
+            
+            // Lokal override varsa önce onu kullan
+            let override = null;
+            try { const raw = localStorage.getItem('products_override'); if(raw) override = JSON.parse(raw); } catch(_){ override = null; }
+            let productsData;
+            
+            updateRefreshProgress(30, 'Ürün dosyası alınıyor...');
+            
+            if(override && (Array.isArray(override.items) || Array.isArray(override))){
+              productsData = override;
+              updateRefreshProgress(50, 'Lokal önbellek kullanılıyor...');
+            } else {
+              // Primary: same-origin products.json
+              let res = await fetch('products.json?' + Date.now(), { cache:'no-store' });
+              if (!res.ok){
+                updateRefreshProgress(40, 'Alternatif kaynak deneniyor...');
+                try { res = await fetch('products.json', { cache:'no-store' }); } catch(_){}
+              }
+              if(!res.ok){
+                updateRefreshProgress(50, 'GitHub raw deneniyor...');
+                const rawUrl = 'https://raw.githubusercontent.com/amtbrs-03/AMTBRS/site-release/products.json?_=' + Date.now();
+                try { res = await fetch(rawUrl, { cache:'no-store' }); } catch(_){}
+              }
+              if (!res.ok) throw new Error('products.json alınamadı! ('+res.status+')');
+              
+              updateRefreshProgress(60, 'Veriler işleniyor...');
+              try { productsData = await res.json(); }
+              catch(_){
+                const txt = await res.text();
+                try { productsData = JSON.parse(txt); } catch(e){ throw new Error('products.json parse hatası'); }
+              }
+            }
+            
+            updateRefreshProgress(80, 'Liste güncelleniyor...');
+            
+            const products = Array.isArray(productsData.items) ? productsData.items : (Array.isArray(productsData) ? productsData : []);
+            
+            updateRefreshProgress(90, 'Ekran yenileniyor...');
+            
+            // Listeyi yenile
+            await renderAdminProducts();
+            
+            finishRefreshSuccess(`${products.length} ürün başarıyla yenilendi`);
+            
+          } catch(e) {
+            finishRefreshError(e.message || e);
+          }
+        }
+        window.refreshProductsWithModal = refreshProductsWithModal;
+        
         // Ürün sıralama: id'li ürünü listedeki konumunda yukarı/aşağı taşır ve GitHub'a yazar
         async function moveProduct(id, delta){
           try{
@@ -2296,9 +2504,8 @@
                     });
           const btn = document.getElementById('refreshProductsBtn');
           if (btn){
-            btn.addEventListener('click', ()=>{
-              btn.disabled = true; const orig = btn.innerHTML; btn.innerHTML = '⏳ Yenileniyor...';
-              renderAdminProducts(); setTimeout(()=>{ btn.disabled=false; btn.innerHTML=orig; },1200);
+            btn.addEventListener('click', async ()=>{
+              await refreshProductsWithModal();
             });
           }
           const addBtn = document.getElementById('addCardBtn');
@@ -4061,119 +4268,132 @@ try {
       }catch(e){ console.error('openUserDetail error', e); }
     }
 
-    // Refresh users list from GitHub
+    // Refresh users list from GitHub - Modal ile
     async function refreshUsersList(){
-      const btn = document.getElementById('refreshUsersBtn');
-      if (!btn) return;
-      
-      const originalText = btn.textContent;
-      btn.disabled = true;
-      btn.textContent = '⏳ Yenileniyor...';
+      openRefreshModal({
+        title: '👥 Kullanıcılar Yenileniyor',
+        progressTitle: '👥 Kullanıcı listesi alınıyor...'
+      });
       
       try {
-        // Simply trigger the load users button
-        const loadBtn = document.getElementById('loadUsersBtn');
-        if (loadBtn) {
-          // Fetch list without opening modal again (modal is already open)
-          const countEl = document.getElementById('userCountModal');
-          const listEl = document.getElementById('usersListModal');
-          
+        updateRefreshProgress(10, 'Sunucuya bağlanılıyor...');
+        
+        const countEl = document.getElementById('userCountModal');
+        const listEl = document.getElementById('usersListModal');
+        
+        if (listEl) {
           listEl.innerHTML = '<p style="color:#6b7280; text-align:center; padding:2rem;">Kullanıcılar GitHub\'dan çekiliyor...</p>';
-          
-          // Fetch list of user files from GitHub API
-          const owner = 'amtbrs-03';
-          const repo = 'AMTBRS';
-          const branch = 'site-release';
-          const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/users?ref=${branch}&t=${Date.now()}`;
-          
-          console.log('Refreshing users from GitHub...');
-          
-          const res = await fetch(apiUrl, {
-            headers: { 'Accept': 'application/vnd.github.v3+json' },
-            cache: 'no-store'
-          });
-          
-          if (!res.ok) {
-            if (res.status === 404) {
-              listEl.innerHTML = '<p style="color:#6b7280;">Henüz kayıtlı kullanıcı yok.</p>';
-              if (countEl) countEl.textContent = '0 kullanıcı';
-              return;
-            }
-            throw new Error(`GitHub API ${res.status} döndürdü`);
-          }
-          
-          const files = await res.json();
-          const userFiles = files.filter(f => f.name.endsWith('_full.json'));
-          
-          if (userFiles.length === 0) {
-            listEl.innerHTML = '<p style="color:#6b7280;">Henüz kayıtlı kullanıcı yok. (users/ klasöründe _full.json dosyası bulunamadı)</p>';
+        }
+        
+        updateRefreshProgress(20, 'GitHub API\'ye bağlanılıyor...');
+        
+        const owner = 'amtbrs-03';
+        const repo = 'AMTBRS';
+        const branch = 'site-release';
+        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/users?ref=${branch}&t=${Date.now()}`;
+        
+        console.log('Refreshing users from GitHub...');
+        
+        const res = await fetch(apiUrl, {
+          headers: { 'Accept': 'application/vnd.github.v3+json' },
+          cache: 'no-store'
+        });
+        
+        updateRefreshProgress(40, 'Dosya listesi alındı...');
+        
+        if (!res.ok) {
+          if (res.status === 404) {
+            if (listEl) listEl.innerHTML = '<p style="color:#6b7280;">Henüz kayıtlı kullanıcı yok.</p>';
             if (countEl) countEl.textContent = '0 kullanıcı';
+            finishRefreshSuccess('Kullanıcı klasörü boş');
             return;
           }
+          throw new Error(`GitHub API ${res.status} döndürdü`);
+        }
+        
+        const files = await res.json();
+        const userFiles = files.filter(f => f.name.endsWith('_full.json'));
+        
+        if (userFiles.length === 0) {
+          if (listEl) listEl.innerHTML = '<p style="color:#6b7280;">Henüz kayıtlı kullanıcı yok. (users/ klasöründe _full.json dosyası bulunamadı)</p>';
+          if (countEl) countEl.textContent = '0 kullanıcı';
+          finishRefreshSuccess('Kullanıcı bulunamadı');
+          return;
+        }
+        
+        updateRefreshProgress(50, `${userFiles.length} kullanıcı dosyası bulundu...`);
+        
+        // Fetch each user file
+        const users = [];
+        for (let i = 0; i < userFiles.length; i++) {
+          const file = userFiles[i];
+          const progress = 50 + Math.round((i / userFiles.length) * 30);
+          updateRefreshProgress(progress, `Kullanıcı ${i+1}/${userFiles.length} yükleniyor...`);
           
-          // Fetch each user file
-          const users = [];
-          for (const file of userFiles) {
-            try {
-              const userRes = await fetch(file.download_url + '?t=' + Date.now(), {cache: 'no-store'});
-              if (userRes.ok) {
-                const userData = await userRes.json();
-                users.push(userData);
-              }
-            } catch(e) {
-              console.error('User load error:', file.name, e);
+          try {
+            const userRes = await fetch(file.download_url + '?t=' + Date.now(), {cache: 'no-store'});
+            if (userRes.ok) {
+              const userData = await userRes.json();
+              users.push(userData);
             }
+          } catch(e) {
+            console.error('User load error:', file.name, e);
           }
-          
-          // Display users
-          if (countEl) countEl.textContent = `${users.length} kullanıcı`;
-          
-          if (users.length === 0) {
-            listEl.innerHTML = '<p style="color:#6b7280;">Kullanıcı verileri yüklenemedi.</p>';
-            return;
-          }
-          
-          // Helper: format user's address
-          const formatUserAddress = (userObj) => {
-            try{
-              let s = '';
-              if (Array.isArray(userObj.addresses) && userObj.addresses.length) {
-                const def = userObj.addresses.find(a=>a && a.default) || userObj.addresses[0];
-                if (def && typeof def === 'object') {
-                  const parts = [def.addressDetail, def.neighborhood, def.district, def.city, def.postalCode ? ('PK: ' + def.postalCode) : ''].filter(Boolean);
-                  s = parts.join(', ');
-                } else if (typeof def === 'string') {
-                  s = def;
-                }
-              } else if (userObj.address && typeof userObj.address === 'object') {
-                const a = userObj.address;
-                const parts = [a.addressDetail, a.neighborhood, a.district, a.city, a.postalCode ? ('PK: ' + a.postalCode) : ''].filter(Boolean);
+        }
+        
+        updateRefreshProgress(85, 'Liste güncelleniyor...');
+        
+        // Display users
+        if (countEl) countEl.textContent = `${users.length} kullanıcı`;
+        
+        if (users.length === 0) {
+          if (listEl) listEl.innerHTML = '<p style="color:#6b7280;">Kullanıcı verileri yüklenemedi.</p>';
+          finishRefreshError('Kullanıcı verileri yüklenemedi');
+          return;
+        }
+        
+        // Helper: format user's address
+        const formatUserAddress = (userObj) => {
+          try{
+            let s = '';
+            if (Array.isArray(userObj.addresses) && userObj.addresses.length) {
+              const def = userObj.addresses.find(a=>a && a.default) || userObj.addresses[0];
+              if (def && typeof def === 'object') {
+                const parts = [def.addressDetail, def.neighborhood, def.district, def.city, def.postalCode ? ('PK: ' + def.postalCode) : ''].filter(Boolean);
                 s = parts.join(', ');
-              } else if (typeof userObj.address === 'string') {
-                s = userObj.address;
+              } else if (typeof def === 'string') {
+                s = def;
               }
-              s = String(s||'');
-              // Çift decode veya + işaretlerinin boşluğa dönüşmesi engellendi
-              return s.replace(/\s+/g,' ').trim();
-            }catch(_){ return ''; }
-          };
+            } else if (userObj.address && typeof userObj.address === 'object') {
+              const a = userObj.address;
+              const parts = [a.addressDetail, a.neighborhood, a.district, a.city, a.postalCode ? ('PK: ' + a.postalCode) : ''].filter(Boolean);
+              s = parts.join(', ');
+            } else if (typeof userObj.address === 'string') {
+              s = userObj.address;
+            }
+            s = String(s||'');
+            return s.replace(/\s+/g,' ').trim();
+          }catch(_){ return ''; }
+        };
 
-          // Cache users for detail popover
-          window.__adminUsersCache = users.slice();
+        // Cache users for detail popover
+        window.__adminUsersCache = users.slice();
+        
+        updateRefreshProgress(90, 'Tablo oluşturuluyor...');
 
-          let html = '<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.1); border-radius:8px; overflow:hidden; table-layout:fixed;">';
-          html += '<thead><tr style="background:linear-gradient(135deg, var(--green-primary), var(--green-dark)); color:white;">';
-          html += '<th style="width:18%; padding:0.9rem 0.75rem; text-align:center; font-weight:700; font-size:0.95rem; border-bottom:2px solid rgba(255,255,255,0.2);">👤 Ad</th>';
-          html += '<th style="width:22%; padding:0.9rem 0.75rem; text-align:center; font-weight:700; font-size:0.95rem; border-bottom:2px solid rgba(255,255,255,0.2);">📧 Email</th>';
-          html += '<th style="width:28%; padding:0.9rem 0.75rem; text-align:center; font-weight:700; font-size:0.95rem; border-bottom:2px solid rgba(255,255,255,0.2);">📍 Adres</th>';
-          html += '<th style="width:16%; padding:0.9rem 0.75rem; text-align:center; font-weight:700; font-size:0.95rem; border-bottom:2px solid rgba(255,255,255,0.2);">📅 Kayıt Tarihi</th>';
-          html += '<th style="width:16%; padding:0.9rem 0.75rem; text-align:center; font-weight:700; font-size:0.95rem; border-bottom:2px solid rgba(255,255,255,0.2);">🕐 Son Giriş</th>';
-          html += '</tr></thead><tbody>';
-          
-          users.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-          
-          users.forEach((user, idx) => {
-            const createdDate = user.createdAt ? new Date(user.createdAt).toLocaleDateString('tr-TR', {day:'2-digit', month:'2-digit', year:'numeric'}) : '-';
+        let html = '<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.1); border-radius:8px; overflow:hidden; table-layout:fixed;">';
+        html += '<thead><tr style="background:linear-gradient(135deg, var(--green-primary), var(--green-dark)); color:white;">';
+        html += '<th style="width:18%; padding:0.9rem 0.75rem; text-align:center; font-weight:700; font-size:0.95rem; border-bottom:2px solid rgba(255,255,255,0.2);">👤 Ad</th>';
+        html += '<th style="width:22%; padding:0.9rem 0.75rem; text-align:center; font-weight:700; font-size:0.95rem; border-bottom:2px solid rgba(255,255,255,0.2);">📧 Email</th>';
+        html += '<th style="width:28%; padding:0.9rem 0.75rem; text-align:center; font-weight:700; font-size:0.95rem; border-bottom:2px solid rgba(255,255,255,0.2);">📍 Adres</th>';
+        html += '<th style="width:16%; padding:0.9rem 0.75rem; text-align:center; font-weight:700; font-size:0.95rem; border-bottom:2px solid rgba(255,255,255,0.2);">📅 Kayıt Tarihi</th>';
+        html += '<th style="width:16%; padding:0.9rem 0.75rem; text-align:center; font-weight:700; font-size:0.95rem; border-bottom:2px solid rgba(255,255,255,0.2);">🕐 Son Giriş</th>';
+        html += '</tr></thead><tbody>';
+        
+        users.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        
+        users.forEach((user, idx) => {
+          const createdDate = user.createdAt ? new Date(user.createdAt).toLocaleDateString('tr-TR', {day:'2-digit', month:'2-digit', year:'numeric'}) : '-';
             const lastLogin = user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('tr-TR', {day:'2-digit', month:'2-digit', year:'numeric'}) : '-';
             const rowBg = idx % 2 === 0 ? '#f9fafb' : '#ffffff';
             
@@ -4189,23 +4409,15 @@ try {
           });
           
           html += '</tbody></table></div>';
-          listEl.innerHTML = html;
+          if (listEl) listEl.innerHTML = html;
           
           console.log('✓ Users list refreshed');
           
-          // Show success message briefly
-          const successMsg = document.createElement('div');
-          successMsg.style.cssText = 'position:fixed; top:20px; right:20px; background:#10b981; color:white; padding:1rem 1.5rem; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15); z-index:10000; font-weight:600;';
-          successMsg.textContent = '✓ Kullanıcı listesi güncellendi';
-          document.body.appendChild(successMsg);
-          setTimeout(() => successMsg.remove(), 2000);
-        }
+          finishRefreshSuccess(`${users.length} kullanıcı başarıyla yenilendi`);
+          
       } catch(e) {
         console.error('refreshUsersList error:', e);
-        showNotification('Kullanıcı listesi yenilenirken hata oluştu: ' + (e.message || e), {type: 'error'});
-      } finally {
-        btn.disabled = false;
-        btn.textContent = originalText;
+        finishRefreshError(e.message || e);
       }
     }
 
@@ -4850,10 +5062,18 @@ try {
     }
   }
   
-  async function loadGalleryImages() {
+  async function loadGalleryImages(showModal = false) {
     const grid = document.getElementById('galleryGrid');
     const status = document.getElementById('galleryStatus');
     if (!grid || !status) return;
+    
+    if (showModal) {
+      openRefreshModal({
+        title: '🖼️ Galeri Yenileniyor',
+        progressTitle: '🖼️ Resimler yükleniyor...'
+      });
+      updateRefreshProgress(10, 'Sunucuya bağlanılıyor...');
+    }
     
     status.textContent = '⏳ Resimler yükleniyor...';
     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#64748b;padding:2rem;">Yükleniyor...</div>';
@@ -4865,15 +5085,21 @@ try {
       const branch = 'site-release';
       const path = 'images/gallery';
       
+      if (showModal) updateRefreshProgress(30, 'GitHub API\'ye bağlanılıyor...');
+      
       const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`;
       const headers = { 'Accept': 'application/vnd.github.v3+json' };
       if (token) headers['Authorization'] = 'token ' + token;
       
       const res = await fetch(url, { headers });
+      
+      if (showModal) updateRefreshProgress(50, 'Dosya listesi alındı...');
+      
       if (!res.ok) {
         if (res.status === 404) {
           grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#64748b;padding:2rem;">📂 Galeri klasörü boş veya henüz oluşturulmamış.</div>';
           status.textContent = 'Galeri boş.';
+          if (showModal) finishRefreshSuccess('Galeri klasörü boş');
           return;
         }
         throw new Error('GitHub API hatası: ' + res.status);
@@ -4882,11 +5108,16 @@ try {
       const files = await res.json();
       const images = files.filter(f => f.type === 'file' && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(f.name));
       
+      if (showModal) updateRefreshProgress(70, `${images.length} resim bulundu...`);
+      
       if (images.length === 0) {
         grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#64748b;padding:2rem;">📂 Galeri klasöründe resim bulunamadı.</div>';
         status.textContent = 'Galeri boş.';
+        if (showModal) finishRefreshSuccess('Galeri klasöründe resim yok');
         return;
       }
+      
+      if (showModal) updateRefreshProgress(85, 'Galeri oluşturuluyor...');
       
       status.textContent = `✅ ${images.length} resim bulundu.`;
       
@@ -4912,11 +5143,20 @@ try {
         `;
       }).join('');
       
+      if (showModal) finishRefreshSuccess(`${images.length} resim başarıyla yenilendi`);
+      
     } catch (e) {
       status.textContent = '❌ Hata: ' + (e.message || e);
       grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#dc2626;padding:2rem;">❌ Yükleme hatası: ' + (e.message || e) + '</div>';
+      if (showModal) finishRefreshError(e.message || e);
     }
   }
+  
+  // Galeri yenileme fonksiyonu (modal ile)
+  function refreshGalleryWithModal() {
+    loadGalleryImages(true);
+  }
+  window.refreshGalleryWithModal = refreshGalleryWithModal;
   
   function formatBytes(bytes) {
     if (bytes === 0) return '0 Bytes';
@@ -5329,7 +5569,7 @@ try {
       </div>
       
       <div style="display:flex;gap:0.75rem;margin-bottom:1rem;flex-wrap:wrap;">
-        <button id="refreshGalleryBtn" class="btn" onclick="loadGalleryImages()">🔄 Yenile</button>
+        <button id="refreshGalleryBtn" class="btn" onclick="refreshGalleryWithModal()">🔄 Yenile</button>
         <button id="uploadToGalleryBtn" class="btn" onclick="openGitHubGalleryUpload()">⬆️ GitHub'da Yükle</button>
         <button id="toggleGalleryGridBtn" class="btn btn-ghost" onclick="toggleGalleryView()">🔲 Görünüm</button>
       </div>
