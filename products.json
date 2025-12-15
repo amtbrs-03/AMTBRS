@@ -1,19 +1,20 @@
 {
-  "updatedAt": 1765825380665,
+  "updatedAt": 1765828722617,
   "items": [
     {
       "id": "TEMP-1765595948731",
-      "name": "ASAKAJSHN",
-      "price": 1345,
-      "badge": "Yeni",
+      "name": "PEHİLODENDRON FELİX",
+      "price": 1100,
+      "badge": "Popüler",
       "image": "images/gallery/IMG_1966.JPG",
       "images": [
         "images/gallery/IMG_1966.JPG"
       ],
       "potDiameter": "15",
       "height": "65",
-      "info": "güzel",
-      "sortOrder": 0
+      "stock": 3,
+      "info": "GÖRSELDEKİ TEPE FİDE GÖNDERİLECEKTİR",
+      "sortOrder": 1
     }
   ]
 }
