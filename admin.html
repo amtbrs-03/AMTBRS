@@ -1707,20 +1707,18 @@
   function safeInput(str) {
     return String(str).replace(/[<>&"']/g, function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;','\'':'&#39;'}[c]; });
   }
-  // Define canonical Base64 helpers only once; avoid duplicate redefinitions.
-  if (typeof window.toBase64 !== 'function') {
-    function toBase64(str){
-      try {
-        const utf8 = new TextEncoder().encode(str);
-        let bin='';
-        for(let i=0;i<utf8.length;i++) bin+=String.fromCharCode(utf8[i]);
-        return btoa(bin);
-      } catch(e) {
-        try { return btoa(unescape(encodeURIComponent(str))); } catch(_){ return ''; }
-      }
+  // Define canonical Base64 helpers - global scope
+  function toBase64(str){
+    try {
+      const utf8 = new TextEncoder().encode(str);
+      let bin='';
+      for(let i=0;i<utf8.length;i++) bin+=String.fromCharCode(utf8[i]);
+      return btoa(bin);
+    } catch(e) {
+      try { return btoa(unescape(encodeURIComponent(str))); } catch(_){ return ''; }
     }
-    window.toBase64 = toBase64;
   }
+  window.toBase64 = toBase64;
   // GitHub Token yönetimi: tarayıcıda güvenli anahtar adıyla sakla ve her yüklemede çağır
   (function(){
     function setGitHubToken(tok){
@@ -1832,10 +1830,10 @@
         return true;
       }
       // Check main + extra images if provided
-      if(!(await ensurePathExists(image))){ finishRefreshError('Dosya GitHub'da bulunamadı: '+image); return; }
-      if(image2 && !(await ensurePathExists(image2))){ finishRefreshError('Dosya GitHub'da bulunamadi: '+image2); return; }
-      if(image3 && !(await ensurePathExists(image3))){ finishRefreshError('Dosya GitHub'da bulunamadi: '+image3); return; }
-      if(image4 && !(await ensurePathExists(image4))){ finishRefreshError('Dosya GitHub'da bulunamadi: '+image4); return; }
+      if(!(await ensurePathExists(image))){ finishRefreshError('Dosya GitHub\'da bulunamadi: '+image); return; }
+      if(image2 && !(await ensurePathExists(image2))){ finishRefreshError('Dosya GitHub\'da bulunamadi: '+image2); return; }
+      if(image3 && !(await ensurePathExists(image3))){ finishRefreshError('Dosya GitHub\'da bulunamadi: '+image3); return; }
+      if(image4 && !(await ensurePathExists(image4))){ finishRefreshError('Dosya GitHub\'da bulunamadi: '+image4); return; }
     } catch(_){ /* path check errors ignored */ }
     updateRefreshProgress(25, 'Görsel formatı kontrol ediliyor...');
     // Görsel yolu doğrulama: optional baştaki '/', products|gallery, uzantı case-insensitive
