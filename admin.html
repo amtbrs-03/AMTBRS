@@ -1968,7 +1968,11 @@
           if (m) m.style.display = 'flex';
         }
         
+        let _deleteInProgress = false; // Silme kilidi
+        
         function closeProductDeleteModal() {
+          // Silme işlemi devam ediyorsa kapatma!
+          if (_deleteInProgress) return;
           _pendingDeleteId = null;
           const m = document.getElementById('productDeleteModal');
           if (m) m.style.display = 'none';
@@ -1976,19 +1980,25 @@
         
         // Silme onayı - onclick ile çağrılıyor
         function confirmProductDelete() {
-          if (_pendingDeleteId) {
+          if (_pendingDeleteId && !_deleteInProgress) {
             performDeleteProduct(_pendingDeleteId);
           }
         }
         
-        // Progress göster
+        // Progress göster ve ekranı kilitle
         function showDeleteProgress() {
+          _deleteInProgress = true;
           const confirm = document.getElementById('deleteConfirmContent');
           const progress = document.getElementById('deleteProgressContent');
           const buttons = document.getElementById('deleteConfirmButtons');
           if (confirm) confirm.style.display = 'none';
           if (progress) progress.style.display = 'block';
           if (buttons) buttons.style.display = 'none';
+          // Modal dışına tıklamayı engelle
+          const modal = document.getElementById('productDeleteModal');
+          if (modal) modal.style.pointerEvents = 'none';
+          const modalContent = modal?.querySelector('.modal-content');
+          if (modalContent) modalContent.style.pointerEvents = 'auto';
         }
         
         // Progress güncelle
@@ -2004,8 +2014,9 @@
           if (statusEl) statusEl.textContent = status;
         }
         
-        // Modal'ı resetle
+        // Modal'ı resetle ve kilidi aç
         function resetDeleteModal() {
+          _deleteInProgress = false;
           const confirm = document.getElementById('deleteConfirmContent');
           const progress = document.getElementById('deleteProgressContent');
           const buttons = document.getElementById('deleteConfirmButtons');
@@ -2013,6 +2024,9 @@
           if (progress) progress.style.display = 'none';
           if (buttons) buttons.style.display = 'flex';
           updateDeleteProgress(0, '');
+          // Modal tıklamayı geri aç
+          const modal = document.getElementById('productDeleteModal');
+          if (modal) modal.style.pointerEvents = '';
         }
         
         // Global erişim için
@@ -2064,29 +2078,51 @@
               })
             });
             
-            updateDeleteProgress(90, 'Sunucu yanıtı bekleniyor...');
+            updateDeleteProgress(85, 'Sunucu yanıtı bekleniyor...');
             
             if (!putRes.ok) {
               if (putRes.status === 409) {
-                updateDeleteProgress(100, 'Tamamlandı!');
-                setTimeout(() => {
-                  resetDeleteModal();
-                  closeProductDeleteModal();
-                  showNotification('Ürün zaten silindi', {type: 'warning'});
-                  renderAdminProducts();
-                }, 500);
-                return;
+                // Çakışma - tekrar kontrol et
+                updateDeleteProgress(90, 'Uzak sunucu kontrol ediliyor...');
+              } else {
+                const t = await putRes.text().catch(()=> '');
+                throw new Error('GitHub kaydı başarısız: '+putRes.status+' '+t);
               }
-              const t = await putRes.text().catch(()=> '');
-              throw new Error('GitHub kaydı başarısız: '+putRes.status+' '+t);
             }
             
-            updateDeleteProgress(100, '✅ Başarıyla silindi!');
+            // UZAK SUNUCUDAN DOĞRULAMA - Gerçekten silinmiş mi kontrol et
+            updateDeleteProgress(92, '🔍 Uzak sunucudan doğrulanıyor...');
+            
+            // Cache'i bypass etmek için kısa gecikme
+            await new Promise(r => setTimeout(r, 1000));
+            
+            const verifyRes = await fetch(url + '&t=' + Date.now(), { 
+              headers:{ 'Accept':'application/vnd.github.v3+json','Authorization':'token '+token },
+              cache: 'no-store'
+            });
+            
+            if (!verifyRes.ok) throw new Error('Doğrulama başarısız: sunucuya ulaşılamadı');
+            
+            updateDeleteProgress(96, '📋 Ürün listesi kontrol ediliyor...');
+            
+            const verifyData = await verifyRes.json();
+            let verifyObj = {};
+            try { verifyObj = JSON.parse(fromBase64(verifyData.content)) || {}; } catch(_) { verifyObj = {}; }
+            const verifyList = Array.isArray(verifyObj.items) ? verifyObj.items : (Array.isArray(verifyObj) ? verifyObj : []);
+            
+            // Ürün hala listede mi kontrol et
+            const stillExists = verifyList.some(p => String(p.id) === String(id));
+            
+            if (stillExists) {
+              throw new Error('Ürün uzak sunucuda hala mevcut! Lütfen tekrar deneyin.');
+            }
+            
+            updateDeleteProgress(100, '✅ Silme doğrulandı!');
             
             setTimeout(() => {
               resetDeleteModal();
               closeProductDeleteModal();
-              showNotification('Ürün başarıyla silindi', {type: 'success'});
+              showNotification('Ürün başarıyla silindi ve doğrulandı', {type: 'success'});
               renderAdminProducts();
             }, 800);
             
