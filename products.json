@@ -1,5 +1,5 @@
 {
-  "updatedAt": 1765823922093,
+  "updatedAt": 1765824365349,
   "items": [
     {
       "id": "IMG_1966.JPG",
@@ -15,22 +15,6 @@
       "potDiameter": "14",
       "height": "45",
       "info": "Bakımı kolay, gölge seven tropik bitki"
-    },
-    {
-      "id": "TEMP-1765322433131",
-      "name": "PEHELEYOTUYTERNA",
-      "price": 3000,
-      "badge": "İndirim",
-      "image": "images/gallery/IMG_1967.JPG",
-      "images": [
-        "images/gallery/IMG_1967.JPG",
-        "images/gallery/IMG_1967.JPG",
-        "images/gallery/IMG_1967.JPG"
-      ],
-      "potDiameter": "18",
-      "height": "60",
-      "info": "Özel koleksiyon ürünü",
-      "sortOrder": 1
     },
     {
       "id": "TEMP-1765595948731",
