@@ -976,6 +976,24 @@
     </style>
   </head>
   <body>
+                <!-- Test Yayını Alert -->
+                <div id="testAlert" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);">
+                    <div style="background:linear-gradient(135deg,#fef3c7,#fde68a);padding:2rem 3rem;border-radius:16px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.4);border:3px solid #f59e0b;max-width:90vw;">
+                        <div style="font-size:2.5rem;margin-bottom:0.5rem;">⚠️</div>
+                        <div style="font-size:1.3rem;font-weight:800;color:#92400e;">Sitemizin test yayınıdır</div>
+                        <div style="font-size:0.9rem;color:#78350f;margin-top:0.5rem;">Lütfen bekleyiniz...</div>
+                    </div>
+                </div>
+                <script>
+                    setTimeout(function() {
+                        var alert = document.getElementById('testAlert');
+                        if (alert) {
+                            alert.style.transition = 'opacity 0.5s';
+                            alert.style.opacity = '0';
+                            setTimeout(function() { alert.remove(); }, 500);
+                        }
+                    }, 3000);
+                </script>
                                 
                 <!-- Decorative floral SVG background (purely visual) -->
                 <!-- decorative floral background removed -->
