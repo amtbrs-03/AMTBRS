@@ -4353,23 +4353,29 @@
                     }
 
                     function editAddress(addressId){
+                        console.log('editAddress çağrıldı:', addressId);
                         const el = document.getElementById('addrEdit_'+addressId);
-                        if (!el) return;
+                        console.log('Form elementi:', el);
+                        if (!el) { console.error('Form bulunamadı: addrEdit_'+addressId); return; }
                         // Prefill from current addresses
                         const addrs = getUserAddresses();
+                        console.log('Mevcut adresler:', addrs);
                         const a = addrs.find(x=>x.id===addressId);
-                        if (!a) return;
+                        console.log('Düzenlenecek adres:', a);
+                        if (!a) { console.error('Adres bulunamadı:', addressId); return; }
                         const cityEl = document.getElementById('addrCity_'+addressId);
                         const districtEl = document.getElementById('addrDistrict_'+addressId);
                         const detailEl = document.getElementById('addrDetail_'+addressId);
                         const zipEl = document.getElementById('addrZip_'+addressId);
                         const defEl = document.getElementById('addrDefault_'+addressId);
+                        console.log('Input elementleri:', { cityEl, districtEl, detailEl, zipEl, defEl });
                         if (cityEl) cityEl.value = a.city || '';
                         if (districtEl) districtEl.value = a.district || '';
                         if (detailEl) detailEl.value = a.addressDetail || '';
                         if (zipEl) zipEl.value = a.postalCode || '';
                         if (defEl) defEl.checked = !!a.isDefault;
                         el.style.display = 'block';
+                        console.log('Form görünür yapıldı');
                     }
 
                     function cancelEditAddress(addressId){
