@@ -4363,7 +4363,70 @@ try {
 
       // (Yeni ürün ekleme arayüzü kaldırıldı: önizleme dinleyicisi devre dışı)
 
+      // Resim standartları
+      const IMAGE_STANDARDS = {
+        maxWidth: 1200,      // maksimum genişlik px
+        maxHeight: 1200,     // maksimum yükseklik px
+        quality: 0.85,       // JPEG kalitesi (0-1)
+        maxSizeKB: 500       // maksimum dosya boyutu KB
+      };
+
+      // Resmi standart boyuta getir
+      function resizeImage(file) {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          img.onload = () => {
+            let { width, height } = img;
+            
+            // En-boy oranını koru, maksimum boyuta sığdır
+            if (width > IMAGE_STANDARDS.maxWidth || height > IMAGE_STANDARDS.maxHeight) {
+              const ratio = Math.min(
+                IMAGE_STANDARDS.maxWidth / width,
+                IMAGE_STANDARDS.maxHeight / height
+              );
+              width = Math.round(width * ratio);
+              height = Math.round(height * ratio);
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Beyaz arka plan (şeffaf PNG'ler için)
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Resmi çiz
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // JPEG olarak dönüştür (daha küçük dosya boyutu)
+            const dataUrl = canvas.toDataURL('image/jpeg', IMAGE_STANDARDS.quality);
+            
+            // Boyut kontrolü
+            const sizeKB = Math.round((dataUrl.length * 0.75) / 1024);
+            console.log(`📸 Resim: ${img.naturalWidth}x${img.naturalHeight} → ${width}x${height}, ~${sizeKB}KB`);
+            
+            resolve(dataUrl);
+          };
+          
+          img.onerror = () => reject(new Error('Resim yüklenemedi'));
+          
+          // FileReader ile resmi yükle
+          const reader = new FileReader();
+          reader.onload = (e) => { img.src = e.target.result; };
+          reader.onerror = () => reject(new Error('Dosya okunamadı'));
+          reader.readAsDataURL(file);
+        });
+      }
+
       function toDataURL(file){
+        // Resim dosyası ise standartlaştır
+        if (file.type.startsWith('image/')) {
+          return resizeImage(file);
+        }
+        // Diğer dosyalar için orijinal davranış
         return new Promise((res, rej)=>{
           const r = new FileReader(); r.onload = ()=>res(r.result); r.onerror = rej; r.readAsDataURL(file);
         });
