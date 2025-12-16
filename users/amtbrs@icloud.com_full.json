@@ -16,5 +16,17 @@
   },
   "phone": "+90 530 306 9081",
   "createdAt": 1765923894558,
-  "lastLogin": 1765924284391
+  "lastLogin": 1765924284391,
+  "addresses": [
+    {
+      "id": "default",
+      "title": "Varsayılan Adres",
+      "city": "İstanbul",
+      "district": "Kağıthane",
+      "neighborhood": "Çağlayan Mahallesi",
+      "addressDetail": "Fevziçakmak Caddesi No:47 Kısmet Apt., Çağlayan Mahallesi, Kağıthane, İstanbul",
+      "postalCode": "34403",
+      "isDefault": true
+    }
+  ]
 }
