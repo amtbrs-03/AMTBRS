@@ -1110,6 +1110,19 @@
                     #progressModal.error #progressBar { background: linear-gradient(90deg,#ef4444,#dc2626); }
                     #progressCloseBtn:hover { background: #b91c1c; }
                 </style>
+                
+                <!-- Logout Onay Modal -->
+                <div id="logoutConfirmModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:100001;align-items:center;justify-content:center;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);">
+                    <div style="background:linear-gradient(135deg,#ffffff,#fff7ed);padding:1.5rem 2rem;border-radius:16px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.25);border:2px solid #f97316;min-width:300px;max-width:400px;">
+                        <div style="font-size:2.5rem;margin-bottom:0.5rem;">👋</div>
+                        <div style="font-size:1.1rem;font-weight:700;color:#9a3412;margin-bottom:0.5rem;">Çıkış Yapmak Üzeresiniz</div>
+                        <div style="font-size:0.9rem;color:#78350f;margin-bottom:1.2rem;">Emin misiniz?</div>
+                        <div style="display:flex;gap:0.75rem;justify-content:center;">
+                            <button onclick="closeLogoutConfirm()" style="padding:0.6rem 1.2rem;border:none;background:#6b7280;color:#fff;font-weight:600;border-radius:8px;cursor:pointer;transition:background 0.2s;">Vazgeç</button>
+                            <button onclick="confirmLogout()" style="padding:0.6rem 1.2rem;border:none;background:#ef4444;color:#fff;font-weight:600;border-radius:8px;cursor:pointer;transition:background 0.2s;">Çıkış Yap</button>
+                        </div>
+                    </div>
+                </div>
                                 
                 <!-- Decorative floral SVG background (purely visual) -->
                 <!-- decorative floral background removed -->
@@ -1207,7 +1220,7 @@
                                     <button id="profileToggle" class="contact-btn" aria-controls="profileMenu" aria-expanded="false" style="margin-left:0.3rem;padding:0.35rem 0.5rem;">▾</button>
                                     <div id="profileMenu" class="hidden" role="menu" style="position:absolute;right:0;top:calc(100% + 6px);background:linear-gradient(180deg, #fff, #fbfbfb);border:1px solid rgba(10,12,30,0.06);box-shadow:0 12px 30px rgba(2,6,23,0.12);border-radius:10px;padding:0.5rem;min-width:160px;z-index:9999;">
                                         <button id="profileAccount" style="display:block;width:100%;text-align:left;padding:0.5rem;border:none;background:#10b981;color:#fff;cursor:pointer;border-radius:6px;margin-bottom:0.4rem;" data-action="open-account">Hesabım</button>
-                                        <button onclick="logout()" style="display:block;width:100%;text-align:left;padding:0.5rem;border:none;background:#ef4444;color:#fff;cursor:pointer;border-radius:6px;">Çıkış Yap</button>
+                                        <button onclick="openLogoutConfirm()" style="display:block;width:100%;text-align:left;padding:0.5rem;border:none;background:#ef4444;color:#fff;cursor:pointer;border-radius:6px;">Çıkış Yap</button>
                                     </div>
                                 </div>
                             </div>
@@ -4803,12 +4816,29 @@
 
                     // Confirm-protected logout used in modal and profile menu
                     function logoutConfirm(){ 
-                        if (confirm('Çıkış yapmak istediğinizden emin misiniz?')) {
-                            closeProfileMenu(); // Close menu before logout
-                            logout();
-                        } else {
-                            closeProfileMenu(); // Close menu even if cancelled
+                        openLogoutConfirm();
+                    }
+                    
+                    function openLogoutConfirm() {
+                        closeProfileMenu();
+                        const modal = document.getElementById('logoutConfirmModal');
+                        if (modal) {
+                            modal.style.display = 'flex';
+                            document.body.style.overflow = 'hidden';
                         }
+                    }
+                    
+                    function closeLogoutConfirm() {
+                        const modal = document.getElementById('logoutConfirmModal');
+                        if (modal) {
+                            modal.style.display = 'none';
+                            document.body.style.overflow = '';
+                        }
+                    }
+                    
+                    function confirmLogout() {
+                        closeLogoutConfirm();
+                        logout();
                     }
 
                     function viewOrderDetails(id){
