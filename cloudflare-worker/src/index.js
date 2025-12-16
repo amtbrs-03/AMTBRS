@@ -291,20 +291,37 @@ https://ern-cicek.com.tr
           const token = env.GITHUB_TOKEN || env.GH_TOKEN;
           if (token) {
             const safeEmail = email.replace(/[^a-z0-9._@-]/gi, '_');
-            const path = `users/${safeEmail}_full.json`;
-            const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}`;
-            // check existing
-            let existingSha = null;
-            try {
-              const headRes = await fetch(apiUrl + `?ref=${branch}`, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'Cloudflare-Worker' } });
-              if (headRes.ok) { const j = await headRes.json(); existingSha = j.sha; }
-            } catch (_) {}
-            const content = btoa(unescape(encodeURIComponent(JSON.stringify(user, null, 2))));
-            const body = { message: `feat(user): update ${safeEmail}`, content, branch };
-            if (existingSha) body.sha = existingSha;
-            const putRes = await fetch(apiUrl, { method: 'PUT', headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json', 'User-Agent': 'Cloudflare-Worker' }, body: JSON.stringify(body) });
-            commitStatus = putRes.status;
-            if (putRes.ok) commitOk = true; else commitError = await safeText(putRes);
+            const filePath = `users/${safeEmail}_full.json`;
+            const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(filePath)}`;
+            
+            // Retry loop for 409 conflicts
+            for (let attempt = 0; attempt < 3; attempt++) {
+              // Get current SHA
+              let existingSha = null;
+              try {
+                const headRes = await fetch(apiUrl + `?ref=${branch}`, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'Cloudflare-Worker' } });
+                if (headRes.ok) { const j = await headRes.json(); existingSha = j.sha; }
+              } catch (_) {}
+              
+              const content = btoa(unescape(encodeURIComponent(JSON.stringify(user, null, 2))));
+              const body = { message: `feat(user): update ${safeEmail}`, content, branch };
+              if (existingSha) body.sha = existingSha;
+              
+              const putRes = await fetch(apiUrl, { method: 'PUT', headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json', 'User-Agent': 'Cloudflare-Worker' }, body: JSON.stringify(body) });
+              commitStatus = putRes.status;
+              
+              if (putRes.ok) {
+                commitOk = true;
+                break;
+              } else if (putRes.status === 409 && attempt < 2) {
+                // Conflict - retry with fresh SHA
+                await new Promise(r => setTimeout(r, 100 * (attempt + 1)));
+                continue;
+              } else {
+                commitError = await safeText(putRes);
+                break;
+              }
+            }
           } else {
             commitError = 'missing token';
           }
