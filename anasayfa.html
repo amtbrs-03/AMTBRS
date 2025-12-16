@@ -243,6 +243,10 @@
         /* Account modal mobilde header üstünde */
         #accountModal {
             z-index: 2000;
+            pointer-events: none; /* Backdrop tıklaması engellendi - sadece X ile kapanır */
+        }
+        #accountModal .modal-content {
+            pointer-events: auto; /* İçerik tıklanabilir */
         }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         
@@ -1086,6 +1090,26 @@
                         }
                     }, 3000);
                 </script>
+
+                <!-- Progress Modal - Kaydetme İlerlemesi (Sade) -->
+                <div id="progressModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:100000;align-items:center;justify-content:center;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);">
+                    <div id="progressBox" style="position:relative;background:linear-gradient(135deg,#ffffff,#f0fdf4);padding:1.5rem 2rem;border-radius:16px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.25);border:2px solid #10b981;min-width:280px;max-width:400px;">
+                        <div id="progressTitle" style="font-size:1.1rem;font-weight:700;color:#064e3b;margin-bottom:1rem;">Kaydediliyor...</div>
+                        <div style="background:#e5e7eb;border-radius:10px;height:28px;overflow:hidden;position:relative;">
+                            <div id="progressBar" style="background:linear-gradient(90deg,#10b981,#059669);height:100%;width:0%;transition:width 0.3s ease;border-radius:10px;"></div>
+                            <div id="progressPercent" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-weight:800;color:#064e3b;font-size:1rem;">%0</div>
+                        </div>
+                        <div id="progressDetail" style="display:none;margin-top:1rem;padding:0.75rem;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;text-align:left;font-size:0.85rem;color:#991b1b;max-height:150px;overflow-y:auto;word-break:break-word;"></div>
+                        <button id="progressCloseBtn" onclick="closeProgressModal()" style="display:none;position:absolute;top:10px;right:10px;width:32px;height:32px;background:#dc2626;color:#fff;border:none;border-radius:50%;font-weight:700;cursor:pointer;font-size:1.2rem;line-height:1;">✕</button>
+                    </div>
+                </div>
+                <style>
+                    #progressModal.success #progressBox { border-color: #22c55e; }
+                    #progressModal.success #progressBar { background: linear-gradient(90deg,#22c55e,#16a34a); }
+                    #progressModal.error #progressBox { border-color: #ef4444; background: linear-gradient(135deg,#ffffff,#fef2f2); }
+                    #progressModal.error #progressBar { background: linear-gradient(90deg,#ef4444,#dc2626); }
+                    #progressCloseBtn:hover { background: #b91c1c; }
+                </style>
                                 
                 <!-- Decorative floral SVG background (purely visual) -->
                 <!-- decorative floral background removed -->
@@ -1182,8 +1206,7 @@
                                 <div id="profileWrap" style="position:relative;">
                                     <button id="profileToggle" class="contact-btn" aria-controls="profileMenu" aria-expanded="false" style="margin-left:0.3rem;padding:0.35rem 0.5rem;">▾</button>
                                     <div id="profileMenu" class="hidden" role="menu" style="position:absolute;right:0;top:calc(100% + 6px);background:linear-gradient(180deg, #fff, #fbfbfb);border:1px solid rgba(10,12,30,0.06);box-shadow:0 12px 30px rgba(2,6,23,0.12);border-radius:10px;padding:0.5rem;min-width:160px;z-index:9999;">
-                                        <button id="profileAccount" style="display:block;width:100%;text-align:left;padding:0.5rem;border:none;background:#10b981;color:#fff;cursor:pointer;border-radius:6px;margin-bottom:0.5rem;" data-action="open-account">Hesabım</button>
-                                        <button id="profileLogout" style="display:block;width:100%;text-align:left;padding:0.5rem;border:none;background:#e53e3e;color:#fff;cursor:pointer;border-radius:6px;" data-action="logout-confirm">Çıkış Yap</button>
+                                        <button id="profileAccount" style="display:block;width:100%;text-align:left;padding:0.5rem;border:none;background:#10b981;color:#fff;cursor:pointer;border-radius:6px;" data-action="open-account">Hesabım</button>
                                     </div>
                                 </div>
                             </div>
@@ -1455,11 +1478,6 @@
                                         <button onclick="saveUserAddress()" style="flex:1; background:#10b981; color:white; border:none; border-radius:8px; padding:0.6rem; cursor:pointer; font-weight:700;">Adresi Kaydet</button>
                                     </div>
                                     <div id="acctAddressStatus" style="font-size:0.85rem; color:#6b7280; margin-top:0.4rem; min-height:1.1em"></div>
-                                </div>
-
-                                <div style="margin-top:1rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
-                                    <button data-action="close-account" style="flex:1; min-width:120px;">Kapat</button>
-                                    <button data-action="logout" style="flex:1; min-width:120px; background:#f59e0b;color:#fff">Çıkış Yap</button>
                                 </div>
 
                                 <div style="margin-top:1rem; padding-top:1rem; border-top:2px solid #fee2e2;">
@@ -3271,10 +3289,14 @@
                         
                         // GitHub'a tam kullanıcı verisiyle kaydet (Contents API) - ZORUNLU
                         console.log('registerUser: GitHub içeriklerine kaydediliyor...');
+                        showProgress('Hesap Oluşturuluyor...', 20);
                         let remoteSuccess = false;
                         try{
+                            updateProgress(50, 'Sunucuya Gönderiliyor...');
                             remoteSuccess = await commitFullUserToRepo(stored);
                             if (remoteSuccess) {
+                                updateProgress(100, '✅ Tamamlandı!');
+                                hideProgress(true, '✅ Hesap Oluşturuldu!');
                                 console.log('registerUser: ✓ GitHub kaydı başarılı');
                                 // Kayıt başarılı - formu temizle
                                 document.getElementById('registerName').value = '';
@@ -3300,6 +3322,8 @@
                                 document.getElementById('loginEmail').value = email;
                                 return;
                             } else {
+                                const errDetail = 'GitHub API yanıt vermedi.\nZaman: ' + new Date().toLocaleString('tr-TR');
+                                hideProgress(false, '❌ Kayıt Başarısız!', errDetail);
                                 console.error('registerUser: GitHub kayıt başarısız oldu');
                                 showNotification('Kayıt tamamlanamadı. Lütfen internet bağlantınızı kontrol edip tekrar deneyin.', {type: 'error', duration: 4000});
                                 return;
@@ -3321,6 +3345,9 @@
                             } else {
                                 userFriendlyMsg += 'Teknik Hata: ' + errorMsg + '\n\nLütfen daha sonra tekrar deneyin veya destek ile iletişime geçin.';
                             }
+                            
+                            const errDetail = 'Hata: ' + errorMsg + '\n\nDetay: ' + (e.stack || String(e)) + '\n\nZaman: ' + new Date().toLocaleString('tr-TR');
+                            hideProgress(false, '❌ Kayıt Hatası!', errDetail);
                             
                             showNotification(userFriendlyMsg.replace(/\n/g, ' '), {type: 'error', duration: 4500});
                             return;
@@ -3643,7 +3670,7 @@
                                     let userData = userStr ? JSON.parse(userStr) : null;
                                     if (!userData) {
                                         userData = await fetchUserFromRepo(email);
-                                        if (!userData) { alert('Kullanıcı bulunamadı.'); if (btn) btn.disabled = false; return; }
+                                        if (!userData) { showNotification('❌ Kullanıcı bulunamadı', {type: 'error', duration: 3000}); if (btn) btn.disabled = false; return; }
                                     }
 
                                     // generate new salt+hash
@@ -3679,7 +3706,7 @@
                                     if (msg) msg.textContent = 'Parola sıfırlama sırasında hata oluştu.';
                                 } finally { if (btn) btn.disabled = false; }
                             };
-                        } catch(e) { console.error('showForcedResetUI failed', e); alert('Sıfırlama UI gösterilemedi.'); }
+                        } catch(e) { console.error('showForcedResetUI failed', e); showNotification('❌ Sıfırlama ekranı gösterilemedi', {type: 'error', duration: 3000}); }
                     }
 
                     function logout() {
@@ -3751,7 +3778,7 @@
                         }, 100);
                     }
 
-                    function deleteAccount() {
+                    async function deleteAccount() {
                         const user = getCurrentUser();
                         if (!user || !user.email) {
                             showNotification('❌ Silinecek hesap bulunamadı', {type: 'error', duration: 3000});
@@ -3764,39 +3791,65 @@
 
                         const email = user.email;
                         
-                        // Remove all user data from localStorage
-                        localStorage.removeItem('currentUser');
-                        localStorage.removeItem('user_' + email);
-                        localStorage.removeItem('cart_' + email);
-                        localStorage.removeItem('orders_' + email);
-
-                        // Reset UI
-                        document.getElementById('authContainer').classList.remove('hidden');
-                        document.getElementById('userContainer').classList.add('hidden');
-                        updateCartCount();
-
-                        // Reset auth button
-                        try{
-                            const b = document.getElementById('authBtn');
-                            if (b) {
-                                b.classList.remove('active');
-                                const label = b.querySelector('.auth-label');
-                                if (label) label.textContent = 'Giriş / Kayıt';
-                                b.onclick = openAuthModal;
-                                b.setAttribute('aria-controls', 'authModal');
-                                b.setAttribute('aria-expanded', 'false');
-                            }
-                        }catch(e){}
-
-                        // Close modals
-                        try{ closeAccountModal(); }catch(e){}
-                        try{ closeAuthModal(); }catch(e){}
-                        try{ closeCart(); }catch(e){}
-
-                        showNotification('✅ Hesabınız başarıyla silindi', {type: 'success', duration: 3500});
+                        // Progress bar göster
+                        showProgress('Hesap Siliniyor...', 10);
                         
-                        // Navigate to homepage
-                        try{ scrollToSection && scrollToSection('home'); }catch(e){ window.location.href = 'anasayfa.html'; }
+                        try {
+                            updateProgress(30, 'Yerel Veriler Temizleniyor...');
+                            
+                            // Remove all user data from localStorage
+                            localStorage.removeItem('currentUser');
+                            localStorage.removeItem('user_' + email);
+                            localStorage.removeItem('cart_' + email);
+                            localStorage.removeItem('orders_' + email);
+                            
+                            updateProgress(50, 'Sunucu Verileri Siliniyor...');
+                            
+                            // GitHub'dan kullanıcı dosyasını sil (eğer varsa)
+                            try {
+                                let endpoint = '/send-order';
+                                try{ const s = await (await fetch('/site-settings.json',{cache:'no-store'})).json(); if (s && s.orderEndpoint) endpoint = s.orderEndpoint; }catch(_){ }
+                                endpoint = endpoint.replace(/\/send-order$/, '/delete-user');
+                                await fetch(endpoint, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: email }) });
+                            } catch(e) { console.warn('Remote delete failed:', e); }
+                            
+                            updateProgress(80, 'Arayüz Güncelleniyor...');
+
+                            // Reset UI
+                            document.getElementById('authContainer').classList.remove('hidden');
+                            document.getElementById('userContainer').classList.add('hidden');
+                            updateCartCount();
+
+                            // Reset auth button
+                            try{
+                                const b = document.getElementById('authBtn');
+                                if (b) {
+                                    b.classList.remove('active');
+                                    const label = b.querySelector('.auth-label');
+                                    if (label) label.textContent = 'Giriş / Kayıt';
+                                    b.onclick = openAuthModal;
+                                    b.setAttribute('aria-controls', 'authModal');
+                                    b.setAttribute('aria-expanded', 'false');
+                                }
+                            }catch(e){}
+
+                            // Close modals
+                            try{ closeAccountModal(); }catch(e){}
+                            try{ closeAuthModal(); }catch(e){}
+                            try{ closeCart(); }catch(e){}
+
+                            updateProgress(100, '✅ Hesap Silindi!');
+                            hideProgress(true, '✅ Hesabınız Silindi!');
+                            
+                            // Navigate to homepage after delay
+                            setTimeout(() => {
+                                try{ scrollToSection && scrollToSection('home'); }catch(e){ window.location.href = 'anasayfa.html'; }
+                            }, 1600);
+                        } catch(e) {
+                            console.error('deleteAccount error:', e);
+                            const errDetail = 'Hata: ' + (e.message || String(e)) + '\n\nZaman: ' + new Date().toLocaleString('tr-TR');
+                            hideProgress(false, '❌ Silme Hatası!', errDetail);
+                        }
                     }
 
                     /* --- Orders / account helpers --- */
@@ -3809,6 +3862,87 @@
                         const arr = getOrdersForUser(email);
                         arr.unshift(order);
                         try{ localStorage.setItem(ordersKeyForUser(email), JSON.stringify(arr)); }catch(e){}
+                    }
+
+                    /* --- Progress Modal Functions (Sade) --- */
+                    function showProgress(title, percent) {
+                        const modal = document.getElementById('progressModal');
+                        const bar = document.getElementById('progressBar');
+                        const percentEl = document.getElementById('progressPercent');
+                        const titleEl = document.getElementById('progressTitle');
+                        
+                        if (!modal) return;
+                        
+                        // Ekranı kilitle - scroll engelle
+                        document.body.style.overflow = 'hidden';
+                        modal.style.display = 'flex';
+                        modal.classList.remove('success', 'error');
+                        if (titleEl) titleEl.textContent = title || 'Kaydediliyor...';
+                        if (bar) bar.style.width = (percent || 0) + '%';
+                        if (percentEl) percentEl.textContent = '%' + (percent || 0);
+                    }
+                    
+                    function updateProgress(percent, title) {
+                        const bar = document.getElementById('progressBar');
+                        const percentEl = document.getElementById('progressPercent');
+                        const titleEl = document.getElementById('progressTitle');
+                        
+                        if (bar) bar.style.width = percent + '%';
+                        if (percentEl) percentEl.textContent = '%' + percent;
+                        if (titleEl && title) titleEl.textContent = title;
+                    }
+                    
+                    function hideProgress(success, message, errorDetail) {
+                        const modal = document.getElementById('progressModal');
+                        const bar = document.getElementById('progressBar');
+                        const percentEl = document.getElementById('progressPercent');
+                        const titleEl = document.getElementById('progressTitle');
+                        const detailEl = document.getElementById('progressDetail');
+                        const closeBtn = document.getElementById('progressCloseBtn');
+                        
+                        if (!modal) return;
+                        
+                        // Set to 100% and show result
+                        if (bar) bar.style.width = '100%';
+                        if (percentEl) percentEl.textContent = '%100';
+                        
+                        if (success === true) {
+                            modal.classList.add('success');
+                            if (titleEl) titleEl.textContent = message || '✅ Tamamlandı!';
+                            if (detailEl) detailEl.style.display = 'none';
+                            if (closeBtn) closeBtn.style.display = 'none';
+                            // Başarılı: 1.5 saniye sonra otomatik kapat
+                            setTimeout(() => {
+                                modal.style.display = 'none';
+                                modal.classList.remove('success', 'error');
+                                document.body.style.overflow = '';
+                            }, 1500);
+                        } else if (success === false) {
+                            modal.classList.add('error');
+                            if (titleEl) titleEl.textContent = message || '❌ Hata!';
+                            // Hata detayını göster
+                            if (detailEl && errorDetail) {
+                                detailEl.textContent = errorDetail;
+                                detailEl.style.display = 'block';
+                            } else if (detailEl) {
+                                detailEl.style.display = 'none';
+                            }
+                            // Kapat butonunu göster - otomatik kapanma yok
+                            if (closeBtn) closeBtn.style.display = 'inline-block';
+                        }
+                    }
+                    
+                    function closeProgressModal() {
+                        const modal = document.getElementById('progressModal');
+                        const detailEl = document.getElementById('progressDetail');
+                        const closeBtn = document.getElementById('progressCloseBtn');
+                        if (modal) {
+                            modal.style.display = 'none';
+                            modal.classList.remove('success', 'error');
+                        }
+                        if (detailEl) detailEl.style.display = 'none';
+                        if (closeBtn) closeBtn.style.display = 'none';
+                        document.body.style.overflow = '';
                     }
 
                     // XOR decode function for obfuscated token
@@ -4235,21 +4369,34 @@
                         return [];
                     }
                     
-                    async function saveUserAddresses(addresses) {
+                    async function saveUserAddresses(addresses, showProgressUI = true) {
                         const cu = getCurrentUser();
                         if (!cu || !cu.email) return false;
+                        
+                        if (showProgressUI) showProgress('Adres Kaydediliyor...', 10);
+                        
                         let full = null;
                         try { full = JSON.parse(localStorage.getItem('user_' + cu.email) || 'null'); } catch(_) {}
                         if (!full || typeof full !== 'object') { full = { name: cu.name, email: cu.email }; }
                         full.addresses = addresses;
+                        
+                        if (showProgressUI) updateProgress(30, 'Yerel Kayıt...');
                         try { localStorage.setItem('user_' + cu.email, JSON.stringify(full)); } catch(_) {}
+                        
+                        if (showProgressUI) updateProgress(50, 'Sunucuya Gönderiliyor...');
                         console.log('Adresler GitHub\'a kaydediliyor:', cu.email);
+                        
                         try {
+                            if (showProgressUI) updateProgress(70, 'Sunucuya Yazılıyor...');
                             const ok = await commitFullUserToRepo(full);
+                            if (showProgressUI) updateProgress(100, '✅ Kaydedildi!');
                             if (!ok) console.warn('GitHub kaydı başarısız ancak localStorage güncellendi');
+                            if (showProgressUI) hideProgress(true, '✅ Adres Kaydedildi!');
                             return true;
                         } catch(e) {
                             console.error('GitHub\'a kaydetme başarısız:', e);
+                            const errDetail = 'Hata: ' + (e.message || String(e)) + '\n\nZaman: ' + new Date().toLocaleString('tr-TR');
+                            if (showProgressUI) hideProgress(false, '❌ Sunucu Hatası!', errDetail);
                             return true;
                         }
                     }
@@ -4386,30 +4533,44 @@
                     }
 
                     async function saveEditedAddress(addressId){
-                        const st = document.getElementById('addrEditStatus_'+addressId);
-                        function setStatus(t){ if(st) st.textContent = t; }
                         const addrs = getUserAddresses();
                         const idx = addrs.findIndex(x=>x.id===addressId);
-                        if (idx < 0){ setStatus('Adres bulunamadı'); return; }
+                        if (idx < 0){ showNotification('❌ Adres bulunamadı', {type: 'error', duration: 3000}); return; }
                         const city = (document.getElementById('addrCity_'+addressId)||{}).value?.trim?.() || '';
                         const district = (document.getElementById('addrDistrict_'+addressId)||{}).value?.trim?.() || '';
                         const detail = (document.getElementById('addrDetail_'+addressId)||{}).value?.trim?.() || '';
                         const zip = (document.getElementById('addrZip_'+addressId)||{}).value?.trim?.() || '';
                         const makeDefault = !!(document.getElementById('addrDefault_'+addressId)||{checked:false}).checked;
-                        if (!city || !district || !detail){ setStatus('Lütfen İl, İlçe ve Adres Detayı alanlarını doldurun'); return; }
-                        setStatus('Kaydediliyor...');
-                        // Update entry
-                        addrs[idx] = Object.assign({}, addrs[idx], { city, district, addressDetail: detail, postalCode: zip });
-                        if (makeDefault){
-                            addrs.forEach(a=>a.isDefault=false);
-                            addrs[idx].isDefault = true;
+                        if (!city || !district || !detail){ showNotification('⚠️ Lütfen İl, İlçe ve Adres Detayı alanlarını doldurun', {type: 'warn', duration: 3500}); return; }
+                        
+                        showProgress('Adres Güncelleniyor...', 10);
+                        
+                        try {
+                            updateProgress(30, 'Veriler Hazırlanıyor...');
+                            // Update entry
+                            addrs[idx] = Object.assign({}, addrs[idx], { city, district, addressDetail: detail, postalCode: zip });
+                            if (makeDefault){
+                                addrs.forEach(a=>a.isDefault=false);
+                                addrs[idx].isDefault = true;
+                            }
+                            
+                            updateProgress(50, 'Sunucuya Gönderiliyor...');
+                            const okLocal = await saveUserAddresses(addrs, false);
+                            
+                            if (okLocal) {
+                                updateProgress(100, '✅ Güncellendi!');
+                                hideProgress(true, '✅ Adres Güncellendi!');
+                            } else {
+                                hideProgress(false, '⚠️ Yerel güncelleme yapıldı, uzak senkronizasyon başarısız');
+                            }
+                            
+                            // Hide form and refresh list
+                            cancelEditAddress(addressId);
+                            await loadUserAddresses();
+                        } catch(e) {
+                            const errDetail = 'Hata: ' + (e.message || String(e)) + '\n\nZaman: ' + new Date().toLocaleString('tr-TR');
+                            hideProgress(false, '❌ Güncelleme Hatası!', errDetail);
                         }
-                        const okLocal = await saveUserAddresses(addrs);
-                        if (okLocal){ setStatus('✅ Adres güncellendi ve senkronize edildi'); }
-                        else { setStatus('⚠️ Yerel güncelleme yapıldı, uzak senkronizasyon başarısız'); }
-                        // Hide form and refresh list
-                        cancelEditAddress(addressId);
-                        await loadUserAddresses();
                     }
                     
                     function showAddAddressForm() {
@@ -4442,67 +4603,103 @@
                             return;
                         }
                         
-                        const addresses = getUserAddresses();
+                        showProgress('Adres Ekleniyor...', 10);
                         
-                        const newAddress = {
-                            id: 'addr_' + Date.now(),
-                            title,
-                            city,
-                            district,
-                            neighborhood,
-                            addressDetail,
-                            postalCode,
-                            isDefault: isDefault || addresses.length === 0,
-                            createdAt: Date.now()
-                        };
-                        
-                        // If this is set as default, remove default from others
-                        if (newAddress.isDefault) {
-                            addresses.forEach(addr => addr.isDefault = false);
-                        }
-                        
-                        addresses.push(newAddress);
-                        
-                        const success = await saveUserAddresses(addresses);
-                        if (success) {
-                            showNotification('✅ Adres başarıyla kaydedildi', {type: 'success', duration: 3000});
-                            cancelAddAddress();
-                            await loadUserAddresses();
-                        } else {
-                            showNotification('❌ Adres kaydedilemedi', {type: 'error', duration: 3000});
+                        try {
+                            const addresses = getUserAddresses();
+                            
+                            updateProgress(30, 'Adres Hazırlanıyor...');
+                            const newAddress = {
+                                id: 'addr_' + Date.now(),
+                                title,
+                                city,
+                                district,
+                                neighborhood,
+                                addressDetail,
+                                postalCode,
+                                isDefault: isDefault || addresses.length === 0,
+                                createdAt: Date.now()
+                            };
+                            
+                            // If this is set as default, remove default from others
+                            if (newAddress.isDefault) {
+                                addresses.forEach(addr => addr.isDefault = false);
+                            }
+                            
+                            addresses.push(newAddress);
+                            
+                            updateProgress(50, 'Sunucuya Gönderiliyor...');
+                            const success = await saveUserAddresses(addresses, false);
+                            
+                            if (success) {
+                                updateProgress(100, '✅ Eklendi!');
+                                hideProgress(true, '✅ Adres Eklendi!');
+                                cancelAddAddress();
+                                await loadUserAddresses();
+                            } else {
+                                hideProgress(false, '❌ Adres Eklenemedi!');
+                            }
+                        } catch(e) {
+                            const errDetail = 'Hata: ' + (e.message || String(e)) + '\n\nZaman: ' + new Date().toLocaleString('tr-TR');
+                            hideProgress(false, '❌ Ekleme Hatası!', errDetail);
                         }
                     }
                     
                     async function setDefaultAddress(addressId) {
-                        const addresses = getUserAddresses();
-                        addresses.forEach(addr => {
-                            addr.isDefault = (addr.id === addressId);
-                        });
+                        showProgress('Varsayılan Adres Güncelleniyor...', 20);
                         
-                        const success = await saveUserAddresses(addresses);
-                        if (success) {
-                            showNotification('✅ Varsayılan adres güncellendi', {type: 'success', duration: 2500});
-                            await loadUserAddresses();
+                        try {
+                            const addresses = getUserAddresses();
+                            addresses.forEach(addr => {
+                                addr.isDefault = (addr.id === addressId);
+                            });
+                            
+                            updateProgress(50, 'Sunucuya Gönderiliyor...');
+                            const success = await saveUserAddresses(addresses, false);
+                            
+                            if (success) {
+                                updateProgress(100, '✅ Güncellendi!');
+                                hideProgress(true, '✅ Varsayılan Adres Güncellendi!');
+                                await loadUserAddresses();
+                            } else {
+                                hideProgress(false, '❌ Güncellenemedi!');
+                            }
+                        } catch(e) {
+                            const errDetail = 'Hata: ' + (e.message || String(e)) + '\n\nZaman: ' + new Date().toLocaleString('tr-TR');
+                            hideProgress(false, '❌ Güncelleme Hatası!', errDetail);
                         }
                     }
                     
                     async function deleteAddress(addressId) {
                         if (!confirm('Bu adresi silmek istediğinizden emin misiniz?')) return;
                         
-                        let addresses = getUserAddresses();
-                        const deletedAddr = addresses.find(a => a.id === addressId);
+                        showProgress('Adres Siliniyor...', 10);
                         
-                        addresses = addresses.filter(addr => addr.id !== addressId);
-                        
-                        // If deleted address was default and there are other addresses, make first one default
-                        if (deletedAddr && deletedAddr.isDefault && addresses.length > 0) {
-                            addresses[0].isDefault = true;
-                        }
-                        
-                        const success = await saveUserAddresses(addresses);
-                        if (success) {
-                            showNotification('🗑️ Adres silindi', {type: 'success', duration: 2500});
-                            await loadUserAddresses();
+                        try {
+                            let addresses = getUserAddresses();
+                            const deletedAddr = addresses.find(a => a.id === addressId);
+                            
+                            updateProgress(30, 'Veriler Güncelleniyor...');
+                            addresses = addresses.filter(addr => addr.id !== addressId);
+                            
+                            // If deleted address was default and there are other addresses, make first one default
+                            if (deletedAddr && deletedAddr.isDefault && addresses.length > 0) {
+                                addresses[0].isDefault = true;
+                            }
+                            
+                            updateProgress(50, 'Sunucuya Gönderiliyor...');
+                            const success = await saveUserAddresses(addresses, false);
+                            
+                            if (success) {
+                                updateProgress(100, '✅ Silindi!');
+                                hideProgress(true, '🗑️ Adres Silindi!');
+                                await loadUserAddresses();
+                            } else {
+                                hideProgress(false, '❌ Adres Silinemedi!');
+                            }
+                        } catch(e) {
+                            const errDetail = 'Hata: ' + (e.message || String(e)) + '\n\nZaman: ' + new Date().toLocaleString('tr-TR');
+                            hideProgress(false, '❌ Silme Hatası!', errDetail);
                         }
                     }
 
@@ -4515,37 +4712,45 @@
                     async function saveUserPhone(){
                         try{
                             const cu = getCurrentUser();
-                            if (!cu || !cu.email){ alert('Lütfen önce giriş yapın.'); return; }
+                            if (!cu || !cu.email){ showNotification('🔒 Lütfen önce giriş yapın', {type: 'warn', duration: 3000}); return; }
                             const input = document.getElementById('acctPhoneInput');
                             if (!input){ showNotification('❌ Telefon alanı bulunamadı', {type: 'error', duration: 2500}); return; }
                             const phone = input.value.trim();
                             if (!phone){ showNotification('📱 Telefon numarası giriniz', {type: 'warn', duration: 2500}); return; }
                             const re = /^\+?\d[\d\s()-]{7,}$/;
                             if (!re.test(phone)){ showNotification('⚠️ Geçersiz telefon formatı. Örnek: +90 530 000 00 00', {type: 'warn', duration: 4000}); return; }
+                            
+                            // Progress bar göster
+                            showProgress('Telefon Kaydediliyor...', 10);
+                            
                             // Full user record merge
                             let full = null;
                             try{ full = JSON.parse(localStorage.getItem('user_' + cu.email) || 'null'); }catch(_){ full = null; }
                             if (!full || typeof full !== 'object') full = { name: cu.name, email: cu.email };
                             full.phone = phone;
+                            
+                            updateProgress(30, 'Yerel Kayıt...');
                             try{ localStorage.setItem('user_' + cu.email, JSON.stringify(full)); }catch(_){}
-                            // Sync to GitHub via Contents API
-                            const ok = false; // client-side commit disabled
+                            
+                            updateProgress(60, 'Sunucuya Gönderiliyor...');
                             // Notify Worker /update-user (server-side commit)
                             try {
                                 let endpoint = '/send-order';
                                 try{ const s = await (await fetch('/site-settings.json',{cache:'no-store'})).json(); if (s && s.orderEndpoint) endpoint = s.orderEndpoint; }catch(_){ }
                                 endpoint = endpoint.replace(/\/send-order$/, '/update-user');
                                 const resp = await fetch(endpoint, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(full) });
-                                // ignore response body; commitFullUserToRepo already did the write
                             } catch(_){ }
-                            showNotification('✅ Telefon numaranız kaydedildi', {type: 'success', duration: 3000});
-                        }catch(e){ showNotification('❌ Telefon kaydetme hatası: ' + (e && e.message ? e.message : e), {type: 'error', duration: 4000}); }
+                            
+                            updateProgress(100, '✅ Kaydedildi!');
+                            hideProgress(true, '✅ Telefon Kaydedildi!');
+                        }catch(e){ 
+                            const errDetail = 'Hata: ' + (e && e.message ? e.message : e) + '\n\nZaman: ' + new Date().toLocaleString('tr-TR');
+                            hideProgress(false, '❌ Telefon Kaydetme Hatası!', errDetail);
+                        }
                     }
 
                     // Profil sekmesinden varsayılan adres güncelleme
                     async function saveUserAddress(){
-                        const statusEl = document.getElementById('acctAddressStatus');
-                        function setStatus(t){ if(statusEl) statusEl.textContent = t; }
                         try{
                             const cu = getCurrentUser();
                             if (!cu || !cu.email){ showNotification('🔒 Lütfen önce giriş yapın', {type: 'warn', duration: 3000}); return; }
@@ -4554,7 +4759,10 @@
                             const addressDetail = (document.getElementById('acctAddressDetailInput')||{}).value?.trim?.() || '';
                             const postalCode = (document.getElementById('acctPostalCodeInput')||{}).value?.trim?.() || '';
                             if (!city || !district || !addressDetail){ showNotification('📍 İl, İlçe ve Adres Detayı zorunludur', {type: 'warn', duration: 3000}); return; }
-                            setStatus('Kaydediliyor...');
+                            
+                            // Progress bar göster
+                            showProgress('Adres Kaydediliyor...', 10);
+                            
                             // Full record
                             let full = null;
                             try{ full = JSON.parse(localStorage.getItem('user_' + cu.email) || 'null'); }catch(_){ full = null; }
@@ -4568,18 +4776,25 @@
                             if (def) Object.assign(def, { id: def.id || 'default', title: def.title || 'Varsayılan Adres', ...defObj });
                             else full.addresses.unshift({ id:'default', title:'Varsayılan Adres', ...defObj });
                             full.updatedAt = Date.now();
+                            
+                            updateProgress(30, 'Yerel Kayıt...');
                             try{ localStorage.setItem('user_' + cu.email, JSON.stringify(full)); }catch(_){}
-                            const ok = false; // client-side commit disabled
+                            
+                            updateProgress(60, 'Sunucuya Gönderiliyor...');
                             // Notify Worker /update-user (server-side commit)
                             try {
                                 let endpoint = '/send-order';
                                 try{ const s = await (await fetch('/site-settings.json',{cache:'no-store'})).json(); if (s && s.orderEndpoint) endpoint = s.orderEndpoint; }catch(_){ }
                                 endpoint = endpoint.replace(/\/send-order$/, '/update-user');
                                 const resp = await fetch(endpoint, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(full) });
-                                // ignore response body; commitFullUserToRepo already did the write
                             } catch(_){ }
-                            setStatus('✅ Adresiniz güncellendi ve sunucuya gönderildi. Değişiklikler senkronize edilecek.');
-                        }catch(e){ setStatus('❌ Hata: ' + (e && e.message ? e.message : e)); }
+                            
+                            updateProgress(100, '✅ Kaydedildi!');
+                            hideProgress(true, '✅ Adres Kaydedildi!');
+                        }catch(e){ 
+                            const errDetail = 'Hata: ' + (e && e.message ? e.message : e) + '\n\nZaman: ' + new Date().toLocaleString('tr-TR');
+                            hideProgress(false, '❌ Adres Kaydetme Hatası!', errDetail);
+                        }
                     }
 
                     // Confirm-protected logout used in modal and profile menu
@@ -4596,7 +4811,7 @@
                                         const user = getCurrentUser(); if (!user) return openAuthModal();
                                         const orders = getOrdersForUser(user.email || '');
                                         const o = orders.find(x=>x.id===id);
-                                        if (!o) return alert('Sipariş bulunamadı');
+                                        if (!o) return showNotification('❌ Sipariş bulunamadı', {type: 'error', duration: 3000});
                                         // populate order detail modal and open it
                                         const hdr = document.getElementById('odHeader');
                                         const items = document.getElementById('odItems');
@@ -4619,7 +4834,7 @@
                                     function openOrderDetailModal(){ const m = document.getElementById('orderDetailModal'); if (!m) return; m.style.display='block'; }
                                     function closeOrderDetailModal(){ const m = document.getElementById('orderDetailModal'); if (!m) return; m.style.display='none'; }
 
-                                    function printInvoiceCurrent(){ const o = window.__currentOrderToPrint; if (!o) return alert('Yazdırılacak sipariş seçili değil'); openPrintableInvoice(o); }
+                                    function printInvoiceCurrent(){ const o = window.__currentOrderToPrint; if (!o) return showNotification('⚠️ Yazdırılacak sipariş seçili değil', {type: 'warn', duration: 3000}); openPrintableInvoice(o); }
 
                                     function openPrintableInvoice(order){
                                         const user = getCurrentUser() || {};
@@ -4653,7 +4868,7 @@
                                         htmlParts.push('<script>window.onload=function(){ setTimeout(function(){ window.print(); },200); }<\/script>');
                                         htmlParts.push('</body></html>');
                                         const html = htmlParts.join('');
-                                        const w = window.open('','_blank'); if (!w) { alert('Yeni pencere açılamadı; tarayıcı pop-up engelleyici devrede olabilir.'); return; }
+                                        const w = window.open('','_blank'); if (!w) { showNotification('⚠️ Yeni pencere açılamadı. Pop-up engelleyici aktif olabilir.', {type: 'warn', duration: 4000}); return; }
                                         w.document.open(); w.document.write(html); w.document.close();
                                     }
 
@@ -4661,7 +4876,7 @@
                         const user = getCurrentUser(); if (!user) return openAuthModal();
                         const orders = getOrdersForUser(user.email || '');
                         const o = orders.find(x=>x.id===orderId);
-                        if (!o) return alert('Fatura bulunamadı');
+                        if (!o) return showNotification('❌ Fatura bulunamadı', {type: 'error', duration: 3000});
                         const lines = [];
                         lines.push('Firma: ERN Tropikal Çiçek');
                         lines.push('Sipariş ID: ' + (o.id || ''));
@@ -4680,7 +4895,7 @@
                     function downloadAllInvoices(){
                         const user = getCurrentUser(); if (!user) return openAuthModal();
                         const orders = getOrdersForUser(user.email || '');
-                        if (!orders.length) return alert('İndirilecek fatura yok.');
+                        if (!orders.length) return showNotification('ℹ️ İndirilecek fatura yok', {type: 'info', duration: 3000});
                         orders.forEach(o=>{ try{ downloadInvoice(o.id); }catch(e){} });
                     }
 
@@ -5473,10 +5688,10 @@
                                 e.preventDefault();
                                 const products = exportCurrentProducts();
                                 saveProductsToGitHub(products).then(()=>{
-                                    alert('Ürünler GitHub’a kaydedildi.');
+                                    showNotification('✅ Ürünler GitHub\'a kaydedildi', {type: 'success', duration: 3000});
                                 }).catch(err=>{
                                     console.error('GitHub kaydetme hatası', err);
-                                    alert('GitHub’a kaydetme başarısız: ' + (err && err.message || 'Hata'));
+                                    showNotification('❌ GitHub\'a kaydetme başarısız: ' + (err && err.message || 'Hata'), {type: 'error', duration: 4000});
                                 });
                                 return;
                             }
@@ -5892,12 +6107,12 @@ function saveUserPhone() {
     if (!input) return;
     const phone = input.value.trim();
     if (!phone) {
-        alert('Telefon numarası giriniz!');
+        showNotification('📱 Telefon numarası giriniz', {type: 'warn', duration: 3000});
         return;
     }
     // localStorage veya sunucuya kaydetme işlemi
     localStorage.setItem('userPhone', phone);
-    alert('Telefon numarası kaydedildi: ' + phone);
+    showNotification('✅ Telefon numarası kaydedildi', {type: 'success', duration: 3000});
 }
 // Eğer kullanıcı www ile geldiyse, kök domaine (non-www) yönlendir
 (function(){
