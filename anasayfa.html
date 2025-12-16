@@ -2696,7 +2696,7 @@
                             if(images.length > 1) {
                                 html += `<div style='display:flex;flex-direction:column;gap:0.4rem;flex-shrink:0;justify-content:center;'>`;
                                 images.forEach((src, i) => {
-                                    html += `<img src='${src}' alt='${name}' data-idx='${i}' class='panelThumbImg' style='width:60px;height:60px;object-fit:cover;border-radius:8px;box-shadow:0 2px 6px rgba(30,143,85,0.12);cursor:pointer;border:2px solid ${i===0?'#16a34a':'#e5e7eb'};background:#fff;transition:all 0.2s ease;'/>`;
+                                    html += `<img src='${src}' alt='${name}' data-idx='${i}' class='panelThumbImg' style='width:80px;height:80px;object-fit:cover;border-radius:8px;box-shadow:0 2px 6px rgba(30,143,85,0.12);cursor:pointer;border:2px solid ${i===0?'#16a34a':'#e5e7eb'};background:#fff;transition:all 0.2s ease;'/>`;
                                 });
                                 html += `</div>`;
                             }
