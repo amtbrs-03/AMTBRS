@@ -2681,8 +2681,8 @@
                             // Panel içeriğini oluştur (kompakt layout - resimler yanda)
                             let mainImg = images[0] || '';
                             let html = `<div style='width:100%;margin:0 auto;'>`;
-                            // Ürün adı - yeşil arka plan, üst kenara yapışık, ortalı
-                            html += `<div style='width:calc(100% + 1.6rem);margin:0 -0.8rem 0.6rem -0.8rem;padding:0.6rem 1rem;background:linear-gradient(135deg, #16a34a 0%, #15803d 100%);border-radius:18px 18px 0 0;text-align:center;'><span style='font-size:1.1rem;font-weight:700;color:#fff;letter-spacing:0.3px;line-height:1.2;display:block;word-wrap:break-word;text-shadow:0 1px 2px rgba(0,0,0,0.1);'>${name}</span></div>`;
+                            // Ürün adı - yeşil arka plan, üst kenara yapışık, ortalı, responsive
+                            html += `<div style='width:calc(100% + 1.6rem);margin:0 -0.8rem 0.6rem -0.8rem;padding:0.6rem 1rem;background:linear-gradient(135deg, #16a34a 0%, #15803d 100%);border-radius:18px 18px 0 0;text-align:center;'><span style='font-size:clamp(0.85rem, 3vw, 1.1rem);font-weight:700;color:#fff;letter-spacing:0.3px;line-height:1.3;display:block;word-wrap:break-word;overflow-wrap:break-word;text-shadow:0 1px 2px rgba(0,0,0,0.1);max-width:100%;'>${name}</span></div>`;
                             // Resim alanı - büyük resim solda, küçük resimler sağda
                             html += `<div style='display:flex;gap:0.4rem;align-items:flex-start;margin-bottom:0.6rem;'>`;
                             // Ana büyük resim - solda, doğal boyutuyla
@@ -2867,16 +2867,17 @@
                                 var footer = document.querySelector('footer');
                                 if (footer) footer.style.display = 'none';
                             } else {
-                                // Masaüstü: ekran ortasında, resimlerin boyutuna göre
+                                // Masaüstü: tıklanan ürün kartının üzerinde, ortalı
                                 const cardRect = card.getBoundingClientRect();
                                 const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
                                 
-                                // Panel pozisyonu: kartın hemen altında
-                                const panelTop = cardRect.bottom + scrollTop + 12; // 12px boşluk
+                                // Panel pozisyonu: kartın üst çizgisinden başlayarak, kartın merkezine hizalı
+                                const cardCenterX = cardRect.left + (cardRect.width / 2);
+                                const panelTop = cardRect.top + scrollTop; // Kartın üst çizgisinden
                                 
                                 panel.style.position = 'absolute';
                                 panel.style.top = panelTop + 'px';
-                                panel.style.left = '50%';
+                                panel.style.left = cardCenterX + 'px';
                                 panel.style.transform = 'translateX(-50%)';
                                 panel.style.width = 'auto';
                                 panel.style.maxWidth = '92vw';
