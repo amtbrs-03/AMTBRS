@@ -2870,7 +2870,7 @@
                                 var footer = document.querySelector('footer');
                                 if (footer) footer.style.display = 'none';
                             } else {
-                                // Masaüstü: tıklanan ürün kartının üzerinde, ortalı, sabit boyut
+                                // Masaüstü: tıklanan ürün kartının üzerinde, kart boyutuna sığacak şekilde
                                 const cardRect = card.getBoundingClientRect();
                                 const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
                                 
@@ -2878,18 +2878,21 @@
                                 const cardCenterX = cardRect.left + (cardRect.width / 2);
                                 const panelTop = cardRect.top + scrollTop; // Kartın üst çizgisinden
                                 
-                                // Sabit panel boyutu - tüm ürünler için aynı
-                                const fixedPanelWidth = 420; // px
+                                // Panel genişliği kart genişliğini geçmesin
+                                const panelWidth = Math.min(420, cardRect.width);
+                                // Panel yüksekliği kart yüksekliğini geçmesin
+                                const panelMaxHeight = cardRect.height;
                                 
                                 panel.style.position = 'absolute';
                                 panel.style.top = panelTop + 'px';
                                 panel.style.left = cardCenterX + 'px';
                                 panel.style.transform = 'translateX(-50%)';
-                                panel.style.width = fixedPanelWidth + 'px';
-                                panel.style.maxWidth = '92vw';
-                                panel.style.maxHeight = '80vh';
+                                panel.style.width = panelWidth + 'px';
+                                panel.style.maxWidth = cardRect.width + 'px';
+                                panel.style.maxHeight = panelMaxHeight + 'px';
                                 panel.style.height = 'auto';
                                 panel.style.borderRadius = '16px';
+                                panel.style.overflowY = 'auto';
                                 
                                 // Eski scroll handler'ları temizle
                                 if (window._panelScrollHandler) {
