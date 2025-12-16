@@ -3772,11 +3772,14 @@
                         try{ closeBank(); }catch(e){}
                         try{ hideMiniCart(0); }catch(e){}
                         
+                        // Show success notification
+                        showNotification('✅ Başarıyla çıkış yapıldı', {type: 'success', duration: 2000});
+                        
                         // FULL PAGE RESET: Reload page to clear all JavaScript state and cached data
                         console.log('logout: Reloading page to reset state...');
                         setTimeout(() => {
                             window.location.href = window.location.pathname + '?logout=1&t=' + Date.now();
-                        }, 100);
+                        }, 1500);
                     }
 
                     async function deleteAccount() {
