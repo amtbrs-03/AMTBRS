@@ -1,0 +1,19 @@
+# Cart Reminder Worker - Sepet Hatırlatma Servisi
+name = "ern-cart-reminder"
+main = "cart-reminder.js"
+compatibility_date = "2024-11-21"
+
+# Scheduled trigger - Her saat başı çalışır
+[triggers]
+crons = ["0 * * * *"]
+
+# Environment variables (Cloudflare Dashboard'dan ayarlanmalı)
+# [vars]
+# GH_OWNER = "amtbrs-03"
+# GH_REPO = "AMTBRS"
+# GH_BRANCH = "site-release"
+# FROM_EMAIL = "Ern Çiçek <siparis@ern-cicek.com.tr>"
+
+# Secrets (wrangler secret put ile ayarlanmalı)
+# - GITHUB_TOKEN
+# - RESEND_API_KEY

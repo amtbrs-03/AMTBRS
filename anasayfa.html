@@ -4898,7 +4898,7 @@
                         } else {
                             // Yeni ürün ekle
                             const addQty = Math.min(qty, MAX_QTY_PER_PRODUCT);
-                            cart.push({ id: id, name: name, price: price, qty: addQty, image: image || '' });
+                            cart.push({ id: id, name: name, price: price, qty: addQty, image: image || '', addedAt: Date.now() });
                         }
                         
                         saveCart(cart);
@@ -4932,7 +4932,7 @@
                             // Resim bilgisi yoksa güncelle
                             if (item.image && !existing.image) existing.image = item.image;
                         } else {
-                            cart.push({ id: item.id, name: item.name, price: item.price, qty: 1, image: item.image || '' });
+                            cart.push({ id: item.id, name: item.name, price: item.price, qty: 1, image: item.image || '', addedAt: Date.now() });
                         }
                         
                         saveCart(cart);
@@ -5042,13 +5042,17 @@
                     async function persistCartSnapshot(cart, user){
                         if (!user || !user.email) return;
                         try {
+                            // En eski ürünün ekleme zamanını bul (hatırlatma maili için)
+                            const addedTimes = cart.map(i => i.addedAt || Date.now()).filter(t => t > 0);
+                            const firstAddedAt = addedTimes.length > 0 ? Math.min(...addedTimes) : Date.now();
                             const snapshot = {
                                 email: user.email,
                                 name: user.name || '',
                                 updatedAt: Date.now(),
+                                firstAddedAt: firstAddedAt,
                                 totalQty: cart.reduce((s,i)=> s + (i.qty||0), 0),
                                 totalPrice: cart.reduce((s,i)=> s + (i.price||0) * (i.qty||0), 0),
-                                items: cart.map(i=>({ id: i.id, name: i.name, price: i.price, qty: i.qty||1 }))
+                                items: cart.map(i=>({ id: i.id, name: i.name, price: i.price, qty: i.qty||1, addedAt: i.addedAt || Date.now() }))
                             };
                             const json = JSON.stringify(snapshot);
                             const now = Date.now();
