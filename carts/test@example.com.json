@@ -1,0 +1,15 @@
+{
+  "email": "amtbrs@icloud.com",
+  "items": [
+    {
+      "id": "test-product-1",
+      "name": "Test Gül Buketi",
+      "price": 450,
+      "quantity": 1,
+      "image": "/images/products/test.jpg"
+    }
+  ],
+  "firstAddedAt": 1734300000000,
+  "updatedAt": 1734300000000,
+  "total": 450
+}
