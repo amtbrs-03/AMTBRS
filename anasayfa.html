@@ -1948,6 +1948,18 @@
                         }catch(e){ console.error('Ürün yükleme hatası', e); }
                     }
                     document.addEventListener('DOMContentLoaded', function(){
+                        // Logout sonrası bildirim göster
+                        const urlParams = new URLSearchParams(window.location.search);
+                        if (urlParams.get('logout') === '1') {
+                            // URL'den logout parametresini temizle
+                            const cleanUrl = window.location.pathname;
+                            window.history.replaceState({}, document.title, cleanUrl);
+                            // Bildirim göster
+                            setTimeout(() => {
+                                showNotification('✅ Başarıyla çıkış yapıldı', {type: 'success', duration: 3000});
+                            }, 300);
+                        }
+                        
                         // Lightbox code removed as requested
                         loadProducts();
                         
