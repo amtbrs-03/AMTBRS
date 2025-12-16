@@ -3887,13 +3887,7 @@
 
                                 try {
                                     const res = await fetch(url, { 
-                                        cache: 'no-store',
-                                        mode: 'cors',
-                                        headers: { 
-                                            'Cache-Control': 'no-cache, no-store, must-revalidate',
-                                            'Pragma': 'no-cache',
-                                            'Expires': '0'
-                                        } 
+                                        cache: 'no-store'
                                     });
 
                                     console.log(`fetchUserFromRepo: deneme ${i+1} yanıt durumu:`, res.status);
