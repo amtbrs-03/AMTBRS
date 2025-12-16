@@ -2549,6 +2549,9 @@
                                 window._activeProductCard = null;
                                 window.removeEventListener('scroll', window._panelScrollHandler);
                                 window.removeEventListener('resize', window._panelScrollHandler);
+                                // Mobilde footer'ı geri göster
+                                var footer = document.querySelector('footer');
+                                if (footer) footer.style.display = '';
                             };
                         }
                         document.getElementById('products').addEventListener('click', function(e) {
@@ -2774,6 +2777,9 @@
                                 panel.style.borderRadius = '0';
                                 panel.style.transform = 'none';
                                 document.body.style.overflow = 'hidden';
+                                // Mobilde footer'ı gizle
+                                var footer = document.querySelector('footer');
+                                if (footer) footer.style.display = 'none';
                             } else {
                                 // Masaüstü: ürün kartının hemen altında, kartı ortalayarak
                                 const cardRect = card.getBoundingClientRect();
