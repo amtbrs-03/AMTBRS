@@ -745,12 +745,13 @@
             transform: translate(-50%, -50%);
             width: auto;
             max-width: 96vw;
-            max-height: 92vh;
+            max-height: 85vh;
             z-index: 2000;
             background: rgba(255,255,255,0.99);
             box-shadow: 0 8px 48px rgba(30,143,85,0.18), 0 0 0 1px rgba(0,0,0,0.05);
             overflow-y: auto;
-            padding: 1.8rem;
+            overflow-x: hidden;
+            padding: 0 1.8rem 1.5rem 1.8rem;
             border-radius: 18px;
             transform-origin: top center;
         }
@@ -852,13 +853,15 @@
                 max-height: calc(100vh - 60px);
                 overflow-y: auto;
                 padding-bottom: 80px;
+                padding-top: 0 !important;
             }
             #productDetailPanel #panelMainImgWrap {
-                max-height: 45vh !important;
+                max-height: 40vh !important;
                 width: 100% !important;
+                flex: 1 !important;
             }
             #productDetailPanel #panelMainImg {
-                max-height: 45vh !important;
+                max-height: 40vh !important;
             }
             #productDetailPanel #closeProductDetailPanel {
                 position: fixed !important;
@@ -2611,7 +2614,7 @@
                             const panel = document.createElement('div');
                             panel.id = 'productDetailPanel';
                             // Stil CSS ile yönetiliyor
-                            panel.innerHTML = '<button id="closeProductDetailPanel" style="position:absolute;top:12px;right:12px;width:44px;height:44px;z-index:2100;background:rgba(255,255,255,0.95);border:none;color:#334155;font-size:2rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s;box-shadow:0 2px 10px rgba(0,0,0,0.15);border-radius:50%;" aria-label="Kapat">&times;</button><div id="productDetailContent" style="padding-top:2.5rem;"></div>';
+                            panel.innerHTML = '<button id="closeProductDetailPanel" style="position:absolute;top:12px;right:12px;width:44px;height:44px;z-index:2100;background:rgba(255,255,255,0.95);border:none;color:#334155;font-size:2rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s;box-shadow:0 2px 10px rgba(0,0,0,0.15);border-radius:50%;" aria-label="Kapat">&times;</button><div id="productDetailContent" style="padding-top:0;"></div>';
                             // X butonuna hover efekti ve minimal görünüm
                             const style = document.createElement('style');
                             style.textContent = '#closeProductDetailPanel:hover { background:rgba(0,0,0,0.04); color:#2563eb; }';
@@ -2675,23 +2678,26 @@
                                 const imgTags = card.querySelectorAll('img');
                                 imgTags.forEach(tag => images.push(tag.src));
                             }
-                            // Panel içeriğini oluştur (modern layout)
+                            // Panel içeriğini oluştur (kompakt layout - resimler yanda)
                             let mainImg = images[0] || '';
                             let html = `<div style='width:100%;margin:0 auto;'>`;
-                            // Ürün adı - büyük, belirgin
-                            html += `<div style='width:100%;text-align:center;margin-bottom:1rem;padding-bottom:0.8rem;border-bottom:1px solid #e5e7eb;'><span style='font-size:1.4rem;font-weight:700;color:#1e293b;letter-spacing:0.3px;line-height:1.3;display:block;word-wrap:break-word;'>${name}</span></div>`;
-                            // Resim - panel genişliği kadar, oran korunarak
-                            html += `<div id='panelMainImgWrap' style='width:100%;max-height:58vh;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:16px;box-shadow:0 4px 20px rgba(30,143,85,0.13);margin-bottom:1.2rem;overflow:hidden;'>`;
-                            html += `<img id='panelMainImg' src='${mainImg}' alt='${name}' style='width:100%;height:auto;max-height:58vh;object-fit:contain;border-radius:14px;background:#fff;'/>`;
+                            // Ürün adı - yeşil arka plan, üst kenara yapışık
+                            html += `<div style='width:calc(100% + 3.6rem);margin:0 -1.8rem 1rem -1.8rem;padding:1rem 1.8rem;background:linear-gradient(135deg, #16a34a 0%, #15803d 100%);border-radius:18px 18px 0 0;'><span style='font-size:1.3rem;font-weight:700;color:#fff;letter-spacing:0.3px;line-height:1.3;display:block;word-wrap:break-word;text-shadow:0 1px 2px rgba(0,0,0,0.1);'>${name}</span></div>`;
+                            // Resim alanı - ana resim solda, küçük resimler sağda dikey
+                            html += `<div style='display:flex;gap:0.8rem;align-items:flex-start;margin-bottom:1rem;'>`;
+                            // Ana büyük resim
+                            html += `<div id='panelMainImgWrap' style='flex:1;max-height:40vh;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:12px;box-shadow:0 4px 16px rgba(30,143,85,0.12);overflow:hidden;'>`;
+                            html += `<img id='panelMainImg' src='${mainImg}' alt='${name}' style='width:100%;height:auto;max-height:40vh;object-fit:contain;border-radius:10px;background:#fff;'/>`;
                             html += `</div>`;
-                            // Küçük resimler
+                            // Küçük resimler - sağda dikey
                             if(images.length > 1) {
-                                html += `<div style='display:flex;gap:0.7rem;justify-content:center;margin-bottom:1.2rem;'>`;
+                                html += `<div style='display:flex;flex-direction:column;gap:0.5rem;'>`;
                                 images.forEach((src, i) => {
-                                    html += `<img src='${src}' alt='${name}' data-idx='${i}' class='panelThumbImg' style='width:64px;height:64px;object-fit:cover;border-radius:10px;box-shadow:0 2px 8px rgba(30,143,85,0.12);cursor:pointer;border:3px solid ${i===0?'#16a34a':'#e5e7eb'};background:#fff;transition:all 0.2s ease;'/>`;
+                                    html += `<img src='${src}' alt='${name}' data-idx='${i}' class='panelThumbImg' style='width:56px;height:56px;object-fit:cover;border-radius:8px;box-shadow:0 2px 6px rgba(30,143,85,0.1);cursor:pointer;border:2px solid ${i===0?'#16a34a':'#e5e7eb'};background:#fff;transition:all 0.2s ease;'/>`;
                                 });
                                 html += `</div>`;
                             }
+                            html += `</div>`;
                             // Fiyat
                             const fmt = new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', minimumFractionDigits: 2 });
                             html += `<div style='text-align:center;margin-bottom:1rem;'>`;
