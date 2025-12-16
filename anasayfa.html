@@ -743,8 +743,8 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 480px;
-            max-width: 94vw;
+            width: auto;
+            max-width: 96vw;
             max-height: 92vh;
             z-index: 2000;
             background: rgba(255,255,255,0.99);
@@ -2786,14 +2786,11 @@
                                 const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
                                 const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
                                 
-                                // Panel genişliği 360px
-                                const panelWidth = 360;
+                                // Panel genişliği = ürün kartı genişliği
+                                const panelWidth = cardRect.width;
                                 
-                                // Kartın merkezini bul
-                                const cardCenterX = cardRect.left + scrollLeft + (cardRect.width / 2);
-                                
-                                // Panel'in sol kenarı (kartın merkezinden panel genişliğinin yarısı kadar sola)
-                                let panelLeft = cardCenterX - (panelWidth / 2);
+                                // Panel pozisyonu: kartın tam hizasında
+                                let panelLeft = cardRect.left + scrollLeft;
                                 
                                 // Ekran sınırlarını kontrol et
                                 const viewportWidth = window.innerWidth;
