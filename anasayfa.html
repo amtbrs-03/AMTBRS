@@ -2688,9 +2688,9 @@
                             html += `<div style='width:calc(100% + 1.6rem);margin:0 -0.8rem 0.6rem -0.8rem;padding:0.6rem 1rem;background:linear-gradient(135deg, #16a34a 0%, #15803d 100%);border-radius:18px 18px 0 0;text-align:center;'><span style='font-size:clamp(0.85rem, 3vw, 1.1rem);font-weight:700;color:#fff;letter-spacing:0.3px;line-height:1.3;display:block;word-wrap:break-word;overflow-wrap:break-word;text-shadow:0 1px 2px rgba(0,0,0,0.1);max-width:100%;'>${name}</span></div>`;
                             // Resim alanı - büyük resim solda, küçük resimler sağda
                             html += `<div style='display:flex;gap:0.4rem;align-items:flex-start;margin-bottom:0.6rem;'>`;
-                            // Ana büyük resim - solda, doğal boyutuyla
-                            html += `<div id='panelMainImgWrap' style='flex-shrink:0;display:flex;align-items:flex-start;justify-content:flex-start;background:#fafafa;border-radius:10px;overflow:hidden;'>`;
-                            html += `<img id='panelMainImg' src='${mainImg}' alt='${name}' style='height:auto;max-height:32vh;width:auto;max-width:280px;object-fit:contain;border-radius:8px;background:#fafafa;'/>`;
+                            // Ana büyük resim - solda, sabit boyut
+                            html += `<div id='panelMainImgWrap' style='flex:1;min-width:0;display:flex;align-items:center;justify-content:center;background:#fafafa;border-radius:10px;overflow:hidden;'>`;
+                            html += `<img id='panelMainImg' src='${mainImg}' alt='${name}' style='width:100%;height:auto;max-height:32vh;object-fit:contain;border-radius:8px;background:#fafafa;'/>`;
                             html += `</div>`;
                             // Küçük resimler - sağda dikey
                             if(images.length > 1) {
@@ -2870,7 +2870,7 @@
                                 var footer = document.querySelector('footer');
                                 if (footer) footer.style.display = 'none';
                             } else {
-                                // Masaüstü: tıklanan ürün kartının üzerinde, ortalı
+                                // Masaüstü: tıklanan ürün kartının üzerinde, ortalı, sabit boyut
                                 const cardRect = card.getBoundingClientRect();
                                 const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
                                 
@@ -2878,11 +2878,14 @@
                                 const cardCenterX = cardRect.left + (cardRect.width / 2);
                                 const panelTop = cardRect.top + scrollTop; // Kartın üst çizgisinden
                                 
+                                // Sabit panel boyutu - tüm ürünler için aynı
+                                const fixedPanelWidth = 340; // px
+                                
                                 panel.style.position = 'absolute';
                                 panel.style.top = panelTop + 'px';
                                 panel.style.left = cardCenterX + 'px';
                                 panel.style.transform = 'translateX(-50%)';
-                                panel.style.width = 'auto';
+                                panel.style.width = fixedPanelWidth + 'px';
                                 panel.style.maxWidth = '92vw';
                                 panel.style.maxHeight = '80vh';
                                 panel.style.height = 'auto';
