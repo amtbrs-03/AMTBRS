@@ -2867,38 +2867,18 @@
                                 var footer = document.querySelector('footer');
                                 if (footer) footer.style.display = 'none';
                             } else {
-                                // Masaüstü: ürün kartının hemen altında, kartı ortalayarak
+                                // Masaüstü: ekran ortasında, resimlerin boyutuna göre
                                 const cardRect = card.getBoundingClientRect();
                                 const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                                const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
-                                
-                                // Panel genişliği = ürün kartı genişliği
-                                const panelWidth = cardRect.width;
-                                
-                                // Panel pozisyonu: kartın tam hizasında
-                                let panelLeft = cardRect.left + scrollLeft;
-                                
-                                // Ekran sınırlarını kontrol et
-                                const viewportWidth = window.innerWidth;
-                                const margin = 16;
-                                
-                                // Sağ taşma kontrolü
-                                if (panelLeft + panelWidth > viewportWidth - margin) {
-                                    panelLeft = viewportWidth - panelWidth - margin;
-                                }
-                                // Sol taşma kontrolü
-                                if (panelLeft < margin) {
-                                    panelLeft = margin;
-                                }
                                 
                                 // Panel pozisyonu: kartın hemen altında
                                 const panelTop = cardRect.bottom + scrollTop + 12; // 12px boşluk
                                 
                                 panel.style.position = 'absolute';
                                 panel.style.top = panelTop + 'px';
-                                panel.style.left = panelLeft + 'px';
-                                panel.style.transform = 'none';
-                                panel.style.width = panelWidth + 'px';
+                                panel.style.left = '50%';
+                                panel.style.transform = 'translateX(-50%)';
+                                panel.style.width = 'auto';
                                 panel.style.maxWidth = '92vw';
                                 panel.style.maxHeight = '80vh';
                                 panel.style.height = 'auto';
