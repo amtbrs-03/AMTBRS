@@ -743,15 +743,15 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 420px;
-            max-width: 92vw;
-            max-height: 90vh;
+            width: 480px;
+            max-width: 94vw;
+            max-height: 92vh;
             z-index: 2000;
             background: rgba(255,255,255,0.99);
             box-shadow: 0 8px 48px rgba(30,143,85,0.18), 0 0 0 1px rgba(0,0,0,0.05);
             overflow-y: auto;
-            padding: 1.5rem;
-            border-radius: 16px;
+            padding: 1.8rem;
+            border-radius: 18px;
         }
         
         /* Ürün detay paneli mobilde tam ekran */
@@ -2596,40 +2596,40 @@
                             let mainImg = images[0] || '';
                             let html = `<div style='width:100%;margin:0 auto;'>`;
                             // Ürün adı - büyük, belirgin
-                            html += `<div style='width:100%;text-align:center;margin-bottom:0.8rem;padding-bottom:0.6rem;border-bottom:1px solid #e5e7eb;'><span style='font-size:1.25rem;font-weight:700;color:#1e293b;letter-spacing:0.3px;line-height:1.3;display:block;word-wrap:break-word;'>${name}</span></div>`;
+                            html += `<div style='width:100%;text-align:center;margin-bottom:1rem;padding-bottom:0.8rem;border-bottom:1px solid #e5e7eb;'><span style='font-size:1.4rem;font-weight:700;color:#1e293b;letter-spacing:0.3px;line-height:1.3;display:block;word-wrap:break-word;'>${name}</span></div>`;
                             // Resim - panel genişliği kadar, oran korunarak
-                            html += `<div id='panelMainImgWrap' style='width:100%;max-height:55vh;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:14px;box-shadow:0 4px 18px rgba(30,143,85,0.13);margin-bottom:1rem;overflow:hidden;'>`;
-                            html += `<img id='panelMainImg' src='${mainImg}' alt='${name}' style='width:100%;height:auto;max-height:55vh;object-fit:contain;border-radius:12px;background:#fff;'/>`;
+                            html += `<div id='panelMainImgWrap' style='width:100%;max-height:58vh;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:16px;box-shadow:0 4px 20px rgba(30,143,85,0.13);margin-bottom:1.2rem;overflow:hidden;'>`;
+                            html += `<img id='panelMainImg' src='${mainImg}' alt='${name}' style='width:100%;height:auto;max-height:58vh;object-fit:contain;border-radius:14px;background:#fff;'/>`;
                             html += `</div>`;
                             // Küçük resimler
                             if(images.length > 1) {
-                                html += `<div style='display:flex;gap:0.6rem;justify-content:center;margin-bottom:1rem;'>`;
+                                html += `<div style='display:flex;gap:0.7rem;justify-content:center;margin-bottom:1.2rem;'>`;
                                 images.forEach((src, i) => {
-                                    html += `<img src='${src}' alt='${name}' data-idx='${i}' class='panelThumbImg' style='width:56px;height:56px;object-fit:cover;border-radius:8px;box-shadow:0 2px 6px rgba(30,143,85,0.10);cursor:pointer;border:2px solid ${i===0?'#16a34a':'#e5e7eb'};background:#fff;'/>`;
+                                    html += `<img src='${src}' alt='${name}' data-idx='${i}' class='panelThumbImg' style='width:64px;height:64px;object-fit:cover;border-radius:10px;box-shadow:0 2px 8px rgba(30,143,85,0.12);cursor:pointer;border:3px solid ${i===0?'#16a34a':'#e5e7eb'};background:#fff;transition:all 0.2s ease;'/>`;
                                 });
                                 html += `</div>`;
                             }
                             // Fiyat
                             const fmt = new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', minimumFractionDigits: 2 });
-                            html += `<div style='text-align:center;margin-bottom:0.8rem;'>`;
-                            html += `<span style='font-size:1.6rem;font-weight:800;color:#16a34a;'>${fmt.format(price)}</span>`;
-                            if(oldPrice && oldPrice > price) html += ` <span style='text-decoration:line-through;color:#6b7280;font-weight:500;font-size:1.1rem;margin-left:0.5rem;'>${fmt.format(oldPrice)}</span>`;
+                            html += `<div style='text-align:center;margin-bottom:1rem;'>`;
+                            html += `<span style='font-size:1.8rem;font-weight:800;color:#16a34a;'>${fmt.format(price)}</span>`;
+                            if(oldPrice && oldPrice > price) html += ` <span style='text-decoration:line-through;color:#6b7280;font-weight:500;font-size:1.2rem;margin-left:0.6rem;'>${fmt.format(oldPrice)}</span>`;
                             html += `</div>`;
                             // Adet seçimi
-                            html += `<div style='display:flex;align-items:center;justify-content:center;gap:0.6rem;margin-bottom:0.8rem;'>`;
-                            html += `<label style='font-size:1rem;font-weight:600;color:#334155;'>Adet:</label>`;
-                            html += `<button id='panelQtyMinus' type='button' style='width:36px;height:36px;border:1px solid #d1d5db;background:#f9fafb;border-radius:8px;font-size:1.3rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#334155;'>−</button>`;
-                            html += `<input id='panelQtyInput' type='number' value='1' min='1' max='3' style='width:50px;height:36px;text-align:center;border:1px solid #d1d5db;border-radius:8px;font-size:1.1rem;font-weight:600;' readonly />`;
-                            html += `<button id='panelQtyPlus' type='button' style='width:36px;height:36px;border:1px solid #d1d5db;background:#f9fafb;border-radius:8px;font-size:1.3rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#334155;'>+</button>`;
-                            html += `<span style='font-size:0.85rem;color:#6b7280;'>(Max: 3)</span>`;
+                            html += `<div style='display:flex;align-items:center;justify-content:center;gap:0.8rem;margin-bottom:1rem;'>`;
+                            html += `<label style='font-size:1.1rem;font-weight:600;color:#334155;'>Adet:</label>`;
+                            html += `<button id='panelQtyMinus' type='button' style='width:42px;height:42px;border:1px solid #d1d5db;background:#f9fafb;border-radius:10px;font-size:1.5rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#334155;'>−</button>`;
+                            html += `<input id='panelQtyInput' type='number' value='1' min='1' max='3' style='width:56px;height:42px;text-align:center;border:1px solid #d1d5db;border-radius:10px;font-size:1.2rem;font-weight:600;' readonly />`;
+                            html += `<button id='panelQtyPlus' type='button' style='width:42px;height:42px;border:1px solid #d1d5db;background:#f9fafb;border-radius:10px;font-size:1.5rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#334155;'>+</button>`;
+                            html += `<span style='font-size:0.9rem;color:#6b7280;'>(Max: 3)</span>`;
                             html += `</div>`;
-                            html += `<div id='panelQtyWarning' style='display:none;text-align:center;margin-bottom:0.6rem;padding:0.5rem;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;color:#dc2626;font-size:0.9rem;'>⚠️ Bu üründen en fazla 3 adet ekleyebilirsiniz.</div>`;
+                            html += `<div id='panelQtyWarning' style='display:none;text-align:center;margin-bottom:0.8rem;padding:0.6rem;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;color:#dc2626;font-size:0.95rem;'>⚠️ Bu üründen en fazla 3 adet ekleyebilirsiniz.</div>`;
                             // Sepete ekle butonu - stok kontrolü
                             if (isOutOfStock) {
-                                html += `<div style='text-align:center;margin-bottom:0.6rem;padding:0.7rem;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;color:#dc2626;font-size:1rem;font-weight:600;'>❌ Bu ürün şu an stokta yok</div>`;
-                                html += `<button id='panelAddToCartBtn' style='width:100%;background:#9ca3af;color:#fff;padding:0.9rem;border:none;border-radius:10px;font-size:1.15rem;cursor:not-allowed;font-weight:700;opacity:0.6;' disabled>Stok Tükendi</button>`;
+                                html += `<div style='text-align:center;margin-bottom:0.8rem;padding:0.8rem;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;color:#dc2626;font-size:1.05rem;font-weight:600;'>❌ Bu ürün şu an stokta yok</div>`;
+                                html += `<button id='panelAddToCartBtn' style='width:100%;background:#9ca3af;color:#fff;padding:1rem;border:none;border-radius:12px;font-size:1.2rem;cursor:not-allowed;font-weight:700;opacity:0.6;' disabled>Stok Tükendi</button>`;
                             } else {
-                                html += `<button id='panelAddToCartBtn' style='width:100%;background:#16a34a;color:#fff;padding:0.9rem;border:none;border-radius:10px;font-size:1.15rem;cursor:pointer;font-weight:700;'>Sepete Ekle</button>`;
+                                html += `<button id='panelAddToCartBtn' style='width:100%;background:#16a34a;color:#fff;padding:1rem;border:none;border-radius:12px;font-size:1.2rem;cursor:pointer;font-weight:700;box-shadow:0 4px 12px rgba(22,163,74,0.25);transition:all 0.2s ease;'>Sepete Ekle</button>`;
                             }
                             html += `</div>`;
                             document.getElementById('productDetailContent').innerHTML = html;
