@@ -472,9 +472,9 @@
     
     <div class="info-box">
       <h3>👤 Müşteri Bilgileri</h3>
-      <p><strong>${escapeHtml(currentOrder.customerName || '-')}</strong></p>
-      <p>${escapeHtml(currentOrder.customerEmail || '-')}</p>
-      ${currentOrder.address ? `<p>${escapeHtml((function(s){ try{ if (/%[0-9A-Fa-f]{2}/.test(s) || s.includes('+')) s = decodeURIComponent(s.replace(/\+/g,' ')); }catch(_){} try{ const ta = document.createElement('textarea'); ta.innerHTML = s; s = ta.value; }catch(_){} return s.replace(/\s+/g,' ').trim(); })(currentOrder.address))}</p>` : ''}
+      <p><strong>${escapeHtml(normalizeText(currentOrder.customerName) || '-')}</strong></p>
+      <p>${escapeHtml(normalizeText(currentOrder.customerEmail) || '-')}</p>
+      ${currentOrder.address ? `<p>${escapeHtml(normalizeText(currentOrder.address))}</p>` : ''}
     </div>
   </div>
 
