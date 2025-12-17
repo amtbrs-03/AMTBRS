@@ -6139,8 +6139,8 @@ try {
     // Sepet kartı HTML'i
     function renderCartCard(cart) {
       const items = cart.items || [];
-      const totalItems = items.reduce((sum, item) => sum + (item.quantity || 1), 0);
-      const totalPrice = items.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0);
+      const totalItems = items.reduce((sum, item) => sum + (item.qty || item.quantity || 1), 0);
+      const totalPrice = items.reduce((sum, item) => sum + (item.price || 0) * (item.qty || item.quantity || 1), 0);
       
       // updatedAt veya createdAt kontrolü (timestamp olarak)
       let lastUpdate = cart.updatedAt || cart.createdAt || null;
@@ -6204,10 +6204,10 @@ try {
       if (!modal || !content) return;
 
       const items = cart.items || [];
-      const totalPrice = items.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0);
+      const totalPrice = items.reduce((sum, item) => sum + (item.price || 0) * (item.qty || item.quantity || 1), 0);
 
       let itemsHtml = items.map(item => {
-        const qty = item.quantity || 1;
+        const qty = item.qty || item.quantity || 1;
         const price = item.price || 0;
         const initials = (item.name || 'Ü').substring(0, 2).toUpperCase();
         return `
