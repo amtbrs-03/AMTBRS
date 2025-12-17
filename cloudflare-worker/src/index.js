@@ -356,6 +356,7 @@ https://ern-cicek.com.tr
       if (path === '/order-ready' && request.method === 'POST') {
         const payload = await readJsonLoose(request);
         const order = payload?.order || payload || {};
+        const invoiceHtml = payload?.invoiceHtml || order.invoiceHtml || '';
         
         const orderId = order.id || order.orderId || '';
         const customerEmail = order.customerEmail || '';
@@ -441,6 +442,12 @@ https://ern-cicek.com.tr
       
       <div style="background:#dbeafe;border:1px solid #93c5fd;border-radius:8px;padding:15px;margin:25px 0;">
         <p style="margin:0;color:#1e40af;font-size:14px;">🚚 <strong>Kargo Bilgisi:</strong> Kargo takip numaranız ayrıca SMS ve e-posta ile iletilecektir.</p>
+      </div>
+      
+      <div style="margin:25px 0;padding:20px;background:#f0fdf4;border:2px solid #10b981;border-radius:12px;text-align:center;">
+        <h3 style="color:#064e3b;margin:0 0 15px 0;">📄 Bilgi Fişiniz Hazır</h3>
+        <p style="color:#475569;font-size:14px;margin:0 0 20px 0;">Siparişinize ait bilgi fişini aşağıdaki butona tıklayarak görüntüleyebilir, yazdırabilir veya PDF olarak kaydedebilirsiniz.</p>
+        <a href="https://ern-cicek.com.tr/faturalar.html" style="display:inline-block;background:#10b981;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:700;font-size:16px;">📥 Bilgi Fişimi Görüntüle</a>
       </div>
       
       <p style="color:#475569;margin-top:25px;">Sorularınız için bize ulaşabilirsiniz:</p>

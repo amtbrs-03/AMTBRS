@@ -548,6 +548,9 @@
       invoiceWindow.document.write(invoiceHTML);
       invoiceWindow.document.close();
       
+      // Store invoice HTML for later use (e.g., sending with order-ready email)
+      window._lastInvoiceHTML = invoiceHTML;
+      
       // Save invoice to GitHub
       saveInvoiceToGitHub(currentOrder.id, invoiceHTML);
     }
@@ -932,7 +935,8 @@
                     address: currentOrder.address,
                     items: currentOrder.items,
                     total: currentOrder.total
-                  }
+                  },
+                  invoiceHtml: window._lastInvoiceHTML || ''
                 })
               });
               if (emailRes.ok) {
