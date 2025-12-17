@@ -6029,8 +6029,8 @@ try {
       return localStorage.getItem('github_token') || localStorage.getItem('gh_token') || '';
     }
 
-    // Sepetleri GitHub'dan çek
-    async function loadLiveCarts() {
+    // Sepetleri GitHub'dan çek (showModal: true ise progress modal göster)
+    async function loadLiveCarts(showModal = false) {
       const listEl = document.getElementById('liveCartsList');
       const statusEl = document.getElementById('liveCartsStatus');
       
@@ -6038,12 +6038,26 @@ try {
       
       const token = getToken();
       if (!token) {
-        listEl.innerHTML = '<div style="text-align:center;padding:2rem;color:#dc2626;">⚠️ GitHub token bulunamadı. Önce giriş yapın.</div>';
+        if (showModal) {
+          finishRefreshError('GitHub token bulunamadı. Önce giriş yapın.');
+        } else {
+          listEl.innerHTML = '<div style="text-align:center;padding:2rem;color:#dc2626;">⚠️ GitHub token bulunamadı. Önce giriş yapın.</div>';
+        }
         return;
+      }
+
+      if (showModal) {
+        openRefreshModal({
+          title: '🛒 Sepetler Yükleniyor',
+          progressTitle: '🛒 Canlı sepetler alınıyor...'
+        });
+        updateRefreshProgress(10, 'GitHub API\'ye bağlanılıyor...');
       }
 
       try {
         // 1. carts/ klasöründeki dosyaları listele
+        if (showModal) updateRefreshProgress(20, 'Sepet listesi alınıyor...');
+        
         const res = await fetch(`${GITHUB_API_BASE}?ref=${BRANCH}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -6058,14 +6072,19 @@ try {
         const files = await res.json();
         const jsonFiles = files.filter(f => f.name.endsWith('.json'));
         
+        if (showModal) updateRefreshProgress(40, `${jsonFiles.length} sepet dosyası bulundu...`);
+        
         if (jsonFiles.length === 0) {
           listEl.innerHTML = '<div style="text-align:center;padding:2rem;color:#6b7280;">📭 Henüz sepet yok</div>';
           updateCartsCount(0);
-          statusEl.textContent = 'Son güncelleme: ' + new Date().toLocaleTimeString('tr-TR');
+          if (statusEl) statusEl.textContent = 'Son güncelleme: ' + new Date().toLocaleTimeString('tr-TR');
+          if (showModal) finishRefreshSuccess('Sepet bulunamadı');
           return;
         }
 
         // 2. Her sepet dosyasını paralel olarak çek
+        if (showModal) updateRefreshProgress(50, 'Sepet içerikleri okunuyor...');
+        
         const cartPromises = jsonFiles.map(async (file) => {
           try {
             const cartRes = await fetch(file.download_url + '?_=' + Date.now());
@@ -6082,11 +6101,15 @@ try {
           }
         });
 
+        if (showModal) updateRefreshProgress(70, 'Sepetler işleniyor...');
+
         const carts = (await Promise.all(cartPromises)).filter(c => c !== null);
         liveCartsData = carts;
 
         // 3. Sadece ürün içeren sepetleri göster
         const activeCarts = carts.filter(c => c.items && c.items.length > 0);
+        
+        if (showModal) updateRefreshProgress(90, 'Liste güncelleniyor...');
         
         if (activeCarts.length === 0) {
           listEl.innerHTML = '<div style="text-align:center;padding:2rem;color:#6b7280;">📭 Aktif sepet yok (tüm sepetler boş)</div>';
@@ -6096,11 +6119,20 @@ try {
           updateCartsCount(activeCarts.length);
         }
         
-        statusEl.textContent = 'Son güncelleme: ' + new Date().toLocaleTimeString('tr-TR');
+        if (statusEl) statusEl.textContent = 'Son güncelleme: ' + new Date().toLocaleTimeString('tr-TR');
+        
+        if (showModal) {
+          finishRefreshSuccess(`${activeCarts.length} aktif sepet yüklendi`);
+        }
 
       } catch (e) {
         console.error('Sepet yükleme hatası:', e);
         listEl.innerHTML = `<div style="text-align:center;padding:2rem;color:#dc2626;">❌ Hata: ${e.message}</div>`;
+        if (showModal) {
+          finishRefreshError(e.message);
+        } else if (typeof showNotification === 'function') {
+          showNotification('Sepet yükleme hatası: ' + e.message, {type: 'error'});
+        }
       }
     }
 
@@ -6279,16 +6311,11 @@ try {
         });
       }
 
-      // Yenile butonu
+      // Yenile butonu - progress modal ile
       const refreshBtn = document.getElementById('refreshCartsBtn');
       if (refreshBtn) {
         refreshBtn.addEventListener('click', function() {
-          this.disabled = true;
-          this.textContent = '⏳ Yükleniyor...';
-          loadLiveCarts().finally(() => {
-            this.disabled = false;
-            this.textContent = '🔄 Yenile';
-          });
+          loadLiveCarts(true); // showModal = true
         });
       }
 
