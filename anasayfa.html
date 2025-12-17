@@ -3616,6 +3616,9 @@
                         
                         // Hesap modalı artık otomatik açılmıyor - kullanıcı isterse menüden açabilir
                         showNotification('Hoşgeldiniz, ' + userData.name, {type: 'success', duration: 2500});
+                        
+                        // Uzak sepeti senkronize et (diğer cihazlardan eklenen ürünler)
+                        setTimeout(() => { syncRemoteCart(); }, 1500);
                     }
 
                     function updateUIAfterLogin(name) {
@@ -4962,6 +4965,74 @@
                         return raw ? JSON.parse(raw) : [];
                     }
 
+                    // Uzak sepeti GitHub'dan çek ve yerel sepet ile birleştir (cihazlar arası senkronizasyon)
+                    async function syncRemoteCart() {
+                        const user = getCurrentUser();
+                        if (!user || !user.email) return;
+                        
+                        try {
+                            const owner = 'amtbrs-03';
+                            const repo = 'AMTBRS';
+                            const branch = 'site-release';
+                            const filePath = `carts/${user.email}.json`;
+                            const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(filePath)}?ref=${branch}`;
+                            
+                            const res = await fetch(apiUrl, {
+                                headers: { 'Accept': 'application/vnd.github.v3+json' },
+                                cache: 'no-store'
+                            });
+                            
+                            if (!res.ok) return; // Uzak sepet yok, sorun değil
+                            
+                            const data = await res.json();
+                            if (!data.content) return;
+                            
+                            // Base64 decode
+                            const remoteCartJson = decodeURIComponent(escape(atob(data.content.replace(/\n/g, ''))));
+                            const remoteCart = JSON.parse(remoteCartJson);
+                            
+                            if (!remoteCart.items || remoteCart.items.length === 0) return;
+                            
+                            // Yerel sepeti al
+                            const localCart = loadCart();
+                            
+                            // Uzak ve yerel sepeti birleştir (aynı ID'li ürünler varsa miktarları topla)
+                            let merged = [...localCart];
+                            let hasNewItems = false;
+                            
+                            for (const remoteItem of remoteCart.items) {
+                                const existingIdx = merged.findIndex(i => i.id === remoteItem.id);
+                                if (existingIdx >= 0) {
+                                    // Ürün zaten var, addedAt daha eski olanı koru
+                                    if ((remoteItem.addedAt || 0) < (merged[existingIdx].addedAt || Date.now())) {
+                                        merged[existingIdx].addedAt = remoteItem.addedAt;
+                                    }
+                                } else {
+                                    // Yeni ürün, ekle
+                                    merged.push({
+                                        id: remoteItem.id,
+                                        name: remoteItem.name,
+                                        price: remoteItem.price,
+                                        qty: remoteItem.qty || 1,
+                                        addedAt: remoteItem.addedAt || Date.now()
+                                    });
+                                    hasNewItems = true;
+                                }
+                            }
+                            
+                            if (hasNewItems) {
+                                // Yerel sepeti güncelle
+                                localStorage.setItem(cartKeyForUser(user.email), JSON.stringify(merged));
+                                updateCartCount();
+                                renderMiniCart();
+                                console.log('Uzak sepet senkronize edildi:', merged.length, 'ürün');
+                                showNotification('🔄 Sepetiniz diğer cihazdan senkronize edildi', {type: 'info', duration: 3000});
+                            }
+                        } catch (e) {
+                            console.warn('Uzak sepet senkronizasyonu başarısız:', e.message);
+                        }
+                    }
+
                     function saveCart(cart) {
                         const user = getCurrentUser();
                         if (!user) return;
@@ -5974,6 +6045,8 @@
                                     updateUIAfterLogin(user.name);
                                     updateCartCount();
                                     console.log('Oturum otomatik olarak geri yüklendi:', user.name);
+                                    // Uzak sepeti senkronize et (diğer cihazlardan eklenen ürünler)
+                                    setTimeout(() => { syncRemoteCart(); }, 1000);
                                 } else {
                                     // Invalid session, clear it
                                     localStorage.removeItem('currentUser');
