@@ -358,7 +358,7 @@
       try {
         const exists = await checkInvoiceExists(currentOrder.id);
         if (exists) {
-          alert(`⚠️ Fatura Zaten Mevcut\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customer || currentOrder.name || '-'}\n\nBu sipariş için fatura daha önce oluşturulmuş.`);
+          alert(`⚠️ Fatura Zaten Mevcut\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n\nBu sipariş için fatura daha önce oluşturulmuş.`);
           const btn = document.getElementById('createInvoiceBtn');
           if (btn) {
             btn.disabled = true;
@@ -611,7 +611,7 @@
         
         if (response.ok) {
           console.log('✅ Invoice saved to GitHub successfully');
-          alert(`✅ Fatura Kaydedildi\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customer || currentOrder.name || '-'}\n💰 Tutar: ${currentOrder.total || '-'} TL\n\nFatura başarıyla sisteme kaydedildi.`);
+          alert(`✅ Fatura Kaydedildi\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n💰 Tutar: ${currentOrder.total || '-'} TL\n\nFatura başarıyla sisteme kaydedildi.`);
         } else {
           const errorText = await response.text();
           console.error('❌ Invoice save failed:', response.status, errorText);
@@ -788,7 +788,7 @@
           body: JSON.stringify({ message: `Sipariş silindi: ${currentOrder.id}`, sha: fileData.sha, branch:'site-release' })
         });
         if (delRes.ok) {
-          alert(`🗑️ Sipariş Silindi\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customer || currentOrder.name || '-'}\n\nSipariş başarıyla silindi. Sipariş listesine yönlendiriliyorsunuz.`);
+          alert(`🗑️ Sipariş Silindi\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n\nSipariş başarıyla silindi. Sipariş listesine yönlendiriliyorsunuz.`);
           window.location.href = 'siparisler.html';
         } else {
           const txt = await delRes.text();
@@ -865,10 +865,10 @@
           currentOrder.status = newStatus;
           renderOrderDetail(currentOrder);
           if (newStatus === 'ready') {
-            alert(`✅ Fatura Oluşturuldu\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customer || currentOrder.name || '-'}\n💰 Tutar: ${currentOrder.total || '-'} TL\n\nSipariş durumu "Hazır" olarak güncellendi.`);
+            alert(`✅ Fatura Oluşturuldu\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n💰 Tutar: ${currentOrder.total || '-'} TL\n\nSipariş durumu "Hazır" olarak güncellendi.`);
           } else {
             const statusNames = { pending: 'Beklemede', processing: 'İşleniyor', ready: 'Hazır', shipped: 'Gönderildi', paid: 'Ödendi' };
-            alert(`✅ Durum Güncellendi\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customer || currentOrder.name || '-'}\n📊 Yeni Durum: ${statusNames[newStatus] || newStatus}\n\nSipariş durumu başarıyla güncellendi.`);
+            alert(`✅ Durum Güncellendi\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n📊 Yeni Durum: ${statusNames[newStatus] || newStatus}\n\nSipariş durumu başarıyla güncellendi.`);
           }
           return true;
         } else {
