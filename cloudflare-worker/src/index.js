@@ -167,10 +167,10 @@ ${order.address || 'Belirtilmedi'}
 
 Sorularınız için bize WhatsApp üzerinden ulaşabilirsiniz: +90 538 417 90 81
 
-Bizi tercih ettiğiniz için teşekkür ederiz! 🌺
+Bizi tercih ettiğiniz için teşekkür ederiz! �
 
 Saygılarımızla,
-ERN-ÇİÇEK Ekibi
+🌿 ERN Tropikal Çiçek
 https://ern-cicek.com.tr
                   `.trim();
                   
@@ -229,8 +229,8 @@ https://ern-cicek.com.tr
       <p style="margin:5px 0;"><a href="https://wa.me/905384179081" style="color:#16a34a;text-decoration:none;">📱 WhatsApp: +90 538 417 90 81</a></p>
       <p style="margin:5px 0;"><a href="mailto:amtbrs@icloud.com" style="color:#2563eb;text-decoration:none;">📧 Email: amtbrs@icloud.com</a></p>
       
-      <p style="color:#475569;margin-top:30px;">Bizi tercih ettiğiniz için teşekkür ederiz! 🌺</p>
-      <p style="color:#0b2f1f;font-weight:600;">ERN-ÇİÇEK Ekibi</p>
+      <p style="color:#475569;margin-top:30px;">Bizi tercih ettiğiniz için teşekkür ederiz! �</p>
+      <p style="color:#0b2f1f;font-weight:600;">🌿 ERN Tropikal Çiçek</p>
     </div>
     <div style="background:#f8fafc;padding:20px;text-align:center;border-top:1px solid #e2e8f0;">
       <p style="margin:0;color:#94a3b8;font-size:12px;">© 2025 ERN-ÇİÇEK — <a href="https://ern-cicek.com.tr" style="color:#16a34a;">ern-cicek.com.tr</a></p>
