@@ -436,7 +436,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fatura - ${currentOrder.id}</title>
+  <title>Bilgi Fişi - ${currentOrder.id}</title>
   <style>
     body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; }
     .invoice-header { text-align: center; margin-bottom: 40px; border-bottom: 3px solid #10b981; padding-bottom: 20px; }
@@ -465,17 +465,18 @@
 </head>
 <body>
   <div class="invoice-header">
-    <h1>� ERN Tropikal Çiçek</h1>
+    <h1>🌿 ERN Tropikal Çiçek</h1>
     <p><a href="https://ern-cicek.com.tr" style="color:#10b981;text-decoration:none;">ern-cicek.com.tr</a></p>
-    <p>Fatura Tarihi: ${new Date().toLocaleDateString('tr-TR')}</p>
+    <p>Bilgi Fişi Tarihi: ${new Date().toLocaleDateString('tr-TR')}</p>
+    <p style="margin-top:15px;padding:10px 20px;background:#fef3c7;border:1px solid #f59e0b;border-radius:6px;color:#92400e;font-size:0.85rem;display:inline-block;">Bu bir bilgilendirme fişidir. Fatura veya irsaliye yerine geçmez.</p>
   </div>
 
   <div class="company-info">
-    <h3 style="margin:0 0 10px 0;color:#064e3b;">Satici Bilgileri</h3>
-    <p><strong>ERN Tropikal Cicek</strong></p>
-    <p>Adres: [Sirket Adresi]</p>
+    <h3 style="margin:0 0 10px 0;color:#064e3b;">Satıcı Bilgileri</h3>
+    <p><strong>ERN Tropikal Çiçek</strong></p>
+    <p>Adres: Çağlayan Mah. Fevziçakmak Cad. No:47, Kağıthane, İstanbul</p>
     <p>Telefon: +90 538 417 90 81</p>
-    <p>Email: amtbrs@icloud.com</p>
+    <p>E-posta: amtbrs@icloud.com</p>
     <p>Web: <a href="https://ern-cicek.com.tr" style="color:#10b981;">ern-cicek.com.tr</a></p>
   </div>
 
@@ -529,12 +530,12 @@
   </table>
 
   <div class="footer">
-    <p>Bu bilgi fisi elektronik olarak olusturulmustur.</p>
-    <p>ERN Tropikal Cicek — <a href="https://ern-cicek.com.tr" style="color:#10b981;">ern-cicek.com.tr</a></p>
+    <p>Bu bilgi fişi elektronik olarak oluşturulmuştur.</p>
+    <p>🌿 ERN Tropikal Çiçek — <a href="https://ern-cicek.com.tr" style="color:#10b981;">ern-cicek.com.tr</a></p>
   </div>
 
   <div class="no-print" style="text-align:center;margin-top:30px;">
-    <button onclick="window.print()" style="padding:12px 24px;background:#10b981;color:white;border:none;border-radius:8px;font-size:1rem;cursor:pointer;font-weight:600;">Yazdir / PDF Olarak Kaydet</button>
+    <button onclick="window.print()" style="padding:12px 24px;background:#10b981;color:white;border:none;border-radius:8px;font-size:1rem;cursor:pointer;font-weight:600;">Yazdır / PDF Olarak Kaydet</button>
   </div>
 </body>
 </html>`;
