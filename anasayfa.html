@@ -4992,6 +4992,12 @@
                         const user = getCurrentUser();
                         if (!user || !user.email) return;
                         
+                        // Sepet temizleme işlemi devam ediyorsa senkronizasyonu atla
+                        if (typeof cartClearInProgress !== 'undefined' && cartClearInProgress) {
+                            console.log('[Sync] Sepet temizleme işlemi devam ediyor, senkronizasyon atlandı');
+                            return;
+                        }
+                        
                         // Rate limit kontrolü - 5 dakika bekle
                         if (syncRateLimited && Date.now() < syncRateLimitResetTime) {
                             console.log('[Sync] Rate limit aktif, bekleniyor...');
@@ -5714,23 +5720,54 @@
                         }catch(e){ }
                     })();
 
-                    function clearCart() {
+                    // Sepet temizleme işlemi sırasında senkronizasyonu engelle
+                    let cartClearInProgress = false;
+                    
+                    async function clearCart() {
                         const user = getCurrentUser();
                         if (!user) return;
-                        if (!(true)) return; // confirmation suppressed: proceed
-                        localStorage.removeItem(cartKeyForUser(user.email));
-                        // Boş sepeti GitHub'a senkronize et (sepet dosyasını sil)
-                        deleteCartFromGitHub(user);
-                        renderCart();
-                        updateCartCount();
+                        
+                        // Onay iste
+                        if (!confirm('Sepeti temizlemek istediğinize emin misiniz?')) {
+                            return;
+                        }
+                        
+                        cartClearInProgress = true;
+                        
+                        // Progress modal aç
+                        showProgress('Sepet temizleniyor...', 10);
+                        
+                        try {
+                            // Yerel sepeti temizle
+                            updateProgress(30, 'Yerel sepet temizleniyor...');
+                            localStorage.removeItem(cartKeyForUser(user.email));
+                            renderCart();
+                            updateCartCount();
+                            
+                            // GitHub'a sync
+                            updateProgress(50, 'Sunucuya yazılıyor...');
+                            await deleteCartFromGitHub(user);
+                            
+                            updateProgress(100, 'Tamamlandı!');
+                            hideProgress(true, '✅ Sepet temizlendi!');
+                            console.log('[Cart] Sepet temizlendi ve senkronize edildi');
+                        } catch(e) {
+                            console.error('[Cart] Sepet temizleme hatası:', e);
+                            hideProgress(false, '❌ Hata oluştu!', e.message);
+                        } finally {
+                            cartClearInProgress = false;
+                        }
                     }
                     
                     // GitHub'dan sepet dosyasını sil
                     async function deleteCartFromGitHub(user) {
                         if (!user || !user.email) return;
                         try {
-                            const token = localStorage.getItem('github_token') || '';
-                            if (!token) return;
+                            const token = localStorage.getItem('github_token') || localStorage.getItem('gh_token') || '';
+                            if (!token) {
+                                console.warn('[Sync] Token bulunamadı, GitHub silme atlandı');
+                                return;
+                            }
                             
                             const owner = 'amtbrs-03';
                             const repo = 'AMTBRS';
@@ -5742,13 +5779,16 @@
                             const headRes = await fetch(`${ghUrl}?ref=${encodeURIComponent(branch)}`, { 
                                 headers: { 'Authorization': `token ${token}` } 
                             });
-                            if (!headRes.ok) return; // Dosya zaten yok
+                            if (!headRes.ok) {
+                                console.log('[Sync] Sepet dosyası zaten yok veya erişilemiyor');
+                                return;
+                            }
                             
                             const headData = await headRes.json();
                             const sha = headData.sha;
                             
                             // Dosyayı sil
-                            await fetch(ghUrl, {
+                            const delRes = await fetch(ghUrl, {
                                 method: 'DELETE',
                                 headers: { 
                                     'Content-Type': 'application/json', 
@@ -5760,7 +5800,12 @@
                                     branch: branch
                                 })
                             });
-                            console.log('[Sync] Sepet dosyası GitHub\'dan silindi:', user.email);
+                            
+                            if (delRes.ok) {
+                                console.log('[Sync] ✅ Sepet dosyası GitHub\'dan silindi:', user.email);
+                            } else {
+                                console.warn('[Sync] ❌ Sepet silme başarısız:', delRes.status);
+                            }
                         } catch(e) {
                             console.warn('[Sync] Sepet silme hatası:', e.message);
                         }
