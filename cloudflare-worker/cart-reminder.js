@@ -190,7 +190,10 @@ async function sendReminderEmail(cart, env, fromEmail, apiKey, reminderNumber) {
     
     <!-- Header -->
     <div style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); padding: 30px; border-radius: 16px 16px 0 0; text-align: center;">
-      <h1 style="color: #fff; margin: 0; font-size: 24px;">🌿 Ern Çiçek</h1>
+      <div style="display:inline-block;margin-bottom:8px;">
+        <span style="font-size:28px;font-weight:800;color:#fff;text-shadow:0 2px 4px rgba(0,0,0,0.2);">🌿 ERN</span>
+        <span style="font-size:16px;font-weight:500;color:rgba(255,255,255,0.9);margin-left:4px;">Tropikal Çiçek</span>
+      </div>
       <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 14px;">Doğanın Güzelliği Evinizde</p>
     </div>
     
@@ -246,7 +249,7 @@ async function sendReminderEmail(cart, env, fromEmail, apiKey, reminderNumber) {
     
     <!-- Footer -->
     <div style="text-align: center; padding: 20px; color: #9ca3af; font-size: 12px;">
-      <p style="margin: 0 0 5px 0;">© 2025 Ern Çiçek - Tüm hakları saklıdır.</p>
+      <p style="margin: 0 0 5px 0;">© 2025 🌿 ERN Tropikal Çiçek - Tüm hakları saklıdır.</p>
       <p style="margin: 0;">Bu e-posta sepetinizde bekleyen ürünler olduğu için gönderilmiştir.</p>
     </div>
     
@@ -269,7 +272,7 @@ Toplam: ₺${totalPrice.toFixed(2)}
 
 Alışverişinizi tamamlamak için: https://ern-cicek.com.tr
 
-Ern Çiçek
+🌿 ERN Tropikal Çiçek
   `;
   
   try {
