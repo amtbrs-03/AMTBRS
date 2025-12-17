@@ -3632,8 +3632,8 @@
                         // Hesap modalı artık otomatik açılmıyor - kullanıcı isterse menüden açabilir
                         showNotification('Hoşgeldiniz, ' + userData.name, {type: 'success', duration: 2500});
                         
-                        // Uzak sepeti senkronize et (diğer cihazlardan eklenen ürünler)
-                        setTimeout(() => { syncRemoteCart(); }, 1500);
+                        // Periyodik sepet senkronizasyonunu başlat
+                        startPeriodicSync();
                     }
 
                     function updateUIAfterLogin(name) {
@@ -3755,6 +3755,9 @@
 
                     function logout() {
                         console.log('logout: Starting logout process...');
+                        
+                        // Periyodik senkronizasyonu durdur
+                        stopPeriodicSync();
                         
                         // Get current user email before removing
                         const currentUser = getCurrentUser();
@@ -5119,6 +5122,88 @@
                         try { persistCartSnapshot(cart, user); } catch(e) { /* sessiz */ }
                     }
 
+                    /* --- Periyodik Sepet Senkronizasyonu (Arka Plan) --- */
+                    // GitHub API rate limit: 60 req/saat (anonim), 60 saniye aralık güvenli
+                    const SYNC_INTERVAL_MS = 60000; // 60 saniye
+                    let syncIntervalId = null;
+                    let lastSyncTime = 0;
+                    
+                    function startPeriodicSync() {
+                        // Önceki interval varsa temizle
+                        if (syncIntervalId) {
+                            clearInterval(syncIntervalId);
+                            syncIntervalId = null;
+                        }
+                        
+                        const user = getCurrentUser();
+                        if (!user || !user.email) {
+                            console.log('[Sync] Periyodik senkronizasyon: Kullanıcı giriş yapmamış');
+                            return;
+                        }
+                        
+                        console.log('[Sync] Periyodik senkronizasyon başlatıldı (her 60 saniye)');
+                        
+                        // İlk senkronizasyon hemen
+                        syncRemoteCart();
+                        lastSyncTime = Date.now();
+                        
+                        // Periyodik senkronizasyon
+                        syncIntervalId = setInterval(() => {
+                            const user = getCurrentUser();
+                            if (!user || !user.email) {
+                                stopPeriodicSync();
+                                return;
+                            }
+                            
+                            // Sayfa görünür değilse senkronizasyon yapma (pil tasarrufu)
+                            if (document.hidden) {
+                                console.log('[Sync] Sayfa gizli, senkronizasyon atlandı');
+                                return;
+                            }
+                            
+                            console.log('[Sync] Periyodik senkronizasyon çalışıyor...');
+                            syncRemoteCart();
+                            lastSyncTime = Date.now();
+                        }, SYNC_INTERVAL_MS);
+                    }
+                    
+                    function stopPeriodicSync() {
+                        if (syncIntervalId) {
+                            clearInterval(syncIntervalId);
+                            syncIntervalId = null;
+                            console.log('[Sync] Periyodik senkronizasyon durduruldu');
+                        }
+                    }
+                    
+                    // Sayfa görünür olduğunda hemen senkronize et
+                    document.addEventListener('visibilitychange', () => {
+                        if (!document.hidden) {
+                            const user = getCurrentUser();
+                            if (user && user.email) {
+                                const timeSinceLastSync = Date.now() - lastSyncTime;
+                                // Son senkronizasyondan 10 saniye geçtiyse hemen senkronize et
+                                if (timeSinceLastSync > 10000) {
+                                    console.log('[Sync] Sayfa aktif, hemen senkronize ediliyor');
+                                    syncRemoteCart();
+                                    lastSyncTime = Date.now();
+                                }
+                            }
+                        }
+                    });
+                    
+                    // Pencere odaklandığında hemen senkronize et (tab değiştirme durumu)
+                    window.addEventListener('focus', () => {
+                        const user = getCurrentUser();
+                        if (user && user.email) {
+                            const timeSinceLastSync = Date.now() - lastSyncTime;
+                            if (timeSinceLastSync > 10000) {
+                                console.log('[Sync] Pencere odaklandı, senkronize ediliyor');
+                                syncRemoteCart();
+                                lastSyncTime = Date.now();
+                            }
+                        }
+                    });
+
                     // Estetik bildirim sistemi - alert yerine kullanılacak
                     function showNotification(msg, opts) {
                         opts = opts || {};
@@ -6126,8 +6211,8 @@
                                     updateUIAfterLogin(user.name);
                                     updateCartCount();
                                     console.log('Oturum otomatik olarak geri yüklendi:', user.name);
-                                    // Uzak sepeti senkronize et (diğer cihazlardan eklenen ürünler)
-                                    setTimeout(() => { syncRemoteCart(); }, 1000);
+                                    // Periyodik sepet senkronizasyonunu başlat
+                                    startPeriodicSync();
                                 } else {
                                     // Invalid session, clear it
                                     localStorage.removeItem('currentUser');
