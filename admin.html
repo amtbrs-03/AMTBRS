@@ -6014,7 +6014,11 @@ try {
 
     // GitHub token'ı al
     function getToken() {
-      return localStorage.getItem('adminToken') || localStorage.getItem('githubToken') || '';
+      // Önce global fonksiyonu dene, sonra localStorage
+      if (typeof getGitHubToken === 'function') {
+        return getGitHubToken();
+      }
+      return localStorage.getItem('github_token') || localStorage.getItem('gh_token') || '';
     }
 
     // Sepetleri GitHub'dan çek
