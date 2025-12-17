@@ -5719,8 +5719,51 @@
                         if (!user) return;
                         if (!(true)) return; // confirmation suppressed: proceed
                         localStorage.removeItem(cartKeyForUser(user.email));
+                        // Boş sepeti GitHub'a senkronize et (sepet dosyasını sil)
+                        deleteCartFromGitHub(user);
                         renderCart();
                         updateCartCount();
+                    }
+                    
+                    // GitHub'dan sepet dosyasını sil
+                    async function deleteCartFromGitHub(user) {
+                        if (!user || !user.email) return;
+                        try {
+                            const token = localStorage.getItem('github_token') || '';
+                            if (!token) return;
+                            
+                            const owner = 'amtbrs-03';
+                            const repo = 'AMTBRS';
+                            const branch = 'site-release';
+                            const filePath = `carts/${user.email}.json`;
+                            const ghUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`;
+                            
+                            // Önce dosyanın SHA'sını al
+                            const headRes = await fetch(`${ghUrl}?ref=${encodeURIComponent(branch)}`, { 
+                                headers: { 'Authorization': `token ${token}` } 
+                            });
+                            if (!headRes.ok) return; // Dosya zaten yok
+                            
+                            const headData = await headRes.json();
+                            const sha = headData.sha;
+                            
+                            // Dosyayı sil
+                            await fetch(ghUrl, {
+                                method: 'DELETE',
+                                headers: { 
+                                    'Content-Type': 'application/json', 
+                                    'Authorization': `token ${token}` 
+                                },
+                                body: JSON.stringify({
+                                    message: `chore: cart cleared ${user.email}`,
+                                    sha: sha,
+                                    branch: branch
+                                })
+                            });
+                            console.log('[Sync] Sepet dosyası GitHub\'dan silindi:', user.email);
+                        } catch(e) {
+                            console.warn('[Sync] Sepet silme hatası:', e.message);
+                        }
                     }
 
                     function checkout() {
