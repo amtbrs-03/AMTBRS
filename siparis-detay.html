@@ -638,7 +638,17 @@
         
         if (response.ok) {
           console.log('✅ Invoice saved to GitHub successfully');
-          alert(`✅ Fatura Kaydedildi\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n💰 Tutar: ${currentOrder.total || '-'} TL\n\nFatura başarıyla sisteme kaydedildi.`);
+          // UI'ı güncelle - fatura butonu devre dışı bırak
+          const btn = document.getElementById('createInvoiceBtn');
+          if (btn) {
+            btn.disabled = true;
+            btn.textContent = '🧾 Fatura Oluşturuldu';
+            btn.style.background = '#9ca3af';
+          }
+          // Durumu "Hazır" olarak güncelle (zaten updateOrderStatus ile yapıldı ama emin olmak için UI'ı tekrar render et)
+          currentOrder.status = 'ready';
+          renderOrderDetail(currentOrder);
+          alert(`✅ Fatura Kaydedildi\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n💰 Tutar: ${currentOrder.total || '-'} TL\n\nFatura başarıyla sisteme kaydedildi.\nSipariş durumu "Hazır" olarak güncellendi.`);
         } else {
           const errorText = await response.text();
           console.error('❌ Invoice save failed:', response.status, errorText);
