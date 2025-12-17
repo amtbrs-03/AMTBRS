@@ -901,8 +901,36 @@
           // Reload order detail to show updated status
           currentOrder.status = newStatus;
           renderOrderDetail(currentOrder);
+          
+          // Durum "Hazır" olduğunda müşteriye e-posta gönder
           if (newStatus === 'ready') {
-            alert(`✅ Fatura Oluşturuldu\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n💰 Tutar: ${currentOrder.total || '-'} TL\n\nSipariş durumu "Hazır" olarak güncellendi.`);
+            // Müşteriye "Siparişiniz Hazır" e-postası gönder
+            try {
+              const emailRes = await fetch('https://ern-site.amtbrs-03.workers.dev/order-ready', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  order: {
+                    id: currentOrder.id,
+                    customerEmail: currentOrder.customerEmail,
+                    customerName: currentOrder.customerName,
+                    address: currentOrder.address,
+                    items: currentOrder.items,
+                    total: currentOrder.total
+                  }
+                })
+              });
+              if (emailRes.ok) {
+                console.log('✅ Order ready email sent to customer');
+                alert(`✅ Fatura Oluşturuldu\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n💰 Tutar: ${currentOrder.total || '-'} TL\n\nSipariş durumu "Hazır" olarak güncellendi.\n📧 Müşteriye bildirim e-postası gönderildi.`);
+              } else {
+                console.warn('⚠️ Order ready email failed:', emailRes.status);
+                alert(`✅ Fatura Oluşturuldu\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n💰 Tutar: ${currentOrder.total || '-'} TL\n\nSipariş durumu "Hazır" olarak güncellendi.\n⚠️ Müşteriye e-posta gönderilemedi.`);
+              }
+            } catch (emailErr) {
+              console.error('❌ Order ready email error:', emailErr);
+              alert(`✅ Fatura Oluşturuldu\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n💰 Tutar: ${currentOrder.total || '-'} TL\n\nSipariş durumu "Hazır" olarak güncellendi.`);
+            }
           } else {
             const statusNames = { pending: 'Beklemede', processing: 'İşleniyor', ready: 'Hazır', shipped: 'Gönderildi', paid: 'Ödendi' };
             alert(`✅ Durum Güncellendi\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n📊 Yeni Durum: ${statusNames[newStatus] || newStatus}\n\nSipariş durumu başarıyla güncellendi.`);
