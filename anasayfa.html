@@ -5569,7 +5569,7 @@
                                 firstAddedAt: firstAddedAt,
                                 totalQty: cart.reduce((s,i)=> s + (i.qty||0), 0),
                                 totalPrice: cart.reduce((s,i)=> s + (i.price||0) * (i.qty||0), 0),
-                                items: cart.map(i=>({ id: i.id, name: i.name, price: i.price, qty: i.qty||1, addedAt: i.addedAt || Date.now() }))
+                                items: cart.map(i=>({ id: i.id, name: i.name, price: i.price, qty: i.qty||1, image: i.image || '', addedAt: i.addedAt || Date.now() }))
                             };
                             const json = JSON.stringify(snapshot);
                             const now = Date.now();
