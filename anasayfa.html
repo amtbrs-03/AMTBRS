@@ -4985,16 +4985,26 @@
                     }
 
                     // Uzak sepeti GitHub'dan çek ve yerel sepet ile birleştir (iki yönlü cihazlar arası senkronizasyon)
+                    let syncRateLimited = false;
+                    let syncRateLimitResetTime = 0;
+                    
                     async function syncRemoteCart() {
                         const user = getCurrentUser();
                         if (!user || !user.email) return;
+                        
+                        // Rate limit kontrolü - 5 dakika bekle
+                        if (syncRateLimited && Date.now() < syncRateLimitResetTime) {
+                            console.log('[Sync] Rate limit aktif, bekleniyor...');
+                            return;
+                        }
+                        syncRateLimited = false;
                         
                         try {
                             const owner = 'amtbrs-03';
                             const repo = 'AMTBRS';
                             const branch = 'site-release';
                             const filePath = `carts/${user.email}.json`;
-                            const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(filePath)}?ref=${branch}&t=${Date.now()}`;
+                            const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(filePath)}?ref=${branch}`;
                             
                             console.log('[Sync] Uzak sepet kontrol ediliyor:', filePath);
                             
@@ -5002,6 +5012,14 @@
                                 headers: { 'Accept': 'application/vnd.github.v3+json' },
                                 cache: 'no-store'
                             });
+                            
+                            // Rate limit kontrolü
+                            if (res.status === 403 || res.status === 429) {
+                                syncRateLimited = true;
+                                syncRateLimitResetTime = Date.now() + 5 * 60 * 1000; // 5 dakika bekle
+                                console.warn('[Sync] GitHub API rate limit, 5 dakika bekleniyor');
+                                return;
+                            }
                             
                             let remoteCart = { items: [], updatedAt: 0 };
                             if (res.ok) {
@@ -5124,8 +5142,8 @@
                     }
 
                     /* --- Periyodik Sepet Senkronizasyonu (Arka Plan) --- */
-                    // GitHub API rate limit: 60 req/saat (anonim), 60 saniye aralık güvenli
-                    const SYNC_INTERVAL_MS = 60000; // 60 saniye
+                    // GitHub API rate limit: 60 req/saat (anonim), 5 dakika aralık güvenli
+                    const SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 dakika
                     let syncIntervalId = null;
                     let lastSyncTime = 0;
                     
@@ -5142,7 +5160,7 @@
                             return;
                         }
                         
-                        console.log('[Sync] Periyodik senkronizasyon başlatıldı (her 60 saniye)');
+                        console.log('[Sync] Periyodik senkronizasyon başlatıldı (her 5 dakika)');
                         
                         // İlk senkronizasyon hemen
                         syncRemoteCart();
@@ -5182,8 +5200,8 @@
                             const user = getCurrentUser();
                             if (user && user.email) {
                                 const timeSinceLastSync = Date.now() - lastSyncTime;
-                                // Son senkronizasyondan 10 saniye geçtiyse hemen senkronize et
-                                if (timeSinceLastSync > 10000) {
+                                // Son senkronizasyondan 2 dakika geçtiyse hemen senkronize et
+                                if (timeSinceLastSync > 2 * 60 * 1000) {
                                     console.log('[Sync] Sayfa aktif, hemen senkronize ediliyor');
                                     syncRemoteCart();
                                     lastSyncTime = Date.now();
@@ -5197,7 +5215,7 @@
                         const user = getCurrentUser();
                         if (user && user.email) {
                             const timeSinceLastSync = Date.now() - lastSyncTime;
-                            if (timeSinceLastSync > 10000) {
+                            if (timeSinceLastSync > 2 * 60 * 1000) {
                                 console.log('[Sync] Pencere odaklandı, senkronize ediliyor');
                                 syncRemoteCart();
                                 lastSyncTime = Date.now();
