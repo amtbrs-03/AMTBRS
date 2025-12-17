@@ -6142,18 +6142,22 @@ try {
       const totalItems = items.reduce((sum, item) => sum + (item.quantity || 1), 0);
       const totalPrice = items.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0);
       
-      // updatedAt veya createdAt kontrolü
+      // updatedAt veya createdAt kontrolü (timestamp olarak)
       let lastUpdate = cart.updatedAt || cart.createdAt || null;
       let timeAgo = '';
       if (lastUpdate) {
-        const diff = Date.now() - new Date(lastUpdate).getTime();
-        const mins = Math.floor(diff / 60000);
-        const hours = Math.floor(mins / 60);
-        const days = Math.floor(hours / 24);
-        if (days > 0) timeAgo = `${days} gün önce`;
-        else if (hours > 0) timeAgo = `${hours} saat önce`;
-        else if (mins > 0) timeAgo = `${mins} dk önce`;
-        else timeAgo = 'Az önce';
+        // Sayıya çevir (string gelebilir)
+        const ts = typeof lastUpdate === 'number' ? lastUpdate : parseInt(lastUpdate, 10);
+        if (!isNaN(ts) && ts > 0) {
+          const diff = Date.now() - ts;
+          const mins = Math.floor(diff / 60000);
+          const hours = Math.floor(mins / 60);
+          const days = Math.floor(hours / 24);
+          if (days > 0) timeAgo = `${days} gün önce`;
+          else if (hours > 0) timeAgo = `${hours} saat önce`;
+          else if (mins > 0) timeAgo = `${mins} dk önce`;
+          else timeAgo = 'Az önce';
+        }
       }
 
       // Hatırlatma durumu
