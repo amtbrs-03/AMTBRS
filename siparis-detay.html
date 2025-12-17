@@ -1027,7 +1027,7 @@
       }
       
       // Notu göster
-      alert(`💬 Müşteri Notu\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customer || currentOrder.name || '-'}\n\n━━━━━━━━━━━━━━━━━━━━\n${customerNote}\n━━━━━━━━━━━━━━━━━━━━`);
+      alert(`💬 Müşteri Notu\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n\n━━━━━━━━━━━━━━━━━━━━\n${customerNote}\n━━━━━━━━━━━━━━━━━━━━`);
       
       // Zaten okunmuşsa tekrar kaydetme
       if (currentOrder.noteRead) return;
