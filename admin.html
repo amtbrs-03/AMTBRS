@@ -2942,37 +2942,37 @@
 
       <div class="card">
         <!-- Canlı Sepet Takibi Butonu -->
-        <button id="openLiveCartsBtn" class="btn" type="button" style="background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:#fff;border-radius:16px;font-weight:700;font-size:1.1rem;padding:1rem 2rem;box-shadow:0 4px 20px rgba(16,185,129,0.3);display:flex;align-items:center;gap:0.75rem;width:100%;">
-          <span style="font-size:1.8rem;">🛒</span>
+        <button id="openLiveCartsBtn" class="btn" type="button" style="background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:#fff;border-radius:16px;font-weight:700;font-size:1.25rem;padding:1.25rem 2rem;box-shadow:0 4px 20px rgba(16,185,129,0.3);display:flex;align-items:center;gap:0.75rem;width:100%;">
+          <span style="font-size:2rem;">🛒</span>
           <span>Canlı Sepet Takibi</span>
-          <span id="liveCartsCount" style="background:rgba(255,255,255,0.25);color:#fff;padding:4px 12px;border-radius:999px;font-size:0.85rem;font-weight:700;margin-left:auto;">0</span>
+          <span id="liveCartsCount" style="background:rgba(255,255,255,0.25);color:#fff;padding:6px 14px;border-radius:999px;font-size:1rem;font-weight:700;margin-left:auto;">0</span>
         </button>
       </div>
 
       <!-- Canlı Sepet Takibi Modal -->
       <div id="liveCartsModal" class="modal" style="display:none;">
-        <div class="modal-content" style="max-width:900px;max-height:90vh;overflow-y:auto;">
-          <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;padding:1.25rem 1.5rem;border-bottom:1px solid #e5e7eb;background:linear-gradient(135deg,#ecfdf5,#d1fae5);">
-            <div style="display:flex;align-items:center;gap:0.75rem;">
-              <span style="font-size:1.8rem;">🛒</span>
-              <h2 style="margin:0;font-size:1.25rem;color:#064e3b;font-weight:700;">Canlı Sepet Takibi</h2>
-              <span id="liveCartsCountModal" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;padding:4px 12px;border-radius:999px;font-size:0.8rem;font-weight:700;">0</span>
+        <div class="modal-content" style="max-width:1000px;max-height:90vh;overflow-y:auto;">
+          <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;padding:1.5rem 2rem;border-bottom:1px solid #e5e7eb;background:linear-gradient(135deg,#ecfdf5,#d1fae5);flex-wrap:wrap;gap:1rem;">
+            <div style="display:flex;align-items:center;gap:1rem;">
+              <span style="font-size:2.2rem;">🛒</span>
+              <h2 style="margin:0;font-size:1.5rem;color:#064e3b;font-weight:700;">Canlı Sepet Takibi</h2>
+              <span id="liveCartsCountModal" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;padding:6px 14px;border-radius:999px;font-size:1rem;font-weight:700;">0</span>
             </div>
-            <div style="display:flex;align-items:center;gap:0.75rem;">
-              <button id="refreshCartsBtn" class="btn btn-ghost" type="button" style="font-size:0.9rem;padding:0.5rem 1rem;">🔄 Yenile</button>
-              <span id="liveCartsStatus" style="font-size:0.75rem;color:#6b7280;">Son güncelleme: -</span>
-              <button id="closeLiveCartsBtn" class="close-modal" type="button" style="font-size:1.5rem;background:none;border:none;cursor:pointer;color:#6b7280;padding:0.25rem;">&times;</button>
+            <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+              <button id="refreshCartsBtn" class="btn btn-ghost" type="button" style="font-size:1rem;padding:0.6rem 1.2rem;">🔄 Yenile</button>
+              <span id="liveCartsStatus" style="font-size:0.9rem;color:#6b7280;">Son güncelleme: -</span>
+              <button id="closeLiveCartsBtn" class="close-modal" type="button" style="font-size:1.8rem;background:none;border:none;cursor:pointer;color:#6b7280;padding:0.5rem;">&times;</button>
             </div>
           </div>
-          <div id="liveCartsList" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:1rem;padding:1.5rem;">
-            <div style="text-align:center;padding:2rem;color:#6b7280;">Sepetler yükleniyor...</div>
+          <div id="liveCartsList" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));gap:1.25rem;padding:2rem;">
+            <div style="text-align:center;padding:2rem;color:#6b7280;font-size:1rem;">Sepetler yükleniyor...</div>
           </div>
         </div>
       </div>
 
       <!-- Sepet Detay Modal -->
       <div id="cartDetailModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:10000;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
-        <div style="background:#fff;border-radius:16px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 25px 60px rgba(0,0,0,0.3);">
+        <div style="background:#fff;border-radius:16px;max-width:560px;width:92%;max-height:85vh;overflow-y:auto;box-shadow:0 25px 60px rgba(0,0,0,0.3);">
           <div style="padding:1.5rem;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;">
             <h3 style="margin:0;font-size:1.2rem;color:#064e3b;">🛒 Sepet Detayı</h3>
             <button id="closeCartDetailBtn" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#6b7280;">&times;</button>
@@ -6163,32 +6163,32 @@ try {
       // Hatırlatma durumu
       let reminderBadge = '';
       if (cart.reminderCount && cart.reminderCount > 0) {
-        reminderBadge = `<span style="background:#f59e0b;color:#fff;padding:2px 8px;border-radius:999px;font-size:0.7rem;margin-left:0.5rem;">📧 ${cart.reminderCount}x hatırlatma</span>`;
+        reminderBadge = `<span style="background:#f59e0b;color:#fff;padding:4px 10px;border-radius:999px;font-size:0.85rem;margin-left:0.5rem;">📧 ${cart.reminderCount}x hatırlatma</span>`;
       }
 
       // Ürün önizlemeleri (ilk 3)
       const previewItems = items.slice(0, 3).map(item => {
         const initials = (item.name || 'Ü').substring(0, 2).toUpperCase();
-        return `<div style="width:40px;height:40px;background:linear-gradient(135deg,#10b981,#059669);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.75rem;font-weight:700;flex-shrink:0;" title="${item.name || 'Ürün'}">${item.image ? `<img src="${item.image}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">` : initials}</div>`;
+        return `<div style="width:48px;height:48px;background:linear-gradient(135deg,#10b981,#059669);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.9rem;font-weight:700;flex-shrink:0;" title="${item.name || 'Ürün'}">${item.image ? `<img src="${item.image}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">` : initials}</div>`;
       }).join('');
       
-      const moreCount = items.length > 3 ? `<div style="width:40px;height:40px;background:#e5e7eb;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#6b7280;font-size:0.75rem;font-weight:600;">+${items.length - 3}</div>` : '';
+      const moreCount = items.length > 3 ? `<div style="width:48px;height:48px;background:#e5e7eb;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#6b7280;font-size:0.9rem;font-weight:600;">+${items.length - 3}</div>` : '';
 
       return `
-        <div class="cart-card" data-email="${cart.email}" onclick="showCartDetail('${cart.email}')" style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:1rem;cursor:pointer;transition:all 0.2s;box-shadow:0 2px 8px rgba(0,0,0,0.04);" onmouseover="this.style.boxShadow='0 8px 25px rgba(0,0,0,0.1)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.04)';this.style.transform='none'">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem;">
-            <div style="font-weight:600;color:#064e3b;font-size:0.9rem;word-break:break-all;">${cart.email}</div>
+        <div class="cart-card" data-email="${cart.email}" onclick="showCartDetail('${cart.email}')" style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:1.25rem;cursor:pointer;transition:all 0.2s;box-shadow:0 2px 8px rgba(0,0,0,0.04);" onmouseover="this.style.boxShadow='0 8px 25px rgba(0,0,0,0.1)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.04)';this.style.transform='none'">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;">
+            <div style="font-weight:600;color:#064e3b;font-size:1.05rem;word-break:break-all;">${cart.email}</div>
             ${reminderBadge}
           </div>
-          <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.75rem;">
+          <div style="display:flex;gap:0.6rem;align-items:center;margin-bottom:1rem;">
             ${previewItems}
             ${moreCount}
           </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.85rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:1rem;">
             <span style="color:#6b7280;">${totalItems} ürün</span>
-            <span style="font-weight:700;color:#059669;">${totalPrice.toLocaleString('tr-TR')} ₺</span>
+            <span style="font-weight:700;color:#059669;font-size:1.1rem;">${totalPrice.toLocaleString('tr-TR')} ₺</span>
           </div>
-          ${timeAgo ? `<div style="font-size:0.75rem;color:#9ca3af;margin-top:0.5rem;">🕐 ${timeAgo}</div>` : ''}
+          ${timeAgo ? `<div style="font-size:0.9rem;color:#9ca3af;margin-top:0.75rem;">🕐 ${timeAgo}</div>` : ''}
         </div>
       `;
     }
@@ -6211,15 +6211,15 @@ try {
         const price = item.price || 0;
         const initials = (item.name || 'Ü').substring(0, 2).toUpperCase();
         return `
-          <div style="display:flex;align-items:center;gap:1rem;padding:0.75rem;background:#f9fafb;border-radius:10px;margin-bottom:0.5rem;">
-            <div style="width:50px;height:50px;background:linear-gradient(135deg,#10b981,#059669);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;flex-shrink:0;overflow:hidden;">
+          <div style="display:flex;align-items:center;gap:1rem;padding:1rem;background:#f9fafb;border-radius:12px;margin-bottom:0.75rem;">
+            <div style="width:56px;height:56px;background:linear-gradient(135deg,#10b981,#059669);border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:1rem;flex-shrink:0;overflow:hidden;">
               ${item.image ? `<img src="${item.image}" style="width:100%;height:100%;object-fit:cover;">` : initials}
             </div>
             <div style="flex:1;min-width:0;">
-              <div style="font-weight:600;color:#1f2937;font-size:0.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.name || 'Ürün'}</div>
-              <div style="font-size:0.8rem;color:#6b7280;">${qty} × ${price.toLocaleString('tr-TR')} ₺</div>
+              <div style="font-weight:600;color:#1f2937;font-size:1.05rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.name || 'Ürün'}</div>
+              <div style="font-size:0.95rem;color:#6b7280;">${qty} × ${price.toLocaleString('tr-TR')} ₺</div>
             </div>
-            <div style="font-weight:700;color:#059669;font-size:0.95rem;white-space:nowrap;">${(qty * price).toLocaleString('tr-TR')} ₺</div>
+            <div style="font-weight:700;color:#059669;font-size:1.1rem;white-space:nowrap;">${(qty * price).toLocaleString('tr-TR')} ₺</div>
           </div>
         `;
       }).join('');
@@ -6227,26 +6227,26 @@ try {
       // Meta bilgiler
       let metaHtml = '';
       if (cart.updatedAt) {
-        metaHtml += `<div style="font-size:0.8rem;color:#6b7280;margin-bottom:0.25rem;">📅 Son güncelleme: ${new Date(cart.updatedAt).toLocaleString('tr-TR')}</div>`;
+        metaHtml += `<div style="font-size:0.95rem;color:#6b7280;margin-bottom:0.35rem;">📅 Son güncelleme: ${new Date(cart.updatedAt).toLocaleString('tr-TR')}</div>`;
       }
       if (cart.lastReminderSentAt) {
-        metaHtml += `<div style="font-size:0.8rem;color:#f59e0b;margin-bottom:0.25rem;">📧 Son hatırlatma: ${new Date(cart.lastReminderSentAt).toLocaleString('tr-TR')}</div>`;
+        metaHtml += `<div style="font-size:0.95rem;color:#f59e0b;margin-bottom:0.35rem;">📧 Son hatırlatma: ${new Date(cart.lastReminderSentAt).toLocaleString('tr-TR')}</div>`;
       }
       if (cart.reminderCount) {
-        metaHtml += `<div style="font-size:0.8rem;color:#f59e0b;margin-bottom:0.25rem;">🔔 Hatırlatma sayısı: ${cart.reminderCount}</div>`;
+        metaHtml += `<div style="font-size:0.95rem;color:#f59e0b;margin-bottom:0.35rem;">🔔 Hatırlatma sayısı: ${cart.reminderCount}</div>`;
       }
 
       content.innerHTML = `
-        <div style="margin-bottom:1rem;">
-          <div style="font-weight:600;color:#064e3b;font-size:1rem;margin-bottom:0.5rem;">📧 ${email}</div>
+        <div style="margin-bottom:1.25rem;">
+          <div style="font-weight:600;color:#064e3b;font-size:1.15rem;margin-bottom:0.6rem;">📧 ${email}</div>
           ${metaHtml}
         </div>
-        <div style="margin-bottom:1rem;">
-          ${itemsHtml || '<div style="color:#6b7280;text-align:center;padding:1rem;">Sepet boş</div>'}
+        <div style="margin-bottom:1.25rem;">
+          ${itemsHtml || '<div style="color:#6b7280;text-align:center;padding:1rem;font-size:1rem;">Sepet boş</div>'}
         </div>
-        <div style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;padding:1rem;border-radius:12px;display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-weight:600;">Toplam</span>
-          <span style="font-size:1.25rem;font-weight:700;">${totalPrice.toLocaleString('tr-TR')} ₺</span>
+        <div style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;padding:1.25rem;border-radius:14px;display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-weight:600;font-size:1.1rem;">Toplam</span>
+          <span style="font-size:1.4rem;font-weight:700;">${totalPrice.toLocaleString('tr-TR')} ₺</span>
         </div>
       `;
 
