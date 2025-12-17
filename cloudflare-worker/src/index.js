@@ -186,8 +186,11 @@ https://ern-cicek.com.tr
 <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f8f6f3;margin:0;padding:20px;">
   <div style="max-width:600px;margin:0 auto;background:white;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.1);">
     <div style="background:linear-gradient(135deg,#0b2f1f,#1a4a35);color:white;padding:30px;text-align:center;">
-      <h1 style="margin:0;font-size:24px;">🌸 ERN-ÇİÇEK</h1>
-      <p style="margin:10px 0 0;opacity:0.9;">Siparişiniz Alındı!</p>
+      <div style="display:inline-block;margin-bottom:10px;">
+        <span style="font-size:32px;font-weight:800;letter-spacing:1px;text-shadow:0 2px 4px rgba(0,0,0,0.2);">🌿 ERN</span>
+        <span style="font-size:18px;font-weight:500;opacity:0.9;margin-left:4px;">ÇİÇEK</span>
+      </div>
+      <p style="margin:10px 0 0;opacity:0.9;font-size:16px;">✅ Siparişiniz Alındı!</p>
     </div>
     <div style="padding:30px;">
       <p style="color:#475569;font-size:16px;">Sayın <strong>${order.customerName}</strong>,</p>
