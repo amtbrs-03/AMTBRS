@@ -465,10 +465,13 @@
 </head>
 <body>
   <div class="invoice-header">
-    <h1>🌿 ERN Tropikal Çiçek</h1>
+    <div style="display:flex;align-items:center;justify-content:center;gap:15px;margin-bottom:10px;">
+      <img src="https://ern-cicek.com.tr/images/logo.png" alt="ERN Logo" style="height:60px;width:auto;" onerror="this.style.display='none'">
+      <h1 style="margin:0;">🌿 ERN Tropikal Çiçek</h1>
+    </div>
     <p><a href="https://ern-cicek.com.tr" style="color:#10b981;text-decoration:none;">ern-cicek.com.tr</a></p>
     <p>Bilgi Fişi Tarihi: ${new Date().toLocaleDateString('tr-TR')}</p>
-    <p style="margin-top:15px;padding:10px 20px;background:#fef3c7;border:1px solid #f59e0b;border-radius:6px;color:#92400e;font-size:0.85rem;display:inline-block;">Bu bir bilgilendirme fişidir. Fatura veya irsaliye yerine geçmez.</p>
+    <p style="margin-top:15px;padding:10px 20px;background:#f97316;border:1px solid #ea580c;border-radius:6px;color:#fff;font-size:0.85rem;display:inline-block;font-weight:600;">⚠️ Bu bir bilgilendirme fişidir. Fatura veya irsaliye yerine geçmez. ⚠️</p>
   </div>
 
   <div class="company-info">
