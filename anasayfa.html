@@ -4990,7 +4990,9 @@
                             const repo = 'AMTBRS';
                             const branch = 'site-release';
                             const filePath = `carts/${user.email}.json`;
-                            const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(filePath)}?ref=${branch}`;
+                            const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(filePath)}?ref=${branch}&t=${Date.now()}`;
+                            
+                            console.log('[Sync] Uzak sepet kontrol ediliyor:', filePath);
                             
                             const res = await fetch(apiUrl, {
                                 headers: { 'Accept': 'application/vnd.github.v3+json' },
@@ -5003,11 +5005,16 @@
                                 if (data.content) {
                                     const remoteCartJson = decodeURIComponent(escape(atob(data.content.replace(/\n/g, ''))));
                                     remoteCart = JSON.parse(remoteCartJson);
+                                    console.log('[Sync] Uzak sepet alındı:', remoteCart.items?.length || 0, 'ürün, güncelleme:', remoteCart.updatedAt);
                                 }
+                            } else {
+                                console.log('[Sync] Uzak sepet bulunamadı veya hata:', res.status);
+                                return;
                             }
                             
                             // Yerel sepeti al
                             const localCart = loadCart();
+                            console.log('[Sync] Yerel sepet:', localCart.length, 'ürün');
                             
                             // İki yönlü birleştirme: Her iki taraftaki ürünleri birleştir
                             const merged = [];
@@ -5026,6 +5033,8 @@
                                     const localTime = localItem.updatedAt || localItem.addedAt || 0;
                                     const remoteTime = remoteItem.updatedAt || remoteItem.addedAt || 0;
                                     
+                                    console.log('[Sync] Ürün karşılaştırma:', localItem.id, 'yerel:', localTime, 'qty:', localItem.qty, '| uzak:', remoteTime, 'qty:', remoteItem.qty);
+                                    
                                     if (remoteTime > localTime) {
                                         // Remote daha güncel, remote değerlerini kullan
                                         merged.push({
@@ -5033,10 +5042,12 @@
                                             name: remoteItem.name,
                                             price: remoteItem.price,
                                             qty: remoteItem.qty || 1,
+                                            image: remoteItem.image || localItem.image || '',
                                             addedAt: Math.min(localItem.addedAt || Date.now(), remoteItem.addedAt || Date.now()),
                                             updatedAt: remoteTime
                                         });
-                                        if (remoteItem.qty !== localItem.qty) hasChanges = true;
+                                        hasChanges = true;
+                                        console.log('[Sync] Remote daha güncel, remote kullanılıyor');
                                     } else {
                                         // Yerel daha güncel veya eşit, yerel değerleri koru
                                         merged.push({
@@ -5044,6 +5055,7 @@
                                             name: localItem.name,
                                             price: localItem.price,
                                             qty: localItem.qty || 1,
+                                            image: localItem.image || '',
                                             addedAt: Math.min(localItem.addedAt || Date.now(), remoteItem.addedAt || Date.now()),
                                             updatedAt: localTime || Date.now()
                                         });
@@ -5055,6 +5067,7 @@
                                         updatedAt: localItem.updatedAt || Date.now()
                                     });
                                     localHasNewItems = true;
+                                    console.log('[Sync] Sadece yerelde var:', localItem.id);
                                 }
                             }
                             
@@ -5071,26 +5084,31 @@
                                     });
                                     remoteHasNewItems = true;
                                     hasChanges = true;
+                                    console.log('[Sync] Sadece uzakta var:', remoteItem.id);
                                 }
                             }
+                            
+                            console.log('[Sync] Sonuç: hasChanges=', hasChanges, 'remoteHasNewItems=', remoteHasNewItems, 'localHasNewItems=', localHasNewItems);
                             
                             // Değişiklik varsa yerel sepeti güncelle
                             if (remoteHasNewItems || hasChanges) {
                                 localStorage.setItem(cartKeyForUser(user.email), JSON.stringify(merged));
                                 updateCartCount();
                                 renderMiniCart();
-                                console.log('Sepet senkronize edildi:', merged.length, 'ürün');
+                                console.log('[Sync] ✅ Sepet senkronize edildi:', merged.length, 'ürün');
                                 showNotification('🔄 Sepetiniz diğer cihazdan senkronize edildi', {type: 'info', duration: 3000});
+                            } else {
+                                console.log('[Sync] Değişiklik yok, senkronizasyon gerekmiyor');
                             }
                             
                             // Yerelde yeni ürün varsa remote'a da gönder (iki yönlü senkronizasyon)
                             if (localHasNewItems || (localCart.length > 0 && (!remoteCart.items || remoteCart.items.length === 0))) {
                                 try { persistCartSnapshot(merged, user); } catch(e) { /* sessiz */ }
-                                console.log('Yerel sepet remote\'a senkronize edildi');
+                                console.log('[Sync] ✅ Yerel sepet remote\'a senkronize edildi');
                             }
                             
                         } catch (e) {
-                            console.warn('Sepet senkronizasyonu başarısız:', e.message);
+                            console.warn('[Sync] ❌ Sepet senkronizasyonu başarısız:', e.message);
                         }
                     }
 
