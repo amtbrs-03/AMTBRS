@@ -5618,7 +5618,7 @@
                         cart.slice(0,6).forEach(item=>{
                             total += (item.price||0)*(item.qty||0);
                             const d = document.createElement('div'); d.className = 'mc-item';
-                            d.innerHTML = `<div style="width:44px;height:44px;border-radius:8px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:1.1rem">${escapeHtml((item.name||'').slice(0,1))}</div><div class="mc-name">${escapeHtml(item.name)}</div><div style="font-weight:700">₺${((item.price||0)*(item.qty||0)).toFixed(2)}</div>`;
+                            d.innerHTML = `<div style="width:44px;height:44px;border-radius:8px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:#fff;font-weight:700;text-transform:uppercase;box-shadow:0 2px 6px rgba(16,185,129,0.3)">${escapeHtml((item.name||'').slice(0,1))}</div><div class="mc-name">${escapeHtml(item.name)}</div><div style="font-weight:700">₺${((item.price||0)*(item.qty||0)).toFixed(2)}</div>`;
                             itemsEl.appendChild(d);
                         });
                         if (cart.length > 6){ const more = document.createElement('div'); more.style.padding='0.4rem'; more.style.color='#6b7280'; more.textContent = '+' + (cart.length-6) + ' diğer ürün'; itemsEl.appendChild(more); }
