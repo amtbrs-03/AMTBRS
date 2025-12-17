@@ -2941,24 +2941,32 @@
       <!-- Token ayar kartları kaldırıldı; başlık altına yerleştirilen küçük modal üzerinden yönetiliyor -->
 
       <div class="card">
-
+        <!-- Canlı Sepet Takibi Butonu -->
+        <button id="openLiveCartsBtn" class="btn" type="button" style="background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:#fff;border-radius:16px;font-weight:700;font-size:1.1rem;padding:1rem 2rem;box-shadow:0 4px 20px rgba(16,185,129,0.3);display:flex;align-items:center;gap:0.75rem;width:100%;">
+          <span style="font-size:1.8rem;">🛒</span>
+          <span>Canlı Sepet Takibi</span>
+          <span id="liveCartsCount" style="background:rgba(255,255,255,0.25);color:#fff;padding:4px 12px;border-radius:999px;font-size:0.85rem;font-weight:700;margin-left:auto;">0</span>
+        </button>
       </div>
 
-      <!-- Canlı Sepet Takibi Bölümü -->
-      <div class="card" id="liveCartsSection">
-        <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
-          <div style="display:flex;align-items:center;gap:0.5rem;">
-            <span style="font-size:2rem;">🛒</span>
-            <span style="font-size:1.15rem;font-weight:700;">CANLI SEPET TAKİBİ</span>
-            <span id="liveCartsCount" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;padding:2px 10px;border-radius:999px;font-size:0.8rem;font-weight:700;">0</span>
+      <!-- Canlı Sepet Takibi Modal -->
+      <div id="liveCartsModal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width:900px;max-height:90vh;overflow-y:auto;">
+          <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;padding:1.25rem 1.5rem;border-bottom:1px solid #e5e7eb;background:linear-gradient(135deg,#ecfdf5,#d1fae5);">
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+              <span style="font-size:1.8rem;">🛒</span>
+              <h2 style="margin:0;font-size:1.25rem;color:#064e3b;font-weight:700;">Canlı Sepet Takibi</h2>
+              <span id="liveCartsCountModal" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;padding:4px 12px;border-radius:999px;font-size:0.8rem;font-weight:700;">0</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+              <button id="refreshCartsBtn" class="btn btn-ghost" type="button" style="font-size:0.9rem;padding:0.5rem 1rem;">🔄 Yenile</button>
+              <span id="liveCartsStatus" style="font-size:0.75rem;color:#6b7280;">Son güncelleme: -</span>
+              <button id="closeLiveCartsBtn" class="close-modal" type="button" style="font-size:1.5rem;background:none;border:none;cursor:pointer;color:#6b7280;padding:0.25rem;">&times;</button>
+            </div>
           </div>
-          <div style="display:flex;gap:0.5rem;align-items:center;">
-            <button id="refreshCartsBtn" class="btn btn-ghost" type="button" style="font-size:0.9rem;">🔄 Yenile</button>
-            <span id="liveCartsStatus" style="font-size:0.75rem;color:var(--muted);">Son güncelleme: -</span>
+          <div id="liveCartsList" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:1rem;padding:1.5rem;">
+            <div style="text-align:center;padding:2rem;color:#6b7280;">Sepetler yükleniyor...</div>
           </div>
-        </div>
-        <div id="liveCartsList" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(300px, 1fr));gap:1rem;margin-top:1rem;">
-          <div style="text-align:center;padding:2rem;color:var(--muted);">Sepetler yükleniyor...</div>
         </div>
       </div>
 
@@ -6024,7 +6032,6 @@ try {
     // Sepetleri GitHub'dan çek
     async function loadLiveCarts() {
       const listEl = document.getElementById('liveCartsList');
-      const countEl = document.getElementById('liveCartsCount');
       const statusEl = document.getElementById('liveCartsStatus');
       
       if (!listEl) return;
@@ -6052,8 +6059,8 @@ try {
         const jsonFiles = files.filter(f => f.name.endsWith('.json'));
         
         if (jsonFiles.length === 0) {
-          listEl.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted);">📭 Henüz sepet yok</div>';
-          countEl.textContent = '0';
+          listEl.innerHTML = '<div style="text-align:center;padding:2rem;color:#6b7280;">📭 Henüz sepet yok</div>';
+          updateCartsCount(0);
           statusEl.textContent = 'Son güncelleme: ' + new Date().toLocaleTimeString('tr-TR');
           return;
         }
@@ -6082,11 +6089,11 @@ try {
         const activeCarts = carts.filter(c => c.items && c.items.length > 0);
         
         if (activeCarts.length === 0) {
-          listEl.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted);">📭 Aktif sepet yok (tüm sepetler boş)</div>';
-          countEl.textContent = '0';
+          listEl.innerHTML = '<div style="text-align:center;padding:2rem;color:#6b7280;">📭 Aktif sepet yok (tüm sepetler boş)</div>';
+          updateCartsCount(0);
         } else {
           listEl.innerHTML = activeCarts.map(cart => renderCartCard(cart)).join('');
-          countEl.textContent = activeCarts.length;
+          updateCartsCount(activeCarts.length);
         }
         
         statusEl.textContent = 'Son güncelleme: ' + new Date().toLocaleTimeString('tr-TR');
@@ -6216,6 +6223,34 @@ try {
       if (modal) modal.style.display = 'none';
     }
 
+    // Canlı Sepet Modal aç/kapat
+    function openLiveCartsModal() {
+      const modal = document.getElementById('liveCartsModal');
+      if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        loadLiveCarts(); // Modal açılınca yenile
+      }
+    }
+
+    function closeLiveCartsModal() {
+      const modal = document.getElementById('liveCartsModal');
+      if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    }
+
+    // Sayaçları güncelle (hem buton hem modal)
+    function updateCartsCount(count) {
+      const btnCount = document.getElementById('liveCartsCount');
+      const modalCount = document.getElementById('liveCartsCountModal');
+      if (btnCount) btnCount.textContent = count;
+      if (modalCount) modalCount.textContent = count;
+    }
+
     // Otomatik yenilemeyi başlat (2 dakikada bir)
     function startLiveCartsAutoRefresh() {
       if (liveCartsInterval) clearInterval(liveCartsInterval);
@@ -6224,6 +6259,26 @@ try {
 
     // Event listener'ları bağla
     document.addEventListener('DOMContentLoaded', function() {
+      // Modal aç butonu
+      const openBtn = document.getElementById('openLiveCartsBtn');
+      if (openBtn) {
+        openBtn.addEventListener('click', openLiveCartsModal);
+      }
+
+      // Modal kapat butonu
+      const closeBtn = document.getElementById('closeLiveCartsBtn');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', closeLiveCartsModal);
+      }
+
+      // Modal dışına tıklayınca kapat
+      const liveCartsModal = document.getElementById('liveCartsModal');
+      if (liveCartsModal) {
+        liveCartsModal.addEventListener('click', function(e) {
+          if (e.target === liveCartsModal) closeLiveCartsModal();
+        });
+      }
+
       // Yenile butonu
       const refreshBtn = document.getElementById('refreshCartsBtn');
       if (refreshBtn) {
@@ -6237,21 +6292,21 @@ try {
         });
       }
 
-      // Modal kapat butonu
-      const closeBtn = document.getElementById('closeCartDetailBtn');
-      if (closeBtn) {
-        closeBtn.addEventListener('click', closeCartDetailModal);
+      // Sepet Detay Modal kapat butonu
+      const closeDetailBtn = document.getElementById('closeCartDetailBtn');
+      if (closeDetailBtn) {
+        closeDetailBtn.addEventListener('click', closeCartDetailModal);
       }
 
-      // Modal dışına tıklayınca kapat
-      const modal = document.getElementById('cartDetailModal');
-      if (modal) {
-        modal.addEventListener('click', function(e) {
-          if (e.target === modal) closeCartDetailModal();
+      // Sepet Detay Modal dışına tıklayınca kapat
+      const detailModal = document.getElementById('cartDetailModal');
+      if (detailModal) {
+        detailModal.addEventListener('click', function(e) {
+          if (e.target === detailModal) closeCartDetailModal();
         });
       }
 
-      // Sayfa yüklenince sepetleri çek
+      // Sayfa yüklenince sepet sayısını çek (arka planda)
       loadLiveCarts();
       
       // Otomatik yenilemeyi başlat
@@ -6260,6 +6315,8 @@ try {
 
     // Global erişim için
     window.loadLiveCarts = loadLiveCarts;
+    window.openLiveCartsModal = openLiveCartsModal;
+    window.closeLiveCartsModal = closeLiveCartsModal;
     window.closeCartDetailModal = closeCartDetailModal;
   })();
   </script>
