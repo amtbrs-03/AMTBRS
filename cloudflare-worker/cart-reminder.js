@@ -29,10 +29,16 @@ export default {
     const RESEND_API_KEY = env.RESEND_API_KEY;
     const FROM_EMAIL = env.FROM_EMAIL || 'Ern Çiçek <siparis@ern-cicek.com.tr>';
     
-    // 3 saat = 10800000 ms
-    const REMINDER_THRESHOLD_MS = 3 * 60 * 60 * 1000;
-    // Hatırlatma gönderildikten sonra tekrar göndermemek için 24 saat bekle
-    const REMINDER_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+    // Hatırlatma aralıkları (ms cinsinden)
+    // 1. hatırlatma: 3 saat sonra
+    // 2. hatırlatma: 24 saat sonra (ilk hatırlatmadan 21 saat sonra)
+    // 3. hatırlatma: 72 saat sonra (2. hatırlatmadan 48 saat sonra)
+    const REMINDER_SCHEDULE = [
+      3 * 60 * 60 * 1000,      // 1. hatırlatma: 3 saat
+      24 * 60 * 60 * 1000,     // 2. hatırlatma: 24 saat
+      72 * 60 * 60 * 1000      // 3. hatırlatma: 72 saat (3 gün)
+    ];
+    const MAX_REMINDERS = 3;
     
     if (!TOKEN || !RESEND_API_KEY) {
       console.error('GITHUB_TOKEN veya RESEND_API_KEY eksik');
@@ -72,28 +78,35 @@ export default {
           if (!cart.items || cart.items.length === 0) continue;
           if (!cart.email) continue;
           
-          // 3 saatten fazla beklemiş mi?
+          // Maksimum hatırlatma sayısına ulaşıldıysa atla
+          const reminderCount = cart.reminderCount || 0;
+          if (reminderCount >= MAX_REMINDERS) continue;
+          
+          // Sepet ne kadar süredir bekliyor?
           const firstAddedAt = cart.firstAddedAt || cart.updatedAt || now;
           const waitingMs = now - firstAddedAt;
           
-          if (waitingMs < REMINDER_THRESHOLD_MS) continue;
+          // Sıradaki hatırlatma için gereken süreyi kontrol et
+          const nextReminderThreshold = REMINDER_SCHEDULE[reminderCount];
+          if (waitingMs < nextReminderThreshold) continue;
           
-          // Son hatırlatma kontrolü (24 saat içinde gönderilmişse atla)
+          // Son hatırlatmadan bu yana yeterli süre geçti mi?
+          // (Her hatırlatma arasında en az 3 saat olsun - cron tekrarlarını önle)
           const lastReminder = cart.lastReminderSentAt || 0;
-          if ((now - lastReminder) < REMINDER_COOLDOWN_MS) continue;
+          if (lastReminder > 0 && (now - lastReminder) < 3 * 60 * 60 * 1000) continue;
           
           // E-posta gönder
-          const emailSent = await sendReminderEmail(cart, env, FROM_EMAIL, RESEND_API_KEY);
+          const emailSent = await sendReminderEmail(cart, env, FROM_EMAIL, RESEND_API_KEY, reminderCount + 1);
           
           if (emailSent) {
             // Hatırlatma gönderildi olarak işaretle
             cart.lastReminderSentAt = now;
-            cart.reminderCount = (cart.reminderCount || 0) + 1;
+            cart.reminderCount = reminderCount + 1;
             
             // Güncellenmiş sepeti kaydet
             await updateCartFile(cart, file.path, OWNER, REPO, BRANCH, TOKEN);
             remindersSent++;
-            console.log(`Hatırlatma gönderildi: ${cart.email}`);
+            console.log(`Hatırlatma #${cart.reminderCount} gönderildi: ${cart.email}`);
           }
         } catch (e) {
           console.error(`Sepet işlenirken hata (${file.name}):`, e.message);
@@ -126,7 +139,7 @@ export default {
 };
 
 // Hatırlatma e-postası gönder
-async function sendReminderEmail(cart, env, fromEmail, apiKey) {
+async function sendReminderEmail(cart, env, fromEmail, apiKey, reminderNumber) {
   const { email, name, items, totalPrice, totalQty } = cart;
   
   // Ürün listesi HTML
@@ -139,6 +152,31 @@ async function sendReminderEmail(cart, env, fromEmail, apiKey) {
   `).join('');
   
   const customerName = name || email.split('@')[0];
+  
+  // Hatırlatma numarasına göre farklı mesajlar
+  let subjectLine, greetingMessage, reminderMessage;
+  
+  switch (reminderNumber) {
+    case 1:
+      subjectLine = '🌿 Sepetinizde sizi bekleyen bitkiler var!';
+      greetingMessage = `Sepetinizde sizi bekleyen güzel bitkiler var! Bu özel ürünleri seçtiniz ama alışverişinizi henüz tamamlamadınız.`;
+      reminderMessage = `Stok durumu değişebilir, bu yüzden favori bitkilerinizi kaçırmamak için alışverişinizi tamamlamanızı öneririz. 🌱`;
+      break;
+    case 2:
+      subjectLine = '🌱 Sepetiniz hâlâ sizi bekliyor';
+      greetingMessage = `Seçtiğiniz bitkiler hâlâ sepetinizde sizi bekliyor. Alışverişinizi yarım bıraktığınızı fark ettik.`;
+      reminderMessage = `Bu güzel bitkilerin yeni evlerine kavuşmasını bekliyoruz. Sipariş vermek için doğru zaman olabilir! 🌿`;
+      break;
+    case 3:
+      subjectLine = '🍃 Sepetiniz';
+      greetingMessage = `Sepetinizde hâlâ bekleyen ürünleriniz var.`;
+      reminderMessage = ``;
+      break;
+    default:
+      subjectLine = '🌿 Sepetinizde ürünler var';
+      greetingMessage = `Sepetinizde bekleyen ürünler var.`;
+      reminderMessage = `Alışverişinizi tamamlamak ister misiniz?`;
+  }
   
   const htmlContent = `
 <!DOCTYPE html>
@@ -162,11 +200,11 @@ async function sendReminderEmail(cart, env, fromEmail, apiKey) {
       <h2 style="color: #1f2937; margin: 0 0 15px 0; font-size: 20px;">Merhaba ${customerName} 👋</h2>
       
       <p style="color: #4b5563; line-height: 1.6; margin: 0 0 20px 0;">
-        Sepetinizde sizi bekleyen güzel bitkiler var! Bu özel ürünleri seçtiniz ama alışverişinizi henüz tamamlamadınız.
+        ${greetingMessage}
       </p>
       
       <p style="color: #4b5563; line-height: 1.6; margin: 0 0 25px 0;">
-        Stok durumu değişebilir, bu yüzden favori bitkilerinizi kaçırmamak için alışverişinizi tamamlamanızı öneririz. 🌱
+        ${reminderMessage}
       </p>
       
       <!-- Ürün Tablosu -->
@@ -220,7 +258,9 @@ async function sendReminderEmail(cart, env, fromEmail, apiKey) {
   const textContent = `
 Merhaba ${customerName},
 
-Sepetinizde sizi bekleyen güzel bitkiler var!
+${greetingMessage}
+
+${reminderMessage}
 
 Sepetinizdeki Ürünler:
 ${items.map(item => `- ${item.name} (${item.qty} adet): ₺${(item.price * item.qty).toFixed(2)}`).join('\n')}
@@ -242,7 +282,7 @@ Ern Çiçek
       body: JSON.stringify({
         from: fromEmail,
         to: [email],
-        subject: '🌿 Sepetinizde sizi bekleyen bitkiler var!',
+        subject: subjectLine,
         html: htmlContent,
         text: textContent
       })
