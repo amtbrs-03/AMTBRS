@@ -328,6 +328,8 @@
       const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
       const userName = user ? user.name : 'Misafir';
       const userEmail = user ? user.email : '-';
+      const userPhone = user ? (user.phone || '-') : '-';
+      const userAddress = user ? (user.address || '-') : '-';
       
       // Sepet verilerini al
       let cartItems = [];
@@ -338,11 +340,13 @@
       
       // Ürün listesi oluştur
       let productList = '';
+      let itemTotal = 0;
       if (cartItems.length > 0) {
         productList = cartItems.map((item, i) => {
           const qty = item.qty || item.quantity || 1;
           const price = item.price || 0;
-          return `${i+1}. ${item.name} (${qty} adet - ₺${price})`;
+          itemTotal += price * qty;
+          return `${i+1}. ${item.name} (${qty} adet × ₺${price} = ₺${price * qty})`;
         }).join('\n');
       }
       
@@ -354,13 +358,17 @@
       
       // Detaylı mesaj oluştur
       let message = `Merhaba, ERN-ÇİÇEK ödeme sayfasından yazıyorum.\n\n`;
-      message += `📋 Sorgu ID: ${orderId}\n`;
-      message += `👤 Müşteri: ${userName}\n`;
-      message += `📧 Email: ${userEmail}\n`;
-      message += `💰 ${total}\n\n`;
+      message += `📋 Sorgu ID: ${orderId}\n\n`;
+      
+      message += `👤 *ÜYE BİLGİLERİ*\n`;
+      message += `• İsim: ${userName}\n`;
+      message += `• E-posta: ${userEmail}\n`;
+      message += `• Telefon: ${userPhone}\n`;
+      message += `• Adres: ${userAddress}\n\n`;
       
       if (productList) {
-        message += `🛒 Sepetteki Ürünler:\n${productList}\n\n`;
+        message += `🛒 *SEPET İÇERİĞİ*\n${productList}\n\n`;
+        message += `💰 Toplam: ${total}\n\n`;
       }
       
       if (orderNote) {
