@@ -16,5 +16,5 @@
   "shippingTime": "1-3 İŞ GÜNÜ",
   "shippingCost": 120,
   "freeShippingThreshold": 0,
-  "commitEndpoint": "https://ern-site.amtbrs.workers.dev/commit"
+  "commitEndpoint": "https://ern-site.amtbrs-03.workers.dev/commit"
 }
