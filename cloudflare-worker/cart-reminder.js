@@ -199,8 +199,9 @@ async function sendReminderEmail(cart, env, fromEmail, apiKey) {
         </a>
       </div>
       
-      <p style="color: #6b7280; font-size: 13px; line-height: 1.6; margin: 0; text-align: center;">
-        Sorularınız mı var? Bize her zaman <a href="mailto:info@ern-cicek.com.tr" style="color: #16a34a;">info@ern-cicek.com.tr</a> adresinden ulaşabilirsiniz.
+      <p style="color: #ef4444; font-size: 12px; line-height: 1.6; margin: 0; text-align: center; background: #fef2f2; padding: 10px; border-radius: 6px;">
+        ⚠️ Bu e-postaya yanıt vermeyiniz. İletileriniz bu kanaldan tarafımıza ulaşmaz.<br>
+        Lütfen <a href="https://ern-cicek.com.tr/anasayfa.html#iletisim" style="color: #16a34a; font-weight: 600;">sitemizin iletişim bölümünü</a> kullanın.
       </p>
       
     </div>
