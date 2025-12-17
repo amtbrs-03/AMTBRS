@@ -323,7 +323,8 @@
       phone = phone.replace(/\+/g, '');
       
       // Kullanıcı ve sepet bilgilerini topla
-      const total = document.getElementById('total').textContent || '';
+      const totalEl = document.getElementById('grandTotal');
+      const total = totalEl ? totalEl.textContent : '';
       const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
       const userName = user ? user.name : 'Misafir';
       const userEmail = user ? user.email : '-';
