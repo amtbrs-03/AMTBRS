@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Faturalar - ERN-ÇİÇEK Admin</title>
+  <title>Bilgi Fişleri - ERN-ÇİÇEK Admin</title>
   <style>
     :root{
       --green-primary: #10b981;
@@ -235,16 +235,16 @@
 <body>
   <div class="container">
     <div class="page-header">
-      <h1>🧾 Faturalar</h1>
+      <h1>�� Bilgi Fişleri</h1>
       <div class="header-actions">
-        <button id="refreshBtn" class="btn">🔄 Faturaları Yenile</button>
+        <button id="refreshBtn" class="btn">🔄 Bilgi Fişlerini Yenile</button>
         <a href="admin.html" class="btn btn-white">← Admin Panele Dön</a>
       </div>
     </div>
 
     <div class="stats">
       <div class="stat-card">
-        <div class="label">📊 Toplam Fatura</div>
+        <div class="label">📊 Toplam Bilgi Fişi</div>
         <div class="number" id="totalInvoices">0</div>
       </div>
       <div class="stat-card">
@@ -255,11 +255,11 @@
 
     <div class="invoices-container">
       <div class="invoices-header">
-        <h2>Fatura Listesi</h2>
+        <h2>Bilgi Fişi Listesi</h2>
         <div id="lastUpdate" style="color:var(--muted);font-size:0.9rem;"></div>
       </div>
       <div id="invoicesContent">
-        <div class="loading">⏳ Faturalar yükleniyor...</div>
+        <div class="loading">⏳ Bilgi Fişleri yükleniyor...</div>
       </div>
     </div>
   </div>
@@ -277,7 +277,7 @@
 
     async function loadInvoices() {
       const contentEl = document.getElementById('invoicesContent');
-      contentEl.innerHTML = '<div class="loading">⏳ Faturalar GitHub\'dan çekiliyor...</div>';
+      contentEl.innerHTML = '<div class="loading">⏳ Bilgi Fişleri GitHub\'dan çekiliyor...</div>';
 
       try {
         const owner = 'amtbrs-03';
@@ -286,7 +286,7 @@
         const cacheBuster = Date.now();
         const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/invoices?ref=${branch}&_cb=${cacheBuster}`;
         
-        console.log('Faturalar çekiliyor (URL):', apiUrl);
+        console.log('Bilgi Fişleri çekiliyor (URL):', apiUrl);
         
         const res = await fetch(apiUrl, {
           headers: { 'Accept': 'application/vnd.github.v3+json' }
@@ -296,7 +296,7 @@
         
         if (!res.ok) {
           if (res.status === 404) {
-            contentEl.innerHTML = '<div class="empty">📭 Henüz fatura oluşturulmamış.</div>';
+            contentEl.innerHTML = '<div class="empty">📭 Henüz bilgi fişi oluşturulmamış.</div>';
             updateStats([]);
             return;
           }
@@ -309,10 +309,10 @@
         console.log('invoices/ klasöründeki dosya sayısı:', files.length);
         
         const invoiceFiles = files.filter(f => f.name.endsWith('.json') && f.name !== '.gitkeep');
-        console.log('Fatura dosyaları:', invoiceFiles.length);
+        console.log('Bilgi Fişi dosyaları:', invoiceFiles.length);
         
         if (invoiceFiles.length === 0) {
-          contentEl.innerHTML = '<div class="empty">📭 Henüz fatura oluşturulmamış.</div>';
+          contentEl.innerHTML = '<div class="empty">📭 Henüz bilgi fişi oluşturulmamış.</div>';
           updateStats([]);
           return;
         }
@@ -320,7 +320,7 @@
         invoicesData = [];
         for (const file of invoiceFiles) {
           try {
-            console.log('Fatura çekiliyor (raw-first):', file.name);
+            console.log('Bilgi Fişi çekiliyor (raw-first):', file.name);
             // Try raw first
             const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/invoices/${file.name}`;
             let invoiceRes = await fetch(rawUrl + `?t=${Date.now()}`);
@@ -336,17 +336,17 @@
               invoicesData.push(invoiceData);
             }
           } catch(e) {
-            console.error('Fatura yüklenemedi:', file.name, e);
+            console.error('Bilgi Fişi yüklenemedi:', file.name, e);
           }
         }
         
         if (invoicesData.length === 0) {
-          contentEl.innerHTML = '<div class="empty">❌ Fatura verileri yüklenemedi.</div>';
+          contentEl.innerHTML = '<div class="empty">❌ Bilgi Fişi verileri yüklenemedi.</div>';
           updateStats([]);
           return;
         }
         
-        console.log('Toplam yüklenen fatura:', invoicesData.length);
+        console.log('Toplam yüklenen bilgi fişi:', invoicesData.length);
         
         invoicesData.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
         
@@ -363,7 +363,7 @@
         document.getElementById('lastUpdate').textContent = `Son güncelleme: ${now}`;
         
       } catch(err) {
-        console.error('Faturalar yüklenemedi:', err);
+        console.error('Bilgi Fişleri yüklenemedi:', err);
         let errorMsg = err.message;
         if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
           errorMsg = 'Ağ hatası: GitHub API\'ye erişilemiyor.';
@@ -388,7 +388,7 @@
     function renderInvoicesTable(invoices) {
       let html = '<table id="invoicesTable">';
       html += '<thead><tr>';
-      html += '<th>🧾 Fatura No</th>';
+      html += '<th>🧾 Bilgi Fişi No</th>';
       html += '<th>📦 Sipariş No</th>';
       html += '<th>📅 Oluşturma Tarihi</th>';
       html += '<th>🔗 İşlem</th>';
@@ -441,7 +441,7 @@
         invoiceWindow.document.write(html);
         invoiceWindow.document.close();
       } else {
-        alert('Fatura içeriği bulunamadı!');
+        alert('Bilgi Fişi içeriği bulunamadı!');
       }
     }
 
@@ -453,7 +453,7 @@
       await loadInvoices();
       
       btn.disabled = false;
-      btn.textContent = '🔄 Faturaları Yenile';
+      btn.textContent = '🔄 Bilgi Fişlerini Yenile';
     });
 
     loadInvoices();

@@ -93,7 +93,7 @@
       <h1>📦 Sipariş Detayı</h1>
       <div class="header-actions">
         <a href="siparisler.html" class="btn btn-white">← Sipariş Listesine Dön</a>
-        <button id="createInvoiceBtn" class="btn btn-orange">🧾 Fatura Oluştur</button>
+        <button id="createInvoiceBtn" class="btn btn-orange">🧾 Bilgi Fişi Oluştur</button>
         <button id="editOrderBtn" class="btn">✏️ Düzenle</button>
         <button id="customerNoteBtn" class="btn no-note">💬 Müşteri Notu</button>
         <button id="refreshBtn" class="btn btn-white" onclick="location.reload(true)">🔄 Yenile</button>
@@ -177,16 +177,16 @@
           if (btn) {
             if (exists) {
               btn.disabled = true;
-              btn.textContent = '🧾 Fatura Zaten Oluşturulmuş';
-              btn.title = 'Bu sipariş için fatura daha önce oluşturulmuş';
+              btn.textContent = '🧾 Bilgi Fişi Zaten Oluşturulmuş';
+              btn.title = 'Bu sipariş için bilgi fişi daha önce oluşturulmuş';
             } else {
               btn.disabled = false;
-              btn.textContent = '🧾 Fatura Oluştur';
+              btn.textContent = '🧾 Bilgi Fişi Oluştur';
               btn.title = '';
             }
           }
         } catch (e) {
-          console.warn('Fatura var mı kontrolü başarısız:', e);
+          console.warn('Bilgi Fişi var mı kontrolü başarısız:', e);
         }
         
       } catch(err) {
@@ -401,17 +401,17 @@
       try {
         const exists = await checkInvoiceExists(currentOrder.id);
         if (exists) {
-          alert(`⚠️ Fatura Zaten Mevcut\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n\nBu sipariş için fatura daha önce oluşturulmuş.`);
+          alert(`⚠️ Bilgi Fişi Zaten Mevcut\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n\nBu sipariş için bilgi fişi daha önce oluşturulmuş.`);
           const btn = document.getElementById('createInvoiceBtn');
           if (btn) {
             btn.disabled = true;
-            btn.textContent = '🧾 Fatura Zaten Oluşturulmuş';
-            btn.title = 'Bu sipariş için fatura daha önce oluşturulmuş';
+            btn.textContent = '🧾 Bilgi Fişi Zaten Oluşturulmuş';
+            btn.title = 'Bu sipariş için bilgi fişi daha önce oluşturulmuş';
           }
           return;
         }
       } catch (e) {
-        console.warn('Fatura mevcut mu kontrolü yapılamadı, devam ediliyor...', e);
+        console.warn('Bilgi Fişi mevcut mu kontrolü yapılamadı, devam ediliyor...', e);
       }
       
       // Create invoice HTML
@@ -631,11 +631,11 @@
         // First, check existence explicitly to avoid accidental overwrite
         const alreadyExists = await checkInvoiceExists(orderId);
         if (alreadyExists) {
-          alert('BU FATURA DAHA ÖNCE OLUŞTURULMUŞ');
+          alert('BU BİLGİ FİŞİ DAHA ÖNCE OLUŞTURULMUŞ');
           const btn = document.getElementById('createInvoiceBtn');
           if (btn) {
             btn.disabled = true;
-            btn.textContent = '🧾 Fatura Zaten Oluşturulmuş';
+            btn.textContent = '🧾 Bilgi Fişi Zaten Oluşturulmuş';
           }
           return;
         }
@@ -648,7 +648,7 @@
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            message: `Fatura oluşturuldu: ${invoiceFileName}`,
+            message: `Bilgi Fişi oluşturuldu: ${invoiceFileName}`,
             content: btoa(unescape(encodeURIComponent(invoiceContent))),
             branch: 'site-release'
           })
@@ -656,21 +656,21 @@
         
         if (response.ok) {
           console.log('✅ Invoice saved to GitHub successfully');
-          // UI'ı güncelle - fatura butonu devre dışı bırak
+          // UI'ı güncelle - bilgi fişi butonu devre dışı bırak
           const btn = document.getElementById('createInvoiceBtn');
           if (btn) {
             btn.disabled = true;
-            btn.textContent = '🧾 Fatura Oluşturuldu';
+            btn.textContent = '🧾 Bilgi Fişi Oluşturuldu';
             btn.style.background = '#9ca3af';
           }
           // Durumu "Hazır" olarak güncelle (zaten updateOrderStatus ile yapıldı ama emin olmak için UI'ı tekrar render et)
           currentOrder.status = 'ready';
           renderOrderDetail(currentOrder);
-          alert(`✅ Fatura Kaydedildi\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n💰 Tutar: ${currentOrder.total || '-'} TL\n\nFatura başarıyla sisteme kaydedildi.\nSipariş durumu "Hazır" olarak güncellendi.`);
+          alert(`✅ Bilgi Fişi Kaydedildi\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n💰 Tutar: ${currentOrder.total || '-'} TL\n\nBilgi Fişi başarıyla sisteme kaydedildi.\nSipariş durumu "Hazır" olarak güncellendi.`);
         } else {
           const errorText = await response.text();
           console.error('❌ Invoice save failed:', response.status, errorText);
-          alert(`⚠️ Fatura Kayıt Uyarısı\n\n📦 Sipariş: ${currentOrder.id}\n\nFatura GitHub'a kaydedilemedi ancak sipariş durumu güncellendi.\nDetaylar için console'u kontrol edin.`);
+          alert(`⚠️ Bilgi Fişi Kayıt Uyarısı\n\n📦 Sipariş: ${currentOrder.id}\n\nBilgi Fişi GitHub'a kaydedilemedi ancak sipariş durumu güncellendi.\nDetaylar için console'u kontrol edin.`);
         }
       } catch(err) {
         console.error('Failed to save invoice to GitHub:', err);
@@ -941,14 +941,14 @@
               });
               if (emailRes.ok) {
                 console.log('✅ Order ready email sent to customer');
-                alert(`✅ Fatura Oluşturuldu\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n💰 Tutar: ${currentOrder.total || '-'} TL\n\nSipariş durumu "Hazır" olarak güncellendi.\n📧 Müşteriye bildirim e-postası gönderildi.`);
+                alert(`✅ Bilgi Fişi Oluşturuldu\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n💰 Tutar: ${currentOrder.total || '-'} TL\n\nSipariş durumu "Hazır" olarak güncellendi.\n📧 Müşteriye bildirim e-postası gönderildi.`);
               } else {
                 console.warn('⚠️ Order ready email failed:', emailRes.status);
-                alert(`✅ Fatura Oluşturuldu\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n💰 Tutar: ${currentOrder.total || '-'} TL\n\nSipariş durumu "Hazır" olarak güncellendi.\n⚠️ Müşteriye e-posta gönderilemedi.`);
+                alert(`✅ Bilgi Fişi Oluşturuldu\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n💰 Tutar: ${currentOrder.total || '-'} TL\n\nSipariş durumu "Hazır" olarak güncellendi.\n⚠️ Müşteriye e-posta gönderilemedi.`);
               }
             } catch (emailErr) {
               console.error('❌ Order ready email error:', emailErr);
-              alert(`✅ Fatura Oluşturuldu\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n💰 Tutar: ${currentOrder.total || '-'} TL\n\nSipariş durumu "Hazır" olarak güncellendi.`);
+              alert(`✅ Bilgi Fişi Oluşturuldu\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n💰 Tutar: ${currentOrder.total || '-'} TL\n\nSipariş durumu "Hazır" olarak güncellendi.`);
             }
           } else {
             const statusNames = { pending: 'Beklemede', processing: 'İşleniyor', ready: 'Hazır', shipped: 'Gönderildi', paid: 'Ödendi' };
