@@ -4,7 +4,7 @@
   "customerEmail": "amtbrs@icloud.com",
   "customerName": "AHMET BURSA",
   "customerPhone": "+90 530 306 9081",
-  "address": "FevziÃ§akmak Caddesi No:47 KÄ±smet Apt., ÃaÄlayan Mahallesi, KaÄÄ±thane, Ä°stanbul, ÃaÄlayan Mahallesi, KaÄÄ±thane, Ä°stanbul, Posta Kodu 34403",
+  "address": "FevziÃÂ§akmak Caddesi No:47 KÃÂ±smet Apt., ÃÂaÃÂlayan Mahallesi, KaÃÂÃÂ±thane, ÃÂ°stanbul, ÃÂaÃÂlayan Mahallesi, KaÃÂÃÂ±thane, ÃÂ°stanbul, Posta Kodu 34403",
   "iban": "TRXX 0006 1005 1978 6457 8413 26",
   "note": "Bu mobilden test siparisidir",
   "noteRead": true,
@@ -12,7 +12,7 @@
   "items": [
     {
       "id": "TEMP-1765831765562",
-      "name": "PHÄ°LODENDRON FELÄ°X",
+      "name": "PHÃÂ°LODENDRON FELÃÂ°X",
       "price": 1100,
       "qty": 3,
       "addedAt": 1765999441744,
