@@ -6244,13 +6244,88 @@ try {
         <div style="margin-bottom:1.25rem;">
           ${itemsHtml || '<div style="color:#6b7280;text-align:center;padding:1rem;font-size:1rem;">Sepet boş</div>'}
         </div>
-        <div style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;padding:1.25rem;border-radius:14px;display:flex;justify-content:space-between;align-items:center;">
+        <div style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;padding:1.25rem;border-radius:14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
           <span style="font-weight:600;font-size:1.1rem;">Toplam</span>
           <span style="font-size:1.4rem;font-weight:700;">${totalPrice.toLocaleString('tr-TR')} ₺</span>
         </div>
+        <button onclick="deleteCartFromAdmin('${email}')" style="width:100%;background:#dc2626;color:#fff;border:none;padding:0.875rem;border-radius:10px;font-size:1rem;font-weight:600;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">
+          🗑️ Sepeti Sil
+        </button>
       `;
 
       modal.style.display = 'flex';
+    };
+
+    // Admin'den sepet silme fonksiyonu
+    window.deleteCartFromAdmin = async function(email) {
+      if (!confirm(`"${email}" sepetini silmek istediğinize emin misiniz?`)) {
+        return;
+      }
+      
+      const token = getToken();
+      if (!token) {
+        alert('GitHub token bulunamadı!');
+        return;
+      }
+      
+      // Progress modal aç
+      openRefreshModal({
+        title: '🗑️ Sepet Siliniyor',
+        progressTitle: 'Sepet siliniyor...'
+      });
+      updateRefreshProgress(20, 'GitHub bağlantısı kuruluyor...');
+      
+      try {
+        const filePath = `carts/${email}.json`;
+        const apiUrl = `https://api.github.com/repos/amtbrs-03/AMTBRS/contents/${encodeURIComponent(filePath)}?ref=site-release`;
+        
+        // Önce SHA al
+        updateRefreshProgress(40, 'Dosya bilgisi alınıyor...');
+        const headRes = await fetch(apiUrl, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
+        
+        if (!headRes.ok) {
+          throw new Error('Sepet dosyası bulunamadı');
+        }
+        
+        const headData = await headRes.json();
+        const sha = headData.sha;
+        
+        // Sil
+        updateRefreshProgress(70, 'Dosya siliniyor...');
+        const delRes = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/${encodeURIComponent(filePath)}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: `chore: admin deleted cart ${email}`,
+            sha: sha,
+            branch: 'site-release'
+          })
+        });
+        
+        if (!delRes.ok) {
+          throw new Error('Silme işlemi başarısız: ' + delRes.status);
+        }
+        
+        updateRefreshProgress(100, 'Tamamlandı!');
+        finishRefreshSuccess('Sepet silindi: ' + email);
+        
+        // Detay modalı kapat ve listeyi yenile
+        closeCartDetailModal();
+        setTimeout(() => loadLiveCarts(false), 500);
+        
+      } catch (e) {
+        console.error('Sepet silme hatası:', e);
+        finishRefreshError(e.message);
+      }
     };
 
     // Modalı kapat
