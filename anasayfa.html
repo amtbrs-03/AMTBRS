@@ -5035,8 +5035,19 @@
                                     remoteCart = JSON.parse(remoteCartJson);
                                     console.log('[Sync] Uzak sepet alındı:', remoteCart.items?.length || 0, 'ürün, güncelleme:', remoteCart.updatedAt);
                                 }
+                            } else if (res.status === 404) {
+                                // Uzak sepet silinmiş - yerel sepeti de temizle (başka cihazdan silinmiş olabilir)
+                                const localCart = loadCart();
+                                if (localCart.length > 0) {
+                                    console.log('[Sync] Uzak sepet silinmiş, yerel sepet de temizleniyor');
+                                    localStorage.removeItem(cartKeyForUser(user.email));
+                                    renderCart();
+                                    updateCartCount();
+                                    showNotification('Sepetiniz başka bir cihazdan temizlendi', {type: 'info', duration: 3000});
+                                }
+                                return;
                             } else {
-                                console.log('[Sync] Uzak sepet bulunamadı veya hata:', res.status);
+                                console.log('[Sync] Uzak sepet erişim hatası:', res.status);
                                 return;
                             }
                             
