@@ -380,6 +380,23 @@
         alert('❌ Sipariş Hatası\n\nSipariş bilgisi yüklenemedi. Sayfayı yenileyip tekrar deneyin.');
         return;
       }
+      
+      // Mojibake düzeltme fonksiyonu
+      function normalizeText(s){
+        s = String(s || '').trim();
+        if (!s) return s;
+        const mojibakeMap = {
+          'Ã§': 'ç', 'Ã‡': 'Ç', 'ÄŸ': 'ğ', 'Ä±': 'ı', 'Ä°': 'İ',
+          'Ã¶': 'ö', 'Ã–': 'Ö', 'ÅŸ': 'ş', 'Åž': 'Ş',
+          'Ã¼': 'ü', 'Ãœ': 'Ü', 'Ã¢': 'â', 'Ã®': 'î', 'Ã»': 'û', 'Ã´': 'ô',
+          'Ã©': 'é', 'Ã¨': 'è', 'Ã ': 'à', 'Ã¹': 'ù'
+        };
+        for (const [broken, fixed] of Object.entries(mojibakeMap)) {
+          s = s.split(broken).join(fixed);
+        }
+        try { const fixed = decodeURIComponent(escape(s)); if (fixed && fixed !== s) return fixed; } catch(_) {}
+        return s;
+      }
 
       // Prevent duplicate invoice creation
       try {
