@@ -199,6 +199,33 @@
       function normalizeText(s){
         s = String(s || '').trim();
         if (!s) return s;
+        
+        // Mojibake düzeltme haritası (UTF-8 -> Latin-1 -> UTF-8 bozulması)
+        const mojibakeMap = {
+          'Ã§': 'ç', 'Ã‡': 'Ç',
+          'ÄŸ': 'ğ', 'Ä±': 'ı', 'Ä°': 'İ',
+          'Ã¶': 'ö', 'Ã–': 'Ö',
+          'ÅŸ': 'ş', 'Åž': 'Ş',
+          'Ã¼': 'ü', 'Ãœ': 'Ü',
+          'Ã¤': 'ä', 'Ã„': 'Ä',
+          'Ã¢': 'â', 'Ã‚': 'Â',
+          'Ãª': 'ê', 'ÃŠ': 'Ê',
+          'Ã®': 'î', 'ÃŽ': 'Î',
+          'Ã»': 'û', 'Ã›': 'Û',
+          'Ã´': 'ô', 'Ã"': 'Ô',
+          'Ã ': 'à', 'Ã€': 'À',
+          'Ã©': 'é', 'Ã‰': 'É',
+          'Ã¨': 'è', 'Ãˆ': 'È',
+          'Ã¹': 'ù', 'Ã™': 'Ù',
+          'Ã±': 'ñ', 'Ã'': 'Ñ'
+        };
+        
+        // Mojibake karakterlerini düzelt
+        for (const [broken, fixed] of Object.entries(mojibakeMap)) {
+          s = s.split(broken).join(fixed);
+        }
+        
+        // Eski yöntemler (fallback)
         try { const fixed = decodeURIComponent(escape(s)); if (fixed && fixed !== s) return fixed; } catch(_) {}
         try { if (/%[0-9A-Fa-f]{2}/.test(s)) return decodeURIComponent(s); } catch(_) {}
         return s;
