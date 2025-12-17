@@ -274,6 +274,81 @@ https://ern-cicek.com.tr
         return new Response(body, { status: commitOk ? 201 : 200, headers: jsonHeaders(allowOrigin) });
       }
 
+      // Generic commit endpoint for cart snapshots and other files
+      if (path === '/commit' && request.method === 'POST') {
+        const payload = await readJsonLoose(request);
+        const files = payload?.files || [];
+        const message = payload?.message || 'chore: auto commit';
+        
+        if (!Array.isArray(files) || files.length === 0) {
+          return new Response(JSON.stringify({ ok: false, error: 'No files provided' }), { 
+            status: 400, headers: jsonHeaders(allowOrigin) 
+          });
+        }
+        
+        const owner = env.GITHUB_OWNER || 'amtbrs-03';
+        const repo = env.GITHUB_REPO || 'AMTBRS';
+        const branch = env.GITHUB_BRANCH || 'site-release';
+        const token = env.GITHUB_TOKEN || env.GH_TOKEN;
+        
+        if (!token) {
+          return new Response(JSON.stringify({ ok: false, error: 'GitHub token not configured' }), { 
+            status: 500, headers: jsonHeaders(allowOrigin) 
+          });
+        }
+        
+        const results = [];
+        for (const file of files) {
+          const filePath = file.path;
+          const content = file.contentBase64 || file.content;
+          if (!filePath || !content) continue;
+          
+          try {
+            const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(filePath)}`;
+            
+            // Check if file exists to get SHA
+            let existingSha = null;
+            try {
+              const headRes = await fetch(apiUrl + `?ref=${branch}`, { 
+                headers: { 
+                  Authorization: `Bearer ${token}`, 
+                  Accept: 'application/vnd.github+json', 
+                  'User-Agent': 'Cloudflare-Worker' 
+                } 
+              });
+              if (headRes.ok) { 
+                const j = await headRes.json(); 
+                existingSha = j.sha; 
+              }
+            } catch (_) {}
+            
+            const putBody = { message, content, branch };
+            if (existingSha) putBody.sha = existingSha;
+            
+            const putRes = await fetch(apiUrl, { 
+              method: 'PUT', 
+              headers: { 
+                Authorization: `Bearer ${token}`, 
+                Accept: 'application/vnd.github+json', 
+                'Content-Type': 'application/json', 
+                'User-Agent': 'Cloudflare-Worker' 
+              }, 
+              body: JSON.stringify(putBody) 
+            });
+            
+            results.push({ path: filePath, ok: putRes.ok, status: putRes.status });
+          } catch (e) {
+            results.push({ path: filePath, ok: false, error: e.message });
+          }
+        }
+        
+        const allOk = results.every(r => r.ok);
+        return new Response(JSON.stringify({ ok: allOk, results }), { 
+          status: allOk ? 200 : 207, 
+          headers: jsonHeaders(allowOrigin) 
+        });
+      }
+
       if (path === '/update-user' && request.method === 'POST') {
         const payload = await readJsonLoose(request);
         // Expect full user record with email
