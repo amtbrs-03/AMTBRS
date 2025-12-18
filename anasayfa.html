@@ -4987,20 +4987,22 @@
                     // Uzak sepeti GitHub'dan çek ve yerel sepet ile birleştir (iki yönlü cihazlar arası senkronizasyon)
                     let syncRateLimited = false;
                     let syncRateLimitResetTime = 0;
+                    let cartClearInProgress = false;
+                    let cartClearedAt = 0;
                     
                     async function syncRemoteCart() {
                         const user = getCurrentUser();
                         if (!user || !user.email) return;
                         
                         // Sepet temizleme işlemi devam ediyorsa senkronizasyonu atla
-                        if (typeof cartClearInProgress !== 'undefined' && cartClearInProgress) {
+                        if (cartClearInProgress) {
                             console.log('[Sync] Sepet temizleme işlemi devam ediyor, senkronizasyon atlandı');
                             return;
                         }
                         
                         // Sepet yeni temizlendiyse 3 dakika bekle
-                        if (typeof cartClearedAt !== 'undefined' && cartClearedAt > 0 && (Date.now() - cartClearedAt) < 180000) {
-                            console.log('[Sync] Sepet yeni temizlendi, senkronizasyon atlandı');
+                        if (cartClearedAt > 0 && (Date.now() - cartClearedAt) < 180000) {
+                            console.log('[Sync] Sepet yeni temizlendi, senkronizasyon atlandı (' + Math.round((180000 - (Date.now() - cartClearedAt)) / 1000) + 's kaldı)');
                             return;
                         }
                         
@@ -5812,10 +5814,6 @@
                             }, true);
                         }catch(e){ }
                     })();
-
-                    // Sepet temizleme işlemi sırasında senkronizasyonu engelle
-                    let cartClearInProgress = false;
-                    let cartClearedAt = 0;
                     
                     async function clearCart() {
                         const user = getCurrentUser();
