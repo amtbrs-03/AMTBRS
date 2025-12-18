@@ -2117,7 +2117,12 @@
                                     document.getElementById('authContainer').classList.remove('hidden');
                                     document.getElementById('userContainer').classList.add('hidden');
                                     
-                                    showNotification('⚠️ Başka bir cihazdan giriş yapıldı. Bu oturum sonlandırıldı.', {type: 'warn', duration: 5000});
+                                    showNotification('⚠️ Başka bir cihazdan giriş yapıldı. Bu oturum sonlandırıldı.', {type: 'warn', duration: 3000});
+                                    
+                                    // Sayfa yenile
+                                    setTimeout(function() {
+                                        window.location.reload();
+                                    }, 2000);
                                     return;
                                 }
                                 
@@ -2169,7 +2174,12 @@
                                     document.getElementById('authContainer').classList.remove('hidden');
                                     document.getElementById('userContainer').classList.add('hidden');
                                     
-                                    showNotification('⚠️ Başka bir cihazdan giriş yapıldı. Bu oturum sonlandırıldı.', {type: 'warn', duration: 5000});
+                                    showNotification('⚠️ Başka bir cihazdan giriş yapıldı. Bu oturum sonlandırıldı.', {type: 'warn', duration: 3000});
+                                    
+                                    // Sayfa yenile
+                                    setTimeout(function() {
+                                        window.location.reload();
+                                    }, 2000);
                                 }
                             } catch(e) {
                                 console.log('[SessionCheck] Kontrol hatası:', e.message);
