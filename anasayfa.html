@@ -2127,6 +2127,61 @@
                             }
                         })();
                         
+                        // ===== PERİYODİK OTURUM KONTROLÜ (30 saniyede bir) =====
+                        let sessionCheckInterval = null;
+                        
+                        async function checkSessionValidity() {
+                            const currentUser = localStorage.getItem('currentUser');
+                            if (!currentUser) {
+                                if (sessionCheckInterval) clearInterval(sessionCheckInterval);
+                                return;
+                            }
+                            
+                            try {
+                                const user = JSON.parse(currentUser);
+                                if (!user || !user.email) return;
+                                
+                                // Raw URL ile kontrol (cache bypass)
+                                const url = 'https://raw.githubusercontent.com/amtbrs-03/AMTBRS/site-release/users/' + user.email + '_full.json?t=' + Date.now();
+                                const res = await fetch(url, { cache: 'no-store' });
+                                
+                                if (!res.ok) {
+                                    console.log('[SessionCheck] Kullanıcı bulunamadı');
+                                    return;
+                                }
+                                
+                                const remoteUser = await res.json();
+                                const localSessionId = localStorage.getItem('sessionId_' + user.email);
+                                const remoteSessionId = remoteUser.sessionId;
+                                
+                                if (remoteSessionId && localSessionId && remoteSessionId !== localSessionId) {
+                                    console.log('[SessionCheck] Başka cihazdan giriş yapılmış!');
+                                    
+                                    // Interval durdur
+                                    if (sessionCheckInterval) clearInterval(sessionCheckInterval);
+                                    
+                                    // Çıkış yap
+                                    localStorage.removeItem('currentUser');
+                                    localStorage.removeItem('sessionId_' + user.email);
+                                    sessionStorage.removeItem('currentUser');
+                                    
+                                    // UI güncelle
+                                    document.getElementById('authContainer').classList.remove('hidden');
+                                    document.getElementById('userContainer').classList.add('hidden');
+                                    
+                                    showNotification('⚠️ Başka bir cihazdan giriş yapıldı. Bu oturum sonlandırıldı.', {type: 'warn', duration: 5000});
+                                }
+                            } catch(e) {
+                                console.log('[SessionCheck] Kontrol hatası:', e.message);
+                            }
+                        }
+                        
+                        // Periyodik kontrolü başlat
+                        if (localStorage.getItem('currentUser')) {
+                            sessionCheckInterval = setInterval(checkSessionValidity, 30000); // 30 saniye
+                            console.log('[SessionCheck] Periyodik oturum kontrolü başlatıldı');
+                        }
+                        
                         // ===== ARAMA VE FİLTRELEME =====
                         let _activeCategory = 'all';
                         
