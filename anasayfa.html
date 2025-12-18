@@ -2069,7 +2069,7 @@
                             });
                         })();
                         
-                        // ===== SİLİNMİŞ KULLANICI KONTROLÜ =====
+                        // ===== SİLİNMİŞ KULLANICI VE TEK OTURUM KONTROLÜ =====
                         (async function checkDeletedUser() {
                             const currentUser = localStorage.getItem('currentUser');
                             if (!currentUser) return;
@@ -2078,13 +2078,14 @@
                                 const user = JSON.parse(currentUser);
                                 if (!user || !user.email) return;
                                 
-                                console.log('checkDeletedUser: Verifying user exists in GitHub...');
+                                console.log('checkSession: Oturum ve kullanıcı doğrulanıyor...');
                                 const remoteUser = await fetchUserFromRepo(user.email);
                                 
                                 if (!remoteUser) {
-                                    console.log('checkDeletedUser: User deleted - logging out');
+                                    console.log('checkSession: Kullanıcı silinmiş - çıkış yapılıyor');
                                     localStorage.removeItem('currentUser');
                                     localStorage.removeItem('user_' + user.email);
+                                    localStorage.removeItem('sessionId_' + user.email);
                                     
                                     // UI güncelle
                                     document.getElementById('authContainer').classList.remove('hidden');
@@ -2097,7 +2098,30 @@
                                         openAuthModal();
                                         switchTab('register', document.querySelector('.form-tab'));
                                     }, 1000);
+                                    return;
                                 }
+                                
+                                // TEK OTURUM KONTROLÜ: sessionId karşılaştır
+                                const localSessionId = localStorage.getItem('sessionId_' + user.email);
+                                const remoteSessionId = remoteUser.sessionId;
+                                
+                                if (remoteSessionId && localSessionId && remoteSessionId !== localSessionId) {
+                                    console.log('checkSession: Başka cihazdan giriş yapılmış - çıkış yapılıyor');
+                                    console.log('checkSession: Yerel:', localSessionId, '| Uzak:', remoteSessionId);
+                                    
+                                    localStorage.removeItem('currentUser');
+                                    localStorage.removeItem('sessionId_' + user.email);
+                                    sessionStorage.removeItem('currentUser');
+                                    
+                                    // UI güncelle
+                                    document.getElementById('authContainer').classList.remove('hidden');
+                                    document.getElementById('userContainer').classList.add('hidden');
+                                    
+                                    showNotification('⚠️ Başka bir cihazdan giriş yapıldı. Bu oturum sonlandırıldı.', {type: 'warn', duration: 5000});
+                                    return;
+                                }
+                                
+                                console.log('checkSession: ✓ Oturum geçerli');
                             } catch(e) {
                                 console.log('checkDeletedUser: Could not verify user (network error)');
                             }
@@ -3613,12 +3637,17 @@
                             showNotification('Oturum kaydedilemedi. Gizli mod kullanıyorsanız devre dışı bırakın.', {type: 'warn', duration: 4000});
                         }
                         
-                        // update lastLogin remotely (best-effort)
+                        // Tek oturum: Benzersiz sessionId oluştur ve kaydet
+                        const newSessionId = generateSessionId();
+                        localStorage.setItem('sessionId_' + email, newSessionId);
+                        console.log('loginUser: ✓ Yeni sessionId oluşturuldu');
+                        
+                        // update lastLogin and sessionId remotely (best-effort)
                         try{ 
-                            await commitFullUserToRepo({ ...userData, lastLogin: Date.now() }); 
-                            console.log('loginUser: ✓ lastLogin updated remotely');
+                            await commitFullUserToRepo({ ...userData, lastLogin: Date.now(), sessionId: newSessionId }); 
+                            console.log('loginUser: ✓ lastLogin ve sessionId güncellendi');
                         }catch(e){
-                            console.warn('loginUser: Could not update lastLogin remotely', e);
+                            console.warn('loginUser: Could not update remotely', e);
                         }
                         
                         console.log('loginUser: ✓ LOGIN SUCCESS - updating UI');
@@ -3775,13 +3804,14 @@
                                 localStorage.removeItem('user_' + userEmail);
                                 localStorage.removeItem('cart_' + userEmail);
                                 localStorage.removeItem('orders_' + userEmail);
+                                localStorage.removeItem('sessionId_' + userEmail); // Tek oturum sessionId temizle
                                 console.log('logout: Removed data for user:', userEmail);
                             }
                             
                             // Clear all cart data (in case of multiple users)
                             const allKeys = Object.keys(localStorage);
                             allKeys.forEach(key => {
-                                if (key.startsWith('cart_') || key.startsWith('user_') || key.startsWith('orders_') || key.startsWith('failed_login_')) {
+                                if (key.startsWith('cart_') || key.startsWith('user_') || key.startsWith('orders_') || key.startsWith('failed_login_') || key.startsWith('sessionId_')) {
                                     localStorage.removeItem(key);
                                 }
                             });
@@ -4003,6 +4033,13 @@
                             decoded += String.fromCharCode(encoded.charCodeAt(i) ^ key.charCodeAt(i % key.length));
                         }
                         return decoded;
+                    }
+
+                    // Benzersiz oturum kimliği oluştur (tek cihaz oturumu için)
+                    function generateSessionId() {
+                        const array = new Uint8Array(16);
+                        crypto.getRandomValues(array);
+                        return Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
                     }
 
                     // Commit FULL user record via GitHub Contents API (client-side direct commit disabled)
