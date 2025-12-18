@@ -577,13 +577,6 @@
       }
     });
 
-    // Overlay'e tıklayınca kapat
-    document.getElementById('invoiceModal').addEventListener('click', (e) => {
-      if (e.target.id === 'invoiceModal') {
-        closeInvoiceModal();
-      }
-    });
-
     document.getElementById('refreshBtn').addEventListener('click', async () => {
       const btn = document.getElementById('refreshBtn');
       btn.disabled = true;
