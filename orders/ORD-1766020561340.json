@@ -1,0 +1,23 @@
+{
+  "id": "ORD-1766020561340",
+  "date": 1766020561340,
+  "customerEmail": "amtbrs@icloud.com",
+  "customerName": "AHMET BURSA",
+  "customerPhone": "+90 530 306 9081",
+  "address": "Fevziçakmak Caddesi No:47 Kısmet Apt., Çağlayan Mahallesi, Kağıthane, İstanbul, Çağlayan Mahallesi, Kağıthane, İstanbul, Posta Kodu 34403",
+  "iban": "xxxxxxxxxxxxxxx",
+  "note": "",
+  "noteRead": false,
+  "status": "pending",
+  "items": [
+    {
+      "id": "TEMP-1765831765562",
+      "name": "PHİLODENDRON FELİX",
+      "price": 1100,
+      "qty": 1,
+      "image": "images/gallery/IMG_2037.JPG",
+      "addedAt": 1766020536711
+    }
+  ],
+  "total": "1220.00"
+}
