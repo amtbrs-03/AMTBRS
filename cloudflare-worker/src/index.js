@@ -167,7 +167,7 @@ ${order.address || 'Belirtilmedi'}
 
 Sorularınız için bize WhatsApp üzerinden ulaşabilirsiniz: +90 538 417 90 81
 
-Bizi tercih ettiğiniz için teşekkür ederiz! �
+Bizi tercih ettiğiniz için teşekkür ederiz! 🌿
 
 Saygılarımızla,
 🌿 ERN Tropikal Çiçek
@@ -229,7 +229,7 @@ https://ern-cicek.com.tr
       <p style="margin:5px 0;"><a href="https://wa.me/905384179081" style="color:#16a34a;text-decoration:none;">📱 WhatsApp: +90 538 417 90 81</a></p>
       <p style="margin:5px 0;"><a href="mailto:amtbrs@icloud.com" style="color:#2563eb;text-decoration:none;">📧 Email: amtbrs@icloud.com</a></p>
       
-      <p style="color:#475569;margin-top:30px;">Bizi tercih ettiğiniz için teşekkür ederiz! �</p>
+<p style="color:#475569;margin-top:30px;">Bizi tercih ettiğiniz için teşekkür ederiz! 🌿</p>
       <p style="color:#0b2f1f;font-weight:600;">🌿 ERN Tropikal Çiçek</p>
     </div>
     <div style="background:#f8fafc;padding:20px;text-align:center;border-top:1px solid #e2e8f0;">
@@ -447,7 +447,7 @@ https://ern-cicek.com.tr
       <div style="margin:25px 0;padding:20px;background:#f0fdf4;border:2px solid #10b981;border-radius:12px;text-align:center;">
         <h3 style="color:#064e3b;margin:0 0 15px 0;">📄 Bilgi Fişiniz Hazır</h3>
         <p style="color:#475569;font-size:14px;margin:0 0 20px 0;">Siparişinize ait bilgi fişini aşağıdaki butona tıklayarak görüntüleyebilir, yazdırabilir veya PDF olarak kaydedebilirsiniz.</p>
-        <a href="https://ern-cicek.com.tr/faturalar.html" style="display:inline-block;background:#10b981;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:700;font-size:16px;">📥 Bilgi Fişimi Görüntüle</a>
+        <a href="https://ern-cicek.com.tr/bilgifisleri.html" style="display:inline-block;background:#10b981;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:700;font-size:16px;">📥 Bilgi Fişimi Görüntüle</a>
       </div>
       
       <p style="color:#475569;margin-top:25px;">Sorularınız için bize ulaşabilirsiniz:</p>
