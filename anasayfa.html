@@ -4998,6 +4998,12 @@
                             return;
                         }
                         
+                        // Sepet yeni temizlendiyse 3 dakika bekle
+                        if (typeof cartClearedAt !== 'undefined' && cartClearedAt > 0 && (Date.now() - cartClearedAt) < 180000) {
+                            console.log('[Sync] Sepet yeni temizlendi, senkronizasyon atlandı');
+                            return;
+                        }
+                        
                         // Rate limit kontrolü - 5 dakika bekle
                         if (syncRateLimited && Date.now() < syncRateLimitResetTime) {
                             console.log('[Sync] Rate limit aktif, bekleniyor...');
@@ -5809,6 +5815,7 @@
 
                     // Sepet temizleme işlemi sırasında senkronizasyonu engelle
                     let cartClearInProgress = false;
+                    let cartClearedAt = 0;
                     
                     async function clearCart() {
                         const user = getCurrentUser();
@@ -5843,6 +5850,8 @@
                             updateProgress(100, 'Tamamlandı!');
                             hideProgress(true, '✅ Sepet temizlendi!');
                             console.log('[Cart] Sepet temizlendi ve senkronize edildi');
+                            // 30 saniye sync engelle
+                            cartClearedAt = Date.now();
                         } catch(e) {
                             console.error('[Cart] Sepet temizleme hatası:', e);
                             hideProgress(false, '❌ Hata oluştu!', e.message);
