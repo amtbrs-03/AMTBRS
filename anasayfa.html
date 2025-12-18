@@ -5814,10 +5814,15 @@
                         const user = getCurrentUser();
                         if (!user) return;
                         
-                        // Onay iste
-                        if (!confirm('Sepeti temizlemek istediğinize emin misiniz?')) {
-                            return;
-                        }
+                        // Modern onay dialog
+                        var confirmed = await showConfirmDialog({
+                            title: 'Sepeti Temizle',
+                            message: 'Sepetinizdeki tüm ürünler silinecek. Devam etmek istiyor musunuz?',
+                            confirmText: 'Evet, Temizle',
+                            cancelText: 'Vazgeç',
+                            type: 'danger'
+                        });
+                        if (!confirmed) return;
                         
                         cartClearInProgress = true;
                         
