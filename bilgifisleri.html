@@ -456,7 +456,15 @@
       btn.textContent = '🔄 Bilgi Fişlerini Yenile';
     });
 
-    loadInvoices();
+    // Sayfa yüklenir yüklenmez otomatik başlat
+    document.addEventListener('DOMContentLoaded', () => {
+      loadInvoices();
+    });
+    
+    // Eğer DOM zaten yüklendiyse hemen başlat
+    if (document.readyState !== 'loading') {
+      loadInvoices();
+    }
   </script>
 </body>
 </html>
