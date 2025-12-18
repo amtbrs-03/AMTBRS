@@ -5331,6 +5331,82 @@
                     }
                     window.showNotification = showNotification;
 
+                    // Modern confirm dialog
+                    function showConfirmDialog(options) {
+                        return new Promise(function(resolve) {
+                            var title = (options && options.title) || 'Onay';
+                            var message = (options && options.message) || 'Emin misiniz?';
+                            var confirmText = (options && options.confirmText) || 'Evet';
+                            var cancelText = (options && options.cancelText) || 'İptal';
+                            var type = (options && options.type) || 'warning';
+
+                            var existing = document.getElementById('confirmDialogOverlay');
+                            if (existing) existing.remove();
+
+                            var btnBg = '#f59e0b';
+                            var icon = '⚠️';
+                            if (type === 'danger') { btnBg = '#ef4444'; icon = '🗑️'; }
+                            else if (type === 'info') { btnBg = '#3b82f6'; icon = 'ℹ️'; }
+
+                            var overlay = document.createElement('div');
+                            overlay.id = 'confirmDialogOverlay';
+                            overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:100000;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.25s ease;padding:1rem;';
+
+                            var dialog = document.createElement('div');
+                            dialog.style.cssText = 'background:white;border-radius:20px;width:100%;max-width:380px;padding:2rem;box-shadow:0 25px 60px rgba(0,0,0,0.3);transform:scale(0.9) translateY(-20px);transition:transform 0.25s ease;text-align:center;';
+
+                            var iconDiv = document.createElement('div');
+                            iconDiv.style.cssText = 'font-size:3rem;margin-bottom:1rem;';
+                            iconDiv.textContent = icon;
+
+                            var titleEl = document.createElement('h3');
+                            titleEl.style.cssText = 'margin:0 0 0.75rem;font-size:1.3rem;color:#1f2937;font-weight:700;';
+                            titleEl.textContent = title;
+
+                            var msgEl = document.createElement('p');
+                            msgEl.style.cssText = 'margin:0 0 1.5rem;color:#6b7280;font-size:1rem;line-height:1.5;';
+                            msgEl.textContent = message;
+
+                            var btnContainer = document.createElement('div');
+                            btnContainer.style.cssText = 'display:flex;gap:0.75rem;justify-content:center;';
+
+                            var cancelBtn = document.createElement('button');
+                            cancelBtn.style.cssText = 'flex:1;padding:0.875rem 1.5rem;border:2px solid #e5e7eb;background:#fff;color:#374151;border-radius:12px;font-weight:600;font-size:1rem;cursor:pointer;';
+                            cancelBtn.textContent = cancelText;
+
+                            var confirmBtn = document.createElement('button');
+                            confirmBtn.style.cssText = 'flex:1;padding:0.875rem 1.5rem;border:none;background:' + btnBg + ';color:#fff;border-radius:12px;font-weight:600;font-size:1rem;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,0.2);';
+                            confirmBtn.textContent = confirmText;
+
+                            btnContainer.appendChild(cancelBtn);
+                            btnContainer.appendChild(confirmBtn);
+                            dialog.appendChild(iconDiv);
+                            dialog.appendChild(titleEl);
+                            dialog.appendChild(msgEl);
+                            dialog.appendChild(btnContainer);
+                            overlay.appendChild(dialog);
+                            document.body.appendChild(overlay);
+
+                            requestAnimationFrame(function() {
+                                overlay.style.opacity = '1';
+                                dialog.style.transform = 'scale(1) translateY(0)';
+                            });
+
+                            function closeDialog(result) {
+                                dialog.style.transform = 'scale(0.9) translateY(-20px)';
+                                overlay.style.opacity = '0';
+                                setTimeout(function() {
+                                    overlay.remove();
+                                    resolve(result);
+                                }, 250);
+                            }
+
+                            cancelBtn.onclick = function() { closeDialog(false); };
+                            confirmBtn.onclick = function() { closeDialog(true); };
+                        });
+                    }
+                    window.showConfirmDialog = showConfirmDialog;
+
                     // Basit toast bildirimi (erişilebilir, otomatik kaybolur)
                     function showToast(msg, opts){
                         try {
