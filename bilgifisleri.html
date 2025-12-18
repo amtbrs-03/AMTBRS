@@ -230,6 +230,86 @@
       .invoices-container{ padding:1rem; border-radius:12px; }
       .btn{ padding:0.5rem 0.75rem; font-size:0.85rem; }
     }
+
+    /* Invoice Modal */
+    .invoice-modal-overlay{
+      display:none;
+      position:fixed;
+      top:0;
+      left:0;
+      width:100%;
+      height:100%;
+      background:rgba(0,0,0,0.7);
+      z-index:9999;
+      justify-content:center;
+      align-items:center;
+      padding:1rem;
+      box-sizing:border-box;
+    }
+    .invoice-modal-overlay.active{
+      display:flex;
+    }
+    .invoice-modal-content{
+      background:white;
+      border-radius:16px;
+      max-width:900px;
+      width:100%;
+      max-height:90vh;
+      overflow:hidden;
+      box-shadow:0 25px 50px rgba(0,0,0,0.3);
+      display:flex;
+      flex-direction:column;
+    }
+    .invoice-modal-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:1rem 1.5rem;
+      background:linear-gradient(135deg,#064e3b 0%,#0b2f1f 100%);
+      color:white;
+    }
+    .invoice-modal-header h3{
+      margin:0;
+      font-size:1.2rem;
+    }
+    .invoice-modal-actions{
+      display:flex;
+      gap:0.5rem;
+    }
+    .invoice-modal-actions button{
+      padding:0.5rem 1rem;
+      border:none;
+      border-radius:8px;
+      cursor:pointer;
+      font-weight:600;
+      font-size:0.9rem;
+      transition:all 0.2s;
+    }
+    .btn-print{
+      background:#10b981;
+      color:white;
+    }
+    .btn-print:hover{
+      background:#059669;
+    }
+    .btn-close-modal{
+      background:#ef4444;
+      color:white;
+    }
+    .btn-close-modal:hover{
+      background:#dc2626;
+    }
+    .invoice-modal-body{
+      flex:1;
+      overflow:auto;
+      padding:0;
+    }
+    .invoice-modal-body iframe{
+      width:100%;
+      height:100%;
+      min-height:70vh;
+      border:none;
+    }
   </style>
 </head>
 <body>
@@ -260,6 +340,22 @@
       </div>
       <div id="invoicesContent">
         <div class="loading">⏳ Bilgi Fişleri yükleniyor...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Invoice View Modal -->
+  <div id="invoiceModal" class="invoice-modal-overlay">
+    <div class="invoice-modal-content">
+      <div class="invoice-modal-header">
+        <h3>🧾 <span id="invoiceModalTitle">Bilgi Fişi</span></h3>
+        <div class="invoice-modal-actions">
+          <button class="btn-print" onclick="printInvoice()">🖨️ Yazdır / PDF</button>
+          <button class="btn-close-modal" onclick="closeInvoiceModal()">✕ Kapat</button>
+        </div>
+      </div>
+      <div class="invoice-modal-body">
+        <iframe id="invoiceFrame" title="Bilgi Fişi"></iframe>
       </div>
     </div>
   </div>
@@ -420,6 +516,8 @@
       document.getElementById('invoicesContent').innerHTML = html;
     }
 
+    let currentInvoiceHtml = '';
+
     function viewInvoice(orderId) {
       const invoice = invoicesData.find(inv => inv.orderId === orderId);
       if (invoice && invoice.html) {
@@ -437,13 +535,54 @@
           // Müşteri Bilgileri kutusuna telefon ekle
           html = html.replace(/(<h3>👤 Müşteri Bilgileri<\/h3>\s*<p><strong>[^<]+<\/strong><\/p>\s*<p>[^<]+<\/p>)/, '$1<p>' + userPhone + '</p>');
         }
-        const invoiceWindow = window.open('', '_blank');
-        invoiceWindow.document.write(html);
-        invoiceWindow.document.close();
+        
+        currentInvoiceHtml = html;
+        
+        // Modal'da göster
+        const modal = document.getElementById('invoiceModal');
+        const iframe = document.getElementById('invoiceFrame');
+        const title = document.getElementById('invoiceModalTitle');
+        
+        title.textContent = `INV-${orderId}`;
+        
+        // iframe içine yaz
+        iframe.srcdoc = html;
+        
+        // Modal'ı aç
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
       } else {
         alert('Bilgi Fişi içeriği bulunamadı!');
       }
     }
+
+    function closeInvoiceModal() {
+      const modal = document.getElementById('invoiceModal');
+      modal.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    function printInvoice() {
+      const iframe = document.getElementById('invoiceFrame');
+      if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+      }
+    }
+
+    // ESC tuşu ile modal'ı kapat
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeInvoiceModal();
+      }
+    });
+
+    // Overlay'e tıklayınca kapat
+    document.getElementById('invoiceModal').addEventListener('click', (e) => {
+      if (e.target.id === 'invoiceModal') {
+        closeInvoiceModal();
+      }
+    });
 
     document.getElementById('refreshBtn').addEventListener('click', async () => {
       const btn = document.getElementById('refreshBtn');
