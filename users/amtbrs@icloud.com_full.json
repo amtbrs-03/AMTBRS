@@ -16,7 +16,7 @@
   },
   "phone": "+90 530 306 9081",
   "createdAt": 1765923894558,
-  "lastLogin": 1766018335835,
+  "lastLogin": 1766019667576,
   "addresses": [
     {
       "id": "default",
@@ -28,5 +28,6 @@
       "postalCode": "34403",
       "isDefault": true
     }
-  ]
+  ],
+  "sessionId": "6bb9d5fb6542fd632ff10a5bc9e607a4"
 }
