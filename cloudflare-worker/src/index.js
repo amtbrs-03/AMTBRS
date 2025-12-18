@@ -586,6 +586,91 @@ https://ern-cicek.com.tr
         return new Response(body, { status: commitOk ? 201 : 200, headers: jsonHeaders(allowOrigin) });
       }
 
+      // Sepet silme endpoint'i - müşteri sepetini temizlediğinde çağrılır
+      if (path === '/delete-cart' && request.method === 'POST') {
+        const payload = await readJsonLoose(request);
+        const email = ((payload && payload.email) || '').toLowerCase().trim();
+        
+        if (!email) {
+          return new Response(JSON.stringify({ ok: false, error: 'missing email' }), { 
+            status: 400, 
+            headers: jsonHeaders(allowOrigin) 
+          });
+        }
+        
+        let deleteOk = false, deleteError = null;
+        
+        try {
+          const owner = env.GITHUB_OWNER || 'amtbrs-03';
+          const repo = env.GITHUB_REPO || 'AMTBRS';
+          const branch = env.GITHUB_BRANCH || 'site-release';
+          const token = env.GITHUB_TOKEN || env.GH_TOKEN;
+          
+          if (!token) {
+            return new Response(JSON.stringify({ ok: false, error: 'missing token' }), { 
+              status: 500, 
+              headers: jsonHeaders(allowOrigin) 
+            });
+          }
+          
+          const safeEmail = email.replace(/[^a-z0-9._@-]/gi, '_');
+          const filePath = `carts/${safeEmail}.json`;
+          const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(filePath)}`;
+          
+          // Önce dosyanın SHA'sini al
+          const headRes = await fetch(apiUrl + `?ref=${branch}`, { 
+            headers: { 
+              Authorization: `Bearer ${token}`, 
+              Accept: 'application/vnd.github+json', 
+              'User-Agent': 'Cloudflare-Worker' 
+            } 
+          });
+          
+          if (!headRes.ok) {
+            // Dosya zaten yok
+            console.log('[delete-cart] Sepet dosyası zaten yok:', email);
+            return new Response(JSON.stringify({ ok: true, message: 'cart already deleted' }), { 
+              status: 200, 
+              headers: jsonHeaders(allowOrigin) 
+            });
+          }
+          
+          const headData = await headRes.json();
+          const sha = headData.sha;
+          
+          // Dosyayı sil
+          const delRes = await fetch(apiUrl, {
+            method: 'DELETE',
+            headers: { 
+              Authorization: `Bearer ${token}`, 
+              Accept: 'application/vnd.github+json',
+              'Content-Type': 'application/json', 
+              'User-Agent': 'Cloudflare-Worker' 
+            },
+            body: JSON.stringify({
+              message: `chore: cart cleared ${safeEmail}`,
+              sha: sha,
+              branch: branch
+            })
+          });
+          
+          if (delRes.ok) {
+            deleteOk = true;
+            console.log('[delete-cart] ✅ Sepet silindi:', email);
+          } else {
+            deleteError = await safeText(delRes);
+            console.log('[delete-cart] ❌ Silme başarısız:', delRes.status, deleteError);
+          }
+        } catch (e) {
+          deleteError = (e && e.message) ? e.message : String(e);
+        }
+        
+        return new Response(JSON.stringify({ ok: deleteOk, error: deleteError }), { 
+          status: deleteOk ? 200 : 500, 
+          headers: jsonHeaders(allowOrigin) 
+        });
+      }
+
       return new Response('Not Found', { status: 404, headers: { 'Content-Type': 'text/plain' } });
     } catch (err) {
       const msg = (err && err.message) ? err.message : String(err);

@@ -722,9 +722,31 @@
       });
       if (!confirmed) return;
       
+      // Yerel sepeti temizle
       cartData = [];
       saveCart();
       renderCart();
+      
+      // GitHub'dan da sil (admin canlı sepetten kaldır)
+      try {
+        const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
+        if (user && user.email) {
+          fetch('https://ern-site.amtbrs-03.workers.dev/delete-cart', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: user.email })
+          }).then(function(res) {
+            if (res.ok) {
+              console.log('[Cart] Sepet GitHub\'dan silindi');
+            }
+          }).catch(function(e) {
+            console.warn('[Cart] GitHub silme hatası:', e);
+          });
+        }
+      } catch(e) {
+        console.warn('[Cart] Kullanıcı bilgisi alınamadı:', e);
+      }
+      
       showNotification('✅ Sepet temizlendi', {type: 'success', duration: 2000});
     }
 

@@ -5732,52 +5732,25 @@
                         }
                     }
                     
-                    // GitHub'dan sepet dosyasını sil
+                    // GitHub'dan sepet dosyasını sil (Worker üzerinden)
                     async function deleteCartFromGitHub(user) {
                         if (!user || !user.email) return;
                         try {
-                            const token = localStorage.getItem('github_token') || localStorage.getItem('gh_token') || '';
-                            if (!token) {
-                                console.warn('[Sync] Token bulunamadı, GitHub silme atlandı');
-                                return;
-                            }
-                            
-                            const owner = 'amtbrs-03';
-                            const repo = 'AMTBRS';
-                            const branch = 'site-release';
-                            const filePath = `carts/${user.email}.json`;
-                            const ghUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`;
-                            
-                            // Önce dosyanın SHA'sını al
-                            const headRes = await fetch(`${ghUrl}?ref=${encodeURIComponent(branch)}`, { 
-                                headers: { 'Authorization': `token ${token}` } 
-                            });
-                            if (!headRes.ok) {
-                                console.log('[Sync] Sepet dosyası zaten yok veya erişilemiyor');
-                                return;
-                            }
-                            
-                            const headData = await headRes.json();
-                            const sha = headData.sha;
-                            
-                            // Dosyayı sil
-                            const delRes = await fetch(ghUrl, {
-                                method: 'DELETE',
-                                headers: { 
-                                    'Content-Type': 'application/json', 
-                                    'Authorization': `token ${token}` 
-                                },
-                                body: JSON.stringify({
-                                    message: `chore: cart cleared ${user.email}`,
-                                    sha: sha,
-                                    branch: branch
-                                })
+                            const res = await fetch('https://ern-site.amtbrs-03.workers.dev/delete-cart', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ email: user.email })
                             });
                             
-                            if (delRes.ok) {
-                                console.log('[Sync] ✅ Sepet dosyası GitHub\'dan silindi:', user.email);
+                            if (res.ok) {
+                                const data = await res.json();
+                                if (data.ok) {
+                                    console.log('[Sync] ✅ Sepet dosyası GitHub\'dan silindi:', user.email);
+                                } else {
+                                    console.warn('[Sync] ❌ Sepet silme başarısız:', data.error);
+                                }
                             } else {
-                                console.warn('[Sync] ❌ Sepet silme başarısız:', delRes.status);
+                                console.warn('[Sync] ❌ Worker yanıt hatası:', res.status);
                             }
                         } catch(e) {
                             console.warn('[Sync] Sepet silme hatası:', e.message);
