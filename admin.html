@@ -7311,6 +7311,17 @@ try {
 
       host.innerHTML = '';
 
+      function formatEmailLogTypeLabel(type){
+        const t = String(type || '').trim();
+        if(!t) return '';
+        const map = {
+          'shipping-tracking': '🚚 Kargo Takip',
+          'order-received': '🧾 Sipariş Alındı',
+          'order-ready': '📦 Sipariş Hazır'
+        };
+        return map[t] || t;
+      }
+
       function makeGroupHeader(group){
         const header = document.createElement('div');
         header.style.gridColumn = '1 / -1';
@@ -7368,6 +7379,7 @@ try {
         const sentAt = entry?.sentAt || entry?.date || 0;
         const orderId = entry?.orderId || '';
         const type = entry?.type || '';
+        const typeLabel = formatEmailLogTypeLabel(type);
 
         const isOk = status === 'sent' || status === 'ok' || status === 'success';
         const badgeBg = isOk ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)';
@@ -7394,7 +7406,7 @@ try {
           <div style="margin-top:0.65rem;display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;color:#6b7280;font-size:0.9rem;">
             <span>🕒 ${safeInput(formatDateTr(sentAt))}</span>
             ${orderId ? `<span style="background:rgba(15,23,42,0.06);padding:3px 8px;border-radius:999px;">${safeInput(orderId)}</span>` : ''}
-            ${type ? `<span style="background:rgba(37,99,235,0.08);color:#1e3a8a;padding:3px 8px;border-radius:999px;">${safeInput(type)}</span>` : ''}
+            ${typeLabel ? `<span style="background:rgba(37,99,235,0.08);color:#1e3a8a;padding:3px 8px;border-radius:999px;" title="${safeInput(String(type||''))}">${safeInput(typeLabel)}</span>` : ''}
           </div>
         `.trim();
 
