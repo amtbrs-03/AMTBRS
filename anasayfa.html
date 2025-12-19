@@ -5102,7 +5102,34 @@
                         const user = getCurrentUser();
                         if (!user) return;
                         localStorage.setItem(cartKeyForUser(user.email), JSON.stringify(cart));
-                        // persistCartSnapshot devre dışı - sadece yerel kaydet
+                        // Admin "Canlı Sepet Takibi" için sepet snapshot'ını GitHub'a yaz
+                        // (çok sık yazım/aynı içerik engeli persistCartSnapshot içinde)
+                        try {
+                            if (cartClearInProgress) return;
+                            if (cartClearedAt && (Date.now() - cartClearedAt) < 30 * 1000) return;
+                            if (!Array.isArray(cart) || cart.length === 0) {
+                                // Sepet boşaldıysa uzak snapshot'ı temizle
+                                deleteCartFromGitHub(user);
+                                return;
+                            }
+                            persistCartSnapshot(cart, user);
+                        } catch(_e) {}
+                    }
+
+                    // Sayfa açılışında / oturum geri yüklemede, mevcut sepeti bir kez snapshot'la
+                    // (önceden snapshot devre dışı kaldıysa admin canlı takipte görünmesi için)
+                    function maybeBootstrapCartSnapshot(user){
+                        try {
+                            if (!user || !user.email) return;
+                            const cart = loadCart();
+                            if (!Array.isArray(cart) || cart.length === 0) return;
+                            const key = 'cart_snapshot_bootstrap_' + user.email;
+                            const last = parseInt(localStorage.getItem(key) || '0', 10) || 0;
+                            // 10 dakika içinde tekrar deneme
+                            if (last && (Date.now() - last) < 10 * 60 * 1000) return;
+                            localStorage.setItem(key, String(Date.now()));
+                            persistCartSnapshot(cart, user);
+                        } catch(_e) {}
                     }
 
                     /* --- Periyodik Sepet Senkronizasyonu (Arka Plan) --- */
@@ -5631,7 +5658,27 @@
                                     if (commitEp) {
                                         try {
                                             const res = await fetch(commitEp, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload), mode:'cors' });
-                                            committed = res.ok;
+                                            let endpointOk = false;
+                                            let endpointBody = null;
+                                            if (res.ok) {
+                                                try {
+                                                    endpointBody = await res.json();
+                                                    endpointOk = !!(endpointBody && endpointBody.ok);
+                                                } catch(_) {
+                                                    // JSON parse failed; treat HTTP 2xx as ok
+                                                    endpointOk = true;
+                                                }
+                                            }
+                                            committed = endpointOk;
+                                            window.__lastCartSnapshotStatus = {
+                                                time: Date.now(),
+                                                email: user.email,
+                                                committed,
+                                                via: 'worker',
+                                                endpointStatus: res.status,
+                                                endpointOk,
+                                                endpointResults: endpointBody && endpointBody.results ? endpointBody.results.slice(0, 3) : null
+                                            };
                                         } catch(_) { /* sessiz */ }
                                     }
                                 }
@@ -5640,7 +5687,7 @@
                             // GitHub token varsa doğrudan API üzerinden fallback commit dene (ör: serverless çalışmıyorsa)
                             if(!committed){
                                 try {
-                                    const token = localStorage.getItem('github_token') || '';
+                                    const token = (localStorage.getItem('github_token') || localStorage.getItem('gh_token') || '').trim();
                                     if(token){
                                         const owner = 'amtbrs-03';
                                         const repo = 'AMTBRS';
@@ -5649,17 +5696,20 @@
                                         // Önce mevcut dosyanın SHA'sını almaya çalış (güncelleme için)
                                         let sha = null;
                                         try {
-                                            const headRes = await fetch(`${ghUrl}?ref=${encodeURIComponent(branch)}`, { headers:{ 'Authorization': `token ${token}` } });
+                                            const headRes = await fetch(`${ghUrl}?ref=${encodeURIComponent(branch)}`, { headers:{ 'Authorization': `Bearer ${token}` } });
                                             if(headRes.ok){ const headData = await headRes.json(); sha = headData.sha; }
                                         } catch(_){}
                                         const putBody = { message: `chore: cart snapshot ${user.email}`, content: contentBase64, branch, sha: sha || undefined };
-                                        const putRes = await fetch(ghUrl, { method:'PUT', headers:{ 'Content-Type':'application/json', 'Authorization': `token ${token}` }, body: JSON.stringify(putBody) });
+                                            const putRes = await fetch(ghUrl, { method:'PUT', headers:{ 'Content-Type':'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(putBody) });
                                         committed = putRes.ok;
+                                            window.__lastCartSnapshotStatus = { time: Date.now(), email: user.email, committed, via: 'github', status: putRes.status };
                                     }
                                 } catch(e){ /* sessiz */ }
                             }
-                            // Debug bilgisi: son commit durumu
-                            window.__lastCartSnapshotStatus = { time: Date.now(), email: user.email, committed };
+                                // Debug bilgisi: son commit durumu (worker başarısızsa buraya düşer)
+                                if (!window.__lastCartSnapshotStatus) {
+                                    window.__lastCartSnapshotStatus = { time: Date.now(), email: user.email, committed };
+                                }
                         } catch(e) { /* sessiz */ }
                     }
 
@@ -6354,6 +6404,8 @@
                                     console.log('Oturum otomatik olarak geri yüklendi:', user.name);
                                     // Periyodik sepet senkronizasyonunu başlat
                                     startPeriodicSync();
+                                    // Mevcut sepeti admin canlı takip için bir kez snapshot'la
+                                    maybeBootstrapCartSnapshot(user);
                                 } else {
                                     // Invalid session, clear it
                                     localStorage.removeItem('currentUser');

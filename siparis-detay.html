@@ -40,6 +40,7 @@
     .btn:active{ transform: translateY(1px); }
     .btn-white{ background: #fff; color: var(--green-dark); border: 2px solid var(--green-primary); box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3); }
     .btn-orange{ background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4); }
+    .btn-danger{ background:#dc2626; box-shadow: 0 4px 15px rgba(220, 38, 38, 0.35); }
     /* Detail Card */
     .detail-card{ background: var(--card-bg); padding:2rem; border-radius:20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); margin-bottom:2rem; }
     .detail-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem; padding-bottom:1rem; border-bottom:2px solid #e5e7eb; }
@@ -63,6 +64,101 @@
     .total-row{ background:#f0fdf4 !important; font-weight:700; font-size:1.1rem; color:var(--green-dark); }
     .loading{ text-align:center; padding:3rem; color:var(--muted); font-size:1.1rem; }
     .error{ background:#fee; color:#c33; padding:1.5rem; border-radius:12px; border-left:4px solid #c33; }
+
+    /* App Dialog (alert/confirm) */
+    .app-modal{
+      display:none;
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.6);
+      z-index:5000;
+      align-items:center;
+      justify-content:center;
+      -webkit-backdrop-filter:blur(6px);
+      backdrop-filter:blur(6px);
+      padding:1rem;
+    }
+    .app-modal.active{ display:flex; }
+    .app-modal-content{
+      background:#fff;
+      width:min(620px, 94vw);
+      border-radius:16px;
+      box-shadow:0 18px 50px rgba(0,0,0,0.25);
+      border:1px solid #e5e7eb;
+      overflow:hidden;
+    }
+    .app-modal-content.info{ border-left:6px solid #3b82f6; }
+    .app-modal-content.success{ border-left:6px solid var(--green-primary); }
+    .app-modal-content.warn{ border-left:6px solid #f59e0b; }
+    .app-modal-content.error,
+    .app-modal-content.danger{ border-left:6px solid #dc2626; }
+    .app-modal-header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:0.75rem;
+      padding:1rem 1.2rem;
+      border-bottom:1px solid #e5e7eb;
+      background:linear-gradient(180deg, #ffffff 0%, #f9fafb 100%);
+    }
+    .app-modal-title{
+      margin:0;
+      font-size:1.05rem;
+      font-weight:900;
+      color:#0f172a;
+      letter-spacing:0.2px;
+    }
+    .app-modal-close{
+      background:transparent;
+      border:none;
+      cursor:pointer;
+      color:#6b7280;
+      font-size:1.3rem;
+      padding:0;
+      line-height:1;
+    }
+    .app-modal-body{ padding:1rem 1.2rem; }
+    .app-modal-message{
+      white-space:pre-wrap;
+      color:#334155;
+      line-height:1.55;
+      font-weight:600;
+    }
+    .app-modal-details{
+      display:none;
+      margin-top:0.75rem;
+      padding:0.75rem;
+      background:#f8fafc;
+      border:1px dashed #cbd5e1;
+      border-radius:12px;
+      white-space:pre-wrap;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size:0.85rem;
+      color:#0f172a;
+    }
+    .app-modal-footer{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:0.5rem;
+      padding:1rem 1.2rem;
+      border-top:1px solid #e5e7eb;
+      background:#f9fafb;
+      flex-wrap:wrap;
+    }
+    .modal-btn{
+      cursor:pointer;
+      padding:0.65rem 1rem;
+      border-radius:12px;
+      border:none;
+      font-weight:800;
+      font-size:0.95rem;
+      transition:transform 0.15s ease, opacity 0.15s ease;
+    }
+    .modal-btn:active{ transform:translateY(1px); }
+    .modal-btn.cancel{ background:#6b7280; color:#fff; }
+    .modal-btn.primary{ background: linear-gradient(135deg, var(--green-primary) 0%, var(--green-dark) 100%); color:#fff; }
+    .modal-btn.danger{ background:#dc2626; color:#fff; }
     
     /* Müşteri notu buton stilleri */
     #customerNoteBtn.has-unread-note {
@@ -97,12 +193,30 @@
         <button id="editOrderBtn" class="btn">✏️ Düzenle</button>
         <button id="customerNoteBtn" class="btn no-note">💬 Müşteri Notu</button>
         <button id="refreshBtn" class="btn btn-white" onclick="location.reload(true)">🔄 Yenile</button>
-        <button id="deleteOrderBtn" class="btn btn-orange" style="background:#dc2626">🗑️ Sil</button>
+        <button id="deleteOrderBtn" class="btn btn-danger">🗑️ Sil</button>
       </div>
     </div>
 
     <div id="orderContent">
       <div class="loading">⏳ Sipariş detayları yükleniyor...</div>
+    </div>
+  </div>
+
+  <!-- App Dialog Modal (replaces alert/confirm) -->
+  <div id="appDialog" class="app-modal" role="dialog" aria-modal="true" aria-labelledby="appDialogTitle" aria-describedby="appDialogMessage">
+    <div id="appDialogContent" class="app-modal-content info">
+      <div class="app-modal-header">
+        <h3 id="appDialogTitle" class="app-modal-title">Bilgi</h3>
+        <button id="appDialogClose" class="app-modal-close" aria-label="Kapat">×</button>
+      </div>
+      <div class="app-modal-body">
+        <div id="appDialogMessage" class="app-modal-message"></div>
+        <div id="appDialogDetails" class="app-modal-details"></div>
+      </div>
+      <div class="app-modal-footer">
+        <button id="appDialogCancel" class="modal-btn cancel" type="button">Vazgeç</button>
+        <button id="appDialogOk" class="modal-btn primary" type="button">Tamam</button>
+      </div>
     </div>
   </div>
 
@@ -117,6 +231,151 @@
     }
 
     let currentOrder = null;
+
+    // Framed modal dialog helpers (replace native alert/confirm)
+    (function(){
+      const modal = document.getElementById('appDialog');
+      const content = document.getElementById('appDialogContent');
+      const titleEl = document.getElementById('appDialogTitle');
+      const msgEl = document.getElementById('appDialogMessage');
+      const detailsEl = document.getElementById('appDialogDetails');
+      const okBtn = document.getElementById('appDialogOk');
+      const cancelBtn = document.getElementById('appDialogCancel');
+      const closeBtn = document.getElementById('appDialogClose');
+
+      function inferTypeFromText(text){
+        const t = String(text || '');
+        if (t.includes('🗑️') || /\bsil/i.test(t)) return 'danger';
+        if (t.includes('❌') || /hata/i.test(t)) return 'error';
+        if (t.includes('⚠️') || /uyarı/i.test(t)) return 'warn';
+        if (t.includes('✅')) return 'success';
+        return 'info';
+      }
+
+      function splitTitleAndBody(raw){
+        const text = String(raw || '').trim();
+        if (!text) return { title: 'Bilgi', body: '' };
+        const parts = text.split(/\n\n/);
+        if (parts.length === 1) return { title: 'Bilgi', body: parts[0] };
+        const title = (parts.shift() || '').trim();
+        const body = parts.join('\n\n').trim();
+        return { title: title || 'Bilgi', body };
+      }
+
+      function setContent({type, title, message, details, mode, confirmText, cancelText}){
+        const safeType = type || inferTypeFromText(title || message);
+        if (content) {
+          content.className = 'app-modal-content ' + safeType;
+        }
+        if (titleEl) titleEl.textContent = title || 'Bilgi';
+        if (msgEl) msgEl.textContent = message || '';
+        if (detailsEl) {
+          if (details) {
+            detailsEl.style.display = 'block';
+            detailsEl.textContent = String(details);
+          } else {
+            detailsEl.style.display = 'none';
+            detailsEl.textContent = '';
+          }
+        }
+
+        const isConfirm = mode === 'confirm';
+        if (cancelBtn) {
+          cancelBtn.style.display = isConfirm ? 'inline-block' : 'none';
+          cancelBtn.textContent = cancelText || 'Vazgeç';
+        }
+        if (okBtn) {
+          okBtn.textContent = confirmText || (isConfirm ? 'Evet' : 'Tamam');
+          const dangerLike = safeType === 'danger' || safeType === 'error';
+          okBtn.className = 'modal-btn ' + (dangerLike ? 'danger' : 'primary');
+        }
+      }
+
+      function openModal(){
+        if (!modal) return;
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeModal(){
+        if (!modal) return;
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+
+      function showDialog(options){
+        return new Promise((resolve) => {
+          if (!modal) {
+            // Fallback to native if markup missing
+            if (options && options.mode === 'confirm') {
+              resolve(!!confirm((options.message || '').toString()));
+            } else {
+              alert((options.message || '').toString());
+              resolve(true);
+            }
+            return;
+          }
+
+          setContent(options || {});
+          openModal();
+
+          let settled = false;
+          const cleanup = () => {
+            document.removeEventListener('keydown', onKeyDown);
+            if (modal) modal.removeEventListener('click', onBackdrop);
+            if (okBtn) okBtn.removeEventListener('click', onOk);
+            if (cancelBtn) cancelBtn.removeEventListener('click', onCancel);
+            if (closeBtn) closeBtn.removeEventListener('click', onCancel);
+          };
+          const finish = (val) => {
+            if (settled) return;
+            settled = true;
+            cleanup();
+            closeModal();
+            resolve(val);
+          };
+          const onOk = () => finish(true);
+          const onCancel = () => finish(false);
+          const onBackdrop = (ev) => { if (ev && ev.target === modal) finish(false); };
+          const onKeyDown = (ev) => {
+            if (!ev) return;
+            if (ev.key === 'Escape') return finish(false);
+            if (ev.key === 'Enter' && options && options.mode === 'confirm') return finish(true);
+          };
+
+          document.addEventListener('keydown', onKeyDown);
+          modal.addEventListener('click', onBackdrop);
+          okBtn && okBtn.addEventListener('click', onOk);
+          cancelBtn && cancelBtn.addEventListener('click', onCancel);
+          closeBtn && closeBtn.addEventListener('click', onCancel);
+
+          // Focus primary action
+          setTimeout(() => { try { (okBtn || cancelBtn || closeBtn).focus(); } catch(_) {} }, 0);
+        });
+      }
+
+      window.appAlert = function(raw, forcedType){
+        const parts = splitTitleAndBody(raw);
+        return showDialog({
+          mode: 'alert',
+          type: forcedType || inferTypeFromText(parts.title),
+          title: parts.title,
+          message: parts.body || ''
+        });
+      };
+
+      window.appConfirm = function(message, opts){
+        const o = opts || {};
+        return showDialog({
+          mode: 'confirm',
+          type: o.type || 'danger',
+          title: o.title || 'Onay',
+          message: message || '',
+          confirmText: o.confirmText || 'Evet',
+          cancelText: o.cancelText || 'Vazgeç'
+        });
+      };
+    })();
 
     async function loadOrderDetail() {
       console.log('loadOrderDetail çağrıldı');
@@ -376,7 +635,7 @@
 
     async function createInvoice() {
       if (!currentOrder) {
-        alert('❌ Sipariş Hatası\n\nSipariş bilgisi yüklenemedi. Sayfayı yenileyip tekrar deneyin.');
+        await appAlert('❌ Sipariş Hatası\n\nSipariş bilgisi yüklenemedi. Sayfayı yenileyip tekrar deneyin.');
         return;
       }
       
@@ -401,7 +660,7 @@
       try {
         const exists = await checkInvoiceExists(currentOrder.id);
         if (exists) {
-          alert(`⚠️ Bilgi Fişi Zaten Mevcut\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n\nBu sipariş için bilgi fişi daha önce oluşturulmuş.`);
+          await appAlert(`⚠️ Bilgi Fişi Zaten Mevcut\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n\nBu sipariş için bilgi fişi daha önce oluşturulmuş.`);
           const btn = document.getElementById('createInvoiceBtn');
           if (btn) {
             btn.disabled = true;
@@ -603,7 +862,7 @@
         console.log('Status update result:', statusUpdateResult);
         
         if (!statusUpdateResult) {
-          alert('⚠️ Sipariş durumu güncellenemedi. Lütfen console\'u kontrol edin.');
+          await appAlert('⚠️ Sipariş durumu güncellenemedi. Lütfen console\'u kontrol edin.');
           return;
         }
         
@@ -619,7 +878,7 @@
         const token = getGitHubToken();
         if (!token) {
           console.error('No GitHub token available');
-          alert('⚠️ Yetki bulunamadı. Admin panelinden yetkilendirme ayarını yapın.');
+          await appAlert('⚠️ Yetki bulunamadı. Admin panelinden yetkilendirme ayarını yapın.');
           return;
         }
         
@@ -631,7 +890,7 @@
         // First, check existence explicitly to avoid accidental overwrite
         const alreadyExists = await checkInvoiceExists(orderId);
         if (alreadyExists) {
-          alert('BU BİLGİ FİŞİ DAHA ÖNCE OLUŞTURULMUŞ');
+          await appAlert('⚠️ Bilgi Fişi Zaten Mevcut\n\nBu bilgi fişi daha önce oluşturulmuş.');
           const btn = document.getElementById('createInvoiceBtn');
           if (btn) {
             btn.disabled = true;
@@ -666,11 +925,11 @@
           // Durumu "Hazır" olarak güncelle (zaten updateOrderStatus ile yapıldı ama emin olmak için UI'ı tekrar render et)
           currentOrder.status = 'ready';
           renderOrderDetail(currentOrder);
-          alert(`✅ Bilgi Fişi Kaydedildi\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n💰 Tutar: ${currentOrder.total || '-'} TL\n\nBilgi Fişi başarıyla sisteme kaydedildi.\nSipariş durumu "Hazır" olarak güncellendi.`);
+          await appAlert(`✅ Bilgi Fişi Kaydedildi\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n💰 Tutar: ${currentOrder.total || '-'} TL\n\nBilgi Fişi başarıyla sisteme kaydedildi.\nSipariş durumu "Hazır" olarak güncellendi.`);
         } else {
           const errorText = await response.text();
           console.error('❌ Invoice save failed:', response.status, errorText);
-          alert(`⚠️ Bilgi Fişi Kayıt Uyarısı\n\n📦 Sipariş: ${currentOrder.id}\n\nBilgi fişi kaydedilemedi ancak sipariş durumu güncellendi.\nDetaylar için console'u kontrol edin.`);
+          await appAlert(`⚠️ Bilgi Fişi Kayıt Uyarısı\n\n📦 Sipariş: ${currentOrder.id}\n\nBilgi fişi kaydedilemedi ancak sipariş durumu güncellendi.\nDetaylar için console'u kontrol edin.`);
         }
       } catch(err) {
         console.error('Failed to save invoice to GitHub:', err);
@@ -679,18 +938,18 @@
     }
 
     async function editOrder() {
-      if (!currentOrder) { alert('Sipariş yüklenmedi!'); return; }
+      if (!currentOrder) { await appAlert('⚠️ Uyarı\n\nSipariş yüklenmedi!'); return; }
       // Simple prompt-based edit of teslimat adresi
       const newAddress = prompt('Yeni teslimat adresini girin:', currentOrder.address || '');
       if (newAddress == null) return; // cancelled
       try {
         const token = getGitHubToken();
-        if (!token) { alert('⚠️ Yetki bulunamadı.'); return; }
+        if (!token) { await appAlert('⚠️ Yetki bulunamadı.'); return; }
         // Fetch file to get SHA
         const getRes = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/orders/${currentOrder.id}.json?ref=site-release&t=${Date.now()}`,{
           headers:{ 'Accept':'application/vnd.github.v3+json','Authorization':`token ${token}` }
         });
-        if (!getRes.ok) { alert('❌ Sipariş dosyası alınamadı.'); return; }
+        if (!getRes.ok) { await appAlert('❌ Sipariş dosyası alınamadı.'); return; }
         const fileData = await getRes.json();
         const orderObj = JSON.parse(atob(fileData.content));
         orderObj.address = newAddress;
@@ -705,25 +964,25 @@
           })
         });
         if (putRes.ok) {
-          alert(`✅ Adres Güncellendi\n\n📦 Sipariş: ${currentOrder.id}\n📍 Yeni Adres:\n${newAddress}\n\nSipariş adresi başarıyla güncellendi.`);
+          await appAlert(`✅ Adres Güncellendi\n\n📦 Sipariş: ${currentOrder.id}\n📍 Yeni Adres:\n${newAddress}\n\nSipariş adresi başarıyla güncellendi.`);
           currentOrder.address = newAddress;
           renderOrderDetail(currentOrder);
         } else {
           const txt = await putRes.text();
           console.error('Edit failed:', putRes.status, txt);
-          alert(`❌ Düzenleme Başarısız\n\n📦 Sipariş: ${currentOrder.id}\n\nAdres güncellenemedi. Hata kodu: ${putRes.status}\nDetaylar için console'u kontrol edin.`);
+          await appAlert(`❌ Düzenleme Başarısız\n\n📦 Sipariş: ${currentOrder.id}\n\nAdres güncellenemedi. Hata kodu: ${putRes.status}\nDetaylar için console'u kontrol edin.`);
         }
       } catch (e) {
         console.error('Edit error:', e);
-        alert(`❌ Düzenleme Hatası\n\n📦 Sipariş: ${currentOrder.id}\n\nDüzenleme işlemi sırasında bir hata oluştu.\nİnternet bağlantınızı kontrol edip tekrar deneyin.`);
+        await appAlert(`❌ Düzenleme Hatası\n\n📦 Sipariş: ${currentOrder.id}\n\nDüzenleme işlemi sırasında bir hata oluştu.\nİnternet bağlantınızı kontrol edip tekrar deneyin.`);
       }
     }
 
     // Fetch latest customer address from users/<email>_full.json (raw-first) and update order file
     async function refreshCustomerAddress() {
-      if (!currentOrder) { alert('Sipariş yüklenmedi!'); return; }
+      if (!currentOrder) { await appAlert('⚠️ Uyarı\n\nSipariş yüklenmedi!'); return; }
       const email = currentOrder.customerEmail || currentOrder.payerEmail;
-      if (!email) { alert('Müşteri e-postası bulunamadı.'); return; }
+      if (!email) { await appAlert('❌ Hata\n\nMüşteri e-postası bulunamadı.'); return; }
       try {
         // Pull user profile file
         const userPath = `users/${encodeURIComponent(email)}_full.json`;
@@ -744,7 +1003,7 @@
           if (!apiRes.ok) {
             const txt = await apiRes.text();
             console.error('User fetch failed:', apiRes.status, txt);
-            alert('❌ Müşteri profili alınamadı.');
+            await appAlert('❌ Müşteri profili alınamadı.');
             return;
           }
           const userFile = await apiRes.json();
@@ -760,13 +1019,13 @@
         const preferred = addresses.find(a => a.default) || addresses[0];
         const latestAddress = preferred ? (preferred.fullAddress || [preferred.city, preferred.district, preferred.neighborhood, preferred.streetAddress, preferred.postalCode].filter(Boolean).join(' ')) : (userData.address || '');
         if (!latestAddress) {
-          alert('Müşteri profilinde adres bulunamadı.');
+          await appAlert('⚠️ Uyarı\n\nMüşteri profilinde adres bulunamadı.');
           return;
         }
         // If address missing or changed, update order file and remote user profile
         const needsUpdate = !currentOrder.address || String(currentOrder.address).trim() !== String(latestAddress).trim();
         if (!needsUpdate) {
-          alert('Adres zaten güncel.');
+          await appAlert('✅ Bilgi\n\nAdres zaten güncel.');
           return;
         }
         // First update remote user profile via /update-user if endpoint is configured
@@ -791,11 +1050,11 @@
 
         // Update order file with this address
         const token = getGitHubToken();
-        if (!token) { alert('⚠️ Yetki bulunamadı.'); return; }
+        if (!token) { await appAlert('⚠️ Yetki bulunamadı.'); return; }
         const getRes = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/orders/${currentOrder.id}.json?ref=site-release&t=${Date.now()}`,{
           headers:{ 'Accept':'application/vnd.github.v3+json','Authorization':`token ${token}` }
         });
-        if (!getRes.ok) { alert('❌ Sipariş dosyası alınamadı.'); return; }
+        if (!getRes.ok) { await appAlert('❌ Sipariş dosyası alınamadı.'); return; }
         const fileData = await getRes.json();
         const orderObj = JSON.parse(atob(fileData.content));
         orderObj.address = latestAddress;
@@ -810,32 +1069,33 @@
           })
         });
         if (putRes.ok) {
-          alert('✅ Adres müşteri profilinden çekildi ve güncellendi.');
+          await appAlert('✅ Başarılı\n\nAdres müşteri profilinden çekildi ve güncellendi.');
           // Update UI immediately without full reload
           currentOrder.address = latestAddress;
           renderOrderDetail(currentOrder);
         } else {
           const txt = await putRes.text();
           console.error('Refresh address failed:', putRes.status, txt);
-          alert('❌ Adres güncelleme başarısız.');
+          await appAlert('❌ Hata\n\nAdres güncelleme başarısız.');
         }
       } catch (e) {
         console.error('Refresh address error:', e);
-        alert('❌ Adres çekme sırasında hata oluştu.');
+        await appAlert('❌ Hata\n\nAdres çekme sırasında hata oluştu.');
       }
     }
 
     async function deleteOrder() {
-      if (!currentOrder) { alert('Sipariş yüklenmedi!'); return; }
-      if (!confirm('Bu siparişi silmek istediğinizden emin misiniz?')) return;
+      if (!currentOrder) { await appAlert('⚠️ Uyarı\n\nSipariş yüklenmedi!'); return; }
+      const ok = await appConfirm('Bu siparişi silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz.', { title: '🗑️ Silme Onayı', type: 'danger', confirmText: 'Evet, Sil', cancelText: 'Vazgeç' });
+      if (!ok) return;
       try {
         const token = getGitHubToken();
-        if (!token) { alert('⚠️ Yetki bulunamadı.'); return; }
+        if (!token) { await appAlert('⚠️ Yetki bulunamadı.'); return; }
         // Fetch file to get SHA
         const getRes = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/orders/${currentOrder.id}.json?ref=site-release&t=${Date.now()}`,{
           headers:{ 'Accept':'application/vnd.github.v3+json','Authorization':`token ${token}` }
         });
-        if (!getRes.ok) { alert('❌ Sipariş dosyası alınamadı.'); return; }
+        if (!getRes.ok) { await appAlert('❌ Sipariş dosyası alınamadı.'); return; }
         const fileData = await getRes.json();
         const delRes = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/orders/${currentOrder.id}.json`,{
           method:'DELETE',
@@ -843,16 +1103,16 @@
           body: JSON.stringify({ message: `Sipariş silindi: ${currentOrder.id}`, sha: fileData.sha, branch:'site-release' })
         });
         if (delRes.ok) {
-          alert(`🗑️ Sipariş Silindi\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n\nSipariş başarıyla silindi. Sipariş listesine yönlendiriliyorsunuz.`);
+          await appAlert(`🗑️ Sipariş Silindi\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n\nSipariş başarıyla silindi. Sipariş listesine yönlendiriliyorsunuz.`, 'danger');
           window.location.href = 'siparisler.html';
         } else {
           const txt = await delRes.text();
           console.error('Delete failed:', delRes.status, txt);
-          alert(`❌ Silme Başarısız\n\n📦 Sipariş: ${currentOrder.id}\n\nSipariş silinemedi. Hata kodu: ${delRes.status}\nDetaylar için console'u kontrol edin.`);
+          await appAlert(`❌ Silme Başarısız\n\n📦 Sipariş: ${currentOrder.id}\n\nSipariş silinemedi. Hata kodu: ${delRes.status}\nDetaylar için console'u kontrol edin.`);
         }
       } catch (e) {
         console.error('Delete error:', e);
-        alert(`❌ Silme Hatası\n\n📦 Sipariş: ${currentOrder.id}\n\nSilme işlemi sırasında bir hata oluştu.\nİnternet bağlantınızı kontrol edip tekrar deneyin.`);
+        await appAlert(`❌ Silme Hatası\n\n📦 Sipariş: ${currentOrder.id}\n\nSilme işlemi sırasında bir hata oluştu.\nİnternet bağlantınızı kontrol edip tekrar deneyin.`);
       }
     }
     
@@ -864,7 +1124,7 @@
         console.log('Token retrieved:', token ? `Yes (${token.substring(0, 7)}...)` : 'No');
         if (!token) {
           console.error('No GitHub token available');
-          alert('⚠️ Yetki bulunamadı. Admin panelinden yetkilendirme ayarını yapın.');
+          await appAlert('⚠️ Yetki bulunamadı. Admin panelinden yetkilendirme ayarını yapın.');
           return false;
         }
         
@@ -883,7 +1143,7 @@
           console.error('Failed to fetch order file:', getResponse.status);
           const errorText = await getResponse.text();
           console.error('Error details:', errorText);
-          alert(`❌ Sipariş dosyası alınamadı: ${getResponse.status} ${getResponse.statusText}`);
+          await appAlert(`❌ Sipariş dosyası alınamadı\n\nHata: ${getResponse.status} ${getResponse.statusText}\n\nConsole'da detayları kontrol edin.`);
           return false;
         }
         
@@ -941,25 +1201,25 @@
               });
               if (emailRes.ok) {
                 console.log('✅ Order ready email sent to customer');
-                alert(`✅ Bilgi Fişi Oluşturuldu\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n💰 Tutar: ${currentOrder.total || '-'} TL\n\nSipariş durumu "Hazır" olarak güncellendi.\n📧 Müşteriye bildirim e-postası gönderildi.`);
+                await appAlert(`✅ Bilgi Fişi Oluşturuldu\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n💰 Tutar: ${currentOrder.total || '-'} TL\n\nSipariş durumu "Hazır" olarak güncellendi.\n📧 Müşteriye bildirim e-postası gönderildi.`);
               } else {
                 console.warn('⚠️ Order ready email failed:', emailRes.status);
-                alert(`✅ Bilgi Fişi Oluşturuldu\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n💰 Tutar: ${currentOrder.total || '-'} TL\n\nSipariş durumu "Hazır" olarak güncellendi.\n⚠️ Müşteriye e-posta gönderilemedi.`);
+                await appAlert(`✅ Bilgi Fişi Oluşturuldu\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n💰 Tutar: ${currentOrder.total || '-'} TL\n\nSipariş durumu "Hazır" olarak güncellendi.\n⚠️ Müşteriye e-posta gönderilemedi.`, 'warn');
               }
             } catch (emailErr) {
               console.error('❌ Order ready email error:', emailErr);
-              alert(`✅ Bilgi Fişi Oluşturuldu\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n💰 Tutar: ${currentOrder.total || '-'} TL\n\nSipariş durumu "Hazır" olarak güncellendi.`);
+              await appAlert(`✅ Bilgi Fişi Oluşturuldu\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n💰 Tutar: ${currentOrder.total || '-'} TL\n\nSipariş durumu "Hazır" olarak güncellendi.`, 'warn');
             }
           } else {
             const statusNames = { pending: 'Beklemede', processing: 'İşleniyor', ready: 'Hazır', shipped: 'Gönderildi', paid: 'Ödendi' };
-            alert(`✅ Durum Güncellendi\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n📊 Yeni Durum: ${statusNames[newStatus] || newStatus}\n\nSipariş durumu başarıyla güncellendi.`);
+            await appAlert(`✅ Durum Güncellendi\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n📊 Yeni Durum: ${statusNames[newStatus] || newStatus}\n\nSipariş durumu başarıyla güncellendi.`);
           }
           return true;
         } else {
           console.error('❌ Failed to update order status:', updateResponse.status);
           const errorText = await updateResponse.text();
           console.error('Update error details:', errorText);
-          alert(`❌ Sipariş durumu güncellenemedi: ${updateResponse.status} ${updateResponse.statusText}\n\nConsole'da detayları kontrol edin.`);
+          await appAlert(`❌ Sipariş durumu güncellenemedi\n\nHata: ${updateResponse.status} ${updateResponse.statusText}\n\nConsole'da detayları kontrol edin.`);
           return false;
         }
       } catch(err) {
@@ -1005,7 +1265,7 @@
 
       saveBtn.onclick = async () => {
         const newAddr = (ta.value || '').trim();
-        if (!newAddr) { alert('Adres boş olamaz.'); return; }
+        if (!newAddr) { await appAlert('⚠️ Uyarı\n\nAdres boş olamaz.'); return; }
         try {
           // 1) Update user profile via Worker update-user (if configured)
           const email = (currentOrder && (currentOrder.customerEmail || currentOrder.payerEmail)) || '';
@@ -1029,7 +1289,7 @@
           // 2) Fallback: update users/<email>_full.json directly via GitHub API
           if (!workerUpdated && email) {
             const token = getGitHubToken();
-            if (!token) { alert('⚠️ Yetki yok, profil dosyasını güncelleyemedik.'); }
+            if (!token) { await appAlert('⚠️ Uyarı\n\nYetki yok, profil dosyasını güncelleyemedik.'); }
             else {
               const userPath = `users/${encodeURIComponent(email)}_full.json`;
               const getRes = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/${userPath}?ref=site-release&t=${Date.now()}`,{
@@ -1066,11 +1326,11 @@
 
           // 3) Update current order address and commit
           const token2 = getGitHubToken();
-          if (!token2) { alert('⚠️ Yetki bulunamadı. Sipariş dosyası güncellenemedi.'); return; }
+          if (!token2) { await appAlert('⚠️ Yetki bulunamadı. Sipariş dosyası güncellenemedi.'); return; }
           const getOrderRes = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/orders/${currentOrder.id}.json?ref=site-release&t=${Date.now()}`,{
             headers:{ 'Accept':'application/vnd.github.v3+json','Authorization':`token ${token2}` }
           });
-          if (!getOrderRes.ok) { alert('❌ Sipariş dosyası alınamadı.'); return; }
+          if (!getOrderRes.ok) { await appAlert('❌ Sipariş dosyası alınamadı.'); return; }
           const orderFile = await getOrderRes.json();
           const orderObj = JSON.parse(atob(orderFile.content));
           orderObj.address = newAddr;
@@ -1087,31 +1347,31 @@
             currentOrder.address = newAddr;
             textEl.textContent = newAddr;
             editor.style.display = 'none';
-            alert('✅ Adres kaydedildi ve sipariş güncellendi.');
+            await appAlert('✅ Başarılı\n\nAdres kaydedildi ve sipariş güncellendi.');
           } else {
             const txt = await putOrderRes.text();
             console.error('Sipariş güncelleme hatası:', putOrderRes.status, txt);
-            alert('❌ Sipariş güncelleme başarısız.');
+            await appAlert('❌ Hata\n\nSipariş güncelleme başarısız.');
           }
         } catch (e) {
           console.error('Adres kaydetme hatası:', e);
-          alert('❌ Adres kaydedilirken bir hata oluştu.');
+          await appAlert('❌ Hata\n\nAdres kaydedilirken bir hata oluştu.');
         }
       };
     }
 
     // Müşteri Notunu Görüntüle ve Okundu olarak işaretle
     async function viewCustomerNote() {
-      if (!currentOrder) { alert('Sipariş yüklenemedi.'); return; }
+      if (!currentOrder) { await appAlert('⚠️ Uyarı\n\nSipariş yüklenemedi.'); return; }
       
       const customerNote = currentOrder.note || '';
       if (!customerNote) {
-        alert('Bu siparişte müşteri notu bulunmuyor.');
+        await appAlert('✅ Bilgi\n\nBu siparişte müşteri notu bulunmuyor.');
         return;
       }
       
       // Notu göster
-      alert(`💬 Müşteri Notu\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n\n━━━━━━━━━━━━━━━━━━━━\n${customerNote}\n━━━━━━━━━━━━━━━━━━━━`);
+      await appAlert(`💬 Müşteri Notu\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n\n${customerNote}`,'info');
       
       // Zaten okunmuşsa tekrar kaydetme
       if (currentOrder.noteRead) return;

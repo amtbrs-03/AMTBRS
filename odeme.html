@@ -312,6 +312,101 @@
     // Satıcıya Sor - WhatsApp butonu
     document.getElementById('askSellerBtn').addEventListener('click', async function(e){
       e.preventDefault();
+
+      function safeParseJSON(raw, fallback) {
+        try { return JSON.parse(raw); } catch(_) { return fallback; }
+      }
+
+      function normalizePhone(value) {
+        const s = (value || '').toString().trim();
+        return s || '-';
+      }
+
+      function formatAddressLine(addr) {
+        if (!addr) return '';
+        // Legacy string address
+        if (typeof addr === 'string') return addr.trim();
+        if (typeof addr !== 'object') return '';
+
+        const loc = [addr.city, addr.district, addr.neighborhood].filter(Boolean).join(' / ');
+        const parts = [];
+        if (loc) parts.push(loc);
+        if (addr.addressDetail) parts.push(addr.addressDetail);
+        if (addr.postalCode) parts.push('PK: ' + addr.postalCode);
+        // Support a possible fullAddress field
+        if (!parts.length && addr.fullAddress) parts.push(addr.fullAddress);
+        return parts.join(', ').trim();
+      }
+
+      function getUserForWhatsApp() {
+        const cu = safeParseJSON(localStorage.getItem('currentUser') || 'null', null);
+        const email = cu && cu.email ? String(cu.email) : '';
+        const full = email ? safeParseJSON(localStorage.getItem('user_' + email) || 'null', null) : null;
+        // Prefer full record for contact/address details, but keep currentUser as fallback
+        return {
+          currentUser: cu,
+          fullUser: full,
+          email
+        };
+      }
+
+      function buildMemberInfoBlock(currentUser, fullUser) {
+        const name = (fullUser && fullUser.name) || (currentUser && currentUser.name) || 'Misafir';
+        const email = (fullUser && fullUser.email) || (currentUser && currentUser.email) || '-';
+        const phone = normalizePhone((fullUser && fullUser.phone) || (currentUser && currentUser.phone));
+
+        // Collect addresses from multiple shapes
+        let addresses = [];
+        if (fullUser && Array.isArray(fullUser.addresses) && fullUser.addresses.length) {
+          addresses = fullUser.addresses.filter(Boolean);
+        } else if (fullUser && fullUser.address) {
+          addresses = [fullUser.address];
+        } else if (currentUser && currentUser.addresses && Array.isArray(currentUser.addresses)) {
+          addresses = currentUser.addresses.filter(Boolean);
+        } else if (currentUser && currentUser.address) {
+          addresses = [currentUser.address];
+        }
+
+        // Format addresses; show default first if possible
+        const withMeta = addresses.map((a, idx) => {
+          const isDefault = !!(a && typeof a === 'object' && a.isDefault);
+          const title = (a && typeof a === 'object' && a.title) ? String(a.title) : '';
+          return {
+            idx,
+            isDefault,
+            title,
+            line: formatAddressLine(a)
+          };
+        }).filter(x => x.line);
+        withMeta.sort((a, b) => {
+          if (a.isDefault && !b.isDefault) return -1;
+          if (!a.isDefault && b.isDefault) return 1;
+          return a.idx - b.idx;
+        });
+
+        let addressText = '-';
+        if (withMeta.length === 1) {
+          addressText = withMeta[0].line;
+        } else if (withMeta.length > 1) {
+          addressText = withMeta.map((a, i) => {
+            const badge = a.isDefault ? ' (Varsayılan)' : '';
+            const title = a.title ? (a.title + badge) : (badge ? ('Adres ' + (i + 1) + badge) : ('Adres ' + (i + 1)));
+            return `- ${title}: ${a.line}`;
+          }).join('\n');
+        }
+
+        let block = '';
+        block += `• İsim: ${name}\n`;
+        block += `• E-posta: ${email}\n`;
+        block += `• Telefon: ${phone}\n`;
+        if (withMeta.length <= 1) {
+          block += `• Adres: ${addressText}\n`;
+        } else {
+          block += `• Adresler:\n${addressText}\n`;
+        }
+        return block;
+      }
+
       let phone = '+905384179081'; // Varsayılan numara
       try {
         const settings = await loadSettings();
@@ -325,11 +420,11 @@
       // Kullanıcı ve sepet bilgilerini topla
       const totalEl = document.getElementById('grandTotal');
       const total = totalEl ? totalEl.textContent : '';
-      const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
-      const userName = user ? user.name : 'Misafir';
-      const userEmail = user ? user.email : '-';
-      const userPhone = user ? (user.phone || '-') : '-';
-      const userAddress = user ? (user.address || '-') : '-';
+      const userBundle = getUserForWhatsApp();
+      const user = userBundle.currentUser;
+      const fullUser = userBundle.fullUser;
+      const userName = (fullUser && fullUser.name) || (user ? user.name : 'Misafir');
+      const userEmail = (fullUser && fullUser.email) || (user ? user.email : '-');
       
       // Sepet verilerini al
       let cartItems = [];
@@ -361,10 +456,8 @@
       message += `📋 Sorgu ID: ${orderId}\n\n`;
       
       message += `👤 *ÜYE BİLGİLERİ*\n`;
-      message += `• İsim: ${userName}\n`;
-      message += `• E-posta: ${userEmail}\n`;
-      message += `• Telefon: ${userPhone}\n`;
-      message += `• Adres: ${userAddress}\n\n`;
+      message += buildMemberInfoBlock(user, fullUser);
+      message += `\n`;
       
       if (productList) {
         message += `🛒 *SEPET İÇERİĞİ*\n${productList}\n\n`;

@@ -69,7 +69,7 @@ export default {
           const token = env.GITHUB_TOKEN || env.GH_TOKEN;
           if (token) {
             const path = `orders/${orderId}.json`;
-            const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}`;
+            const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeGitHubPath(path)}`;
             // check existing
             let existingSha = null;
             try {
@@ -374,7 +374,7 @@ https://ern-cicek.com.tr
           if (!filePath || !content) continue;
           
           try {
-            const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(filePath)}`;
+            const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeGitHubPath(filePath)}`;
             
             // Check if file exists to get SHA
             let existingSha = null;
@@ -664,7 +664,7 @@ https://ern-cicek.com.tr
         }
 
         const filePath = `orders/${orderId}.json`;
-        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(filePath)}`;
+        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeGitHubPath(filePath)}`;
 
         function decodeB64Utf8(b64) {
           const raw = String(b64 || '').replace(/\n/g, '');
@@ -711,7 +711,7 @@ https://ern-cicek.com.tr
         if (!shippingCompany) {
           try {
             const settingsPath = 'site-settings.json';
-            const settingsUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(settingsPath)}?ref=${encodeURIComponent(branch)}`;
+            const settingsUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeGitHubPath(settingsPath)}?ref=${encodeURIComponent(branch)}`;
             const settingsRes = await fetch(settingsUrl, {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -972,7 +972,7 @@ https://ern-cicek.com.tr
           if (token) {
             const safeEmail = email.replace(/[^a-z0-9._@-]/gi, '_');
             const filePath = `users/${safeEmail}_full.json`;
-            const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(filePath)}`;
+            const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeGitHubPath(filePath)}`;
             
             // Retry loop for 409 conflicts
             for (let attempt = 0; attempt < 3; attempt++) {
@@ -1041,7 +1041,7 @@ https://ern-cicek.com.tr
           
           const safeEmail = email.replace(/[^a-z0-9._@-]/gi, '_');
           const filePath = `carts/${safeEmail}.json`;
-          const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(filePath)}`;
+          const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeGitHubPath(filePath)}`;
           
           // Önce dosyanın SHA'sini al
           const headRes = await fetch(apiUrl + `?ref=${branch}`, { 
@@ -1121,6 +1121,14 @@ function jsonHeaders(origin) {
   return { ...corsHeaders(origin), 'Content-Type': 'application/json; charset=utf-8' };
 }
 
+function encodeGitHubPath(path) {
+  // GitHub Contents API path segments must be encoded but '/' must be preserved.
+  return String(path || '')
+    .split('/')
+    .map(seg => encodeURIComponent(seg))
+    .join('/');
+}
+
 async function readJsonLoose(request) {
   // Accept text/plain (no-preflight) and application/json
   const ct = (request.headers.get('Content-Type') || '').toLowerCase();
@@ -1153,7 +1161,7 @@ async function writeEmailLogToGitHub({ env, log }) {
   const content = btoa(unescape(encodeURIComponent(contentJson)));
   const message = `chore(email-log): ${type} ${orderId} -> ${safeEmail}`;
 
-  const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(filePath)}`;
+  const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeGitHubPath(filePath)}`;
 
   for (let attempt = 0; attempt < 3; attempt++) {
     let existingSha = null;
