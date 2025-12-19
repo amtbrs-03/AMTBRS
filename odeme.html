@@ -313,6 +313,72 @@
     document.getElementById('askSellerBtn').addEventListener('click', async function(e){
       e.preventDefault();
 
+      function encodeWhatsAppText(str) {
+        const input = String(str);
+
+        function isUnreservedByte(b) {
+          return (
+            (b >= 0x41 && b <= 0x5A) ||
+            (b >= 0x61 && b <= 0x7A) ||
+            (b >= 0x30 && b <= 0x39) ||
+            b === 0x2D || b === 0x2E || b === 0x5F || b === 0x7E
+          );
+        }
+        function pct(b) {
+          const hex = b.toString(16).toUpperCase();
+          return '%' + (hex.length === 1 ? ('0' + hex) : hex);
+        }
+
+        // Prefer TextEncoder when available, otherwise manual UTF-8 encoding.
+        try {
+          if (typeof TextEncoder !== 'undefined') {
+            const bytes = new TextEncoder().encode(input);
+            let out = '';
+            for (let i = 0; i < bytes.length; i++) {
+              const b = bytes[i];
+              out += isUnreservedByte(b) ? String.fromCharCode(b) : pct(b);
+            }
+            return out;
+          }
+        } catch (_) {}
+
+        let out = '';
+        for (let i = 0; i < input.length; i++) {
+          let codePoint = input.charCodeAt(i);
+          // Surrogate pair -> code point
+          if (codePoint >= 0xD800 && codePoint <= 0xDBFF && i + 1 < input.length) {
+            const next = input.charCodeAt(i + 1);
+            if (next >= 0xDC00 && next <= 0xDFFF) {
+              codePoint = ((codePoint - 0xD800) << 10) + (next - 0xDC00) + 0x10000;
+              i++;
+            }
+          }
+
+          const bytes = [];
+          if (codePoint < 0x80) {
+            bytes.push(codePoint);
+          } else if (codePoint < 0x800) {
+            bytes.push(0xC0 | (codePoint >> 6));
+            bytes.push(0x80 | (codePoint & 0x3F));
+          } else if (codePoint < 0x10000) {
+            bytes.push(0xE0 | (codePoint >> 12));
+            bytes.push(0x80 | ((codePoint >> 6) & 0x3F));
+            bytes.push(0x80 | (codePoint & 0x3F));
+          } else {
+            bytes.push(0xF0 | (codePoint >> 18));
+            bytes.push(0x80 | ((codePoint >> 12) & 0x3F));
+            bytes.push(0x80 | ((codePoint >> 6) & 0x3F));
+            bytes.push(0x80 | (codePoint & 0x3F));
+          }
+
+          for (let j = 0; j < bytes.length; j++) {
+            const b = bytes[j];
+            out += isUnreservedByte(b) ? String.fromCharCode(b) : pct(b);
+          }
+        }
+        return out;
+      }
+
       function safeParseJSON(raw, fallback) {
         try { return JSON.parse(raw); } catch(_) { return fallback; }
       }
@@ -490,7 +556,7 @@
       const message = parts.filter(Boolean).join(SP).replace(/\n{3,}/g, SP);
       
       // WhatsApp URL - hem mobil hem masaüstü için wa.me kullan (daha güvenilir)
-      const waUrl = 'https://wa.me/' + phone + '?text=' + encodeURIComponent(message);
+      const waUrl = 'https://wa.me/' + phone + '?text=' + encodeWhatsAppText(message);
       
       window.open(waUrl, '_blank');
     });

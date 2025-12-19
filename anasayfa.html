@@ -3674,7 +3674,7 @@
 
                         console.log('loginUser: Saving current user session...');
                         // store current user without sensitive fields
-                        const safeUser = { name: userData.name, email: userData.email };
+                        const safeUser = { name: userData.name, email: userData.email, lastLogin: Date.now() };
                         
                         // MOBILE FIX: Try both localStorage and sessionStorage
                         let sessionSaved = false;
@@ -5071,7 +5071,7 @@
 
                     /* --- Cart logic (user-specific) --- */
                     function getCurrentUser() {
-                        const cu = localStorage.getItem('currentUser');
+                        const cu = localStorage.getItem('currentUser') || sessionStorage.getItem('currentUser');
                         return cu ? JSON.parse(cu) : null;
                     }
 
@@ -5626,14 +5626,29 @@
                     async function persistCartSnapshot(cart, user){
                         if (!user || !user.email) return;
                         try {
+                            // Kullanıcının son giriş zamanı (local/session currentUser veya cached full user)
+                            let lastLoginAt = null;
+                            try {
+                                if (user && user.lastLogin) lastLoginAt = Number(user.lastLogin) || null;
+                                if (!lastLoginAt) {
+                                    const cached = localStorage.getItem('user_' + user.email);
+                                    if (cached) {
+                                        const full = JSON.parse(cached);
+                                        if (full && full.lastLogin) lastLoginAt = Number(full.lastLogin) || null;
+                                    }
+                                }
+                            } catch(_){ lastLoginAt = null; }
+
                             // En eski ürünün ekleme zamanını bul (hatırlatma maili için)
                             const addedTimes = cart.map(i => i.addedAt || Date.now()).filter(t => t > 0);
                             const firstAddedAt = addedTimes.length > 0 ? Math.min(...addedTimes) : Date.now();
                             const snapshot = {
                                 email: user.email,
                                 name: user.name || '',
+                                lastLoginAt: lastLoginAt,
                                 updatedAt: Date.now(),
                                 firstAddedAt: firstAddedAt,
+                                cartCreatedAt: firstAddedAt,
                                 totalQty: cart.reduce((s,i)=> s + (i.qty||0), 0),
                                 totalPrice: cart.reduce((s,i)=> s + (i.price||0) * (i.qty||0), 0),
                                 items: cart.map(i=>({ id: i.id, name: i.name, price: i.price, qty: i.qty||1, image: i.image || '', addedAt: i.addedAt || Date.now() }))
