@@ -9,6 +9,15 @@
 			"isBackground": false,
 			"problemMatcher": [],
 			"group": "run"
+		},
+		{
+			"label": "Normalize products JSON",
+			"type": "shell",
+			"command": "node scripts/normalize-products.js",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "run"
 		}
 	]
 }

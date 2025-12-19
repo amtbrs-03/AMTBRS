@@ -1848,6 +1848,49 @@
   
   // Note: openProductEditPanelById, openProductEditPanel, closeProductEditPanel are now defined
   // in the inline script block with renderAdminProducts to ensure they're available when needed.
+
+  // === Ürün sıra numarası (sortOrder) yardımcıları ===
+  // Kural:
+  // - sortOrder her zaman 1..N olacak şekilde normalize edilir.
+  // - Bir ürüne yeni sıra numarası verilirse, ürün o pozisyona taşınır ve diğerleri kayar.
+  // - sortOrder boş/0 ise ürün sona eklenir.
+  function adminNormalizeProductIdKey(pid){
+    return String(pid||'').toLowerCase().replace(/\.(jpg|jpeg|png|webp)$/i,'');
+  }
+  function adminEffectiveSortOrder(p){
+    const so = Number(p && p.sortOrder);
+    return Number.isFinite(so) && so > 0 ? so : 999999;
+  }
+  function adminSortByEffectiveOrderThenName(a,b){
+    const ao = adminEffectiveSortOrder(a);
+    const bo = adminEffectiveSortOrder(b);
+    if(ao !== bo) return ao - bo;
+    const an = String((a && a.name) || '');
+    const bn = String((b && b.name) || '');
+    const nc = an.localeCompare(bn,'tr');
+    if(nc !== 0) return nc;
+    return String((a && a.id) || '').localeCompare(String((b && b.id) || ''), 'tr');
+  }
+  function adminNormalizeProductsSequentialSortOrder(items){
+    const list = Array.isArray(items) ? [...items] : [];
+    list.sort(adminSortByEffectiveOrderThenName);
+    for(let i=0;i<list.length;i++) list[i].sortOrder = i + 1;
+    return list;
+  }
+  function adminUpsertAndReorderProducts(items, nextProduct, desiredSortOrder){
+    const list = adminNormalizeProductsSequentialSortOrder(items);
+    const key = adminNormalizeProductIdKey(nextProduct && nextProduct.id);
+    const existingIdx = list.findIndex(p => adminNormalizeProductIdKey(p && p.id) === key);
+    if(existingIdx !== -1) list.splice(existingIdx, 1);
+
+    let desired = parseInt(String(desiredSortOrder||'0'), 10);
+    if(!Number.isFinite(desired) || desired <= 0) desired = list.length + 1;
+    desired = Math.max(1, Math.min(list.length + 1, desired));
+    list.splice(desired - 1, 0, { ...(nextProduct||{}) });
+
+    for(let i=0;i<list.length;i++) list[i].sortOrder = i + 1;
+    return list;
+  }
   
   document.getElementById('productEditForm').onsubmit = async function(e){
     e.preventDefault();
@@ -1949,16 +1992,13 @@
                 const txt = await res.text();
                 let products = {};
                 try { products = JSON.parse(txt); } catch(e){ throw new Error('products.json parse hatası'); }
-                if(!Array.isArray(products.items)) products.items = Array.isArray(products) ? products : [];
+                const baseItems = Array.isArray(products.items) ? products.items : (Array.isArray(products) ? products : []);
                 const imagesArr=[image].concat([image2,image3,image4].filter(Boolean));
                 const next = { id, name, price, badge, image: imagesArr[0], images: imagesArr, potDiameter: potDiameter || '', height: height || '', stock: isNaN(stock) ? null : stock, info: info || '', sortOrder: sortOrder || 0 };
-                const idNorm = String(id).toLowerCase().replace(/\.(jpg|jpeg|png|webp)$/i,'');
-                let idx = -1;
-                if(Array.isArray(products.items)){
-                  idx = products.items.findIndex(p=> String(p.id).toLowerCase().replace(/\.(jpg|jpeg|png|webp)$/i,'') === idNorm);
-                }
-                if(idx===-1){ products.items.push(next); } else { products.items[idx]=next; }
-                products.updatedAt=Date.now();
+                const idKey = adminNormalizeProductIdKey(id);
+                const idx = baseItems.findIndex(p=> adminNormalizeProductIdKey(p && p.id) === idKey);
+                const reordered = adminUpsertAndReorderProducts(baseItems, next, sortOrder);
+                products = { ...(products && !Array.isArray(products) ? products : {}), items: reordered, updatedAt: Date.now() };
                 updateRefreshProgress(70, 'GitHub\'a kaydediliyor...');
                 if(token){
                   // Async commit
@@ -1988,14 +2028,11 @@
               const data=await res.json(); let products=JSON.parse(fromBase64(data.content));
               const imagesArr=[image].concat([image2,image3,image4].filter(Boolean));
               const next = { id, name, price, badge, image: imagesArr[0], images: imagesArr, potDiameter: potDiameter || '', height: height || '', stock: isNaN(stock) ? null : stock, info: info || '', sortOrder: sortOrder || 0 };
-              const idNorm = String(id).toLowerCase().replace(/\.(jpg|jpeg|png|webp)$/i,'');
-              let idx = -1;
-              if(Array.isArray(products.items)){
-                idx = products.items.findIndex(p=> String(p.id).toLowerCase().replace(/\.(jpg|jpeg|png|webp)$/i,'') === idNorm);
-              }
-              if(!Array.isArray(products.items)) products.items = Array.isArray(products) ? products : [];
-              if(idx===-1){ products.items.push(next); } else { products.items[idx]=next; }
-              products.updatedAt=Date.now();
+              const baseItems = Array.isArray(products.items) ? products.items : (Array.isArray(products) ? products : []);
+              const idKey = adminNormalizeProductIdKey(id);
+              const idx = baseItems.findIndex(p=> adminNormalizeProductIdKey(p && p.id) === idKey);
+              const reordered = adminUpsertAndReorderProducts(baseItems, next, sortOrder);
+              products = { ...(products && !Array.isArray(products) ? products : {}), items: reordered, updatedAt: Date.now() };
               updateRefreshProgress(70, 'GitHub\'a kaydediliyor...');
               if(token){
                 // Async commit
@@ -2101,6 +2138,8 @@
       document.getElementById('editProductPrice').value = p.price || '';
       document.getElementById('editProductBadge').value = p.badge || '';
       document.getElementById('editProductImage').value = p.image || '';
+      const sortOrderEl = document.getElementById('editProductSortOrder');
+      if(sortOrderEl) sortOrderEl.value = p.sortOrder || '';
       const imgs = Array.isArray(p.images) ? p.images : [];
       const im2 = document.getElementById('editProductImage2'); if(im2) im2.value = imgs[1]||'';
       const im3 = document.getElementById('editProductImage3'); if(im3) im3.value = imgs[2]||'';
@@ -2132,17 +2171,21 @@
     // Önce ürünleri sortOrder'a göre sırala ve numaraları ekle
     fetch('products.json?v='+Date.now()).then(r=>r.json()).then(productsData=>{
       const products = productsData.items || [];
+      const sorted = adminNormalizeProductsSequentialSortOrder(products);
+      const orderById = new Map();
+      sorted.forEach((p,i)=>{ orderById.set(adminNormalizeProductIdKey(p && p.id), i+1); });
       document.querySelectorAll('.product-card').forEach(card=>{ 
         const id = card.getAttribute('data-id');
         const product = products.find(x=>x.id===id);
+        const displayNo = orderById.get(adminNormalizeProductIdKey(id)) || (product && product.sortOrder) || '—';
         
         // Sıra numarası badge'i ekle (sadece admin görecek) - turuncu
         if(!card.querySelector('.admin-sort-badge') && product){ 
           const sortBadge = document.createElement('div');
           sortBadge.className = 'admin-sort-badge';
           sortBadge.style = 'position:absolute;top:8px;left:8px;z-index:3;background:#f97316;color:#fff;font-size:12px;font-weight:700;padding:4px 10px;border-radius:8px;box-shadow:0 2px 6px rgba(249,115,22,0.4);';
-          sortBadge.textContent = '#' + (product.sortOrder || '—');
-          sortBadge.title = 'Sıra Numarası: ' + (product.sortOrder || 'Belirlenmemiş');
+          sortBadge.textContent = '#' + (displayNo || '—');
+          sortBadge.title = 'Sıra Numarası: ' + (displayNo || 'Belirlenmemiş');
           card.appendChild(sortBadge);
         }
         
@@ -2434,7 +2477,13 @@
                 }
               } catch(_){ /* ignore remote fetch errors */ }
             }
-            if(p) openProductEditPanel(p);
+            if(p){
+              // Sıra numarasını, mevcut listeye göre deterministik şekilde hesapla (1..N)
+              const sorted = adminNormalizeProductsSequentialSortOrder(products);
+              const pos = sorted.findIndex(x=>adminNormalizeProductIdKey(x && x.id)===adminNormalizeProductIdKey(id));
+              if(pos !== -1) p = { ...p, sortOrder: pos + 1 };
+              openProductEditPanel(p);
+            }
             else throw new Error('Ürün bulunamadı: '+id);
           } catch(err){
             const msg = (err && err.name === 'AbortError') ? 'Zaman aşımı: products.json yüklenemedi' : (err.message||'Bilinmeyen hata');
@@ -2814,8 +2863,9 @@
             let obj = {};
             try { obj = JSON.parse(fromBase64(data.content)) || {}; } catch(_) { obj = {}; }
             const list = Array.isArray(obj.items) ? obj.items : (Array.isArray(obj) ? obj : []);
-            const filtered = list.filter(p=> String(p.id) !== String(id));
-            const newObj = { updatedAt: Date.now(), items: filtered };
+            const filtered = list.filter(p=> adminNormalizeProductIdKey(p && p.id) !== adminNormalizeProductIdKey(id));
+            const normalized = adminNormalizeProductsSequentialSortOrder(filtered);
+            const newObj = { updatedAt: Date.now(), items: normalized };
             
             updateDeleteProgress(70, 'Ürün siliniyor...');
             
@@ -2909,12 +2959,15 @@
             if(!res.ok) throw new Error('products.json alınamadı');
             const data = await res.json();
             let obj = {}; try{ obj = JSON.parse(fromBase64((data.content||'').replace(/\n/g,'')))||{}; }catch(_){ obj={}; }
-            const list = Array.isArray(obj.items)?obj.items:(Array.isArray(obj)?obj:[]);
-            const idx = list.findIndex(p=> String(p.id)===String(id)); if(idx===-1) throw new Error('Ürün bulunamadı');
+            const baseList = Array.isArray(obj.items)?obj.items:(Array.isArray(obj)?obj:[]);
+            const list = adminNormalizeProductsSequentialSortOrder(baseList);
+            const idx = list.findIndex(p=> adminNormalizeProductIdKey(p && p.id)===adminNormalizeProductIdKey(id));
+            if(idx===-1) throw new Error('Ürün bulunamadı');
             const newIdx = Math.max(0, Math.min(list.length-1, idx + (delta||0)));
             if(newIdx === idx) return; // değişim yok
             const [item] = list.splice(idx,1);
             list.splice(newIdx,0,item);
+            for(let i=0;i<list.length;i++) list[i].sortOrder = i + 1;
             const next = obj.items? { ...obj, items:list, updatedAt: Date.now() } : { items:list, updatedAt: Date.now() };
             const putRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/products.json`, {
               method:'PUT', headers:{ 'Content-Type':'application/json', ...(token?{'Authorization':'token '+token}:{}) },
@@ -3175,6 +3228,20 @@
             <button id="closeCartDetailBtn" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#6b7280;">&times;</button>
           </div>
           <div id="cartDetailContent" style="padding:1.5rem;"></div>
+        </div>
+      </div>
+
+      <!-- Üye Bilgileri Modal (Canlı Sepet Takibi) -->
+      <div id="memberInfoModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:10001;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+        <div style="background:#fff;border-radius:16px;max-width:760px;width:94%;max-height:88vh;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,0.3);display:flex;flex-direction:column;">
+          <div style="padding:1.25rem 1.5rem;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;gap:1rem;">
+            <div style="display:flex;flex-direction:column;gap:0.25rem;min-width:0;">
+              <h3 id="memberInfoTitle" style="margin:0;font-size:1.15rem;color:#064e3b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">👤 Üye Bilgileri</h3>
+              <div id="memberInfoMeta" style="font-size:0.9rem;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+            </div>
+            <button id="closeMemberInfoBtn" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#6b7280;">&times;</button>
+          </div>
+          <div id="memberInfoContent" style="padding:1.25rem 1.5rem;overflow:auto;"></div>
         </div>
       </div>
 
@@ -3448,16 +3515,14 @@
       let obj; try { obj = JSON.parse(fromBase64((meta.content||'').replace(/\n/g,''))) || {}; } catch(e){ throw new Error('products.json parse hatası: '+(e.message||e)); }
       let list = Array.isArray(obj.items) ? obj.items : (Array.isArray(obj) ? obj : null);
       if(!list) throw new Error('products.json formatı beklenen değil (items dizisi yok)');
+      const normalizedList = adminNormalizeProductsSequentialSortOrder(list);
       // Case-insensitive ve uzantı-esnek ürün ID eşleşmesi
-      const pidLower = String(productId).toLowerCase().replace(/\.(jpg|jpeg|png|webp)$/i, '');
-      const idx = list.findIndex(p => {
-        const pIdLower = String(p.id).toLowerCase().replace(/\.(jpg|jpeg|png|webp)$/i, '');
-        return pIdLower === pidLower;
-      });
+      const pidKey = adminNormalizeProductIdKey(productId);
+      const idx = normalizedList.findIndex(p => adminNormalizeProductIdKey(p && p.id) === pidKey);
       if(idx === -1) throw new Error('Ürün bulunamadı: '+productId);
-      list[idx].image = imagePath;
+      normalizedList[idx].image = imagePath;
       // Yazım biçimini daima { items:[...], updatedAt } olarak normalize et
-      const normalized = { items: list, updatedAt: Date.now() };
+      const normalized = { items: normalizedList, updatedAt: Date.now() };
       const newJson = JSON.stringify(normalized, null, 2);
       const contentB64 = toBase64(newJson);
       const putRes = await fetch(url, { method:'PUT', headers:{ 'Accept':'application/vnd.github.v3+json', 'Content-Type':'application/json', 'Authorization': `token ${token}` }, body: JSON.stringify({ message:`chore(admin): ürün resmi güncellendi (${productId})`, content: contentB64, branch, sha: meta.sha }) });
@@ -3487,19 +3552,20 @@
       // Ürün ID'sinden temiz isim oluştur (uzantıyı çıkar)
       const cleanName = String(productId).replace(/\.(jpg|jpeg|png|webp)$/i, '');
       
-      // Yeni ürün objesi
+      // Yeni ürün objesi (sortOrder boş bırakılır; otomatik olarak sona yerleştirilecek)
       const newProduct = {
         id: productId,
         name: `Ürün ${cleanName}`,
         price: 0,
         badge: "",
-        image: imagePath
+        image: imagePath,
+        sortOrder: 0
       };
-      
-      list.push(newProduct);
-      
+
+      // Yeni ürün sona eklenir, tüm ürünler 1..N olacak şekilde yeniden numaralanır
+      const reordered = adminUpsertAndReorderProducts(list, newProduct, 0);
       // Daima { items:[...], updatedAt } biçiminde yaz
-      const normalized = { items: list, updatedAt: Date.now() };
+      const normalized = { items: reordered, updatedAt: Date.now() };
       const newJson = JSON.stringify(normalized, null, 2);
       const contentB64 = toBase64(newJson);
       const putRes = await fetch(url, { method:'PUT', headers:{ 'Accept':'application/vnd.github.v3+json', 'Content-Type':'application/json', 'Authorization': `token ${token}` }, body: JSON.stringify({ message:`feat(admin): yeni ürün eklendi (${productId})`, content: contentB64, branch, sha: meta.sha }) });
@@ -3712,10 +3778,11 @@ try {
                   if(!getRes.ok) throw new Error('Remote products.json alınamadı');
                   const meta = await getRes.json();
                   let remoteObj; try{ remoteObj = JSON.parse(fromBase64((meta.content||'').replace(/\n/g,''))) || {}; }catch(_){ remoteObj={}; }
-                  const list = Array.isArray(remoteObj.items)?remoteObj.items:(Array.isArray(remoteObj)?remoteObj:[]);
-                  const ridx = list.findIndex(p=>String(p.id)===String(id)); if(ridx!==-1){ list[ridx]={ ...list[ridx], name, price, badge, image }; }
-                  if(remoteObj.items) remoteObj.items=list; else remoteObj=list;
-                  remoteObj.updatedAt=Date.now();
+                  const baseList = Array.isArray(remoteObj.items)?remoteObj.items:(Array.isArray(remoteObj)?remoteObj:[]);
+                  const list = adminNormalizeProductsSequentialSortOrder(baseList);
+                  const ridx = list.findIndex(p=>adminNormalizeProductIdKey(p && p.id)===adminNormalizeProductIdKey(id));
+                  if(ridx!==-1){ list[ridx]={ ...list[ridx], name, price, badge, image }; }
+                  remoteObj = { ...(remoteObj && !Array.isArray(remoteObj) ? remoteObj : {}), items: list, updatedAt: Date.now() };
                   updateRefreshProgress(80, 'GitHub\'a kaydediliyor...');
                   const putRes = await fetch(apiUrl, { method:'PUT', headers:{ 'Content-Type':'application/json','Authorization':'token '+token }, body: JSON.stringify({ message:`chore(admin): inline ürün güncelle (${id})`, content: toBase64(JSON.stringify(remoteObj,null,2)), branch:'site-release', sha: meta.sha }) });
                   if(putRes.status===409 && attempt<maxAttempts){ 
@@ -5808,15 +5875,30 @@ try {
       return pathToProducts;
     };
 
-    const pickPrimaryProductName = (arr) => {
-      if (!arr || arr.length === 0) return '';
+    const pickPrimaryProductRef = (arr) => {
+      if (!arr || arr.length === 0) return null;
       const sorted = [...arr].sort((a, b) => {
         const ao = (typeof a.sortOrder === 'number') ? a.sortOrder : 999999;
         const bo = (typeof b.sortOrder === 'number') ? b.sortOrder : 999999;
         if (ao !== bo) return ao - bo;
         return String(a.name || '').localeCompare(String(b.name || ''), 'tr');
       });
-      return String(sorted[0].name || '').trim();
+      const first = sorted[0] || {};
+      const name = String(first.name || '').trim();
+      const sortOrder = (typeof first.sortOrder === 'number') ? first.sortOrder : null;
+      if (!name) return null;
+      return { name, sortOrder };
+    };
+
+    const productGroupKey = (ref) => {
+      if (!ref || !ref.name) return '';
+      const so = (typeof ref.sortOrder === 'number' && isFinite(ref.sortOrder) && ref.sortOrder > 0) ? ref.sortOrder : '—';
+      return `${ref.name}@@${so}`;
+    };
+
+    const productGroupTitle = (ref) => {
+      const so = (typeof ref.sortOrder === 'number' && isFinite(ref.sortOrder) && ref.sortOrder > 0) ? ref.sortOrder : '—';
+      return `🌿 #${so} ${ref.name}`;
     };
 
     const collectBackgroundPaths = (settingsJson) => {
@@ -5896,7 +5978,7 @@ try {
 
       // Gruplama
       const background = [];
-      const byProduct = new Map(); // productName -> [img]
+      const byProduct = new Map(); // groupKey -> { ref:{name,sortOrder}, list:[img] }
       const fresh = [];
 
       for (const img of images) {
@@ -5908,33 +5990,24 @@ try {
         }
 
         const productRefs = productIndex.get(key);
-        const primaryName = pickPrimaryProductName(productRefs);
-        if (primaryName) {
-          if (!byProduct.has(primaryName)) byProduct.set(primaryName, []);
-          byProduct.get(primaryName).push(img);
+        const primaryRef = pickPrimaryProductRef(productRefs);
+        if (primaryRef && primaryRef.name) {
+          const gk = productGroupKey(primaryRef);
+          if (!byProduct.has(gk)) byProduct.set(gk, { ref: primaryRef, list: [] });
+          byProduct.get(gk).list.push(img);
         } else {
           fresh.push(img);
         }
       }
 
-      // Ürün gruplarını deterministik sırala
-      const productOrderIndex = new Map();
-      if (productsJson && Array.isArray(productsJson.items)) {
-        for (const item of productsJson.items) {
-          const name = item && item.name ? String(item.name) : '';
-          if (!name || !byProduct.has(name)) continue;
-          const so = (item && typeof item.sortOrder === 'number') ? item.sortOrder : 999999;
-          const prev = productOrderIndex.get(name);
-          if (prev === undefined || so < prev) productOrderIndex.set(name, so);
-        }
-      }
-
       const productGroups = [...byProduct.entries()].sort((a, b) => {
-        const an = a[0];
-        const bn = b[0];
-        const ao = productOrderIndex.has(an) ? productOrderIndex.get(an) : 999999;
-        const bo = productOrderIndex.has(bn) ? productOrderIndex.get(bn) : 999999;
+        const ar = a[1] && a[1].ref ? a[1].ref : null;
+        const br = b[1] && b[1].ref ? b[1].ref : null;
+        const ao = (ar && typeof ar.sortOrder === 'number') ? ar.sortOrder : 999999;
+        const bo = (br && typeof br.sortOrder === 'number') ? br.sortOrder : 999999;
         if (ao !== bo) return ao - bo;
+        const an = ar && ar.name ? ar.name : a[0];
+        const bn = br && br.name ? br.name : b[0];
         return String(an).localeCompare(String(bn), 'tr');
       });
 
@@ -5973,14 +6046,16 @@ try {
       };
 
       pushSection('🧱 Arka Plan', background);
-      for (const [productName, list] of productGroups) {
-        pushSection('🌿 ' + productName, list);
+      for (const [, obj] of productGroups) {
+        const ref = obj && obj.ref ? obj.ref : null;
+        const list = obj && Array.isArray(obj.list) ? obj.list : [];
+        pushSection(productGroupTitle(ref), list);
       }
       pushSection('🆕 Yeni', fresh);
 
       grid.innerHTML = html;
 
-      const productImgCount = productGroups.reduce((acc, [, list]) => acc + list.length, 0);
+      const productImgCount = productGroups.reduce((acc, [, obj]) => acc + ((obj && Array.isArray(obj.list)) ? obj.list.length : 0), 0);
       status.textContent = `✅ Toplam ${images.length} resim: Arka Plan ${background.length}, Ürün ${productImgCount}, Yeni ${fresh.length}.`;
       
       if (showModal) finishRefreshSuccess(`${images.length} resim başarıyla yenilendi`);
@@ -6448,6 +6523,7 @@ try {
   <script>
   (function(){
     const GITHUB_API_BASE = 'https://api.github.com/repos/amtbrs-03/AMTBRS/contents/carts';
+    const GITHUB_USERS_BASE = 'https://api.github.com/repos/amtbrs-03/AMTBRS/contents/users';
     const BRANCH = 'site-release';
     let liveCartsData = [];
     let liveCartsInterval = null;
@@ -6468,6 +6544,40 @@ try {
       try { return decodeURIComponent(escape(atob(raw))); } catch (_) {}
       try { return atob(raw); } catch (_) {}
       return '';
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function formatDateTr(ms) {
+      try {
+        const n = Number(ms);
+        if (!Number.isFinite(n) || n <= 0) return '-';
+        return new Date(n).toLocaleString('tr-TR');
+      } catch (_) {
+        return '-';
+      }
+    }
+
+    function omitSensitiveUserFields(user) {
+      try {
+        if (!user || typeof user !== 'object') return user;
+        const copy = JSON.parse(JSON.stringify(user));
+        delete copy.pw;
+        delete copy.password;
+        delete copy.sessionId;
+        delete copy.session;
+        delete copy.tokens;
+        return copy;
+      } catch (_) {
+        return user;
+      }
     }
 
     // GitHub token'ı al
@@ -6640,6 +6750,9 @@ try {
             <div style="font-weight:600;color:#064e3b;font-size:1.05rem;word-break:break-all;">${cart.email}</div>
             ${reminderBadge}
           </div>
+          <div style="display:flex;gap:0.6rem;align-items:center;justify-content:flex-end;margin:-0.5rem 0 0.9rem 0;flex-wrap:wrap;">
+            <button type="button" class="btn btn-ghost" onclick="event.stopPropagation(); showMemberInfo('${encodeURIComponent(cart.email)}')" style="padding:0.45rem 0.8rem;font-size:0.95rem;">👤 Üye Bilgileri</button>
+          </div>
           <div style="display:flex;gap:0.6rem;align-items:center;margin-bottom:1rem;">
             ${previewItems}
             ${moreCount}
@@ -6700,6 +6813,9 @@ try {
         <div style="margin-bottom:1.25rem;">
           <div style="font-weight:600;color:#064e3b;font-size:1.15rem;margin-bottom:0.6rem;">📧 ${email}</div>
           ${metaHtml}
+        </div>
+        <div style="display:flex;gap:0.6rem;align-items:center;justify-content:flex-end;margin:0 0 1rem 0;flex-wrap:wrap;">
+          <button type="button" class="btn btn-ghost" onclick="showMemberInfo('${encodeURIComponent(email)}')" style="padding:0.55rem 0.9rem;font-size:0.95rem;">👤 Üye Bilgileri</button>
         </div>
         <div style="margin-bottom:1.25rem;">
           ${itemsHtml || '<div style="color:#6b7280;text-align:center;padding:1rem;font-size:1rem;">Sepet boş</div>'}
@@ -6794,6 +6910,163 @@ try {
       if (modal) modal.style.display = 'none';
     }
 
+    function closeMemberInfoModal() {
+      const modal = document.getElementById('memberInfoModal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    async function fetchUserProfile(email) {
+      const token = getToken();
+      if (!token) throw new Error('GitHub token bulunamadı.');
+
+      const fileName = `${email}_full.json`;
+      const filePath = `users/${fileName}`;
+
+      const apiUrl = `https://api.github.com/repos/amtbrs-03/AMTBRS/contents/${encodeGitHubPath(filePath)}?ref=${BRANCH}&_=${Date.now()}`;
+      const res = await fetch(apiUrl, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+
+      if (res.status === 404) return null;
+      if (!res.ok) {
+        throw new Error(`Üye profili okunamadı (GitHub: ${res.status})`);
+      }
+
+      const meta = await res.json();
+      const txt = decodeB64Utf8(meta && meta.content ? meta.content : '');
+      const data = JSON.parse(txt || '{}');
+      return data;
+    }
+
+    function renderMemberInfo(userRaw, email) {
+      const user = omitSensitiveUserFields(userRaw || {});
+      const name = user && (user.name || user.fullName || user.adSoyad) ? String(user.name || user.fullName || user.adSoyad) : '-';
+      const phone = user && (user.phone || user.tel || user.telefon) ? String(user.phone || user.tel || user.telefon) : '-';
+
+      const address = user && user.address ? user.address : null;
+      const addresses = Array.isArray(user && user.addresses) ? user.addresses : [];
+
+      const addrLine = address && (address.addressDetail || address.detail || address.line1) ? String(address.addressDetail || address.detail || address.line1) : '';
+      const addrCity = address && (address.city || address.il) ? String(address.city || address.il) : '';
+      const addrDistrict = address && (address.district || address.ilce) ? String(address.district || address.ilce) : '';
+      const addrNeighborhood = address && (address.neighborhood || address.mahalle) ? String(address.neighborhood || address.mahalle) : '';
+      const addrPostal = address && (address.postalCode || address.zip || address.postaKodu) ? String(address.postalCode || address.zip || address.postaKodu) : '';
+
+      const createdAt = user && (user.createdAt || user.created) ? formatDateTr(user.createdAt || user.created) : '-';
+      const lastLogin = user && (user.lastLogin || user.lastSeenAt) ? formatDateTr(user.lastLogin || user.lastSeenAt) : '-';
+
+      const addressHtml = (addrLine || addrCity || addrDistrict || addrNeighborhood || addrPostal)
+        ? `
+          <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:1rem;">
+            <div style="font-weight:800;color:#0f172a;margin-bottom:0.5rem;">📍 Adres</div>
+            <div style="color:#334155;line-height:1.5;">${escapeHtml(addrLine || '-')}</div>
+            <div style="color:#64748b;font-size:0.95rem;margin-top:0.4rem;">${escapeHtml([addrNeighborhood, addrDistrict, addrCity].filter(Boolean).join(' / ') || '')}${addrPostal ? ' • ' + escapeHtml(addrPostal) : ''}</div>
+          </div>
+        `
+        : `
+          <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:1rem;">
+            <div style="font-weight:800;color:#0f172a;margin-bottom:0.5rem;">📍 Adres</div>
+            <div style="color:#64748b;">Adres bilgisi bulunamadı.</div>
+          </div>
+        `;
+
+      const addressesHtml = addresses.length
+        ? `
+          <div style="margin-top:0.9rem;">
+            <div style="font-weight:800;color:#0f172a;margin-bottom:0.5rem;">🏷️ Kayıtlı Adresler</div>
+            ${addresses.map(a => {
+              const title = a && (a.title || a.name) ? String(a.title || a.name) : 'Adres';
+              const line = a && (a.addressDetail || a.detail || a.line1) ? String(a.addressDetail || a.detail || a.line1) : '';
+              const city = a && (a.city || a.il) ? String(a.city || a.il) : '';
+              const district = a && (a.district || a.ilce) ? String(a.district || a.ilce) : '';
+              const neighborhood = a && (a.neighborhood || a.mahalle) ? String(a.neighborhood || a.mahalle) : '';
+              const postal = a && (a.postalCode || a.zip || a.postaKodu) ? String(a.postalCode || a.zip || a.postaKodu) : '';
+              const isDefault = !!(a && a.isDefault);
+              return `
+                <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:0.9rem 1rem;margin-bottom:0.7rem;">
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;">
+                    <div style="font-weight:800;color:#0f172a;">${escapeHtml(title)}${isDefault ? ' <span style="color:#059669;font-weight:800;">(Varsayılan)</span>' : ''}</div>
+                  </div>
+                  ${line ? `<div style="color:#334155;line-height:1.5;margin-top:0.35rem;">${escapeHtml(line)}</div>` : ''}
+                  <div style="color:#64748b;font-size:0.95rem;margin-top:0.35rem;">${escapeHtml([neighborhood, district, city].filter(Boolean).join(' / ') || '')}${postal ? ' • ' + escapeHtml(postal) : ''}</div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `
+        : '';
+
+      const rawJson = (() => {
+        try { return JSON.stringify(user, null, 2); } catch (_) { return ''; }
+      })();
+
+      return `
+        <div style="display:flex;flex-direction:column;gap:0.9rem;">
+          <div style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:flex-start;justify-content:space-between;">
+            <div style="min-width:240px;flex:1;">
+              <div style="font-weight:900;color:#064e3b;font-size:1.15rem;">${escapeHtml(name)}</div>
+              <div style="color:#64748b;margin-top:0.25rem;word-break:break-all;">📧 ${escapeHtml(email)}</div>
+              <div style="color:#334155;margin-top:0.35rem;">📞 ${escapeHtml(phone)}</div>
+            </div>
+            <div style="min-width:220px;">
+              <div style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border-radius:12px;padding:0.85rem 1rem;">
+                <div style="font-weight:800;">🕒 Zaman Bilgisi</div>
+                <div style="opacity:0.95;font-size:0.95rem;margin-top:0.35rem;">Kayıt: ${escapeHtml(createdAt)}</div>
+                <div style="opacity:0.95;font-size:0.95rem;margin-top:0.2rem;">Son giriş: ${escapeHtml(lastLogin)}</div>
+              </div>
+            </div>
+          </div>
+          ${addressHtml}
+          ${addressesHtml}
+          <div style="background:#0f172a;border-radius:12px;padding:1rem;color:#e2e8f0;overflow:auto;">
+            <div style="font-weight:800;color:#fff;margin-bottom:0.5rem;">🧾 Ham Profil (şifre / oturum bilgileri hariç)</div>
+            <pre style="margin:0;white-space:pre;overflow:auto;font-size:12px;line-height:1.45;">${escapeHtml(rawJson)}</pre>
+          </div>
+        </div>
+      `;
+    }
+
+    window.showMemberInfo = async function(encodedEmail) {
+      const email = decodeURIComponent(String(encodedEmail || ''));
+      const modal = document.getElementById('memberInfoModal');
+      const titleEl = document.getElementById('memberInfoTitle');
+      const metaEl = document.getElementById('memberInfoMeta');
+      const contentEl = document.getElementById('memberInfoContent');
+
+      if (!modal || !contentEl) return;
+      if (titleEl) titleEl.textContent = '👤 Üye Bilgileri';
+      if (metaEl) metaEl.textContent = email ? ('📧 ' + email) : '';
+
+      modal.style.display = 'flex';
+      contentEl.innerHTML = '<div style="text-align:center;padding:1.5rem;color:#6b7280;">Üye bilgileri yükleniyor...</div>';
+
+      try {
+        const user = await fetchUserProfile(email);
+        if (!user) {
+          contentEl.innerHTML = `
+            <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:1rem;color:#9a3412;">
+              <div style="font-weight:900;margin-bottom:0.35rem;">⚠️ Üye profili bulunamadı</div>
+              <div style="color:#7c2d12;">Bu e-posta için <code style="background:#ffedd5;padding:0.1rem 0.35rem;border-radius:6px;border:1px solid #fed7aa;">users/${escapeHtml(email)}_full.json</code> dosyası yok.</div>
+            </div>
+          `;
+          return;
+        }
+
+        contentEl.innerHTML = renderMemberInfo(user, email);
+      } catch (e) {
+        console.error('Üye profili yükleme hatası:', e);
+        contentEl.innerHTML = `
+          <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:1rem;color:#b91c1c;">
+            <div style="font-weight:900;margin-bottom:0.35rem;">❌ Üye bilgileri alınamadı</div>
+            <div>${escapeHtml(e && e.message ? e.message : 'Bilinmeyen hata')}</div>
+          </div>
+        `;
+      }
+    };
+
     // Canlı Sepet Modal aç/kapat
     function openLiveCartsModal() {
       const modal = document.getElementById('liveCartsModal');
@@ -6864,11 +7137,24 @@ try {
         closeDetailBtn.addEventListener('click', closeCartDetailModal);
       }
 
+      // Üye Bilgileri Modal kapat butonu
+      const closeMemberBtn = document.getElementById('closeMemberInfoBtn');
+      if (closeMemberBtn) {
+        closeMemberBtn.addEventListener('click', closeMemberInfoModal);
+      }
+
       // Sepet Detay Modal dışına tıklayınca kapat
       const detailModal = document.getElementById('cartDetailModal');
       if (detailModal) {
         detailModal.addEventListener('click', function(e) {
           if (e.target === detailModal) closeCartDetailModal();
+        });
+      }
+
+      const memberModal = document.getElementById('memberInfoModal');
+      if (memberModal) {
+        memberModal.addEventListener('click', function(e) {
+          if (e.target === memberModal) closeMemberInfoModal();
         });
       }
 
@@ -6884,6 +7170,7 @@ try {
     window.openLiveCartsModal = openLiveCartsModal;
     window.closeLiveCartsModal = closeLiveCartsModal;
     window.closeCartDetailModal = closeCartDetailModal;
+    window.closeMemberInfoModal = closeMemberInfoModal;
   })();
   </script>
 

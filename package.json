@@ -9,6 +9,7 @@
   },
   "scripts": {
     "start": "netlify dev",
+    "normalize:products": "node scripts/normalize-products.js",
     "test": "node scripts/test-user-update.js"
   },
   "dependencies": {

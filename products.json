@@ -1,5 +1,9 @@
 {
+<<<<<<< HEAD
   "updatedAt": 1766183284553,
+=======
+  "updatedAt": 1766184124163,
+>>>>>>> d2b56dc (chore(admin): normalize product sortOrder + add products normalizer)
   "items": [
     {
       "id": "TEMP-1765831765562",
