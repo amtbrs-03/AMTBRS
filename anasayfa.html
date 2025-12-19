@@ -1825,14 +1825,13 @@
                     /* --- Dinamik Ürün Yükleme --- */
                     async function loadProducts(){
                         try{
-                            const cacheBypass = '?v=' + Date.now();
-                                                        let productsUrl = 'products.json' + cacheBypass;
-                                                        try {
-                                                            const u = new URL('products.json', window.location.href);
-                                                            u.searchParams.set('v', String(Date.now()));
-                                                            productsUrl = u.toString();
-                                                        } catch(_){ /* fallback */ }
-                                                        const res = await fetch(productsUrl, {cache:'no-store'});
+                            const v = String(Date.now());
+                            let productsUrl = 'products.json?v=' + v;
+                            try {
+                                const origin = (window.location && window.location.origin) ? window.location.origin : '';
+                                if(origin && origin !== 'null') productsUrl = origin + '/products.json?v=' + v;
+                            } catch(_){ /* fallback */ }
+                            const res = await fetch(productsUrl, {cache:'no-store'});
                             if(!res.ok) throw new Error('products.json yüklenemedi');
                             const listRaw = await res.json();
                             let list = Array.isArray(listRaw) ? listRaw : (Array.isArray(listRaw.items) ? listRaw.items : []);

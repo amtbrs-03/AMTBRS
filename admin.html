@@ -1891,6 +1891,18 @@
     for(let i=0;i<list.length;i++) list[i].sortOrder = i + 1;
     return list;
   }
+
+  // Safari/WebKit bazı koşullarda relative URL/URL() kullanımında
+  // "SyntaxError: The string did not match the expected pattern" verebiliyor.
+  // URL() kullanmadan güvenli products.json URL'i üret.
+  function adminProductsJsonUrl(){
+    const v = String(Date.now());
+    try {
+      const origin = (window.location && window.location.origin) ? window.location.origin : '';
+      if(origin && origin !== 'null') return origin + '/products.json?v=' + v;
+    } catch(_){ }
+    return 'products.json?v=' + v;
+  }
   
   document.getElementById('productEditForm').onsubmit = async function(e){
     e.preventDefault();
@@ -2104,7 +2116,7 @@
       // Try same-origin first
       let data = null;
       try{
-        const res = await fetch('products.json?' + Date.now(), { cache:'no-store' });
+        const res = await fetch(adminProductsJsonUrl(), { cache:'no-store' });
         if(res.ok){ data = await res.json(); }
       }catch(_){ /* ignore */ }
       
@@ -2453,7 +2465,7 @@
             // 1. Fetch local products.json
             const controller = new AbortController();
             const t = setTimeout(()=>controller.abort(), 8000);
-            let res = await fetch('products.json?' + Date.now(), { signal: controller.signal, cache:'no-store' });
+            let res = await fetch(adminProductsJsonUrl(), { signal: controller.signal, cache:'no-store' });
             clearTimeout(t);
             let data = null;
             if(res.ok){
@@ -2638,11 +2650,16 @@
             } else {
               if (showModal) updateRefreshProgress(30, 'Sunucuya bağlanılıyor...');
               // Primary: same-origin products.json
-              let res = await fetch('products.json?' + Date.now(), { cache:'no-store' });
+              let res = await fetch(adminProductsJsonUrl(), { cache:'no-store' });
               if (!res.ok){
                 if (showModal) updateRefreshProgress(40, 'Alternatif kaynak deneniyor...');
                 // Fallback 1: without cache-busting
-                try { res = await fetch('products.json', { cache:'no-store' }); } catch(_){}
+                try {
+                  // URL() kullanmadan aynı origin'e sabitle
+                  const origin = (window.location && window.location.origin && window.location.origin !== 'null') ? window.location.origin : '';
+                  const url = origin ? (origin + '/products.json') : 'products.json';
+                  res = await fetch(url, { cache:'no-store' });
+                } catch(_){ }
               }
               if(!res.ok){
                 if (showModal) updateRefreshProgress(50, 'GitHub raw deneniyor...');
@@ -3763,7 +3780,7 @@ try {
               if(!chk.exists) throw new Error('Görsel bulunamadı: '+image);
             }
             updateRefreshProgress(30, 'Ürün listesi alınıyor...');
-            const res = await fetch('products.json?' + Date.now()); if(!res.ok) throw new Error('products.json alınamadı');
+            const res = await fetch(adminProductsJsonUrl(), { cache:'no-store' }); if(!res.ok) throw new Error('products.json alınamadı');
             const data = await res.json();
             const products = Array.isArray(data.items) ? data.items : (Array.isArray(data)?data:[]);
             const idx = products.findIndex(p=>String(p.id)===String(id)); if(idx===-1) throw new Error('Ürün bulunamadı');
