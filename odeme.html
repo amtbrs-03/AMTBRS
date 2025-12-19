@@ -440,9 +440,16 @@
         productList = cartItems.map((item, i) => {
           const qty = item.qty || item.quantity || 1;
           const price = item.price || 0;
-          itemTotal += price * qty;
-          return `${i+1}. ${item.name} (${qty} adet × ₺${price} = ₺${price * qty})`;
-        }).join('\n');
+          const lineTotal = price * qty;
+          itemTotal += lineTotal;
+          const name = item.name || 'Ürün';
+          return [
+            `• ${i+1}) ${name}`,
+            `  Adet: ${qty}`,
+            `  Birim: ₺${price}`,
+            `  Ara toplam: ₺${lineTotal}`
+          ].join('\n');
+        }).join('\n\n');
       }
       
       // Sipariş ID oluştur (tarih bazlı)
@@ -452,23 +459,35 @@
       const orderNote = localStorage.getItem('orderNote') || '';
       
       // Detaylı mesaj oluştur
-      let message = `Merhaba, ERN-ÇİÇEK ödeme sayfasından yazıyorum.\n\n`;
-      message += `📋 Sorgu ID: ${orderId}\n\n`;
-      
-      message += `👤 *ÜYE BİLGİLERİ*\n`;
-      message += buildMemberInfoBlock(user, fullUser);
-      message += `\n`;
-      
+      const EMOJI_CLIPBOARD = '\uD83D\uDCCB'; // 📋
+      const EMOJI_MEMBER = '\uD83D\uDC64';    // 👤
+      const EMOJI_CART = '\uD83D\uDED2';      // 🛒
+      const EMOJI_MONEY = '\uD83D\uDCB0';     // 💰
+      const EMOJI_NOTE = '\uD83D\uDCDD';      // 📝
+      const NL = '\n';
+      const SP = '\n\n';
+
+      const parts = [];
+      parts.push(`Merhaba, ERN-ÇİÇEK ödeme sayfasından yazıyorum.`);
+      parts.push(`${EMOJI_CLIPBOARD} Sorgu ID: ${orderId}`);
+
+      parts.push(`${EMOJI_MEMBER} *ÜYE BİLGİLERİ*`);
+      parts.push(buildMemberInfoBlock(user, fullUser).trim());
+
       if (productList) {
-        message += `🛒 *SEPET İÇERİĞİ*\n${productList}\n\n`;
-        message += `💰 Toplam: ${total}\n\n`;
+        parts.push(`${EMOJI_CART} *SEPET İÇERİĞİ*`);
+        parts.push(productList);
+        parts.push(`${EMOJI_MONEY} Toplam: ${total}`);
       }
-      
+
       if (orderNote) {
-        message += `📝 Sipariş Notu: ${orderNote}\n\n`;
+        parts.push(`${EMOJI_NOTE} Sipariş Notu:`);
+        parts.push(String(orderNote).trim());
       }
-      
-      message += `Bu sipariş hakkında bilgi almak istiyorum.`;
+
+      parts.push('Bu sipariş hakkında bilgi almak istiyorum.');
+
+      const message = parts.filter(Boolean).join(SP).replace(/\n{3,}/g, SP);
       
       // WhatsApp URL - hem mobil hem masaüstü için wa.me kullan (daha güvenilir)
       const waUrl = 'https://wa.me/' + phone + '?text=' + encodeURIComponent(message);
