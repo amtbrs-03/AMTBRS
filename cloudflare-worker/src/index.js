@@ -419,6 +419,61 @@ https://ern-cicek.com.tr
         });
       }
 
+      // List invoices via GitHub token (prevents browser GitHub API rate-limit 403)
+      if (path === '/list-invoices' && request.method === 'GET') {
+        const owner = env.GITHUB_OWNER || 'amtbrs-03';
+        const repo = env.GITHUB_REPO || 'AMTBRS';
+        const branch = env.GITHUB_BRANCH || 'site-release';
+        const token = env.GITHUB_TOKEN || env.GH_TOKEN;
+
+        if (!token) {
+          return new Response(JSON.stringify({ ok: false, error: 'GitHub token not configured' }), {
+            status: 500,
+            headers: jsonHeaders(allowOrigin)
+          });
+        }
+
+        try {
+          const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeGitHubPath('invoices')}?ref=${encodeURIComponent(branch)}&_cb=${Date.now()}`;
+          const res = await fetch(apiUrl, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: 'application/vnd.github+json',
+              'User-Agent': 'Cloudflare-Worker'
+            }
+          });
+
+          if (!res.ok) {
+            const t = await safeText(res);
+            return new Response(JSON.stringify({ ok: false, status: res.status, error: 'GitHub list failed', details: t }), {
+              status: res.status,
+              headers: jsonHeaders(allowOrigin)
+            });
+          }
+
+          const files = await res.json();
+          const invoiceFiles = (Array.isArray(files) ? files : [])
+            .filter(f => f && f.type === 'file' && typeof f.name === 'string' && f.name.endsWith('.json') && f.name !== '.gitkeep')
+            .map(f => ({
+              name: f.name,
+              path: f.path,
+              size: f.size,
+              sha: f.sha,
+              download_url: f.download_url
+            }));
+
+          return new Response(JSON.stringify({ ok: true, count: invoiceFiles.length, files: invoiceFiles }), {
+            status: 200,
+            headers: jsonHeaders(allowOrigin)
+          });
+        } catch (e) {
+          return new Response(JSON.stringify({ ok: false, error: (e && e.message) ? e.message : String(e) }), {
+            status: 500,
+            headers: jsonHeaders(allowOrigin)
+          });
+        }
+      }
+
       // Sipariş Hazır - Müşteriye bildirim e-postası gönder
       if (path === '/order-ready' && request.method === 'POST') {
         const payload = await readJsonLoose(request);

@@ -380,31 +380,58 @@
         const repo = 'AMTBRS';
         const branch = 'site-release';
         const cacheBuster = Date.now();
+        const workerUrl = `https://ern-site.amtbrs-03.workers.dev/list-invoices?_cb=${cacheBuster}`;
         const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/invoices?ref=${branch}&_cb=${cacheBuster}`;
         
-        console.log('Bilgi Fişleri çekiliyor (URL):', apiUrl);
-        
-        const res = await fetch(apiUrl, {
-          headers: { 'Accept': 'application/vnd.github.v3+json' }
-        });
-        
-        console.log('GitHub API yanıtı:', res.status, res.statusText);
-        
-        if (!res.ok) {
-          if (res.status === 404) {
-            contentEl.innerHTML = '<div class="empty">📭 Henüz bilgi fişi oluşturulmamış.</div>';
-            updateStats([]);
-            return;
+        console.log('Bilgi Fişleri çekiliyor (worker-first):', workerUrl);
+
+        let files = null;
+        // 1) Worker üzerinden listele (rate-limit yok)
+        try {
+          const wres = await fetch(workerUrl, { headers: { 'Accept': 'application/json' } });
+          if (wres.ok) {
+            const wj = await wres.json().catch(()=>null);
+            if (wj && wj.ok && Array.isArray(wj.files)) {
+              files = wj.files;
+              console.log('Worker invoice list ok. count=', files.length);
+            } else {
+              console.warn('Worker invoice list beklenmeyen yanıt:', wj);
+            }
+          } else {
+            console.warn('Worker invoice list HTTP hata:', wres.status);
           }
-          const errorText = await res.text().catch(() => '');
-          console.error('GitHub API hata detayları:', errorText);
-          throw new Error(`GitHub API şu yanıtı verdi: ${res.status} - ${res.statusText}`);
+        } catch(e) {
+          console.warn('Worker invoice list fetch hatası:', e);
         }
+
+        // 2) Fallback: doğrudan GitHub Contents API (rate limit riski)
+        if (!files) {
+          console.log('Bilgi Fişleri çekiliyor (GitHub API fallback):', apiUrl);
+          const res = await fetch(apiUrl, {
+            headers: { 'Accept': 'application/vnd.github.v3+json' }
+          });
         
-        const files = await res.json();
+          console.log('GitHub API yanıtı:', res.status, res.statusText);
+          
+          if (!res.ok) {
+            if (res.status === 404) {
+              contentEl.innerHTML = '<div class="empty">📭 Henüz bilgi fişi oluşturulmamış.</div>';
+              updateStats([]);
+              return;
+            }
+            const errorText = await res.text().catch(() => '');
+            console.error('GitHub API hata detayları:', errorText);
+            if (res.status === 403) {
+              throw new Error('GitHub API 403: Rate limit / erişim kısıtı. Birkaç dakika sonra tekrar deneyin.');
+            }
+            throw new Error(`GitHub API şu yanıtı verdi: ${res.status} - ${res.statusText}`);
+          }
+          
+          files = await res.json();
+        }
         console.log('invoices/ klasöründeki dosya sayısı:', files.length);
-        
-        const invoiceFiles = files.filter(f => f.name.endsWith('.json') && f.name !== '.gitkeep');
+
+        const invoiceFiles = files.filter(f => f && f.name && f.name.endsWith('.json') && f.name !== '.gitkeep');
         console.log('Bilgi Fişi dosyaları:', invoiceFiles.length);
         
         if (invoiceFiles.length === 0) {
