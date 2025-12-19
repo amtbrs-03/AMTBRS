@@ -706,6 +706,30 @@ https://ern-cicek.com.tr
         const customerName = String(currentOrder?.customerName || 'Değerli Müşterimiz').trim() || 'Değerli Müşterimiz';
         const address = String(currentOrder?.address || 'Belirtilmedi');
 
+        // Sistem kargo firması (best-effort): site-settings.json > shippingCompany
+        let shippingCompany = String(currentOrder?.shippingCompany || '').trim();
+        if (!shippingCompany) {
+          try {
+            const settingsPath = 'site-settings.json';
+            const settingsUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(settingsPath)}?ref=${encodeURIComponent(branch)}`;
+            const settingsRes = await fetch(settingsUrl, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                Accept: 'application/vnd.github+json',
+                'User-Agent': 'Cloudflare-Worker'
+              }
+            });
+            if (settingsRes.ok) {
+              const meta = await settingsRes.json();
+              const txt = decodeB64Utf8(meta?.content || '');
+              const settings = JSON.parse(txt || '{}');
+              shippingCompany = String(settings?.shippingCompany || settings?.cargoCompany || settings?.carrier || '').trim();
+            }
+          } catch (_) {
+            // ignore (email can still be sent)
+          }
+        }
+
         if (!customerEmail) {
           return new Response(JSON.stringify({ ok: false, error: 'Order has no customerEmail' }), {
             status: 400,
@@ -720,7 +744,9 @@ https://ern-cicek.com.tr
         let emailLogError = null;
         let emailDataForLog = null;
 
-        const subject = `🚚 Kargonuz Yola Çıktı - ${orderId} | ERN-ÇİÇEK`;
+        const subject = shippingCompany
+          ? `🚚 Kargonuz Yola Çıktı - ${shippingCompany} - ${orderId} | ERN-ÇİÇEK`
+          : `🚚 Kargonuz Yola Çıktı - ${orderId} | ERN-ÇİÇEK`;
         const fromEmail = env.FROM_EMAIL || 'onboarding@resend.dev';
         const resendKey = env.RESEND_API_KEY || '';
 
@@ -742,6 +768,7 @@ https://ern-cicek.com.tr
       <p style="color:#475569;">Siparişiniz kargoya verilmiştir. Kargo takip numaranız aşağıdadır.</p>
       <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:16px;margin:18px 0;">
         <div style="color:#166534;font-weight:800;">📦 Sipariş Numarası: ${orderId}</div>
+        ${shippingCompany ? `<div style="margin-top:8px;color:#065f46;font-weight:800;">🏷️ Kargo Firması: ${shippingCompany}</div>` : ''}
         <div style="margin-top:10px;color:#064e3b;font-weight:900;font-size:18px;">🚚 Kargo Takip No: ${trackingNumber}</div>
       </div>
       <h3 style="color:#0b2f1f;margin:22px 0 10px;">📍 Teslimat Adresi</h3>
@@ -765,6 +792,7 @@ Sayın ${customerName},
 🚚 Kargonuz yola çıktı.
 
 Sipariş Numarası: ${orderId}
+${shippingCompany ? `Kargo Firması: ${shippingCompany}\n` : ''}Kargo Takip No: ${trackingNumber}
 Kargo Takip No: ${trackingNumber}
 
 Teslimat Adresi:
@@ -829,6 +857,7 @@ https://ern-cicek.com.tr
             error: emailOk ? null : (emailError || null),
             resend: emailDataForLog,
             trackingNumber,
+            shippingCompany: shippingCompany || null,
             html: trackingHtml,
             text: trackingText
           };
