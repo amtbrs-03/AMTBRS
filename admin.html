@@ -2300,8 +2300,55 @@
           await pasteTokenIntoInput(inp);
         });
       }
-      if(saveBtn && inp){ saveBtn.addEventListener('click', async ()=>{ const t=(inp.value||'').trim(); if(!t){ st.textContent='Lütfen token girin'; return; } setToken(t); const r=await validateToken(t); st.textContent=r.msg; const pat=document.getElementById('patNotice'); if(pat) pat.style.display = r.ok ? 'none' : 'block'; }); }
-      if(valBtn){ valBtn.addEventListener('click', async ()=>{ const r=await validateToken(getToken()); st.textContent=r.msg; const pat=document.getElementById('patNotice'); if(pat) pat.style.display = r.ok ? 'none' : 'block'; }); }
+      if(saveBtn && inp){
+        saveBtn.addEventListener('click', async ()=>{
+          const t = (inp.value||'').trim();
+          if(!t){
+            st.textContent = 'Lütfen token girin';
+            if(typeof finishRefreshError === 'function') finishRefreshError('Token boş');
+            return;
+          }
+
+          const useModal = (typeof openRefreshModal === 'function') && (typeof updateRefreshProgress === 'function');
+          if(useModal){
+            openRefreshModal({ title: '🔑 GitHub Token', progressTitle: 'Token kaydediliyor...' });
+            updateRefreshProgress(15, 'Token yerel depoya yazılıyor...');
+          }
+
+          setToken(t);
+
+          if(useModal) updateRefreshProgress(40, 'Token doğrulanıyor...');
+          const r = await validateToken(t);
+          st.textContent = r.msg;
+          const pat = document.getElementById('patNotice');
+          if(pat) pat.style.display = r.ok ? 'none' : 'block';
+
+          if(useModal){
+            if(r.ok) finishRefreshSuccess(r.msg);
+            else finishRefreshError(r.msg);
+          }
+        });
+      }
+
+      if(valBtn){
+        valBtn.addEventListener('click', async ()=>{
+          const useModal = (typeof openRefreshModal === 'function') && (typeof updateRefreshProgress === 'function');
+          if(useModal){
+            openRefreshModal({ title: '🔎 Token Doğrulama', progressTitle: 'Token doğrulanıyor...' });
+            updateRefreshProgress(20, 'GitHub API kontrol ediliyor...');
+          }
+
+          const r = await validateToken(getToken());
+          st.textContent = r.msg;
+          const pat = document.getElementById('patNotice');
+          if(pat) pat.style.display = r.ok ? 'none' : 'block';
+
+          if(useModal){
+            if(r.ok) finishRefreshSuccess(r.msg);
+            else finishRefreshError(r.msg);
+          }
+        });
+      }
     }
     if(document.readyState === 'loading'){
       document.addEventListener('DOMContentLoaded', bind);
