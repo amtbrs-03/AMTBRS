@@ -1963,6 +1963,55 @@
                             });
                         }catch(e){ console.error('Ürün yükleme hatası', e); }
                     }
+
+                    // ===== OTURUM (LATEST WINS) + SİSTEMDEN SEPET ÇEKME =====
+                    // Not: Bu helper'lar loginUser() gibi global fonksiyonlar tarafından
+                    // kullanıldığı için DOMContentLoaded içinde TANIMLANMAMALIDIR.
+                    function sessionIdUpdatedAtKey(email) {
+                        return 'sessionIdUpdatedAt_' + email;
+                    }
+                    function getLocalSessionMeta(email) {
+                        const sid = localStorage.getItem('sessionId_' + email) || '';
+                        const ts = Number(localStorage.getItem(sessionIdUpdatedAtKey(email)) || 0) || 0;
+                        return { sessionId: sid, updatedAt: ts };
+                    }
+                    function setLocalSessionMeta(email, sessionId, updatedAt) {
+                        try { localStorage.setItem('sessionId_' + email, String(sessionId || '')); } catch(_){ }
+                        try { localStorage.setItem(sessionIdUpdatedAtKey(email), String(Number(updatedAt) || Date.now())); } catch(_){ }
+                    }
+                    async function syncCartFromSystem(email) {
+                        try {
+                            if (!email) return false;
+                            const url = 'https://raw.githubusercontent.com/amtbrs-03/AMTBRS/site-release/carts/' + email + '.json?t=' + Date.now();
+                            const res = await fetch(url, { cache: 'no-store' });
+                            if (!res.ok) return false;
+                            const data = await res.json();
+                            const items = Array.isArray(data) ? data : (data && Array.isArray(data.items) ? data.items : []);
+                            if (!Array.isArray(items)) return false;
+                            // cart storage expects an array
+                            const cart = items.map(i => ({
+                                id: i.id,
+                                name: i.name,
+                                price: i.price,
+                                qty: i.qty || i.quantity || 1,
+                                image: i.image || '',
+                                addedAt: i.addedAt || Date.now(),
+                                updatedAt: i.updatedAt || i.addedAt || Date.now()
+                            })).filter(x => x && x.id);
+                            localStorage.setItem('cart_' + email, JSON.stringify(cart));
+                            try { updateCartCount(); } catch(_){ }
+                            try {
+                                const cm = document.getElementById('cartModal');
+                                if (cm && cm.style && cm.style.display === 'block') {
+                                    renderCart();
+                                }
+                            } catch(_){ }
+                            return true;
+                        } catch(_e) {
+                            return false;
+                        }
+                    }
+
                     document.addEventListener('DOMContentLoaded', function(){
                         // Logout sonrası bildirim göster
                         const urlParams = new URLSearchParams(window.location.search);
@@ -2068,52 +2117,6 @@
                                 updateFilterBarPosition();
                             });
                         })();
-
-                        // ===== OTURUM (LATEST WINS) + SİSTEMDEN SEPET ÇEKME =====
-                        function sessionIdUpdatedAtKey(email) {
-                            return 'sessionIdUpdatedAt_' + email;
-                        }
-                        function getLocalSessionMeta(email) {
-                            const sid = localStorage.getItem('sessionId_' + email) || '';
-                            const ts = Number(localStorage.getItem(sessionIdUpdatedAtKey(email)) || 0) || 0;
-                            return { sessionId: sid, updatedAt: ts };
-                        }
-                        function setLocalSessionMeta(email, sessionId, updatedAt) {
-                            try { localStorage.setItem('sessionId_' + email, String(sessionId || '')); } catch(_){ }
-                            try { localStorage.setItem(sessionIdUpdatedAtKey(email), String(Number(updatedAt) || Date.now())); } catch(_){ }
-                        }
-                        async function syncCartFromSystem(email) {
-                            try {
-                                if (!email) return false;
-                                const url = 'https://raw.githubusercontent.com/amtbrs-03/AMTBRS/site-release/carts/' + email + '.json?t=' + Date.now();
-                                const res = await fetch(url, { cache: 'no-store' });
-                                if (!res.ok) return false;
-                                const data = await res.json();
-                                const items = Array.isArray(data) ? data : (data && Array.isArray(data.items) ? data.items : []);
-                                if (!Array.isArray(items)) return false;
-                                // cart storage expects an array
-                                const cart = items.map(i => ({
-                                    id: i.id,
-                                    name: i.name,
-                                    price: i.price,
-                                    qty: i.qty || i.quantity || 1,
-                                    image: i.image || '',
-                                    addedAt: i.addedAt || Date.now(),
-                                    updatedAt: i.updatedAt || i.addedAt || Date.now()
-                                })).filter(x => x && x.id);
-                                localStorage.setItem('cart_' + email, JSON.stringify(cart));
-                                try { updateCartCount(); } catch(_){ }
-                                try {
-                                    const cm = document.getElementById('cartModal');
-                                    if (cm && cm.style && cm.style.display === 'block') {
-                                        renderCart();
-                                    }
-                                } catch(_){ }
-                                return true;
-                            } catch(_e) {
-                                return false;
-                            }
-                        }
                         
                         // ===== SİLİNMİŞ KULLANICI VE TEK OTURUM KONTROLÜ =====
                         (async function checkDeletedUser() {
