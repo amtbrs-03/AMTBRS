@@ -6452,6 +6452,24 @@ try {
     let liveCartsData = [];
     let liveCartsInterval = null;
 
+    function encodeGitHubPath(path) {
+      try {
+        return String(path || '')
+          .split('/')
+          .map(seg => encodeURIComponent(seg))
+          .join('/');
+      } catch (_) {
+        return encodeURIComponent(String(path || '')).replace(/%2F/g, '/');
+      }
+    }
+
+    function decodeB64Utf8(b64) {
+      const raw = String(b64 || '').replace(/\n/g, '');
+      try { return decodeURIComponent(escape(atob(raw))); } catch (_) {}
+      try { return atob(raw); } catch (_) {}
+      return '';
+    }
+
     // GitHub token'ı al
     function getToken() {
       // Önce global fonksiyonu dene, sonra localStorage
@@ -6519,9 +6537,19 @@ try {
         
         const cartPromises = jsonFiles.map(async (file) => {
           try {
-            const cartRes = await fetch(file.download_url + '?_=' + Date.now());
+            // ÖNEMLİ: Private repo durumunda download_url/raw fetch 401/404 dönebilir.
+            // Bu yüzden Contents API üzerinden (token ile) okuyup base64 decode ediyoruz.
+            const fileApiUrl = `https://api.github.com/repos/amtbrs-03/AMTBRS/contents/${encodeGitHubPath(file.path)}?ref=${BRANCH}&_=${Date.now()}`;
+            const cartRes = await fetch(fileApiUrl, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/vnd.github.v3+json'
+              }
+            });
             if (!cartRes.ok) return null;
-            const cartData = await cartRes.json();
+            const meta = await cartRes.json();
+            const txt = decodeB64Utf8(meta && meta.content ? meta.content : '');
+            const cartData = JSON.parse(txt || '{}');
             return {
               email: file.name.replace('.json', ''),
               fileName: file.name,
@@ -6688,7 +6716,7 @@ try {
       modal.style.display = 'flex';
     };
 
-    // Admin'den sepet silme fonksiyonu
+      // Admin'den sepet silme fonksiyonu
     window.deleteCartFromAdmin = async function(email) {
       if (!confirm(`"${email}" sepetini silmek istediğinize emin misiniz?`)) {
         return;
@@ -6709,7 +6737,7 @@ try {
       
       try {
         const filePath = `carts/${email}.json`;
-        const apiUrl = `https://api.github.com/repos/amtbrs-03/AMTBRS/contents/${encodeURIComponent(filePath)}?ref=site-release`;
+        const apiUrl = `https://api.github.com/repos/amtbrs-03/AMTBRS/contents/${encodeGitHubPath(filePath)}?ref=site-release`;
         
         // Önce SHA al
         updateRefreshProgress(40, 'Dosya bilgisi alınıyor...');
@@ -6729,7 +6757,7 @@ try {
         
         // Sil
         updateRefreshProgress(70, 'Dosya siliniyor...');
-        const delRes = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/${encodeURIComponent(filePath)}`, {
+        const delRes = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/${encodeGitHubPath(filePath)}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`,
