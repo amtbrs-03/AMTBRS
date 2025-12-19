@@ -5511,8 +5511,8 @@
                         const cart = loadCart();
                         const totalQty = cart.reduce((s,i) => s + (i.qty||0), 0);
                         badge.textContent = totalQty;
-                        if (totalQty > 0) badge.classList.remove('hidden');
-                        else badge.classList.add('hidden');
+                        // Üye giriş yaptıysa sayaç aktif/görünür olsun (sepet boş olsa bile 0 göster)
+                        badge.classList.remove('hidden');
                         // keep mini cart in sync
                         try{ renderMiniCart(); }catch(e){}
                     }
