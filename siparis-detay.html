@@ -619,7 +619,7 @@
         const token = getGitHubToken();
         if (!token) {
           console.error('No GitHub token available');
-          alert('⚠️ GitHub token bulunamadı. Admin panelinden token ayarını yapın.');
+          alert('⚠️ Yetki bulunamadı. Admin panelinden yetkilendirme ayarını yapın.');
           return;
         }
         
@@ -670,7 +670,7 @@
         } else {
           const errorText = await response.text();
           console.error('❌ Invoice save failed:', response.status, errorText);
-          alert(`⚠️ Bilgi Fişi Kayıt Uyarısı\n\n📦 Sipariş: ${currentOrder.id}\n\nBilgi Fişi GitHub'a kaydedilemedi ancak sipariş durumu güncellendi.\nDetaylar için console'u kontrol edin.`);
+          alert(`⚠️ Bilgi Fişi Kayıt Uyarısı\n\n📦 Sipariş: ${currentOrder.id}\n\nBilgi fişi kaydedilemedi ancak sipariş durumu güncellendi.\nDetaylar için console'u kontrol edin.`);
         }
       } catch(err) {
         console.error('Failed to save invoice to GitHub:', err);
@@ -685,7 +685,7 @@
       if (newAddress == null) return; // cancelled
       try {
         const token = getGitHubToken();
-        if (!token) { alert('⚠️ GitHub token bulunamadı.'); return; }
+        if (!token) { alert('⚠️ Yetki bulunamadı.'); return; }
         // Fetch file to get SHA
         const getRes = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/orders/${currentOrder.id}.json?ref=site-release&t=${Date.now()}`,{
           headers:{ 'Accept':'application/vnd.github.v3+json','Authorization':`token ${token}` }
@@ -791,7 +791,7 @@
 
         // Update order file with this address
         const token = getGitHubToken();
-        if (!token) { alert('⚠️ GitHub token bulunamadı.'); return; }
+        if (!token) { alert('⚠️ Yetki bulunamadı.'); return; }
         const getRes = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/orders/${currentOrder.id}.json?ref=site-release&t=${Date.now()}`,{
           headers:{ 'Accept':'application/vnd.github.v3+json','Authorization':`token ${token}` }
         });
@@ -830,7 +830,7 @@
       if (!confirm('Bu siparişi silmek istediğinizden emin misiniz?')) return;
       try {
         const token = getGitHubToken();
-        if (!token) { alert('⚠️ GitHub token bulunamadı.'); return; }
+        if (!token) { alert('⚠️ Yetki bulunamadı.'); return; }
         // Fetch file to get SHA
         const getRes = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/orders/${currentOrder.id}.json?ref=site-release&t=${Date.now()}`,{
           headers:{ 'Accept':'application/vnd.github.v3+json','Authorization':`token ${token}` }
@@ -864,7 +864,7 @@
         console.log('Token retrieved:', token ? `Yes (${token.substring(0, 7)}...)` : 'No');
         if (!token) {
           console.error('No GitHub token available');
-          alert('⚠️ GitHub token bulunamadı. Admin panelinden token ayarını yapın.');
+          alert('⚠️ Yetki bulunamadı. Admin panelinden yetkilendirme ayarını yapın.');
           return false;
         }
         
@@ -1029,7 +1029,7 @@
           // 2) Fallback: update users/<email>_full.json directly via GitHub API
           if (!workerUpdated && email) {
             const token = getGitHubToken();
-            if (!token) { alert('⚠️ GitHub token yok, profil dosyasını güncelleyemedik.'); }
+            if (!token) { alert('⚠️ Yetki yok, profil dosyasını güncelleyemedik.'); }
             else {
               const userPath = `users/${encodeURIComponent(email)}_full.json`;
               const getRes = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/${userPath}?ref=site-release&t=${Date.now()}`,{
@@ -1066,7 +1066,7 @@
 
           // 3) Update current order address and commit
           const token2 = getGitHubToken();
-          if (!token2) { alert('⚠️ GitHub token bulunamadı. Sipariş dosyası güncellenemedi.'); return; }
+          if (!token2) { alert('⚠️ Yetki bulunamadı. Sipariş dosyası güncellenemedi.'); return; }
           const getOrderRes = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/orders/${currentOrder.id}.json?ref=site-release&t=${Date.now()}`,{
             headers:{ 'Accept':'application/vnd.github.v3+json','Authorization':`token ${token2}` }
           });

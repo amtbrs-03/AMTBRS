@@ -6112,10 +6112,10 @@
                                 e.preventDefault();
                                 const products = exportCurrentProducts();
                                 saveProductsToGitHub(products).then(()=>{
-                                    showNotification('✅ Ürünler GitHub\'a kaydedildi', {type: 'success', duration: 3000});
+                                    showNotification('✅ Kaydedildi', {type: 'success', duration: 3000});
                                 }).catch(err=>{
                                     console.error('GitHub kaydetme hatası', err);
-                                    showNotification('❌ GitHub\'a kaydetme başarısız: ' + (err && err.message || 'Hata'), {type: 'error', duration: 4000});
+                                    showNotification('❌ Kaydetme başarısız: ' + (err && err.message || 'Hata'), {type: 'error', duration: 4000});
                                 });
                                 return;
                             }

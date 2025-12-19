@@ -5753,6 +5753,95 @@ try {
     
     status.textContent = '⏳ Resimler yükleniyor...';
     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#64748b;padding:2rem;">Yükleniyor...</div>';
+
+    const normalizeGalleryPath = (p) => {
+      if (!p) return '';
+      return String(p)
+        .trim()
+        .replace(/^\.{1,2}\//, '')
+        .replace(/\\/g, '/')
+        .toLowerCase();
+    };
+
+    const fetchJsonBestEffort = async ({ owner, repo, branch, path, token }) => {
+      // 1) raw.githubusercontent.com
+      try {
+        const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`;
+        const rawRes = await fetch(rawUrl, { cache: 'no-store' });
+        if (rawRes.ok) return await rawRes.json();
+      } catch (_) {}
+
+      // 2) GitHub Contents API (requires base64 decoding)
+      try {
+        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`;
+        const headers = { 'Accept': 'application/vnd.github.v3+json' };
+        if (token) headers['Authorization'] = 'token ' + token;
+        const apiRes = await fetch(apiUrl, { headers, cache: 'no-store' });
+        if (!apiRes.ok) return null;
+        const data = await apiRes.json();
+        if (!data || !data.content) return null;
+        const decoded = atob(String(data.content).replace(/\s/g, ''));
+        return JSON.parse(decoded);
+      } catch (_) {
+        return null;
+      }
+    };
+
+    const buildProductImageIndex = (productsJson) => {
+      const pathToProducts = new Map(); // normalizedPath -> [{ name, sortOrder }]
+      const items = (productsJson && Array.isArray(productsJson.items)) ? productsJson.items : [];
+      for (const item of items) {
+        const name = (item && item.name) ? String(item.name) : '';
+        const sortOrder = (item && typeof item.sortOrder === 'number') ? item.sortOrder : 999999;
+
+        const paths = [];
+        if (item && item.image) paths.push(item.image);
+        if (item && Array.isArray(item.images)) paths.push(...item.images);
+
+        for (const p of paths) {
+          const key = normalizeGalleryPath(p);
+          if (!key) continue;
+          if (!pathToProducts.has(key)) pathToProducts.set(key, []);
+          pathToProducts.get(key).push({ name, sortOrder });
+        }
+      }
+      return pathToProducts;
+    };
+
+    const pickPrimaryProductName = (arr) => {
+      if (!arr || arr.length === 0) return '';
+      const sorted = [...arr].sort((a, b) => {
+        const ao = (typeof a.sortOrder === 'number') ? a.sortOrder : 999999;
+        const bo = (typeof b.sortOrder === 'number') ? b.sortOrder : 999999;
+        if (ao !== bo) return ao - bo;
+        return String(a.name || '').localeCompare(String(b.name || ''), 'tr');
+      });
+      return String(sorted[0].name || '').trim();
+    };
+
+    const collectBackgroundPaths = (settingsJson) => {
+      const set = new Set();
+      if (!settingsJson || typeof settingsJson !== 'object') return set;
+      for (const [k, v] of Object.entries(settingsJson)) {
+        if (typeof v !== 'string') continue;
+        const val = v.trim();
+        // “arka plan” isteği için en azından homepageBackground; ayrıca gallery içinden gelen string alanları da yakala
+        if (k === 'homepageBackground' || val.toLowerCase().startsWith('images/gallery/')) {
+          set.add(normalizeGalleryPath(val));
+        }
+      }
+      return set;
+    };
+
+    const renderSectionHeader = (title, count, isFirst) => {
+      const mt = isFirst ? '0' : '14px';
+      return `
+        <div style="grid-column:1/-1;margin-top:${mt};padding:10px 12px;border-radius:12px;border:1px solid rgba(15,23,42,0.08);background:rgba(15,23,42,0.06);display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <div style="font-weight:800;color:#0f172a;letter-spacing:0.01em;">${title}</div>
+          <div style="font-weight:800;color:#334155;background:rgba(255,255,255,0.65);border:1px solid rgba(15,23,42,0.10);padding:4px 10px;border-radius:999px;min-width:44px;text-align:center;">${count}</div>
+        </div>
+      `;
+    };
     
     try {
       const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token') || '');
@@ -5792,15 +5881,69 @@ try {
         if (showModal) finishRefreshSuccess('Galeri klasöründe resim yok');
         return;
       }
-      
-      if (showModal) updateRefreshProgress(85, 'Galeri oluşturuluyor...');
-      
-      status.textContent = `✅ ${images.length} resim bulundu.`;
-      
-      grid.innerHTML = images.map(img => {
+
+      if (showModal) updateRefreshProgress(78, 'Ürün ve site ayarları okunuyor...');
+
+      const [productsJson, settingsJson] = await Promise.all([
+        fetchJsonBestEffort({ owner, repo, branch, path: 'products.json', token }),
+        fetchJsonBestEffort({ owner, repo, branch, path: 'site-settings.json', token })
+      ]);
+
+      const productIndex = buildProductImageIndex(productsJson);
+      const backgroundPaths = collectBackgroundPaths(settingsJson);
+
+      if (showModal) updateRefreshProgress(85, 'Galeri gruplandırılıyor...');
+
+      // Gruplama
+      const background = [];
+      const byProduct = new Map(); // productName -> [img]
+      const fresh = [];
+
+      for (const img of images) {
+        const relativePath = `images/gallery/${img.name}`;
+        const key = normalizeGalleryPath(relativePath);
+        if (backgroundPaths.has(key)) {
+          background.push(img);
+          continue;
+        }
+
+        const productRefs = productIndex.get(key);
+        const primaryName = pickPrimaryProductName(productRefs);
+        if (primaryName) {
+          if (!byProduct.has(primaryName)) byProduct.set(primaryName, []);
+          byProduct.get(primaryName).push(img);
+        } else {
+          fresh.push(img);
+        }
+      }
+
+      // Ürün gruplarını deterministik sırala
+      const productOrderIndex = new Map();
+      if (productsJson && Array.isArray(productsJson.items)) {
+        for (const item of productsJson.items) {
+          const name = item && item.name ? String(item.name) : '';
+          if (!name || !byProduct.has(name)) continue;
+          const so = (item && typeof item.sortOrder === 'number') ? item.sortOrder : 999999;
+          const prev = productOrderIndex.get(name);
+          if (prev === undefined || so < prev) productOrderIndex.set(name, so);
+        }
+      }
+
+      const productGroups = [...byProduct.entries()].sort((a, b) => {
+        const an = a[0];
+        const bn = b[0];
+        const ao = productOrderIndex.has(an) ? productOrderIndex.get(an) : 999999;
+        const bo = productOrderIndex.has(bn) ? productOrderIndex.get(bn) : 999999;
+        if (ao !== bo) return ao - bo;
+        return String(an).localeCompare(String(bn), 'tr');
+      });
+
+      // Dosyaları isimle sırala
+      const sortByName = (arr) => [...arr].sort((a, b) => String(a.name).localeCompare(String(b.name), 'tr'));
+
+      const renderItem = (img) => {
         const imgUrl = img.download_url || `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}/${img.name}`;
         const relativePath = `images/gallery/${img.name}`;
-        
         return `
           <div class="gallery-item" data-path="${relativePath}" data-sha="${img.sha}">
             <div class="gallery-img-wrapper">
@@ -5817,7 +5960,28 @@ try {
             </div>
           </div>
         `;
-      }).join('');
+      };
+
+      // Render
+      let html = '';
+      let sectionCount = 0;
+
+      const pushSection = (title, list) => {
+        html += renderSectionHeader(title, list.length, sectionCount === 0);
+        sectionCount++;
+        html += sortByName(list).map(renderItem).join('');
+      };
+
+      pushSection('🧱 Arka Plan', background);
+      for (const [productName, list] of productGroups) {
+        pushSection('🌿 ' + productName, list);
+      }
+      pushSection('🆕 Yeni', fresh);
+
+      grid.innerHTML = html;
+
+      const productImgCount = productGroups.reduce((acc, [, list]) => acc + list.length, 0);
+      status.textContent = `✅ Toplam ${images.length} resim: Arka Plan ${background.length}, Ürün ${productImgCount}, Yeni ${fresh.length}.`;
       
       if (showModal) finishRefreshSuccess(`${images.length} resim başarıyla yenilendi`);
       
