@@ -1826,7 +1826,13 @@
                     async function loadProducts(){
                         try{
                             const cacheBypass = '?v=' + Date.now();
-                            const res = await fetch('products.json' + cacheBypass, {cache:'no-store'});
+                                                        let productsUrl = 'products.json' + cacheBypass;
+                                                        try {
+                                                            const u = new URL('products.json', window.location.href);
+                                                            u.searchParams.set('v', String(Date.now()));
+                                                            productsUrl = u.toString();
+                                                        } catch(_){ /* fallback */ }
+                                                        const res = await fetch(productsUrl, {cache:'no-store'});
                             if(!res.ok) throw new Error('products.json yüklenemedi');
                             const listRaw = await res.json();
                             let list = Array.isArray(listRaw) ? listRaw : (Array.isArray(listRaw.items) ? listRaw.items : []);

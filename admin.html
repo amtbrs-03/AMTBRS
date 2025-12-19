@@ -2169,7 +2169,13 @@
   document.addEventListener('DOMContentLoaded', function(){ const btn=document.getElementById('refreshEditBtn'); if(btn){ btn.addEventListener('click', refreshCurrentEditProduct); } });
   function addEditButtonsToProductCards(){
     // Önce ürünleri sortOrder'a göre sırala ve numaraları ekle
-    fetch('products.json?v='+Date.now()).then(r=>r.json()).then(productsData=>{
+    let productsUrl = 'products.json?v='+Date.now();
+    try {
+      productsUrl = new URL('products.json', window.location.href);
+      productsUrl.searchParams.set('v', String(Date.now()));
+      productsUrl = productsUrl.toString();
+    } catch(_){ /* fallback to relative */ }
+    fetch(productsUrl, { cache:'no-store' }).then(r=>r.json()).then(productsData=>{
       const products = productsData.items || [];
       const sorted = adminNormalizeProductsSequentialSortOrder(products);
       const orderById = new Map();
