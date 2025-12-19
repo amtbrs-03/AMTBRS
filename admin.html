@@ -2258,16 +2258,20 @@
       </div>
 
       <div class="card">
-        <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+        <div class="section-header" style="display:flex;flex-direction:column;align-items:flex-start;gap:1rem;">
+          <button id="productImagesMainBtn" class="btn" aria-expanded="false" style="background:linear-gradient(90deg,#16a34a 0%,#22d3ee 100%);color:#fff;border-radius:16px;font-weight:700;font-size:1.15rem;padding:1.0rem 2.0rem;box-shadow:0 4px 24px rgba(34,211,238,0.15);letter-spacing:0.02em;transition:all 0.2s;display:flex;align-items:center;gap:0.8rem;width:100%;justify-content:flex-start;">
             <span style="font-size:2rem;">🛒</span>
-            <span style="font-size:1.15rem;">KAYITLI ÜRÜN GÖRSELLERİ DÜZENLEME</span>
-          <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-top:0.5rem;width:100%;">
-            <button id="refreshProductsBtn" class="btn btn-ghost" type="button" style="flex:1 1 0;min-width:120px;font-size:0.95rem;">🔄 Yenile</button>
-            <button id="addCardBtn" class="btn btn-ghost" type="button" title="Yeni düzenleme kartı ekle" style="flex:1 1 0;min-width:120px;font-size:0.95rem;">➕ Kart Ekle</button>
-          </div>
-        </div>
-        <div id="products" class="products-list"></div>
-        <script>
+            <span>KAYITLI ÜRÜN GÖRSELLERİ DÜZENLEME</span>
+            <span id="productImagesChevron" aria-hidden="true" style="margin-left:0.2rem;display:inline-block;transition:transform 180ms ease;transform:rotate(-90deg)">▾</span>
+          </button>
+
+          <div id="productImagesBody" style="display:none;width:100%;">
+            <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-top:0.5rem;width:100%;">
+              <button id="refreshProductsBtn" class="btn btn-ghost" type="button" style="flex:1 1 0;min-width:120px;font-size:0.95rem;">🔄 Yenile</button>
+              <button id="addCardBtn" class="btn btn-ghost" type="button" title="Yeni düzenleme kartı ekle" style="flex:1 1 0;min-width:120px;font-size:0.95rem;">➕ Kart Ekle</button>
+            </div>
+            <div id="products" class="products-list"></div>
+            <script>
         // Quick action: open GitHub upload UI for images/gallery
         (function bindGalleryUpload(){
           function openUpload(){
@@ -2935,7 +2939,9 @@
           }
 
         });
-        </script>
+            </script>
+          </div>
+        </div>
       </div>
 
       <!-- Token ayar kartları kaldırıldı; başlık altına yerleştirilen küçük modal üzerinden yönetiliyor -->
@@ -2953,6 +2959,12 @@
               <span>🛒</span>
               <span>Canlı Sepet Takibi</span>
               <span id="liveCartsCount" style="background:rgba(16,185,129,0.12);color:#064e3b;padding:4px 10px;border-radius:999px;font-size:0.95rem;font-weight:800;margin-left:auto;">0</span>
+            </button>
+
+            <button id="openEmailTrackingBtn" class="btn btn-ghost" type="button" style="font-size:1rem;padding:0.8rem 1.4rem;display:flex;align-items:center;gap:0.6rem;">
+              <span>📧</span>
+              <span>E-posta Takibi</span>
+              <span id="emailLogsCount" style="background:rgba(37,99,235,0.10);color:#1e3a8a;padding:4px 10px;border-radius:999px;font-size:0.95rem;font-weight:800;margin-left:auto;">0</span>
             </button>
           </div>
         </div>
@@ -2987,6 +2999,43 @@
             <button id="closeCartDetailBtn" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#6b7280;">&times;</button>
           </div>
           <div id="cartDetailContent" style="padding:1.5rem;"></div>
+        </div>
+      </div>
+
+      <!-- E-posta Takibi Modal -->
+      <div id="emailTrackingModal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width:1100px;max-height:90vh;overflow-y:auto;">
+          <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;padding:1.5rem 2rem;border-bottom:1px solid #e5e7eb;background:linear-gradient(135deg,#eff6ff,#dbeafe);flex-wrap:wrap;gap:1rem;">
+            <div style="display:flex;align-items:center;gap:1rem;">
+              <span style="font-size:2.2rem;">📧</span>
+              <h2 style="margin:0;font-size:1.5rem;color:#1e3a8a;font-weight:700;">E-posta Takibi</h2>
+              <span id="emailLogsCountModal" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;padding:6px 14px;border-radius:999px;font-size:1rem;font-weight:700;">0</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+              <button id="refreshEmailLogsBtn" class="btn btn-ghost" type="button" style="font-size:1rem;padding:0.6rem 1.2rem;">🔄 Yenile</button>
+              <span id="emailLogsStatus" style="font-size:0.9rem;color:#6b7280;">Son güncelleme: -</span>
+              <button id="closeEmailTrackingBtn" class="close-modal" type="button" style="font-size:1.8rem;background:none;border:none;cursor:pointer;color:#6b7280;padding:0.5rem;">&times;</button>
+            </div>
+          </div>
+          <div id="emailLogsList" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(360px, 1fr));gap:1.25rem;padding:2rem;">
+            <div style="text-align:center;padding:2rem;color:#6b7280;font-size:1rem;">E-postalar yükleniyor...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- E-posta Detay / Önizleme Modal -->
+      <div id="emailDetailModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:10000;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+        <div style="background:#fff;border-radius:16px;max-width:980px;width:94%;max-height:88vh;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,0.3);display:flex;flex-direction:column;">
+          <div style="padding:1.25rem 1.5rem;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;gap:1rem;">
+            <div style="display:flex;flex-direction:column;gap:0.35rem;min-width:0;">
+              <h3 id="emailDetailTitle" style="margin:0;font-size:1.15rem;color:#1e3a8a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📧 E-posta Detayı</h3>
+              <div id="emailDetailMeta" style="font-size:0.9rem;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+            </div>
+            <button id="closeEmailDetailBtn" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#6b7280;">&times;</button>
+          </div>
+          <div style="padding:0;flex:1;min-height:0;">
+            <iframe id="emailDetailFrame" title="E-posta Önizleme" style="width:100%;height:100%;border:0;display:block;background:#fff;"></iframe>
+          </div>
         </div>
       </div>
 
@@ -3170,6 +3219,24 @@
       }
       // Start closed by default
       setCustomerOpenState(false);
+
+      // Accordion: Kayıtlı Ürün Görselleri Düzenleme
+      const productImagesMainBtn = document.getElementById('productImagesMainBtn');
+      const productImagesBody = document.getElementById('productImagesBody');
+      const productImagesChev = document.getElementById('productImagesChevron');
+      function setProductImagesOpenState(isOpen){
+        if(productImagesBody) productImagesBody.style.display = isOpen ? 'block' : 'none';
+        if(productImagesMainBtn) productImagesMainBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        if(productImagesChev) productImagesChev.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(-90deg)';
+      }
+      if(productImagesMainBtn){
+        productImagesMainBtn.addEventListener('click', ()=>{
+          const currentlyOpen = productImagesBody && productImagesBody.style.display !== 'none';
+          setProductImagesOpenState(!currentlyOpen);
+        });
+      }
+      // Start closed by default
+      setProductImagesOpenState(false);
       // Live preview background input
       const bgInput = document.getElementById('homepageBackground');
       const bgPrev = document.getElementById('homepageBackgroundPreview');
@@ -6451,6 +6518,385 @@ try {
     window.openLiveCartsModal = openLiveCartsModal;
     window.closeLiveCartsModal = closeLiveCartsModal;
     window.closeCartDetailModal = closeCartDetailModal;
+  })();
+  </script>
+
+  <script>
+  (function(){
+    // E-posta Takibi (GitHub email-logs/)
+    const OWNER = 'amtbrs-03';
+    const REPO = 'AMTBRS';
+    const BRANCH = 'site-release';
+
+    function updateEmailLogsCount(count){
+      const btnCount = document.getElementById('emailLogsCount');
+      const modalCount = document.getElementById('emailLogsCountModal');
+      if(btnCount) btnCount.textContent = String(count||0);
+      if(modalCount) modalCount.textContent = String(count||0);
+    }
+
+    function openEmailTrackingModal(){
+      const modal = document.getElementById('emailTrackingModal');
+      if(modal){
+        modal.style.display='flex';
+        modal.classList.add('active');
+        document.body.style.overflow='hidden';
+        loadEmailLogs();
+      }
+    }
+
+    function closeEmailTrackingModal(){
+      const modal = document.getElementById('emailTrackingModal');
+      if(modal){
+        modal.style.display='none';
+        modal.classList.remove('active');
+        document.body.style.overflow='';
+      }
+    }
+
+    function openEmailDetailModal(){
+      const modal = document.getElementById('emailDetailModal');
+      if(modal){
+        modal.style.display='flex';
+        document.body.style.overflow='hidden';
+      }
+    }
+
+    function closeEmailDetailModal(){
+      const modal = document.getElementById('emailDetailModal');
+      if(modal){
+        modal.style.display='none';
+      }
+      // Email tracking modal açık kalabilir; kullanıcı geri döner
+    }
+
+    function formatDateTr(ms){
+      try{
+        const d = new Date(Number(ms||Date.now()));
+        return d.toLocaleString('tr-TR');
+      }catch(_){
+        return '-';
+      }
+    }
+
+    function encodePath(path){
+      return String(path||'').split('/').map(seg=>encodeURIComponent(seg)).join('/');
+    }
+
+    async function ghFetch(url, token){
+      const headers = { 'Accept':'application/vnd.github.v3+json' };
+      if(token) headers['Authorization'] = 'token ' + token;
+      return fetch(url, { headers, cache: 'no-store' });
+    }
+
+    function emptyStateHtml(msg){
+      return `<div style="text-align:center;padding:2rem;color:#6b7280;font-size:1rem;">${msg}</div>`;
+    }
+
+    function renderEmailLogCards(logs){
+      const host = document.getElementById('emailLogsList');
+      if(!host) return;
+
+      if(!Array.isArray(logs) || logs.length===0){
+        host.innerHTML = emptyStateHtml('Henüz e-posta kaydı bulunmuyor.');
+        updateEmailLogsCount(0);
+        return;
+      }
+
+      updateEmailLogsCount(logs.length);
+
+      // Müşteriye göre grupla: (isim + email)
+      const groupsMap = new Map();
+      (logs||[]).forEach((entry)=>{
+        const toName = String(entry?.toName || 'Müşteri').trim() || 'Müşteri';
+        const toEmail = String(entry?.toEmail || '').trim();
+        const key = (toName + '|' + toEmail).toLowerCase();
+        if(!groupsMap.has(key)) groupsMap.set(key, { toName, toEmail, items: [] });
+        groupsMap.get(key).items.push(entry);
+      });
+
+      const groups = Array.from(groupsMap.values()).map(g=>{
+        g.items.sort((a,b)=> Number(b?.sentAt||0) - Number(a?.sentAt||0));
+        g.latest = Number(g.items[0]?.sentAt || 0);
+        return g;
+      }).sort((a,b)=> (b.latest||0) - (a.latest||0));
+
+      host.innerHTML = '';
+
+      function makeGroupHeader(group){
+        const header = document.createElement('div');
+        header.style.gridColumn = '1 / -1';
+        header.style.display = 'flex';
+        header.style.alignItems = 'center';
+        header.style.justifyContent = 'space-between';
+        header.style.gap = '0.75rem';
+        header.style.padding = '0.9rem 1.1rem';
+        header.style.border = '1px solid #e5e7eb';
+        header.style.borderRadius = '14px';
+        header.style.background = 'linear-gradient(135deg,#eff6ff,#ffffff)';
+
+        const left = document.createElement('div');
+        left.style.minWidth = '0';
+        left.innerHTML = `
+          <div style="font-weight:900;color:#0f172a;font-size:1.05rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeInput(group.toName||'Müşteri')}</div>
+          <div style="color:#64748b;font-size:0.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeInput(group.toEmail||'')}</div>
+        `.trim();
+
+        const right = document.createElement('div');
+        right.style.display = 'flex';
+        right.style.alignItems = 'center';
+        right.style.gap = '0.5rem';
+
+        const countPill = document.createElement('div');
+        countPill.style.background = 'rgba(37,99,235,0.10)';
+        countPill.style.color = '#1e3a8a';
+        countPill.style.padding = '4px 10px';
+        countPill.style.borderRadius = '999px';
+        countPill.style.fontSize = '0.9rem';
+        countPill.style.fontWeight = '900';
+        countPill.textContent = `${group.items.length} e-posta`;
+
+        const lastPill = document.createElement('div');
+        lastPill.style.background = 'rgba(15,23,42,0.06)';
+        lastPill.style.color = '#334155';
+        lastPill.style.padding = '4px 10px';
+        lastPill.style.borderRadius = '999px';
+        lastPill.style.fontSize = '0.9rem';
+        lastPill.style.fontWeight = '800';
+        lastPill.textContent = `Son: ${formatDateTr(group.latest || Date.now())}`;
+
+        right.appendChild(countPill);
+        right.appendChild(lastPill);
+        header.appendChild(left);
+        header.appendChild(right);
+        return header;
+      }
+
+      function makeEmailCard(entry){
+        const toName = (entry?.toName || 'Müşteri').trim();
+        const toEmail = (entry?.toEmail || '').trim();
+        const subject = (entry?.subject || 'Konu yok').trim();
+        const status = String(entry?.status || '').toLowerCase();
+        const sentAt = entry?.sentAt || entry?.date || 0;
+        const orderId = entry?.orderId || '';
+        const type = entry?.type || '';
+
+        const isOk = status === 'sent' || status === 'ok' || status === 'success';
+        const badgeBg = isOk ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)';
+        const badgeColor = isOk ? '#064e3b' : '#7f1d1d';
+        const badgeText = isOk ? 'Gönderildi' : 'Hata';
+
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.style.padding = '1.25rem';
+        card.style.cursor = 'pointer';
+        card.style.border = '1px solid #e5e7eb';
+        card.style.borderRadius = '16px';
+        card.style.transition = 'transform 120ms ease, box-shadow 120ms ease';
+
+        card.innerHTML = `
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.75rem;">
+            <div style="min-width:0;">
+              <div style="font-weight:800;color:#0f172a;font-size:1.05rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeInput(toName)}</div>
+              <div style="color:#64748b;font-size:0.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeInput(toEmail)}</div>
+            </div>
+            <div style="background:${badgeBg};color:${badgeColor};padding:4px 10px;border-radius:999px;font-size:0.88rem;font-weight:900;white-space:nowrap;">${badgeText}</div>
+          </div>
+          <div style="margin-top:0.85rem;color:#1e293b;font-weight:700;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${safeInput(subject)}</div>
+          <div style="margin-top:0.65rem;display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;color:#6b7280;font-size:0.9rem;">
+            <span>🕒 ${safeInput(formatDateTr(sentAt))}</span>
+            ${orderId ? `<span style="background:rgba(15,23,42,0.06);padding:3px 8px;border-radius:999px;">${safeInput(orderId)}</span>` : ''}
+            ${type ? `<span style="background:rgba(37,99,235,0.08);color:#1e3a8a;padding:3px 8px;border-radius:999px;">${safeInput(type)}</span>` : ''}
+          </div>
+        `.trim();
+
+        card.addEventListener('mouseenter', ()=>{ card.style.transform='translateY(-1px)'; card.style.boxShadow='0 12px 28px rgba(15,23,42,0.10)'; });
+        card.addEventListener('mouseleave', ()=>{ card.style.transform=''; card.style.boxShadow=''; });
+        card.addEventListener('click', ()=>{ showEmailDetail(entry); });
+
+        return card;
+      }
+
+      groups.forEach((group)=>{
+        host.appendChild(makeGroupHeader(group));
+        group.items.forEach((entry)=>{
+          host.appendChild(makeEmailCard(entry));
+        });
+      });
+    }
+
+    function showEmailDetail(entry){
+      const titleEl = document.getElementById('emailDetailTitle');
+      const metaEl = document.getElementById('emailDetailMeta');
+      const frame = document.getElementById('emailDetailFrame');
+
+      const toName = (entry?.toName || 'Müşteri').trim();
+      const toEmail = (entry?.toEmail || '').trim();
+      const subject = (entry?.subject || 'Konu yok').trim();
+      const sentAt = entry?.sentAt || Date.now();
+      const orderId = entry?.orderId || '';
+      const status = (entry?.status || '').toLowerCase();
+
+      if(titleEl) titleEl.textContent = `📧 ${subject}`;
+      if(metaEl){
+        const parts = [
+          (toName || toEmail) ? `${toName}${toEmail ? ' <'+toEmail+'>' : ''}` : '',
+          orderId ? `Sipariş: ${orderId}` : '',
+          `Tarih: ${formatDateTr(sentAt)}`,
+          status ? `Durum: ${status==='sent' ? 'Gönderildi' : 'Hata'}` : ''
+        ].filter(Boolean);
+        metaEl.textContent = parts.join(' • ');
+      }
+
+      const html = (entry && typeof entry.html === 'string' && entry.html.trim()) ? entry.html : '';
+      const text = (entry && typeof entry.text === 'string' && entry.text.trim()) ? entry.text : '';
+      const errorText = (entry && entry.error) ? String(entry.error) : '';
+
+      const fallbackHtml = `
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>E-posta</title></head>
+<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding:16px;line-height:1.5;">
+  <h2 style="margin:0 0 10px;color:#1e3a8a;">${safeInput(subject)}</h2>
+  <div style="color:#64748b;margin-bottom:14px;">${safeInput(toName)} ${toEmail ? '&lt;'+safeInput(toEmail)+'&gt;' : ''}</div>
+  ${errorText ? `<div style="background:#fef2f2;border:1px solid #fecaca;color:#7f1d1d;padding:10px;border-radius:10px;margin-bottom:12px;"><strong>Hata:</strong> ${safeInput(errorText)}</div>` : ''}
+  <pre style="white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;padding:12px;border-radius:12px;">${safeInput(text || 'Bu e-postanın HTML içeriği kayıtlı değil.')}</pre>
+</body>
+</html>`.trim();
+
+      if(frame){
+        // srcdoc yerine blob kullanmıyoruz; basit ve statik kalsın.
+        frame.srcdoc = html || fallbackHtml;
+      }
+
+      openEmailDetailModal();
+    }
+
+    async function loadEmailLogs(showModalProgress){
+      const listEl = document.getElementById('emailLogsList');
+      const statusEl = document.getElementById('emailLogsStatus');
+      const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||localStorage.getItem('gh_token')||'');
+      if(!token){
+        if(listEl) listEl.innerHTML = emptyStateHtml('GitHub token bulunamadı. Lütfen admin panelde token tanımlayın.');
+        updateEmailLogsCount(0);
+        return;
+      }
+
+      if(listEl) listEl.innerHTML = emptyStateHtml('E-postalar yükleniyor...');
+      if(statusEl) statusEl.textContent = 'Son güncelleme: yükleniyor...';
+
+      const dirUrl = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodePath('email-logs')}?ref=${encodeURIComponent(BRANCH)}&_=${Date.now()}`;
+      const dirRes = await ghFetch(dirUrl, token);
+      if(!dirRes.ok){
+        const t = await dirRes.text().catch(()=> '');
+        // 404: klasör yoksa, henüz log yok
+        if(dirRes.status === 404){
+          if(listEl) listEl.innerHTML = emptyStateHtml('Henüz e-posta kaydı bulunmuyor.');
+          updateEmailLogsCount(0);
+          if(statusEl) statusEl.textContent = 'Son güncelleme: ' + formatDateTr(Date.now());
+          return;
+        }
+        if(listEl) listEl.innerHTML = emptyStateHtml('E-posta kayıtları okunamadı: ' + safeInput(String(dirRes.status)));
+        console.warn('[admin] email-logs list error:', dirRes.status, t);
+        updateEmailLogsCount(0);
+        if(statusEl) statusEl.textContent = 'Son güncelleme: hata';
+        return;
+      }
+
+      const dirData = await dirRes.json().catch(()=> null);
+      const files = Array.isArray(dirData) ? dirData.filter(x=>x && x.type==='file' && /\.json$/i.test(x.name||'')) : [];
+
+      // En güncel 80 kaydı al (fazla fetch yapmamak için)
+      const sorted = files
+        .map(f=>({
+          name: f.name,
+          path: f.path,
+          ts: (function(){
+            const m = String(f.name||'').match(/^(\d+)_/);
+            return m ? Number(m[1]) : 0;
+          })()
+        }))
+        .sort((a,b)=> (b.ts||0) - (a.ts||0))
+        .slice(0, 80);
+
+      if(sorted.length === 0){
+        if(listEl) listEl.innerHTML = emptyStateHtml('Henüz e-posta kaydı bulunmuyor.');
+        updateEmailLogsCount(0);
+        if(statusEl) statusEl.textContent = 'Son güncelleme: ' + formatDateTr(Date.now());
+        return;
+      }
+
+      const logs = [];
+      for(const f of sorted){
+        try{
+          const fileUrl = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodePath(f.path)}?ref=${encodeURIComponent(BRANCH)}&_=${Date.now()}`;
+          const fileRes = await ghFetch(fileUrl, token);
+          if(!fileRes.ok) continue;
+          const meta = await fileRes.json();
+          const b64 = (meta && meta.content) ? String(meta.content).replace(/\n/g,'') : '';
+          const txt = fromBase64(b64);
+          const obj = JSON.parse(txt||'{}');
+          logs.push(obj);
+        }catch(e){
+          // ignore tekil bozuk kayıt
+        }
+      }
+
+      logs.sort((a,b)=> Number(b?.sentAt||0) - Number(a?.sentAt||0));
+      renderEmailLogCards(logs);
+      if(statusEl) statusEl.textContent = 'Son güncelleme: ' + formatDateTr(Date.now());
+    }
+
+    document.addEventListener('DOMContentLoaded', function(){
+      const openBtn = document.getElementById('openEmailTrackingBtn');
+      if(openBtn) openBtn.addEventListener('click', openEmailTrackingModal);
+
+      const closeBtn = document.getElementById('closeEmailTrackingBtn');
+      if(closeBtn) closeBtn.addEventListener('click', closeEmailTrackingModal);
+
+      const modal = document.getElementById('emailTrackingModal');
+      if(modal){
+        modal.addEventListener('click', function(e){
+          if(e.target === modal) closeEmailTrackingModal();
+        });
+      }
+
+      const refreshBtn = document.getElementById('refreshEmailLogsBtn');
+      if(refreshBtn){
+        refreshBtn.addEventListener('click', function(){
+          loadEmailLogs(true);
+        });
+      }
+
+      const closeDetailBtn = document.getElementById('closeEmailDetailBtn');
+      if(closeDetailBtn) closeDetailBtn.addEventListener('click', closeEmailDetailModal);
+
+      const detailModal = document.getElementById('emailDetailModal');
+      if(detailModal){
+        detailModal.addEventListener('click', function(e){
+          if(e.target === detailModal) closeEmailDetailModal();
+        });
+      }
+
+      // Sayfa yüklenince sadece sayaç için hızlı kontrol (listeyi çekmeden)
+      (async function primeEmailLogsCount(){
+        try{
+          const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : '';
+          if(!token) return;
+          const dirUrl = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodePath('email-logs')}?ref=${encodeURIComponent(BRANCH)}&_=${Date.now()}`;
+          const dirRes = await ghFetch(dirUrl, token);
+          if(!dirRes.ok) return;
+          const dirData = await dirRes.json().catch(()=> null);
+          const files = Array.isArray(dirData) ? dirData.filter(x=>x && x.type==='file' && /\.json$/i.test(x.name||'')) : [];
+          updateEmailLogsCount(files.length);
+        }catch(_){ /* ignore */ }
+      })();
+    });
+
+    // Global erişim (debug)
+    window.openEmailTrackingModal = openEmailTrackingModal;
+    window.closeEmailTrackingModal = closeEmailTrackingModal;
+    window.loadEmailLogs = loadEmailLogs;
   })();
   </script>
 </body>
