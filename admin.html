@@ -2941,12 +2941,21 @@
       <!-- Token ayar kartları kaldırıldı; başlık altına yerleştirilen küçük modal üzerinden yönetiliyor -->
 
       <div class="card">
-        <!-- Canlı Sepet Takibi Butonu -->
-        <button id="openLiveCartsBtn" class="btn" type="button" style="background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:#fff;border-radius:16px;font-weight:700;font-size:1.25rem;padding:1.25rem 2rem;box-shadow:0 4px 20px rgba(16,185,129,0.3);display:flex;align-items:center;gap:0.75rem;width:100%;">
-          <span style="font-size:2rem;">🛒</span>
-          <span>Canlı Sepet Takibi</span>
-          <span id="liveCartsCount" style="background:rgba(255,255,255,0.25);color:#fff;padding:6px 14px;border-radius:999px;font-size:1rem;font-weight:700;margin-left:auto;">0</span>
-        </button>
+        <div class="section-header" style="display:flex;flex-direction:column;align-items:flex-start;gap:1rem;">
+          <button id="customerMgmtMainBtn" class="btn" aria-expanded="false" style="background:linear-gradient(90deg,#16a34a 0%,#22d3ee 100%);color:#fff;border-radius:16px;font-weight:700;font-size:1.2rem;padding:1.1rem 2.2rem;box-shadow:0 4px 24px rgba(34,211,238,0.15);letter-spacing:0.04em;transition:all 0.2s;display:flex;align-items:center;gap:0.8rem;">
+            <span style="font-size:2rem;">👥</span>
+            <span>MÜŞTERİ YÖNETİMİ</span>
+            <span id="customerMgmtChevron" aria-hidden="true" style="margin-left:0.2rem;display:inline-block;transition:transform 180ms ease;transform:rotate(-90deg)">▾</span>
+          </button>
+
+          <div id="customerMgmtSubBtns" style="display:none;flex-direction:row;gap:0.75rem;margin-top:0.5rem;flex-wrap:wrap;">
+            <button id="openLiveCartsBtn" class="btn btn-ghost" type="button" style="font-size:1rem;padding:0.8rem 1.4rem;display:flex;align-items:center;gap:0.6rem;">
+              <span>🛒</span>
+              <span>Canlı Sepet Takibi</span>
+              <span id="liveCartsCount" style="background:rgba(16,185,129,0.12);color:#064e3b;padding:4px 10px;border-radius:999px;font-size:0.95rem;font-weight:800;margin-left:auto;">0</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Canlı Sepet Takibi Modal -->
@@ -3143,6 +3152,24 @@
       // Start open by default
       setOpenState(true);
       showSettingsForm('contactSettingsForm');
+
+      // Accordion: Müşteri Yönetimi (şimdilik sadece Canlı Sepet Takibi)
+      const customerMainBtn = document.getElementById('customerMgmtMainBtn');
+      const customerSubBtns = document.getElementById('customerMgmtSubBtns');
+      const customerChev = document.getElementById('customerMgmtChevron');
+      function setCustomerOpenState(isOpen){
+        if(customerSubBtns) customerSubBtns.style.display = isOpen ? 'flex' : 'none';
+        if(customerMainBtn) customerMainBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        if(customerChev) customerChev.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(-90deg)';
+      }
+      if (customerMainBtn) {
+        customerMainBtn.addEventListener('click', ()=>{
+          const currentlyOpen = customerSubBtns && customerSubBtns.style.display !== 'none';
+          setCustomerOpenState(!currentlyOpen);
+        });
+      }
+      // Start closed by default
+      setCustomerOpenState(false);
       // Live preview background input
       const bgInput = document.getElementById('homepageBackground');
       const bgPrev = document.getElementById('homepageBackgroundPreview');
