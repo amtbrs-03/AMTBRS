@@ -89,6 +89,7 @@ export default {
         // Attempt email notification via Resend if order was committed
         let emailOk = false, emailError = null;
         let customerEmailOk = false, customerEmailError = null;
+        let customerEmailLogOk = null, customerEmailLogError = null;
         if (commitOk) {
           try {
             const toEmail = env.TO_EMAIL || '';
@@ -258,13 +259,79 @@ https://ern-cicek.com.tr
                     customerEmailOk = true;
                     const customerData = await customerRes.json();
                     console.log('✅ Customer email sent:', customerData);
+
+                    // Email log (GitHub) - best effort
+                    try {
+                      const log = {
+                        type: 'order-received',
+                        orderId,
+                        toEmail: order.customerEmail,
+                        toName: order.customerName,
+                        subject: `Siparişiniz Alındı - ${orderId} | ERN-ÇİÇEK`,
+                        sentAt: Date.now(),
+                        status: 'sent',
+                        resend: customerData || null,
+                        html: customerEmailHtml,
+                        text: customerEmailBody
+                      };
+                      const logRes = await writeEmailLogToGitHub({ env, log });
+                      customerEmailLogOk = !!logRes?.ok;
+                      customerEmailLogError = logRes?.error || null;
+                    } catch (le) {
+                      customerEmailLogOk = false;
+                      customerEmailLogError = (le && le.message) ? le.message : String(le);
+                    }
                   } else {
                     customerEmailError = await safeText(customerRes);
                     console.log('❌ Customer email failed:', customerRes.status, customerEmailError);
+
+                    // Email log (GitHub) - best effort
+                    try {
+                      const log = {
+                        type: 'order-received',
+                        orderId,
+                        toEmail: order.customerEmail,
+                        toName: order.customerName,
+                        subject: `Siparişiniz Alındı - ${orderId} | ERN-ÇİÇEK`,
+                        sentAt: Date.now(),
+                        status: 'failed',
+                        error: customerEmailError || `Resend status ${customerRes.status}`,
+                        html: customerEmailHtml,
+                        text: customerEmailBody
+                      };
+                      const logRes = await writeEmailLogToGitHub({ env, log });
+                      customerEmailLogOk = !!logRes?.ok;
+                      customerEmailLogError = logRes?.error || null;
+                    } catch (le) {
+                      customerEmailLogOk = false;
+                      customerEmailLogError = (le && le.message) ? le.message : String(le);
+                    }
                   }
                 } catch (ce) {
                   customerEmailError = (ce && ce.message) ? ce.message : String(ce);
                   console.log('❌ Customer email exception:', customerEmailError);
+
+                  // Email log (GitHub) - best effort
+                  try {
+                    const log = {
+                      type: 'order-received',
+                      orderId,
+                      toEmail: order.customerEmail,
+                      toName: order.customerName,
+                      subject: `Siparişiniz Alındı - ${orderId} | ERN-ÇİÇEK`,
+                      sentAt: Date.now(),
+                      status: 'failed',
+                      error: customerEmailError,
+                      html: customerEmailHtml,
+                      text: customerEmailBody
+                    };
+                    const logRes = await writeEmailLogToGitHub({ env, log });
+                    customerEmailLogOk = !!logRes?.ok;
+                    customerEmailLogError = logRes?.error || null;
+                  } catch (le) {
+                    customerEmailLogOk = false;
+                    customerEmailLogError = (le && le.message) ? le.message : String(le);
+                  }
                 }
               }
             }
@@ -273,7 +340,7 @@ https://ern-cicek.com.tr
             console.log('❌ Email exception:', emailError);
           }
         }
-        const body = JSON.stringify({ ok: true, orderId, commitOk, commitStatus, commitError, emailOk, emailError, customerEmailOk, customerEmailError, order });
+        const body = JSON.stringify({ ok: true, orderId, commitOk, commitStatus, commitError, emailOk, emailError, customerEmailOk, customerEmailError, customerEmailLogOk, customerEmailLogError, order });
         return new Response(body, { status: commitOk ? 201 : 200, headers: jsonHeaders(allowOrigin) });
       }
 
@@ -372,6 +439,8 @@ https://ern-cicek.com.tr
         }
         
         let emailOk = false, emailError = null;
+        let emailLogOk = null, emailLogError = null;
+        let emailDataForLog = null;
         
         try {
           const fromEmail = env.FROM_EMAIL || 'onboarding@resend.dev';
@@ -528,6 +597,7 @@ https://ern-cicek.com.tr
           if (emailRes.ok) {
             emailOk = true;
             const emailData = await emailRes.json();
+            emailDataForLog = emailData;
             console.log('✅ Order ready email sent:', emailData);
           } else {
             emailError = await safeText(emailRes);
@@ -537,8 +607,32 @@ https://ern-cicek.com.tr
           emailError = (e && e.message) ? e.message : String(e);
           console.log('❌ Order ready email exception:', emailError);
         }
+
+        // Email log (GitHub) - best effort
+        try {
+          const log = {
+            type: 'order-ready',
+            orderId,
+            toEmail: customerEmail,
+            toName: customerName,
+            subject: `✅ Siparişiniz Hazırlandı - ${orderId} | ERN-ÇİÇEK`,
+            sentAt: Date.now(),
+            status: emailOk ? 'sent' : 'failed',
+            error: emailOk ? null : (emailError || null),
+            resend: emailDataForLog,
+            attachments: (attachments || []).map(a => ({ filename: a.filename })),
+            html: orderReadyHtml,
+            text: orderReadyText
+          };
+          const logRes = await writeEmailLogToGitHub({ env, log });
+          emailLogOk = !!logRes?.ok;
+          emailLogError = logRes?.error || null;
+        } catch (le) {
+          emailLogOk = false;
+          emailLogError = (le && le.message) ? le.message : String(le);
+        }
         
-        return new Response(JSON.stringify({ ok: emailOk, emailOk, emailError }), { 
+        return new Response(JSON.stringify({ ok: emailOk, emailOk, emailError, emailLogOk, emailLogError }), { 
           status: emailOk ? 200 : 500, 
           headers: jsonHeaders(allowOrigin) 
         });
@@ -723,4 +817,65 @@ async function readJsonLoose(request) {
 
 async function safeText(res) {
   try { return await res.text(); } catch { return null; }
+}
+
+async function writeEmailLogToGitHub({ env, log }) {
+  const owner = env.GITHUB_OWNER || 'amtbrs-03';
+  const repo = env.GITHUB_REPO || 'AMTBRS';
+  const branch = env.GITHUB_BRANCH || 'site-release';
+  const token = env.GITHUB_TOKEN || env.GH_TOKEN;
+  if (!token) return { ok: false, error: 'GitHub token not configured' };
+
+  const sentAtMs = Number(log?.sentAt || Date.now());
+  const orderId = String(log?.orderId || '').trim() || 'UNKNOWN';
+  const type = String(log?.type || 'email').trim() || 'email';
+  const toEmail = String(log?.toEmail || '').trim() || 'unknown';
+  const safeEmail = toEmail.toLowerCase().replace(/[^a-z0-9._@-]/g, '_');
+
+  const filePath = `email-logs/${sentAtMs}_${type}_${orderId}_${safeEmail}.json`;
+  const contentJson = JSON.stringify(log, null, 2);
+  const content = btoa(unescape(encodeURIComponent(contentJson)));
+  const message = `chore(email-log): ${type} ${orderId} -> ${safeEmail}`;
+
+  const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(filePath)}`;
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    let existingSha = null;
+    try {
+      const headRes = await fetch(apiUrl + `?ref=${branch}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/vnd.github+json',
+          'User-Agent': 'Cloudflare-Worker'
+        }
+      });
+      if (headRes.ok) {
+        const j = await headRes.json();
+        existingSha = j.sha;
+      }
+    } catch (_) {}
+
+    const body = { message, content, branch };
+    if (existingSha) body.sha = existingSha;
+
+    const putRes = await fetch(apiUrl, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github+json',
+        'Content-Type': 'application/json',
+        'User-Agent': 'Cloudflare-Worker'
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (putRes.ok) return { ok: true, status: putRes.status, path: filePath };
+    if (putRes.status === 409 && attempt < 2) {
+      await new Promise(r => setTimeout(r, 120 * (attempt + 1)));
+      continue;
+    }
+    return { ok: false, status: putRes.status, error: await safeText(putRes), path: filePath };
+  }
+
+  return { ok: false, error: 'GitHub commit retry limit reached', path: filePath };
 }
