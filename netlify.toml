@@ -25,3 +25,10 @@
   to = "https://www.ern-cicek.com.tr/:splat"
   status = 301
   force = true
+
+[[redirects]]
+  # Serve email-logs directory index without 404
+  from = "/email-logs"
+  to = "/email-logs/"
+  status = 301
+  force = true

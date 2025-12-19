@@ -1896,12 +1896,7 @@
   // "SyntaxError: The string did not match the expected pattern" verebiliyor.
   // URL() kullanmadan güvenli products.json URL'i üret.
   function adminProductsJsonUrl(){
-    const v = String(Date.now());
-    try {
-      const origin = (window.location && window.location.origin) ? window.location.origin : '';
-      if(origin && origin !== 'null') return origin + '/products.json?v=' + v;
-    } catch(_){ }
-    return 'products.json?v=' + v;
+    return 'products.json?v=' + String(Date.now());
   }
   
   document.getElementById('productEditForm').onsubmit = async function(e){
@@ -2181,12 +2176,7 @@
   document.addEventListener('DOMContentLoaded', function(){ const btn=document.getElementById('refreshEditBtn'); if(btn){ btn.addEventListener('click', refreshCurrentEditProduct); } });
   function addEditButtonsToProductCards(){
     // Önce ürünleri sortOrder'a göre sırala ve numaraları ekle
-    let productsUrl = 'products.json?v='+Date.now();
-    try {
-      productsUrl = new URL('products.json', window.location.href);
-      productsUrl.searchParams.set('v', String(Date.now()));
-      productsUrl = productsUrl.toString();
-    } catch(_){ /* fallback to relative */ }
+    const productsUrl = 'products.json?v='+Date.now();
     fetch(productsUrl, { cache:'no-store' }).then(r=>r.json()).then(productsData=>{
       const products = productsData.items || [];
       const sorted = adminNormalizeProductsSequentialSortOrder(products);

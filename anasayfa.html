@@ -1825,12 +1825,7 @@
                     /* --- Dinamik Ürün Yükleme --- */
                     async function loadProducts(){
                         try{
-                            const v = String(Date.now());
-                            let productsUrl = 'products.json?v=' + v;
-                            try {
-                                const origin = (window.location && window.location.origin) ? window.location.origin : '';
-                                if(origin && origin !== 'null') productsUrl = origin + '/products.json?v=' + v;
-                            } catch(_){ /* fallback */ }
+                            const productsUrl = 'products.json?v=' + String(Date.now());
                             const res = await fetch(productsUrl, {cache:'no-store'});
                             if(!res.ok) throw new Error('products.json yüklenemedi');
                             const listRaw = await res.json();
