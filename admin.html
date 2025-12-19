@@ -259,6 +259,26 @@
     .meta{font-size:0.875rem;color:#64748b;line-height:1.5}
     .thumb{width:80px;height:80px;object-fit:cover;border-radius:10px;border:2px solid #e5e7eb;margin-right:0.75rem}
     .prod-row{display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap}
+    .prod-name{
+      display:inline-flex;
+      align-items:center;
+      flex-wrap:wrap;
+      gap:0.35rem;
+      padding:4px 10px;
+      border-radius:999px;
+      background:linear-gradient(135deg, var(--green-primary) 0%, var(--green-dark) 100%);
+      color:#ffffff;
+      box-shadow: 0 6px 18px rgba(16,185,129,0.25);
+      text-shadow: 0 1px 2px rgba(0,0,0,0.16);
+    }
+    .prod-name.prod-name--plain{
+      background: transparent;
+      color: #0f172a;
+      box-shadow: none;
+      text-shadow: none;
+      padding: 0;
+      border-radius: 0;
+    }
     .file-preview{width:80px;height:80px;display:inline-block;vertical-align:middle}
     .small{font-size:0.875rem;color:#64748b}
 
@@ -2544,7 +2564,7 @@
                 <div class='prod-row'>
                   <div class='thumb' style='background:#e0e7ef;display:flex;align-items:center;justify-content:center;'>${imgPrimary ? (/(jpg|jpeg|png|webp)$/i.test(imgPrimary) ? `<img src='${imgPrimary}' style='width:100%;height:100%;object-fit:cover;border-radius:10px;'/>` : imgPrimary) : '🌺'}</div>
                   <div>
-                    <div style='font-weight:700;font-size:1.08rem;'>${p.name || ''} ${badgeHtml} ${imgCount>1?`<span class='small' title='Görsel sayısı' style='background:#e5e7eb;color:#374151;border:1px solid #d1d5db;padding:2px 6px;border-radius:999px;margin-left:4px;'>🖼️ ${imgCount}</span>`:''}</div>
+                    <div class='prod-name' style='font-weight:700;font-size:1.08rem;'>${p.name || ''} ${badgeHtml} ${imgCount>1?`<span class='small' title='Görsel sayısı' style='background:#e5e7eb;color:#374151;border:1px solid #d1d5db;padding:2px 6px;border-radius:999px;margin-left:4px;'>🖼️ ${imgCount}</span>`:''}</div>
                     <div class='meta'>Fiyat: ${formatTLDisplay(p.price||0)}</div>
                     <div class='meta'>ID: ${p.id}</div>
                   </div>
@@ -2886,7 +2906,7 @@
                 <div class='prod-row'>
                   <div class='thumb' style='background:#e0e7ef;display:flex;align-items:center;justify-content:center;'>${/(.)/.test('')?'':'🌺'}</div>
                   <div>
-                    <div style='font-weight:700;font-size:1.08rem;'>
+                    <div class='prod-name prod-name--plain' style='font-weight:700;font-size:1.08rem;'>
                       <input id='tmp-name' type='text' placeholder='PHILODENDRON FELIX' style='font-weight:700;font-size:1.08rem;border:none;border-bottom:2px solid #e5e7eb;outline:none;width:240px' />
                     </div>
                     <div class='meta'>Fiyat: <span id='tmp-price-display'>—</span></div>
@@ -2961,11 +2981,62 @@
               <span id="liveCartsCount" style="background:rgba(16,185,129,0.12);color:#064e3b;padding:4px 10px;border-radius:999px;font-size:0.95rem;font-weight:800;margin-left:auto;">0</span>
             </button>
 
+            <button id="openShippingTrackingBtn" class="btn btn-ghost" type="button" style="font-size:1rem;padding:0.8rem 1.4rem;display:flex;align-items:center;gap:0.6rem;">
+              <span>🚚</span>
+              <span>Kargo Takip No Ekle</span>
+              <span id="shippingTrackingCount" style="background:rgba(16,185,129,0.12);color:#064e3b;padding:4px 10px;border-radius:999px;font-size:0.95rem;font-weight:800;margin-left:auto;">0</span>
+            </button>
+
             <button id="openEmailTrackingBtn" class="btn btn-ghost" type="button" style="font-size:1rem;padding:0.8rem 1.4rem;display:flex;align-items:center;gap:0.6rem;">
               <span>📧</span>
               <span>E-posta Takibi</span>
               <span id="emailLogsCount" style="background:rgba(37,99,235,0.10);color:#1e3a8a;padding:4px 10px;border-radius:999px;font-size:0.95rem;font-weight:800;margin-left:auto;">0</span>
             </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Kargo Takip No Ekle Modal (Hazır siparişler) -->
+      <div id="shippingTrackingModal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width:1100px;max-height:90vh;overflow-y:auto;">
+          <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;padding:1.5rem 2rem;border-bottom:1px solid #e5e7eb;background:linear-gradient(135deg,#ecfdf5,#d1fae5);flex-wrap:wrap;gap:1rem;">
+            <div style="display:flex;align-items:center;gap:1rem;">
+              <span style="font-size:2.2rem;">🚚</span>
+              <h2 style="margin:0;font-size:1.5rem;color:#064e3b;font-weight:700;">Kargo Takip No Ekle</h2>
+              <span id="shippingTrackingCountModal" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;padding:6px 14px;border-radius:999px;font-size:1rem;font-weight:700;">0</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+              <button id="refreshShippingTrackingBtn" class="btn btn-ghost" type="button" style="font-size:1rem;padding:0.6rem 1.2rem;">🔄 Yenile</button>
+              <span id="shippingTrackingStatus" style="font-size:0.9rem;color:#6b7280;">Son güncelleme: -</span>
+              <button id="closeShippingTrackingBtn" class="close-modal" type="button" style="font-size:1.8rem;background:none;border:none;cursor:pointer;color:#6b7280;padding:0.5rem;">&times;</button>
+            </div>
+          </div>
+          <div id="shippingReadyOrdersList" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(360px, 1fr));gap:1.25rem;padding:2rem;">
+            <div style="text-align:center;padding:2rem;color:#6b7280;font-size:1rem;">Hazır siparişler yükleniyor...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Kargo Takip Detay Modal -->
+      <div id="shippingTrackingDetailModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:10000;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+        <div style="background:#fff;border-radius:16px;max-width:720px;width:94%;max-height:88vh;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,0.3);display:flex;flex-direction:column;">
+          <div style="padding:1.25rem 1.5rem;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;gap:1rem;">
+            <div style="display:flex;flex-direction:column;gap:0.35rem;min-width:0;">
+              <h3 id="shippingDetailTitle" style="margin:0;font-size:1.15rem;color:#064e3b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">🚚 Kargo Takip No</h3>
+              <div id="shippingDetailMeta" style="font-size:0.9rem;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+            </div>
+            <button id="closeShippingDetailBtn" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#6b7280;">&times;</button>
+          </div>
+          <div style="padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:0.9rem;">
+            <div style="display:flex;flex-direction:column;gap:0.45rem;">
+              <label for="shippingTrackingNoInput" style="font-weight:800;color:#0f172a;">Kargo Takip Numarası</label>
+              <input id="shippingTrackingNoInput" type="text" placeholder="Örn: 1234567890" style="padding:0.85rem 0.95rem;border-radius:12px;border:1px solid #e5e7eb;font-size:1rem;outline:none;" />
+              <div style="color:#6b7280;font-size:0.9rem;">Not: Gönder'e bastığınızda müşteriye “kargonuz yola çıktı” e-postası gönderilir.</div>
+            </div>
+            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;justify-content:flex-end;">
+              <button id="sendShippingTrackingBtn" class="btn" type="button">📨 Gönder</button>
+              <button id="cancelShippingTrackingBtn" class="btn btn-ghost" type="button">İptal</button>
+            </div>
           </div>
         </div>
       </div>
@@ -6518,6 +6589,326 @@ try {
     window.openLiveCartsModal = openLiveCartsModal;
     window.closeLiveCartsModal = closeLiveCartsModal;
     window.closeCartDetailModal = closeCartDetailModal;
+  })();
+  </script>
+
+  <script>
+  (function(){
+    // Kargo Takip No Ekle (Hazır siparişler -> takip no -> e-posta)
+    const OWNER = 'amtbrs-03';
+    const REPO = 'AMTBRS';
+    const BRANCH = 'site-release';
+    const WORKER_BASE = 'https://ern-site.amtbrs-03.workers.dev';
+
+    let selectedOrder = null;
+
+    function formatDateTr(ms){
+      try{ return new Date(Number(ms||Date.now())).toLocaleString('tr-TR'); }catch(_){ return '-'; }
+    }
+
+    function encodePath(path){
+      return String(path||'').split('/').map(seg=>encodeURIComponent(seg)).join('/');
+    }
+
+    async function ghFetch(url, token){
+      const headers = { 'Accept':'application/vnd.github.v3+json' };
+      if(token) headers['Authorization'] = 'token ' + token;
+      return fetch(url, { headers, cache: 'no-store' });
+    }
+
+    function emptyStateHtml(msg){
+      return `<div style="text-align:center;padding:2rem;color:#6b7280;font-size:1rem;">${msg}</div>`;
+    }
+
+    function updateCount(count){
+      const btnCount = document.getElementById('shippingTrackingCount');
+      const modalCount = document.getElementById('shippingTrackingCountModal');
+      if(btnCount) btnCount.textContent = String(count||0);
+      if(modalCount) modalCount.textContent = String(count||0);
+    }
+
+    function notify(msg, type){
+      if(typeof showNotification === 'function'){
+        showNotification(msg, { type: type || 'success' });
+      }else{
+        alert(msg);
+      }
+    }
+
+    function openModal(){
+      const modal = document.getElementById('shippingTrackingModal');
+      if(modal){
+        modal.style.display = 'flex';
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        loadReadyOrders();
+      }
+    }
+
+    function closeModal(){
+      const modal = document.getElementById('shippingTrackingModal');
+      if(modal){
+        modal.style.display = 'none';
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    }
+
+    function openDetailModal(){
+      const modal = document.getElementById('shippingTrackingDetailModal');
+      if(modal){
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+      }
+    }
+
+    function closeDetailModal(){
+      const modal = document.getElementById('shippingTrackingDetailModal');
+      if(modal){
+        modal.style.display = 'none';
+      }
+      selectedOrder = null;
+      const input = document.getElementById('shippingTrackingNoInput');
+      if(input) input.value = '';
+    }
+
+    async function mapLimit(items, limit, fn){
+      const results = [];
+      const queue = [...(items||[])];
+      const workers = new Array(Math.max(1, limit||6)).fill(0).map(async ()=>{
+        while(queue.length){
+          const it = queue.shift();
+          try{ results.push(await fn(it)); }catch(_){ results.push(null); }
+        }
+      });
+      await Promise.all(workers);
+      return results;
+    }
+
+    function renderCards(orders){
+      const host = document.getElementById('shippingReadyOrdersList');
+      if(!host) return;
+
+      if(!Array.isArray(orders) || orders.length===0){
+        host.innerHTML = emptyStateHtml('Hazır (ready) durumunda sipariş bulunamadı.');
+        updateCount(0);
+        return;
+      }
+
+      // En güncel üstte
+      orders.sort((a,b)=> Number(b?.date||0) - Number(a?.date||0));
+      updateCount(orders.length);
+      host.innerHTML = '';
+
+      orders.forEach((o)=>{
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.style.padding = '1.25rem';
+        card.style.cursor = 'pointer';
+        card.style.border = '1px solid #e5e7eb';
+        card.style.borderRadius = '16px';
+        card.style.transition = 'transform 120ms ease, box-shadow 120ms ease';
+
+        const name = String(o?.customerName || 'Müşteri');
+        const email = String(o?.customerEmail || '');
+        const orderId = String(o?.id || '');
+        const when = formatDateTr(o?.date || 0);
+        const hasTracking = !!(o && (o.trackingNumber || o.trackingNo));
+
+        card.innerHTML = `
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.75rem;">
+            <div style="min-width:0;">
+              <div style="font-weight:800;color:#0f172a;font-size:1.05rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeInput(name)}</div>
+              <div style="color:#64748b;font-size:0.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeInput(email)}</div>
+            </div>
+            <div style="background:${hasTracking ? 'rgba(245,158,11,0.14)' : 'rgba(16,185,129,0.12)'};color:${hasTracking ? '#92400e' : '#064e3b'};padding:4px 10px;border-radius:999px;font-size:0.88rem;font-weight:900;white-space:nowrap;">
+              ${hasTracking ? 'Takip No Var' : 'Hazır'}
+            </div>
+          </div>
+          <div style="margin-top:0.65rem;display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;color:#6b7280;font-size:0.9rem;">
+            <span style="background:rgba(15,23,42,0.06);padding:3px 8px;border-radius:999px;">${safeInput(orderId)}</span>
+            <span>🕒 ${safeInput(when)}</span>
+          </div>
+          ${hasTracking ? `<div style="margin-top:0.7rem;color:#334155;font-size:0.92rem;">Mevcut takip no: <strong>${safeInput(String(o.trackingNumber || o.trackingNo))}</strong></div>` : ''}
+        `.trim();
+
+        card.addEventListener('mouseenter', ()=>{ card.style.transform='translateY(-1px)'; card.style.boxShadow='0 12px 28px rgba(15,23,42,0.10)'; });
+        card.addEventListener('mouseleave', ()=>{ card.style.transform=''; card.style.boxShadow=''; });
+        card.addEventListener('click', ()=>{ showDetail(o); });
+
+        host.appendChild(card);
+      });
+    }
+
+    function showDetail(order){
+      selectedOrder = order || null;
+      const titleEl = document.getElementById('shippingDetailTitle');
+      const metaEl = document.getElementById('shippingDetailMeta');
+      const input = document.getElementById('shippingTrackingNoInput');
+
+      const orderId = String(order?.id || '');
+      const name = String(order?.customerName || 'Müşteri');
+      const email = String(order?.customerEmail || '');
+      const when = formatDateTr(order?.date || 0);
+
+      if(titleEl) titleEl.textContent = `🚚 Kargo Takip No • ${orderId}`;
+      if(metaEl) metaEl.textContent = `${name}${email ? ' <'+email+'>' : ''} • Tarih: ${when}`;
+      if(input) input.value = String(order?.trackingNumber || order?.trackingNo || '').trim();
+      openDetailModal();
+    }
+
+    async function loadReadyOrders(){
+      const host = document.getElementById('shippingReadyOrdersList');
+      const statusEl = document.getElementById('shippingTrackingStatus');
+      const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||localStorage.getItem('gh_token')||'');
+      if(!token){
+        if(host) host.innerHTML = emptyStateHtml('GitHub token bulunamadı. Lütfen admin panelde token tanımlayın.');
+        updateCount(0);
+        return;
+      }
+
+      if(host) host.innerHTML = emptyStateHtml('Hazır siparişler yükleniyor...');
+      if(statusEl) statusEl.textContent = 'Son güncelleme: yükleniyor...';
+
+      const dirUrl = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodePath('orders')}?ref=${encodeURIComponent(BRANCH)}&_=${Date.now()}`;
+      const dirRes = await ghFetch(dirUrl, token);
+      if(!dirRes.ok){
+        const t = await dirRes.text().catch(()=> '');
+        if(host) host.innerHTML = emptyStateHtml('Sipariş klasörü okunamadı: ' + safeInput(String(dirRes.status)));
+        console.warn('[admin] orders list error:', dirRes.status, t);
+        updateCount(0);
+        if(statusEl) statusEl.textContent = 'Son güncelleme: hata';
+        return;
+      }
+
+      const dirData = await dirRes.json().catch(()=> null);
+      const files = Array.isArray(dirData) ? dirData.filter(x=>x && x.type==='file' && /\.json$/i.test(x.name||'')) : [];
+
+      const sorted = files
+        .map(f=>({ name: f.name, path: f.path, ts: (function(){
+          const m = String(f.name||'').match(/(\d{10,})/);
+          return m ? Number(m[1]) : 0;
+        })() }))
+        .sort((a,b)=> (b.ts||0) - (a.ts||0));
+
+      if(sorted.length === 0){
+        if(host) host.innerHTML = emptyStateHtml('Sipariş dosyası bulunamadı.');
+        updateCount(0);
+        if(statusEl) statusEl.textContent = 'Son güncelleme: ' + formatDateTr(Date.now());
+        return;
+      }
+
+      const fetched = await mapLimit(sorted, 8, async (f)=>{
+        const fileUrl = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodePath(f.path)}?ref=${encodeURIComponent(BRANCH)}&_=${Date.now()}`;
+        const fileRes = await ghFetch(fileUrl, token);
+        if(!fileRes.ok) return null;
+        const meta = await fileRes.json().catch(()=> null);
+        const b64 = (meta && meta.content) ? String(meta.content).replace(/\n/g,'') : '';
+        const txt = fromBase64(b64);
+        const obj = JSON.parse(txt||'{}');
+        return obj;
+      });
+
+      const ready = (fetched||[])
+        .filter(Boolean)
+        .filter(o=> String(o?.status||'').toLowerCase() === 'ready');
+
+      renderCards(ready);
+      if(statusEl) statusEl.textContent = 'Son güncelleme: ' + formatDateTr(Date.now());
+    }
+
+    async function sendTracking(){
+      const btn = document.getElementById('sendShippingTrackingBtn');
+      const input = document.getElementById('shippingTrackingNoInput');
+      const trackingNumber = String(input?.value || '').trim();
+      const orderId = String(selectedOrder?.id || '').trim();
+
+      if(!orderId){
+        notify('Sipariş seçilmedi.', 'error');
+        return;
+      }
+      if(!trackingNumber){
+        notify('Kargo takip numarası boş olamaz.', 'error');
+        return;
+      }
+
+      if(btn) btn.disabled = true;
+      try{
+        const res = await fetch(`${WORKER_BASE}/shipping-tracking`, {
+          method: 'POST',
+          headers: { 'Content-Type':'application/json' },
+          body: JSON.stringify({ orderId, trackingNumber })
+        });
+        const data = await res.json().catch(()=> ({}));
+        if(res.ok && data && data.ok){
+          notify('Kargo takip e-postası gönderildi ve sipariş güncellendi.', 'success');
+          closeDetailModal();
+          // Listeyi yenile
+          setTimeout(()=> loadReadyOrders(), 400);
+        }else{
+          const err = (data && (data.error || data.emailError || data.commitError)) ? (data.error || data.emailError || data.commitError) : ('HTTP ' + res.status);
+          notify('Gönderim başarısız: ' + String(err).slice(0, 160), 'error');
+        }
+      }catch(e){
+        notify('Ağ hatası: ' + (e && e.message ? e.message : String(e)), 'error');
+      }finally{
+        if(btn) btn.disabled = false;
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function(){
+      const openBtn = document.getElementById('openShippingTrackingBtn');
+      if(openBtn) openBtn.addEventListener('click', openModal);
+
+      const closeBtn = document.getElementById('closeShippingTrackingBtn');
+      if(closeBtn) closeBtn.addEventListener('click', closeModal);
+
+      const modal = document.getElementById('shippingTrackingModal');
+      if(modal){
+        modal.addEventListener('click', function(e){
+          if(e.target === modal) closeModal();
+        });
+      }
+
+      const refreshBtn = document.getElementById('refreshShippingTrackingBtn');
+      if(refreshBtn) refreshBtn.addEventListener('click', loadReadyOrders);
+
+      const closeDetailBtn = document.getElementById('closeShippingDetailBtn');
+      if(closeDetailBtn) closeDetailBtn.addEventListener('click', closeDetailModal);
+
+      const cancelBtn = document.getElementById('cancelShippingTrackingBtn');
+      if(cancelBtn) cancelBtn.addEventListener('click', closeDetailModal);
+
+      const sendBtn = document.getElementById('sendShippingTrackingBtn');
+      if(sendBtn) sendBtn.addEventListener('click', sendTracking);
+
+      const detailModal = document.getElementById('shippingTrackingDetailModal');
+      if(detailModal){
+        detailModal.addEventListener('click', function(e){
+          if(e.target === detailModal) closeDetailModal();
+        });
+      }
+
+      // Sayfa yüklenince sadece sayaç için hızlı kontrol (dosyaları tek tek çekmeden)
+      (async function primeReadyOrdersCount(){
+        try{
+          const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : '';
+          if(!token) return;
+          const dirUrl = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodePath('orders')}?ref=${encodeURIComponent(BRANCH)}&_=${Date.now()}`;
+          const dirRes = await ghFetch(dirUrl, token);
+          if(!dirRes.ok) return;
+          const dirData = await dirRes.json().catch(()=> null);
+          const files = Array.isArray(dirData) ? dirData.filter(x=>x && x.type==='file' && /\.json$/i.test(x.name||'')) : [];
+          // Hazır sayısını hızlıca bulmak için tek tek okumuyoruz; bu yüzden 0 bırakıyoruz.
+          // (Buton üzerinde yanıltıcı bir sayı göstermemek için.)
+          updateCount(0);
+          if(files.length === 0) updateCount(0);
+        }catch(_){ /* ignore */ }
+      })();
+    });
+
+    window.openShippingTrackingModal = openModal;
+    window.loadReadyOrdersForShipping = loadReadyOrders;
   })();
   </script>
 

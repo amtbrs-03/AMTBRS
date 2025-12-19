@@ -638,6 +638,293 @@ https://ern-cicek.com.tr
         });
       }
 
+      // Kargo Takip Numarası - Müşteriye “kargonuz yola çıktı” e-postası gönder + siparişi güncelle
+      if (path === '/shipping-tracking' && request.method === 'POST') {
+        const payload = await readJsonLoose(request);
+        const orderId = (payload?.orderId || payload?.id || payload?.order?.id || '').trim();
+        const trackingNumber = String(payload?.trackingNumber || payload?.trackingNo || payload?.tracking || '').trim();
+
+        if (!orderId || !trackingNumber) {
+          return new Response(JSON.stringify({ ok: false, error: 'Missing orderId or trackingNumber' }), {
+            status: 400,
+            headers: jsonHeaders(allowOrigin)
+          });
+        }
+
+        const owner = env.GITHUB_OWNER || 'amtbrs-03';
+        const repo = env.GITHUB_REPO || 'AMTBRS';
+        const branch = env.GITHUB_BRANCH || 'site-release';
+        const token = env.GITHUB_TOKEN || env.GH_TOKEN;
+
+        if (!token) {
+          return new Response(JSON.stringify({ ok: false, error: 'GitHub token not configured' }), {
+            status: 500,
+            headers: jsonHeaders(allowOrigin)
+          });
+        }
+
+        const filePath = `orders/${orderId}.json`;
+        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(filePath)}`;
+
+        function decodeB64Utf8(b64) {
+          const raw = String(b64 || '').replace(/\n/g, '');
+          try { return decodeURIComponent(escape(atob(raw))); } catch (_) {}
+          try { return atob(raw); } catch (_) {}
+          return '';
+        }
+
+        // Siparişi çek
+        let currentOrder = null;
+        let currentSha = null;
+        try {
+          const getRes = await fetch(apiUrl + `?ref=${encodeURIComponent(branch)}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: 'application/vnd.github+json',
+              'User-Agent': 'Cloudflare-Worker'
+            }
+          });
+          if (!getRes.ok) {
+            const t = await safeText(getRes);
+            return new Response(JSON.stringify({ ok: false, error: `Order not found or GitHub read failed (${getRes.status})`, details: t }), {
+              status: getRes.status === 404 ? 404 : 500,
+              headers: jsonHeaders(allowOrigin)
+            });
+          }
+          const meta = await getRes.json();
+          currentSha = meta?.sha || null;
+          const txt = decodeB64Utf8(meta?.content || '');
+          currentOrder = JSON.parse(txt || '{}');
+        } catch (e) {
+          return new Response(JSON.stringify({ ok: false, error: 'Failed to read order JSON', details: (e && e.message) ? e.message : String(e) }), {
+            status: 500,
+            headers: jsonHeaders(allowOrigin)
+          });
+        }
+
+        const customerEmail = String(currentOrder?.customerEmail || '').trim();
+        const customerName = String(currentOrder?.customerName || 'Değerli Müşterimiz').trim() || 'Değerli Müşterimiz';
+        const address = String(currentOrder?.address || 'Belirtilmedi');
+
+        if (!customerEmail) {
+          return new Response(JSON.stringify({ ok: false, error: 'Order has no customerEmail' }), {
+            status: 400,
+            headers: jsonHeaders(allowOrigin)
+          });
+        }
+
+        // E-posta gönder
+        let emailOk = false;
+        let emailError = null;
+        let emailLogOk = null;
+        let emailLogError = null;
+        let emailDataForLog = null;
+
+        const subject = `🚚 Kargonuz Yola Çıktı - ${orderId} | ERN-ÇİÇEK`;
+        const fromEmail = env.FROM_EMAIL || 'onboarding@resend.dev';
+        const resendKey = env.RESEND_API_KEY || '';
+
+        const trackingHtml = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f8f6f3;margin:0;padding:20px;">
+  <div style="max-width:600px;margin:0 auto;background:white;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.1);">
+    <div style="background:linear-gradient(135deg,#0b2f1f,#1a4a35);color:white;padding:30px;text-align:center;">
+      <div style="display:inline-block;margin-bottom:10px;">
+        <span style="font-size:32px;font-weight:800;letter-spacing:1px;text-shadow:0 2px 4px rgba(0,0,0,0.2);">🌿 ERN</span>
+        <span style="font-size:18px;font-weight:500;opacity:0.9;margin-left:4px;">ÇİÇEK</span>
+      </div>
+      <p style="margin:10px 0 0;opacity:0.9;font-size:16px;">🚚 Kargonuz Yola Çıktı</p>
+    </div>
+    <div style="padding:30px;">
+      <p style="color:#475569;font-size:16px;">Sayın <strong>${customerName}</strong>,</p>
+      <p style="color:#475569;">Siparişiniz kargoya verilmiştir. Kargo takip numaranız aşağıdadır.</p>
+      <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:16px;margin:18px 0;">
+        <div style="color:#166534;font-weight:800;">📦 Sipariş Numarası: ${orderId}</div>
+        <div style="margin-top:10px;color:#064e3b;font-weight:900;font-size:18px;">🚚 Kargo Takip No: ${trackingNumber}</div>
+      </div>
+      <h3 style="color:#0b2f1f;margin:22px 0 10px;">📍 Teslimat Adresi</h3>
+      <p style="color:#475569;background:#f8fafc;padding:15px;border-radius:8px;margin:0;border-left:4px solid #10b981;">${address}</p>
+      <p style="color:#475569;margin-top:25px;">Sorularınız için bize ulaşabilirsiniz:</p>
+      <p style="margin:5px 0;"><a href="https://wa.me/905384179081" style="color:#16a34a;text-decoration:none;">📱 WhatsApp: +90 538 417 90 81</a></p>
+      <p style="margin:5px 0;"><a href="mailto:amtbrs@icloud.com" style="color:#2563eb;text-decoration:none;">📧 Email: amtbrs@icloud.com</a></p>
+      <p style="color:#475569;margin-top:30px;">Bizi tercih ettiğiniz için teşekkür ederiz! 🌿</p>
+      <p style="color:#0b2f1f;font-weight:600;">🌿 ERN Tropikal Çiçek</p>
+    </div>
+    <div style="background:#f8fafc;padding:20px;text-align:center;border-top:1px solid #e2e8f0;">
+      <p style="margin:0;color:#94a3b8;font-size:12px;">© 2025 ERN-ÇİÇEK — <a href="https://ern-cicek.com.tr" style="color:#16a34a;">ern-cicek.com.tr</a></p>
+    </div>
+  </div>
+</body>
+</html>`.trim();
+
+        const trackingText = `
+Sayın ${customerName},
+
+🚚 Kargonuz yola çıktı.
+
+Sipariş Numarası: ${orderId}
+Kargo Takip No: ${trackingNumber}
+
+Teslimat Adresi:
+${address}
+
+Sorularınız için:
+📱 WhatsApp: +90 538 417 90 81
+📧 Email: amtbrs@icloud.com
+
+Saygılarımızla,
+ERN Tropikal Çiçek
+https://ern-cicek.com.tr
+        `.trim();
+
+        if (!resendKey) {
+          emailOk = false;
+          emailError = 'Resend API key not configured';
+        } else {
+          try {
+            const emailRes = await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${resendKey}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                from: fromEmail,
+                to: customerEmail,
+                subject,
+                text: trackingText,
+                html: trackingHtml
+              })
+            });
+
+            if (emailRes.ok) {
+              emailOk = true;
+              const emailData = await emailRes.json();
+              emailDataForLog = emailData;
+              console.log('✅ Shipping tracking email sent:', emailData);
+            } else {
+              emailOk = false;
+              emailError = await safeText(emailRes);
+              console.log('❌ Shipping tracking email failed:', emailRes.status, emailError);
+            }
+          } catch (e) {
+            emailOk = false;
+            emailError = (e && e.message) ? e.message : String(e);
+            console.log('❌ Shipping tracking email exception:', emailError);
+          }
+        }
+
+        // Email log (GitHub) - best effort
+        try {
+          const log = {
+            type: 'shipping-tracking',
+            orderId,
+            toEmail: customerEmail,
+            toName: customerName,
+            subject,
+            sentAt: Date.now(),
+            status: emailOk ? 'sent' : 'failed',
+            error: emailOk ? null : (emailError || null),
+            resend: emailDataForLog,
+            trackingNumber,
+            html: trackingHtml,
+            text: trackingText
+          };
+          const logRes = await writeEmailLogToGitHub({ env, log });
+          emailLogOk = !!logRes?.ok;
+          emailLogError = logRes?.error || null;
+        } catch (le) {
+          emailLogOk = false;
+          emailLogError = (le && le.message) ? le.message : String(le);
+        }
+
+        // Siparişi güncelle (trackingNumber her durumda; e-posta başarılıysa status=shipped)
+        let commitOk = false;
+        let commitStatus = null;
+        let commitError = null;
+        try {
+          const updated = Object.assign({}, currentOrder || {});
+          updated.trackingNumber = trackingNumber;
+          updated.trackingNumberUpdatedAt = Date.now();
+          if (emailOk) {
+            updated.status = 'shipped';
+            updated.shippedAt = Date.now();
+            updated.trackingEmailSentAt = Date.now();
+          }
+
+          const content = btoa(unescape(encodeURIComponent(JSON.stringify(updated, null, 2))));
+          const message = emailOk
+            ? `feat(order): mark shipped ${orderId}`
+            : `chore(order): add trackingNumber ${orderId}`;
+
+          // 409 conflict için retry
+          for (let attempt = 0; attempt < 3; attempt++) {
+            let sha = currentSha;
+            if (!sha || attempt > 0) {
+              try {
+                const headRes = await fetch(apiUrl + `?ref=${encodeURIComponent(branch)}`, {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                    Accept: 'application/vnd.github+json',
+                    'User-Agent': 'Cloudflare-Worker'
+                  }
+                });
+                if (headRes.ok) {
+                  const j = await headRes.json();
+                  sha = j?.sha || sha;
+                }
+              } catch (_) {}
+            }
+
+            const putBody = { message, content, branch };
+            if (sha) putBody.sha = sha;
+
+            const putRes = await fetch(apiUrl, {
+              method: 'PUT',
+              headers: {
+                Authorization: `Bearer ${token}`,
+                Accept: 'application/vnd.github+json',
+                'Content-Type': 'application/json',
+                'User-Agent': 'Cloudflare-Worker'
+              },
+              body: JSON.stringify(putBody)
+            });
+
+            commitStatus = putRes.status;
+            if (putRes.ok) {
+              commitOk = true;
+              break;
+            }
+            if (putRes.status === 409 && attempt < 2) {
+              await new Promise(r => setTimeout(r, 120 * (attempt + 1)));
+              continue;
+            }
+
+            commitError = await safeText(putRes);
+            break;
+          }
+        } catch (e) {
+          commitError = (e && e.message) ? e.message : String(e);
+        }
+
+        const ok = !!(emailOk && commitOk);
+        return new Response(JSON.stringify({
+          ok,
+          emailOk,
+          emailError,
+          emailLogOk,
+          emailLogError,
+          commitOk,
+          commitStatus,
+          commitError
+        }), {
+          status: ok ? 200 : 500,
+          headers: jsonHeaders(allowOrigin)
+        });
+      }
+
       if (path === '/update-user' && request.method === 'POST') {
         const payload = await readJsonLoose(request);
         // Expect full user record with email
