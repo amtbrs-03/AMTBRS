@@ -2,7 +2,6 @@
 <html lang="tr">
 <head>
   <meta charset="utf-8" />
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Bilgi Fişleri - ERN-ÇİÇEK Admin</title>
   <style>
@@ -92,6 +91,30 @@
       border: 2px solid var(--orange);
     }
 
+    .btn-danger{
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.35);
+    }
+    .btn-danger:hover{
+      box-shadow: 0 6px 20px rgba(239, 68, 68, 0.45);
+    }
+
+    .btn-ghost{
+      background: #fff;
+      color: #0f172a;
+      border: 1px solid #e5e7eb;
+      box-shadow: none;
+    }
+    .btn-ghost:hover{
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    }
+
+    .btn-inline{
+      padding:0.5rem 0.9rem;
+      font-size:0.85rem;
+    }
+
     .stats{
       display:grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -134,6 +157,11 @@
       margin-bottom:1.5rem;
       padding-bottom:1rem;
       border-bottom:2px solid #e5e7eb;
+    }
+
+    #lastUpdate{
+      color:var(--muted);
+      font-size:0.9rem;
     }
 
     .invoices-header h2{
@@ -310,6 +338,77 @@
       height:100%;
       border:none;
     }
+
+    /* Generic modal (delete confirm) */
+    .modal{
+      position:fixed;
+      inset:0;
+      z-index:10000;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:1rem;
+      background:rgba(0,0,0,0.55);
+      box-sizing:border-box;
+    }
+    .modal-content{
+      background: var(--card-bg);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      border-radius:16px;
+      overflow:hidden;
+      width:92%;
+      max-width:480px;
+    }
+    .modal-header{
+      display:flex;
+      align-items:center;
+      padding:1rem 1.25rem;
+    }
+    .modal-body{
+      padding:1.5rem;
+    }
+
+    /* Delete modal styling */
+    #deleteModal{ display:none; }
+    #deleteModal .modal-header{
+      justify-content:center;
+      background:linear-gradient(135deg,#fef2f2,#fee2e2);
+      border-bottom:2px solid #fecaca;
+    }
+    #deleteModalTitle{ margin:0; color:#991b1b; }
+    #deleteConfirmContent{ margin-bottom:0.5rem; }
+    .delete-modal-center{ text-align:center; margin-bottom:1rem; }
+    .delete-modal-iconWrap{
+      width:64px;
+      height:64px;
+      background:linear-gradient(135deg,#fef2f2,#fee2e2);
+      border-radius:50%;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      margin-bottom:0.5rem;
+      border:2px solid #fecaca;
+    }
+    #deleteModalIcon{ font-size:1.8rem; }
+    .delete-modal-question{ font-weight:700; color:#0f172a; font-size:1.1rem; margin-bottom:0.25rem; }
+    #deleteModalName{ color:#dc2626; font-weight:600; font-size:1rem; margin-bottom:0.5rem; }
+    #deleteModalDesc{ color:var(--muted); line-height:1.6; }
+    #deleteProgressContent{ display:none; padding:2rem; text-align:center; }
+    .delete-progress-ring{ width:80px; height:80px; margin:0 auto 1rem; position:relative; }
+    .delete-progress-ring svg{ width:100%; height:100%; transform:rotate(-90deg); }
+    #deleteProgressCircle{ transition:stroke-dashoffset 0.3s; }
+    #deleteProgressPercent{ position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:1.2rem; font-weight:800; color:#dc2626; }
+    #deleteProgressTitle{ font-weight:700; color:#991b1b; font-size:1.1rem; margin-bottom:0.5rem; }
+    #deleteProgressStatus{ color:var(--muted); font-size:0.9rem; }
+    #deleteConfirmButtons{
+      display:flex;
+      gap:0.5rem;
+      justify-content:center;
+      padding:1rem;
+      background:#f9fafb;
+      border-top:1px solid #e5e7eb;
+    }
+    .delete-modal-btn{ padding:0.6rem 1.5rem; }
   </style>
 </head>
 <body>
@@ -336,7 +435,7 @@
     <div class="invoices-container">
       <div class="invoices-header">
         <h2>Bilgi Fişi Listesi</h2>
-        <div id="lastUpdate" style="color:var(--muted);font-size:0.9rem;"></div>
+        <div id="lastUpdate"></div>
       </div>
       <div id="invoicesContent">
         <div class="loading">⏳ Bilgi Fişleri yükleniyor...</div>
@@ -360,6 +459,42 @@
     </div>
   </div>
 
+  <!-- Delete Confirm Modal (Admin ile aynı UX) -->
+  <section id="deleteModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="deleteModalTitle">🗑️ Silme Onayı</h2>
+      </div>
+      <div id="deleteConfirmContent" class="modal-body">
+        <div class="delete-modal-center">
+          <div class="delete-modal-iconWrap">
+            <span id="deleteModalIcon">⚠️</span>
+          </div>
+          <div class="delete-modal-question">Emin misiniz?</div>
+          <div id="deleteModalName"></div>
+          <div id="deleteModalDesc">
+            Bu öğe kalıcı olarak silinecektir.<br>Bu işlem geri alınamaz!
+          </div>
+        </div>
+      </div>
+      <div id="deleteProgressContent">
+        <div class="delete-progress-ring">
+          <svg viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="45" fill="none" stroke="#fee2e2" stroke-width="8"/>
+            <circle id="deleteProgressCircle" cx="50" cy="50" r="45" fill="none" stroke="#dc2626" stroke-width="8" stroke-linecap="round" stroke-dasharray="283" stroke-dashoffset="283"/>
+          </svg>
+          <div id="deleteProgressPercent">0%</div>
+        </div>
+        <div id="deleteProgressTitle">🗑️ Siliniyor...</div>
+        <div id="deleteProgressStatus">Sunucuya bağlanılıyor...</div>
+      </div>
+      <div id="deleteConfirmButtons">
+        <button type="button" class="btn btn-danger delete-modal-btn" id="confirmDeleteBtn">🗑️ Evet, Sil</button>
+        <button type="button" class="btn btn-ghost delete-modal-btn" onclick="closeDeleteModal()">Vazgeç</button>
+      </div>
+    </div>
+  </section>
+
   <script>
     function escapeHtml(s){ 
       if (s === undefined || s === null) return '';
@@ -371,6 +506,8 @@
 
     let invoicesData = [];
 
+    const WORKER_BASE = 'https://ern-site.amtbrs-03.workers.dev';
+
     async function loadInvoices() {
       const contentEl = document.getElementById('invoicesContent');
       contentEl.innerHTML = '<div class="loading">⏳ Bilgi Fişleri GitHub\'dan çekiliyor...</div>';
@@ -380,7 +517,7 @@
         const repo = 'AMTBRS';
         const branch = 'site-release';
         const cacheBuster = Date.now();
-        const workerUrl = `https://ern-site.amtbrs-03.workers.dev/list-invoices?_cb=${cacheBuster}`;
+        const workerUrl = `${WORKER_BASE}/list-invoices?_cb=${cacheBuster}`;
         const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/invoices?ref=${branch}&_cb=${cacheBuster}`;
         
         console.log('Bilgi Fişleri çekiliyor (worker-first):', workerUrl);
@@ -393,7 +530,7 @@
             const wj = await wres.json().catch(()=>null);
             if (wj && wj.ok && Array.isArray(wj.files)) {
               files = wj.files;
-              console.log('Worker invoice list ok. count=', files.length);
+              console.log('Worker üzerinden bilgi fişi listesi alındı. Adet=', files.length);
             } else {
               console.warn('Worker invoice list beklenmeyen yanıt:', wj);
             }
@@ -422,7 +559,7 @@
             const errorText = await res.text().catch(() => '');
             console.error('GitHub API hata detayları:', errorText);
             if (res.status === 403) {
-              throw new Error('GitHub API 403: Rate limit / erişim kısıtı. Birkaç dakika sonra tekrar deneyin.');
+              throw new Error('GitHub API 403: API limitine takıldı veya erişim kısıtı. Birkaç dakika sonra tekrar deneyin.');
             }
             throw new Error(`GitHub API şu yanıtı verdi: ${res.status} - ${res.statusText}`);
           }
@@ -534,7 +671,10 @@
         html += `<td style="font-weight:600;color:var(--orange);">${escapeHtml(invoiceId)}</td>`;
         html += `<td style="font-weight:500;">${escapeHtml(invoice.orderId || '-')}</td>`;
         html += `<td style="color:var(--muted);">${createdDate}</td>`;
-        html += `<td><button class="btn" style="padding:0.5rem 1rem;font-size:0.85rem;" onclick="event.stopPropagation();viewInvoice('${escapeHtml(invoice.orderId)}')">👁️ Görüntüle</button></td>`;
+        html += `<td>`;
+        html += `<button class="btn btn-inline" onclick="event.stopPropagation();viewInvoice('${escapeHtml(invoice.orderId)}')">👁️ Görüntüle</button>`;
+        html += ` <button class="btn btn-danger btn-inline" onclick="event.stopPropagation();deleteInvoiceConfirm('${escapeHtml(invoice.orderId)}')">🗑️ Sil</button>`;
+        html += `</td>`;
         html += '</tr>';
       });
       
@@ -544,6 +684,223 @@
     }
 
     let currentInvoiceHtml = '';
+
+    // Bildirim mesajı (admin'deki ile aynı mantık, bu sayfaya uyarlanmış)
+    function showNotification(message, options = {}) {
+      const type = options.type || 'info'; // success, warning, error, info
+      const duration = options.duration || 3500;
+
+      const configs = {
+        success: { bg: 'linear-gradient(135deg, var(--green-primary), var(--green-dark))', icon: '✓', iconBg: 'rgba(255,255,255,0.2)' },
+        warning: { bg: 'linear-gradient(135deg, var(--orange), #d97706)', icon: '⚠', iconBg: 'rgba(255,255,255,0.2)' },
+        error: { bg: 'linear-gradient(135deg, #ef4444, #dc2626)', icon: '✕', iconBg: 'rgba(255,255,255,0.2)' },
+        info: { bg: 'linear-gradient(135deg, var(--orange), #d97706)', icon: 'ℹ', iconBg: 'rgba(255,255,255,0.2)' }
+      };
+      const config = configs[type] || configs.info;
+
+      const container = document.createElement('div');
+      container.style.cssText = `
+        position: fixed;
+        top: 24px;
+        right: 24px;
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 20px;
+        background: ${config.bg};
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.25), 0 4px 12px rgba(0,0,0,0.15);
+        color: #fff;
+        font-size: 0.95rem;
+        font-weight: 600;
+        max-width: 420px;
+        animation: notifSlideIn 0.35s cubic-bezier(0.16,1,0.3,1);
+        cursor: pointer;
+      `;
+
+      const iconEl = document.createElement('span');
+      iconEl.style.cssText = `
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        background: ${config.iconBg};
+        border-radius: 50%;
+        font-size: 1rem;
+        flex-shrink: 0;
+      `;
+      iconEl.textContent = config.icon;
+
+      const msgEl = document.createElement('span');
+      msgEl.textContent = message;
+      msgEl.style.lineHeight = '1.4';
+
+      container.appendChild(iconEl);
+      container.appendChild(msgEl);
+
+      if (!document.getElementById('notifAnimStyle')) {
+        const style = document.createElement('style');
+        style.id = 'notifAnimStyle';
+        style.textContent = `
+          @keyframes notifSlideIn { from { opacity: 0; transform: translateX(100px); } to { opacity: 1; transform: translateX(0); } }
+          @keyframes notifSlideOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(100px); } }
+        `;
+        document.head.appendChild(style);
+      }
+
+      document.body.appendChild(container);
+
+      const close = () => {
+        container.style.animation = 'notifSlideOut 0.3s ease forwards';
+        setTimeout(() => container.remove(), 300);
+      };
+      container.onclick = close;
+      setTimeout(close, duration);
+    }
+
+    // Delete modal system (admin ile aynı özellikler)
+    let _deleteInProgress = false;
+    let _pendingDeleteCallback = null;
+    let _pendingDeleteData = {};
+
+    function openDeleteModal(options = {}) {
+      if (_deleteInProgress) return;
+      const title = options.title || '🗑️ Silme Onayı';
+      const icon = options.icon || '⚠️';
+      const name = options.name || '';
+      const desc = options.desc || 'Bu öğe kalıcı olarak silinecektir.<br>Bu işlem geri alınamaz!';
+      const progressTitle = options.progressTitle || '🗑️ Siliniyor...';
+      const callback = options.onConfirm;
+      const data = options.data || {};
+
+      _pendingDeleteCallback = callback;
+      _pendingDeleteData = data;
+
+      document.getElementById('deleteModalTitle').innerHTML = title;
+      document.getElementById('deleteModalIcon').textContent = icon;
+      document.getElementById('deleteModalName').textContent = name;
+      document.getElementById('deleteModalDesc').innerHTML = desc;
+      document.getElementById('deleteProgressTitle').innerHTML = progressTitle;
+
+      resetDeleteModal();
+      const m = document.getElementById('deleteModal');
+      if (m) m.style.display = 'flex';
+    }
+
+    function closeDeleteModal() {
+      if (_deleteInProgress) return;
+      _pendingDeleteCallback = null;
+      _pendingDeleteData = {};
+      const m = document.getElementById('deleteModal');
+      if (m) m.style.display = 'none';
+    }
+
+    function showDeleteProgress() {
+      _deleteInProgress = true;
+      const confirm = document.getElementById('deleteConfirmContent');
+      const progress = document.getElementById('deleteProgressContent');
+      const buttons = document.getElementById('deleteConfirmButtons');
+      if (confirm) confirm.style.display = 'none';
+      if (progress) progress.style.display = 'block';
+      if (buttons) buttons.style.display = 'none';
+      const modal = document.getElementById('deleteModal');
+      if (modal) modal.style.pointerEvents = 'none';
+      const modalContent = modal?.querySelector('.modal-content');
+      if (modalContent) modalContent.style.pointerEvents = 'auto';
+    }
+
+    function updateDeleteProgress(percent, status) {
+      const circle = document.getElementById('deleteProgressCircle');
+      const percentEl = document.getElementById('deleteProgressPercent');
+      const statusEl = document.getElementById('deleteProgressStatus');
+      if (circle) {
+        const offset = 283 - (283 * percent / 100);
+        circle.style.strokeDashoffset = offset;
+      }
+      if (percentEl) percentEl.textContent = Math.round(percent) + '%';
+      if (statusEl) statusEl.textContent = status;
+    }
+
+    function resetDeleteModal() {
+      _deleteInProgress = false;
+      const confirm = document.getElementById('deleteConfirmContent');
+      const progress = document.getElementById('deleteProgressContent');
+      const buttons = document.getElementById('deleteConfirmButtons');
+      if (confirm) confirm.style.display = 'block';
+      if (progress) progress.style.display = 'none';
+      if (buttons) buttons.style.display = 'flex';
+      updateDeleteProgress(0, '');
+      const modal = document.getElementById('deleteModal');
+      if (modal) modal.style.pointerEvents = '';
+    }
+
+    function finishDeleteSuccess(message) {
+      updateDeleteProgress(100, '✅ ' + (message || 'Başarıyla silindi!'));
+      setTimeout(() => {
+        resetDeleteModal();
+        closeDeleteModal();
+        showNotification(message || 'Başarıyla silindi', { type: 'success' });
+      }, 800);
+    }
+
+    function finishDeleteError(message) {
+      updateDeleteProgress(0, '❌ Hata: ' + message);
+      setTimeout(() => {
+        resetDeleteModal();
+        closeDeleteModal();
+        showNotification('Hata: ' + message, { type: 'error' });
+      }, 2000);
+    }
+
+    document.getElementById('confirmDeleteBtn').onclick = function() {
+      if (_deleteInProgress) return;
+      if (typeof _pendingDeleteCallback === 'function') {
+        _pendingDeleteCallback(_pendingDeleteData);
+      }
+    };
+
+    function deleteInvoiceConfirm(orderId) {
+      const invoiceId = `INV-${orderId}`;
+      openDeleteModal({
+        title: '🗑️ Bilgi Fişi Silme',
+        icon: '⚠️',
+        name: invoiceId,
+        desc: 'Bu bilgi fişi kalıcı olarak silinecektir.<br>Bu işlem geri alınamaz!',
+        progressTitle: '🗑️ Bilgi Fişi Siliniyor...',
+        data: { orderId },
+        onConfirm: () => performDeleteInvoice(orderId)
+      });
+    }
+
+    async function performDeleteInvoice(orderId) {
+      try {
+        showDeleteProgress();
+        updateDeleteProgress(10, 'Sunucuya bağlanılıyor...');
+
+        const res = await fetch(`${WORKER_BASE}/delete-invoice`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId })
+        });
+
+        updateDeleteProgress(60, 'Silme isteği işlendi...');
+
+        const j = await res.json().catch(() => null);
+        if (!res.ok || !j || !j.ok) {
+          const msg = (j && (j.error || j.details)) ? (j.error || j.details) : `HTTP ${res.status}`;
+          throw new Error('Silme başarısız: ' + msg);
+        }
+
+        updateDeleteProgress(85, 'Liste güncelleniyor...');
+        await loadInvoices();
+        finishDeleteSuccess('Bilgi fişi başarıyla silindi');
+      } catch (e) {
+        const msg = (e && e.message) ? e.message : String(e);
+        finishDeleteError(msg);
+      }
+    }
 
     function viewInvoice(orderId) {
       const invoice = invoicesData.find(inv => inv.orderId === orderId);

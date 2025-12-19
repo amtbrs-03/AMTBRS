@@ -351,7 +351,7 @@ https://ern-cicek.com.tr
         const message = payload?.message || 'chore: auto commit';
         
         if (!Array.isArray(files) || files.length === 0) {
-          return new Response(JSON.stringify({ ok: false, error: 'No files provided' }), { 
+          return new Response(JSON.stringify({ ok: false, error: 'Dosya listesi boş' }), { 
             status: 400, headers: jsonHeaders(allowOrigin) 
           });
         }
@@ -362,7 +362,7 @@ https://ern-cicek.com.tr
         const token = env.GITHUB_TOKEN || env.GH_TOKEN;
         
         if (!token) {
-          return new Response(JSON.stringify({ ok: false, error: 'GitHub token not configured' }), { 
+          return new Response(JSON.stringify({ ok: false, error: 'GitHub erişim anahtarı (token) yapılandırılmamış' }), { 
             status: 500, headers: jsonHeaders(allowOrigin) 
           });
         }
@@ -427,7 +427,7 @@ https://ern-cicek.com.tr
         const token = env.GITHUB_TOKEN || env.GH_TOKEN;
 
         if (!token) {
-          return new Response(JSON.stringify({ ok: false, error: 'GitHub token not configured' }), {
+          return new Response(JSON.stringify({ ok: false, error: 'GitHub erişim anahtarı (token) yapılandırılmamış' }), {
             status: 500,
             headers: jsonHeaders(allowOrigin)
           });
@@ -445,7 +445,7 @@ https://ern-cicek.com.tr
 
           if (!res.ok) {
             const t = await safeText(res);
-            return new Response(JSON.stringify({ ok: false, status: res.status, error: 'GitHub list failed', details: t }), {
+            return new Response(JSON.stringify({ ok: false, status: res.status, error: 'GitHub listeleme işlemi başarısız', details: t }), {
               status: res.status,
               headers: jsonHeaders(allowOrigin)
             });
@@ -474,6 +474,116 @@ https://ern-cicek.com.tr
         }
       }
 
+      // Delete an invoice via GitHub token (prevents browser GitHub API auth/rate-limit issues)
+      // Body: { orderId?: string, fileName?: string }
+      if (path === '/delete-invoice' && request.method === 'POST') {
+        const payload = await readJsonLoose(request);
+        const orderIdRaw = String(payload?.orderId || '').trim();
+        const fileNameRaw = String(payload?.fileName || '').trim();
+
+        const owner = env.GITHUB_OWNER || 'amtbrs-03';
+        const repo = env.GITHUB_REPO || 'AMTBRS';
+        const branch = env.GITHUB_BRANCH || 'site-release';
+        const token = env.GITHUB_TOKEN || env.GH_TOKEN;
+
+        if (!token) {
+          return new Response(JSON.stringify({ ok: false, error: 'Sunucu tarafında GitHub token eksik' }), {
+            status: 500,
+            headers: jsonHeaders(allowOrigin)
+          });
+        }
+
+        let fileName = '';
+        if (fileNameRaw) {
+          fileName = fileNameRaw;
+        } else if (orderIdRaw) {
+          fileName = `INV-${orderIdRaw}.json`;
+        }
+
+        if (!fileName) {
+          return new Response(JSON.stringify({ ok: false, error: 'orderId veya fileName eksik' }), {
+            status: 400,
+            headers: jsonHeaders(allowOrigin)
+          });
+        }
+
+        // Basic hardening: only allow deleting within invoices/ and only JSON files
+        fileName = fileName
+          .replace(/\//g, '_')
+          .replace(/\\/g, '_')
+          .replace(/\.{2,}/g, '_')
+          .replace(/[^A-Za-z0-9._-]/g, '_');
+        if (!fileName.endsWith('.json')) {
+          return new Response(JSON.stringify({ ok: false, error: 'Geçersiz dosya adı' }), {
+            status: 400,
+            headers: jsonHeaders(allowOrigin)
+          });
+        }
+
+        const filePath = `invoices/${fileName}`;
+        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeGitHubPath(filePath)}`;
+
+        try {
+          const headRes = await fetch(apiUrl + `?ref=${branch}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: 'application/vnd.github+json',
+              'User-Agent': 'Cloudflare-Worker'
+            }
+          });
+
+          if (!headRes.ok) {
+            if (headRes.status === 404) {
+              return new Response(JSON.stringify({ ok: true, message: 'Bilgi fişi zaten silinmiş', path: filePath }), {
+                status: 200,
+                headers: jsonHeaders(allowOrigin)
+              });
+            }
+            const t = await safeText(headRes);
+            return new Response(JSON.stringify({ ok: false, status: headRes.status, error: 'GitHub dosya bilgisi (SHA) alınamadı', details: t }), {
+              status: headRes.status,
+              headers: jsonHeaders(allowOrigin)
+            });
+          }
+
+          const headData = await headRes.json();
+          const sha = headData.sha;
+
+          const delRes = await fetch(apiUrl, {
+            method: 'DELETE',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: 'application/vnd.github+json',
+              'Content-Type': 'application/json',
+              'User-Agent': 'Cloudflare-Worker'
+            },
+            body: JSON.stringify({
+              message: `chore: delete invoice ${fileName}`,
+              sha,
+              branch
+            })
+          });
+
+          if (!delRes.ok) {
+            const t = await safeText(delRes);
+            return new Response(JSON.stringify({ ok: false, status: delRes.status, error: 'GitHub silme işlemi başarısız', details: t }), {
+              status: delRes.status,
+              headers: jsonHeaders(allowOrigin)
+            });
+          }
+
+          return new Response(JSON.stringify({ ok: true, message: 'Bilgi fişi silindi', path: filePath }), {
+            status: 200,
+            headers: jsonHeaders(allowOrigin)
+          });
+        } catch (e) {
+          return new Response(JSON.stringify({ ok: false, error: (e && e.message) ? e.message : String(e) }), {
+            status: 500,
+            headers: jsonHeaders(allowOrigin)
+          });
+        }
+      }
+
       // Sipariş Hazır - Müşteriye bildirim e-postası gönder
       if (path === '/order-ready' && request.method === 'POST') {
         const payload = await readJsonLoose(request);
@@ -488,7 +598,7 @@ https://ern-cicek.com.tr
         const total = order.total || '0';
         
         if (!customerEmail || !orderId) {
-          return new Response(JSON.stringify({ ok: false, error: 'Missing orderId or customerEmail' }), { 
+          return new Response(JSON.stringify({ ok: false, error: 'orderId veya müşteri e-postası eksik' }), { 
             status: 400, headers: jsonHeaders(allowOrigin) 
           });
         }
@@ -502,7 +612,7 @@ https://ern-cicek.com.tr
           const resendKey = env.RESEND_API_KEY || '';
           
           if (!resendKey) {
-            return new Response(JSON.stringify({ ok: false, error: 'Resend API key not configured' }), { 
+            return new Response(JSON.stringify({ ok: false, error: 'Resend API anahtarı yapılandırılmamış' }), { 
               status: 500, headers: jsonHeaders(allowOrigin) 
             });
           }
@@ -700,7 +810,7 @@ https://ern-cicek.com.tr
         const trackingNumber = String(payload?.trackingNumber || payload?.trackingNo || payload?.tracking || '').trim();
 
         if (!orderId || !trackingNumber) {
-          return new Response(JSON.stringify({ ok: false, error: 'Missing orderId or trackingNumber' }), {
+          return new Response(JSON.stringify({ ok: false, error: 'Sipariş numarası veya takip numarası eksik' }), {
             status: 400,
             headers: jsonHeaders(allowOrigin)
           });
@@ -712,7 +822,7 @@ https://ern-cicek.com.tr
         const token = env.GITHUB_TOKEN || env.GH_TOKEN;
 
         if (!token) {
-          return new Response(JSON.stringify({ ok: false, error: 'GitHub token not configured' }), {
+          return new Response(JSON.stringify({ ok: false, error: 'GitHub erişim anahtarı (token) yapılandırılmamış' }), {
             status: 500,
             headers: jsonHeaders(allowOrigin)
           });
@@ -741,7 +851,7 @@ https://ern-cicek.com.tr
           });
           if (!getRes.ok) {
             const t = await safeText(getRes);
-            return new Response(JSON.stringify({ ok: false, error: `Order not found or GitHub read failed (${getRes.status})`, details: t }), {
+            return new Response(JSON.stringify({ ok: false, error: `Sipariş bulunamadı veya GitHub okuma başarısız (${getRes.status})`, details: t }), {
               status: getRes.status === 404 ? 404 : 500,
               headers: jsonHeaders(allowOrigin)
             });
@@ -751,7 +861,7 @@ https://ern-cicek.com.tr
           const txt = decodeB64Utf8(meta?.content || '');
           currentOrder = JSON.parse(txt || '{}');
         } catch (e) {
-          return new Response(JSON.stringify({ ok: false, error: 'Failed to read order JSON', details: (e && e.message) ? e.message : String(e) }), {
+          return new Response(JSON.stringify({ ok: false, error: 'Sipariş JSON okunamadı', details: (e && e.message) ? e.message : String(e) }), {
             status: 500,
             headers: jsonHeaders(allowOrigin)
           });
@@ -786,7 +896,7 @@ https://ern-cicek.com.tr
         }
 
         if (!customerEmail) {
-          return new Response(JSON.stringify({ ok: false, error: 'Order has no customerEmail' }), {
+          return new Response(JSON.stringify({ ok: false, error: 'Siparişte müşteri e-postası yok' }), {
             status: 400,
             headers: jsonHeaders(allowOrigin)
           });
@@ -864,7 +974,7 @@ https://ern-cicek.com.tr
 
         if (!resendKey) {
           emailOk = false;
-          emailError = 'Resend API key not configured';
+          emailError = 'Resend API anahtarı yapılandırılmamış';
         } else {
           try {
             const emailRes = await fetch('https://api.resend.com/emails', {
@@ -1016,7 +1126,7 @@ https://ern-cicek.com.tr
         const email = (user.email || '').toLowerCase();
         let commitOk = false, commitStatus = null, commitError = null;
         if (!email) {
-          const body = JSON.stringify({ commitOk: false, commitError: 'missing email' });
+          const body = JSON.stringify({ commitOk: false, commitError: 'E-posta adresi eksik' });
           return new Response(body, { status: 400, headers: jsonHeaders(allowOrigin) });
         }
         try {
@@ -1058,7 +1168,7 @@ https://ern-cicek.com.tr
               }
             }
           } else {
-            commitError = 'missing token';
+            commitError = 'token eksik';
           }
         } catch (e) {
           commitError = (e && e.message) ? e.message : String(e);
@@ -1073,7 +1183,7 @@ https://ern-cicek.com.tr
         const email = ((payload && payload.email) || '').toLowerCase().trim();
         
         if (!email) {
-          return new Response(JSON.stringify({ ok: false, error: 'missing email' }), { 
+          return new Response(JSON.stringify({ ok: false, error: 'E-posta adresi eksik' }), { 
             status: 400, 
             headers: jsonHeaders(allowOrigin) 
           });
@@ -1088,7 +1198,7 @@ https://ern-cicek.com.tr
           const token = env.GITHUB_TOKEN || env.GH_TOKEN;
           
           if (!token) {
-            return new Response(JSON.stringify({ ok: false, error: 'missing token' }), { 
+            return new Response(JSON.stringify({ ok: false, error: 'Sunucu tarafında GitHub token eksik' }), { 
               status: 500, 
               headers: jsonHeaders(allowOrigin) 
             });
@@ -1110,7 +1220,7 @@ https://ern-cicek.com.tr
           if (!headRes.ok) {
             // Dosya zaten yok
             console.log('[delete-cart] Sepet dosyası zaten yok:', email);
-            return new Response(JSON.stringify({ ok: true, message: 'cart already deleted' }), { 
+            return new Response(JSON.stringify({ ok: true, message: 'Sepet zaten silinmiş' }), { 
               status: 200, 
               headers: jsonHeaders(allowOrigin) 
             });
@@ -1152,7 +1262,7 @@ https://ern-cicek.com.tr
         });
       }
 
-      return new Response('Not Found', { status: 404, headers: { 'Content-Type': 'text/plain' } });
+      return new Response('Bulunamadı', { status: 404, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
     } catch (err) {
       const msg = (err && err.message) ? err.message : String(err);
       return new Response(JSON.stringify({ commitOk: false, error: msg }), { status: 500, headers: jsonHeaders(allowOrigin) });
@@ -1203,7 +1313,7 @@ async function writeEmailLogToGitHub({ env, log }) {
   const repo = env.GITHUB_REPO || 'AMTBRS';
   const branch = env.GITHUB_BRANCH || 'site-release';
   const token = env.GITHUB_TOKEN || env.GH_TOKEN;
-  if (!token) return { ok: false, error: 'GitHub token not configured' };
+  if (!token) return { ok: false, error: 'GitHub erişim anahtarı (token) yapılandırılmamış' };
 
   const sentAtMs = Number(log?.sentAt || Date.now());
   const orderId = String(log?.orderId || '').trim() || 'UNKNOWN';
