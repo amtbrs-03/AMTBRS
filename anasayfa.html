@@ -2068,6 +2068,52 @@
                                 updateFilterBarPosition();
                             });
                         })();
+
+                        // ===== OTURUM (LATEST WINS) + SİSTEMDEN SEPET ÇEKME =====
+                        function sessionIdUpdatedAtKey(email) {
+                            return 'sessionIdUpdatedAt_' + email;
+                        }
+                        function getLocalSessionMeta(email) {
+                            const sid = localStorage.getItem('sessionId_' + email) || '';
+                            const ts = Number(localStorage.getItem(sessionIdUpdatedAtKey(email)) || 0) || 0;
+                            return { sessionId: sid, updatedAt: ts };
+                        }
+                        function setLocalSessionMeta(email, sessionId, updatedAt) {
+                            try { localStorage.setItem('sessionId_' + email, String(sessionId || '')); } catch(_){ }
+                            try { localStorage.setItem(sessionIdUpdatedAtKey(email), String(Number(updatedAt) || Date.now())); } catch(_){ }
+                        }
+                        async function syncCartFromSystem(email) {
+                            try {
+                                if (!email) return false;
+                                const url = 'https://raw.githubusercontent.com/amtbrs-03/AMTBRS/site-release/carts/' + email + '.json?t=' + Date.now();
+                                const res = await fetch(url, { cache: 'no-store' });
+                                if (!res.ok) return false;
+                                const data = await res.json();
+                                const items = Array.isArray(data) ? data : (data && Array.isArray(data.items) ? data.items : []);
+                                if (!Array.isArray(items)) return false;
+                                // cart storage expects an array
+                                const cart = items.map(i => ({
+                                    id: i.id,
+                                    name: i.name,
+                                    price: i.price,
+                                    qty: i.qty || i.quantity || 1,
+                                    image: i.image || '',
+                                    addedAt: i.addedAt || Date.now(),
+                                    updatedAt: i.updatedAt || i.addedAt || Date.now()
+                                })).filter(x => x && x.id);
+                                localStorage.setItem('cart_' + email, JSON.stringify(cart));
+                                try { updateCartCount(); } catch(_){ }
+                                try {
+                                    const cm = document.getElementById('cartModal');
+                                    if (cm && cm.style && cm.style.display === 'block') {
+                                        renderCart();
+                                    }
+                                } catch(_){ }
+                                return true;
+                            } catch(_e) {
+                                return false;
+                            }
+                        }
                         
                         // ===== SİLİNMİŞ KULLANICI VE TEK OTURUM KONTROLÜ =====
                         (async function checkDeletedUser() {
@@ -2101,44 +2147,40 @@
                                     return;
                                 }
                                 
-                                // TEK OTURUM KONTROLÜ: sessionId karşılaştır
-                                const localSessionId = localStorage.getItem('sessionId_' + user.email);
+                                // TEK OTURUM (LATEST WINS): sessionId + updatedAt karşılaştır
+                                const localMeta = getLocalSessionMeta(user.email);
+                                const localSessionId = localMeta.sessionId;
+                                const localSessionUpdatedAt = localMeta.updatedAt;
                                 const remoteSessionId = remoteUser.sessionId;
+                                const remoteSessionUpdatedAt = Number(remoteUser.sessionIdUpdatedAt || remoteUser.sessionIssuedAt || remoteUser.lastLogin || 0) || 0;
 
                                 if (remoteSessionId && localSessionId && remoteSessionId !== localSessionId) {
-                                    const remoteIssuedAt = Number(remoteUser.sessionIdUpdatedAt || remoteUser.sessionIssuedAt || remoteUser.lastLogin || 0) || 0;
-                                    const RECENT_OTHER_LOGIN_MS = 15 * 60 * 1000; // 15 dk
-                                    const isRecentOtherLogin = remoteIssuedAt > 0 && (Date.now() - remoteIssuedAt) < RECENT_OTHER_LOGIN_MS;
-
-                                    if (isRecentOtherLogin) {
-                                        console.log('checkSession: Başka cihazdan yeni giriş tespit edildi - çıkış yapılıyor');
-                                        console.log('checkSession: Yerel:', localSessionId, '| Uzak:', remoteSessionId);
+                                    const remoteWins = (remoteSessionUpdatedAt || 0) > (localSessionUpdatedAt || 0);
+                                    if (remoteWins) {
+                                        console.log('checkSession: Daha yeni oturum (remote) - çıkış yapılıyor');
+                                        console.log('checkSession: Yerel:', localSessionId, localSessionUpdatedAt, '| Uzak:', remoteSessionId, remoteSessionUpdatedAt);
 
                                         localStorage.removeItem('currentUser');
                                         localStorage.removeItem('sessionId_' + user.email);
+                                        localStorage.removeItem(sessionIdUpdatedAtKey(user.email));
                                         sessionStorage.removeItem('currentUser');
 
-                                        // UI güncelle
                                         document.getElementById('authContainer').classList.remove('hidden');
                                         document.getElementById('userContainer').classList.add('hidden');
 
-                                        showNotification('⚠️ Başka bir cihazdan giriş yapıldı. Bu oturum sonlandırıldı.', {type: 'warn', duration: 3000});
+                                        showNotification('⚠️ Daha yeni bir oturum açıldı. Bu oturum kapatıldı.', {type: 'warn', duration: 3500});
 
-                                        // Sayfa yenile
                                         setTimeout(function() {
                                             window.location.reload();
                                         }, 2000);
                                         return;
                                     }
 
-                                    // Eski/stale session çakışması: kullanıcıyı durduk yere atma.
-                                    // Bu cihaz için session'ı yenileyip (best-effort) uzak kaydı güncelle.
-                                    console.log('checkSession: Stale session mismatch - session yenileniyor');
-                                    const refreshedSessionId = generateSessionId();
-                                    localStorage.setItem('sessionId_' + user.email, refreshedSessionId);
+                                    console.log('checkSession: Yerel oturum daha yeni - remote güncelleniyor');
                                     try {
-                                        await commitFullUserToRepo({ ...remoteUser, sessionId: refreshedSessionId, sessionIdUpdatedAt: Date.now() });
+                                        await commitFullUserToRepo({ ...remoteUser, sessionId: localSessionId, sessionIdUpdatedAt: localSessionUpdatedAt || Date.now() });
                                     } catch (_) {}
+                                    try { await syncCartFromSystem(user.email); } catch(_e) {}
                                 }
                                 
                                 console.log('checkSession: ✓ Oturum geçerli');
@@ -2171,43 +2213,38 @@
                                 }
                                 
                                 const remoteUser = await res.json();
-                                const localSessionId = localStorage.getItem('sessionId_' + user.email);
+                                const localMeta = getLocalSessionMeta(user.email);
+                                const localSessionId = localMeta.sessionId;
+                                const localSessionUpdatedAt = localMeta.updatedAt;
                                 const remoteSessionId = remoteUser.sessionId;
-                                
+                                const remoteSessionUpdatedAt = Number(remoteUser.sessionIdUpdatedAt || remoteUser.sessionIssuedAt || remoteUser.lastLogin || 0) || 0;
+
                                 if (remoteSessionId && localSessionId && remoteSessionId !== localSessionId) {
-                                    const remoteIssuedAt = Number(remoteUser.sessionIdUpdatedAt || remoteUser.sessionIssuedAt || remoteUser.lastLogin || 0) || 0;
-                                    const RECENT_OTHER_LOGIN_MS = 15 * 60 * 1000; // 15 dk
-                                    const isRecentOtherLogin = remoteIssuedAt > 0 && (Date.now() - remoteIssuedAt) < RECENT_OTHER_LOGIN_MS;
+                                    const remoteWins = (remoteSessionUpdatedAt || 0) > (localSessionUpdatedAt || 0);
+                                    if (remoteWins) {
+                                        console.log('[SessionCheck] Daha yeni oturum (remote) tespit edildi!');
 
-                                    if (isRecentOtherLogin) {
-                                        console.log('[SessionCheck] Başka cihazdan yeni giriş yapılmış!');
-
-                                        // Interval durdur
                                         if (sessionCheckInterval) clearInterval(sessionCheckInterval);
 
-                                        // Çıkış yap
                                         localStorage.removeItem('currentUser');
                                         localStorage.removeItem('sessionId_' + user.email);
+                                        localStorage.removeItem(sessionIdUpdatedAtKey(user.email));
                                         sessionStorage.removeItem('currentUser');
 
-                                        // UI güncelle
                                         document.getElementById('authContainer').classList.remove('hidden');
                                         document.getElementById('userContainer').classList.add('hidden');
 
-                                        showNotification('⚠️ Başka bir cihazdan giriş yapıldı. Bu oturum sonlandırıldı.', {type: 'warn', duration: 3000});
+                                        showNotification('⚠️ Daha yeni bir oturum açıldı. Bu oturum kapatıldı.', {type: 'warn', duration: 3500});
 
-                                        // Sayfa yenile
                                         setTimeout(function() {
                                             window.location.reload();
                                         }, 2000);
                                     } else {
-                                        // Stale mismatch: sessizce session yenile
-                                        console.log('[SessionCheck] Stale session mismatch - session yenileniyor');
-                                        const refreshedSessionId = generateSessionId();
-                                        localStorage.setItem('sessionId_' + user.email, refreshedSessionId);
+                                        console.log('[SessionCheck] Yerel oturum daha yeni - remote güncelleniyor');
                                         try {
-                                            await commitFullUserToRepo({ ...remoteUser, sessionId: refreshedSessionId, sessionIdUpdatedAt: Date.now() });
+                                            await commitFullUserToRepo({ ...remoteUser, sessionId: localSessionId, sessionIdUpdatedAt: localSessionUpdatedAt || Date.now() });
                                         } catch (_) {}
+                                        try { await syncCartFromSystem(user.email); } catch(_e) {}
                                     }
                                 }
                             } catch(e) {
@@ -3733,7 +3770,7 @@
                         
                         // Tek oturum: Benzersiz sessionId oluştur ve kaydet
                         const newSessionId = generateSessionId();
-                        localStorage.setItem('sessionId_' + email, newSessionId);
+                        setLocalSessionMeta(email, newSessionId, Date.now());
                         console.log('loginUser: ✓ Yeni sessionId oluşturuldu');
                         
                         // update lastLogin and sessionId remotely (best-effort)
@@ -3743,6 +3780,9 @@
                         }catch(e){
                             console.warn('loginUser: Could not update remotely', e);
                         }
+
+                        // En yeni oturum: sepeti sistemden çek (best-effort)
+                        try { await syncCartFromSystem(email); } catch(_e) {}
                         
                         console.log('loginUser: ✓ LOGIN SUCCESS - updating UI');
                         closeAuthModal();
@@ -3899,6 +3939,7 @@
                                 localStorage.removeItem('cart_' + userEmail);
                                 localStorage.removeItem('orders_' + userEmail);
                                 localStorage.removeItem('sessionId_' + userEmail); // Tek oturum sessionId temizle
+                                localStorage.removeItem('sessionIdUpdatedAt_' + userEmail);
                                 console.log('logout: Removed data for user:', userEmail);
                             }
                             
