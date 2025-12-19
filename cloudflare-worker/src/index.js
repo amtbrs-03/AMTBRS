@@ -387,6 +387,20 @@ https://ern-cicek.com.tr
           const itemsHtml = items.map((item) => 
             `<tr><td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;">${item.name}</td><td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;text-align:center;">${item.qty || item.quantity || 1}</td><td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;text-align:right;">₺${item.price}</td></tr>`
           ).join('');
+
+          // Bilgi fişini ek (varsa) - Resend attachment base64(utf8)
+          const attachments = [];
+          if (invoiceHtml && String(invoiceHtml).trim()) {
+            try {
+              const safeInvoiceHtml = String(invoiceHtml);
+              attachments.push({
+                filename: `bilgi-fisi-${orderId}.html`,
+                content: btoa(unescape(encodeURIComponent(safeInvoiceHtml)))
+              });
+            } catch (e) {
+              console.log('⚠️ invoiceHtml attachment hazırlanamadı:', (e && e.message) ? e.message : String(e));
+            }
+          }
           
           const orderReadyHtml = `
 <!DOCTYPE html>
@@ -445,9 +459,8 @@ https://ern-cicek.com.tr
       </div>
       
       <div style="margin:25px 0;padding:20px;background:#f0fdf4;border:2px solid #10b981;border-radius:12px;text-align:center;">
-        <h3 style="color:#064e3b;margin:0 0 15px 0;">📄 Bilgi Fişiniz Hazır</h3>
-        <p style="color:#475569;font-size:14px;margin:0 0 20px 0;">Siparişinize ait bilgi fişini aşağıdaki butona tıklayarak görüntüleyebilir, yazdırabilir veya PDF olarak kaydedebilirsiniz.</p>
-        <a href="https://ern-cicek.com.tr/bilgifisleri.html" style="display:inline-block;background:#10b981;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:700;font-size:16px;">📥 Bilgi Fişimi Görüntüle</a>
+        <h3 style="color:#064e3b;margin:0 0 12px 0;">📄 Bilgi Fişiniz</h3>
+        <p style="color:#475569;font-size:14px;margin:0;">Bilgi fişiniz bu e-postaya ek olarak iletilmiştir.</p>
       </div>
       
       <p style="color:#475569;margin-top:25px;">Sorularınız için bize ulaşabilirsiniz:</p>
@@ -483,6 +496,8 @@ ${address}
 
 Kargo takip numaranız e-posta ile iletilecektir.
 
+Bilgi fişiniz bu e-postaya ek olarak iletilmiştir.
+
 Sorularınız için:
 📱 WhatsApp: +90 538 417 90 81
 📧 Email: amtbrs@icloud.com
@@ -505,7 +520,8 @@ https://ern-cicek.com.tr
               to: customerEmail,
               subject: `✅ Siparişiniz Hazırlandı - ${orderId} | ERN-ÇİÇEK`,
               text: orderReadyText,
-              html: orderReadyHtml
+              html: orderReadyHtml,
+              ...(attachments.length ? { attachments } : {})
             })
           });
           
