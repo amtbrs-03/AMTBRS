@@ -441,7 +441,7 @@ https://ern-cicek.com.tr
       <p style="color:#475569;background:#f8fafc;padding:15px;border-radius:8px;margin:0;border-left:4px solid #10b981;">${address}</p>
       
       <div style="background:#dbeafe;border:1px solid #93c5fd;border-radius:8px;padding:15px;margin:25px 0;">
-        <p style="margin:0;color:#1e40af;font-size:14px;">🚚 <strong>Kargo Bilgisi:</strong> Kargo takip numaranız ayrıca SMS ve e-posta ile iletilecektir.</p>
+        <p style="margin:0;color:#1e40af;font-size:14px;">🚚 <strong>Kargo Bilgisi:</strong> Kargo takip numaranız e-posta ile iletilecektir.</p>
       </div>
       
       <div style="margin:25px 0;padding:20px;background:#f0fdf4;border:2px solid #10b981;border-radius:12px;text-align:center;">
@@ -481,7 +481,7 @@ Toplam: ₺${total}
 Teslimat Adresi:
 ${address}
 
-Kargo takip numaranız ayrıca SMS ve e-posta ile iletilecektir.
+Kargo takip numaranız e-posta ile iletilecektir.
 
 Sorularınız için:
 📱 WhatsApp: +90 538 417 90 81
