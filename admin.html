@@ -2264,12 +2264,7 @@
     <!-- Yönetici paneli doğrudan erişim: şifre/giriş alanı kaldırıldı -->
 
     <div id="adminUI">
-      <!-- Quick Actions Bar -->
-      <div class="action-bar">
-        <button id="loadUsersBtn" class="btn">👥 Kullanıcıları Yükle</button>
-        <a href="siparisler.html" class="btn" style="text-decoration:none;">📦 Müşteri Siparişleri</a>
-        <a href="bilgifisleri.html" class="btn" style="text-decoration:none;background:linear-gradient(135deg,#f59e0b 0%,#d97706 100%);box-shadow:0 4px 15px rgba(245,158,11,0.4);">🧾 Bilgi Fişleri</a>
-      </div>
+      <!-- Quick Actions Bar (moved relevant actions into Müşteri Yönetimi) -->
       <!-- Gallery image upload quick action (under Users load) -->
       <div class="action-bar" style="margin-top:8px;display:flex;gap:0.5rem;flex-wrap:wrap;">
         <button id="openGalleryBtn" class="btn" type="button" title="Galeriye git, resimleri görüntüle, sil ve yönet" style="background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);box-shadow:0 4px 15px rgba(139,92,246,0.4);">
@@ -2975,6 +2970,21 @@
           </button>
 
           <div id="customerMgmtSubBtns" style="display:none;flex-direction:row;gap:0.75rem;margin-top:0.5rem;flex-wrap:wrap;">
+            <button id="loadUsersBtn" class="btn btn-ghost" type="button" style="font-size:1rem;padding:0.8rem 1.4rem;display:flex;align-items:center;gap:0.6rem;">
+              <span>👥</span>
+              <span>Kullanıcıları Yükle</span>
+            </button>
+
+            <a href="siparisler.html" class="btn btn-ghost" style="text-decoration:none;font-size:1rem;padding:0.8rem 1.4rem;display:flex;align-items:center;gap:0.6rem;">
+              <span>📦</span>
+              <span>Müşteri Siparişleri</span>
+            </a>
+
+            <a href="bilgifisleri.html" class="btn btn-ghost" style="text-decoration:none;font-size:1rem;padding:0.8rem 1.4rem;display:flex;align-items:center;gap:0.6rem;">
+              <span>🧾</span>
+              <span>Bilgi Fişleri</span>
+            </a>
+
             <button id="openLiveCartsBtn" class="btn btn-ghost" type="button" style="font-size:1rem;padding:0.8rem 1.4rem;display:flex;align-items:center;gap:0.6rem;">
               <span>🛒</span>
               <span>Canlı Sepet Takibi</span>
@@ -4667,7 +4677,7 @@ try {
         </div>
         <div id="usersListModal" style="max-height:60vh; overflow:auto;">
           <p style="color:#6b7280; text-align:center; padding:2rem;">
-            Kullanıcıları yüklemek için yukarıdaki "👥 Kullanıcıları Yükle" butonuna tıklayın.
+            Kullanıcıları yüklemek için "Müşteri Yönetimi" bölümündeki "👥 Kullanıcıları Yükle" butonuna tıklayın.
           </p>
         </div>
         <div class="small meta" style="margin-top:1rem; padding-top:1rem; border-top:2px solid #e5e7eb;">
