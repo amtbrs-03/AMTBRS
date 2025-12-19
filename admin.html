@@ -801,6 +801,7 @@
         <div class="small" style="color:#64748b;margin-bottom:0.75rem">Admin işlemleri için kişisel erişim token'ınızı girin. Token girilmezse sadece uyarı gösterilir, sayfa yine açılır.</div>
         <div class="controls-row" style="gap:0.5rem;">
           <input id="tokenInput" type="password" placeholder="ghp_..." style="flex:1;min-width:220px" />
+          <button id="tokenPaste" class="btn btn-ghost" type="button">📋 Yapıştır</button>
           <button id="tokenSubmit" class="btn" type="button">Giriş</button>
         </div>
         <div id="tokenMsg" class="small" style="margin-top:0.5rem;color:#64748b"></div>
@@ -808,14 +809,48 @@
       </div>
     </div>
     <script>
+      // Clipboard helper: Simple Browser / bazı ortamlarda yapıştırma engellenebilir.
+      async function pasteTokenIntoInput(inputEl){
+        if(!inputEl) return false;
+        // 1) Clipboard API (kullanıcı etkileşimi ile çalışır)
+        try{
+          if(navigator && navigator.clipboard && typeof navigator.clipboard.readText === 'function'){
+            const txt = await navigator.clipboard.readText();
+            if(txt && String(txt).trim()){
+              inputEl.value = String(txt).trim();
+              try{ inputEl.dispatchEvent(new Event('input', { bubbles:true })); }catch(_){ }
+              inputEl.focus();
+              return true;
+            }
+          }
+        }catch(_){ /* ignore */ }
+        // 2) Fallback: prompt (çoğu ortamda Cmd/Ctrl+V çalışır)
+        try{
+          const manual = window.prompt("Token'ı buraya yapıştırın:", "");
+          if(manual && String(manual).trim()){
+            inputEl.value = String(manual).trim();
+            try{ inputEl.dispatchEvent(new Event('input', { bubbles:true })); }catch(_){ }
+            inputEl.focus();
+            return true;
+          }
+        }catch(_){ /* ignore */ }
+        return false;
+      }
+
       // Token giriş modalı kontrolü
       function showTokenGate() {
         var gate = document.getElementById('tokenGate');
         var input = document.getElementById('tokenInput');
         var submit = document.getElementById('tokenSubmit');
+        var pasteBtn = document.getElementById('tokenPaste');
         var msg = document.getElementById('tokenMsg');
         if (gate && input && submit) {
           gate.style.display = 'flex';
+          if(pasteBtn){
+            pasteBtn.onclick = async function(){
+              await pasteTokenIntoInput(input);
+            };
+          }
           submit.onclick = function() {
             var val = input.value.trim();
             if (val.length > 10) {
@@ -854,6 +889,7 @@
       <div class="modal-body form-content">
         <label for="loginToken">Kişisel erişim token'ınızı girin:</label>
         <input type="password" id="loginToken" placeholder="ghp_..." autocomplete="off" style="width:100%;margin-bottom:1rem" />
+        <button class="btn btn-ghost" id="pasteLoginTokenBtn" type="button" style="margin-bottom:0.75rem;">📋 Yapıştır</button>
         <button class="btn" onclick="loginUser()">Kaydet</button>
         <button class="btn" id="clearTokenBtn" style="background:#ef4444;margin-left:8px">Token'ı Sil</button>
         <div id="patNoticeInline" style="margin-top:1rem;color:#ef4444;display:none">Token eksik veya hatalı!</div>
@@ -892,6 +928,12 @@
       try {
         var tokenInput = document.getElementById('loginToken');
         var clearBtn = document.getElementById('clearTokenBtn');
+        var pasteBtn = document.getElementById('pasteLoginTokenBtn');
+        if(pasteBtn && tokenInput){
+          pasteBtn.onclick = async function(){
+            await pasteTokenIntoInput(tokenInput);
+          };
+        }
         if (clearBtn) {
           clearBtn.onclick = function(){
             try { localStorage.removeItem('github_token'); localStorage.removeItem('gh_token'); } catch(_){}
@@ -2217,6 +2259,7 @@
           <input id="tokenModalInput" type="password" placeholder="ghp_xxx..." />
         </label>
         <div style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:0.75rem">
+          <button id="tokenModalPaste" class="btn btn-ghost" type="button">📋 Yapıştır</button>
           <button id="tokenModalSave" class="btn" type="button">Kaydet</button>
           <button id="tokenModalValidate" class="btn btn-ghost" type="button">Doğrula</button>
           <button id="closeTokenModalBtn" class="btn btn-ghost" type="button">Kapat</button>
@@ -2246,7 +2289,17 @@
     function bind(){
       const openBtn = document.getElementById('openTokenModalBtn'); if(openBtn) openBtn.addEventListener('click', open);
       const closeBtn = document.getElementById('closeTokenModalBtn'); if(closeBtn) closeBtn.addEventListener('click', close);
-      const saveBtn = document.getElementById('tokenModalSave'); const valBtn = document.getElementById('tokenModalValidate'); const st = document.getElementById('tokenModalStatus'); const inp = document.getElementById('tokenModalInput');
+      const saveBtn = document.getElementById('tokenModalSave');
+      const valBtn = document.getElementById('tokenModalValidate');
+      const pasteBtn = document.getElementById('tokenModalPaste');
+      const st = document.getElementById('tokenModalStatus');
+      const inp = document.getElementById('tokenModalInput');
+
+      if(pasteBtn && inp){
+        pasteBtn.addEventListener('click', async ()=>{
+          await pasteTokenIntoInput(inp);
+        });
+      }
       if(saveBtn && inp){ saveBtn.addEventListener('click', async ()=>{ const t=(inp.value||'').trim(); if(!t){ st.textContent='Lütfen token girin'; return; } setToken(t); const r=await validateToken(t); st.textContent=r.msg; const pat=document.getElementById('patNotice'); if(pat) pat.style.display = r.ok ? 'none' : 'block'; }); }
       if(valBtn){ valBtn.addEventListener('click', async ()=>{ const r=await validateToken(getToken()); st.textContent=r.msg; const pat=document.getElementById('patNotice'); if(pat) pat.style.display = r.ok ? 'none' : 'block'; }); }
     }
