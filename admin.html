@@ -6672,13 +6672,19 @@ try {
       if(input) input.value = '';
     }
 
-    async function mapLimit(items, limit, fn){
+    async function mapLimit(items, limit, fn, onTick){
       const results = [];
       const queue = [...(items||[])];
+      const total = queue.length || 0;
+      let done = 0;
+      const tick = (typeof onTick === 'function') ? onTick : null;
+
       const workers = new Array(Math.max(1, limit||6)).fill(0).map(async ()=>{
         while(queue.length){
           const it = queue.shift();
           try{ results.push(await fn(it)); }catch(_){ results.push(null); }
+          done++;
+          if(tick) tick(done, total);
         }
       });
       await Promise.all(workers);
@@ -6757,13 +6763,19 @@ try {
       openDetailModal();
     }
 
-    async function loadReadyOrders(){
+    async function loadReadyOrders(showModalProgress){
       const host = document.getElementById('shippingReadyOrdersList');
       const statusEl = document.getElementById('shippingTrackingStatus');
       const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||localStorage.getItem('gh_token')||'');
+      const useModal = !!showModalProgress && typeof openRefreshModal === 'function';
+      if(useModal){
+        openRefreshModal({ title: '🚚 Kargo Takip', progressTitle: 'Hazır siparişler yenileniyor...' });
+        if(typeof updateRefreshProgress === 'function') updateRefreshProgress(5, 'Başlatılıyor...');
+      }
       if(!token){
         if(host) host.innerHTML = emptyStateHtml('GitHub token bulunamadı. Lütfen admin panelde token tanımlayın.');
         updateCount(0);
+        if(useModal && typeof finishRefreshError === 'function') finishRefreshError('GitHub token bulunamadı');
         return;
       }
 
@@ -6771,6 +6783,7 @@ try {
       if(statusEl) statusEl.textContent = 'Son güncelleme: yükleniyor...';
 
       const dirUrl = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodePath('orders')}?ref=${encodeURIComponent(BRANCH)}&_=${Date.now()}`;
+      if(useModal && typeof updateRefreshProgress === 'function') updateRefreshProgress(15, 'Sipariş listesi alınıyor...');
       const dirRes = await ghFetch(dirUrl, token);
       if(!dirRes.ok){
         const t = await dirRes.text().catch(()=> '');
@@ -6778,6 +6791,7 @@ try {
         console.warn('[admin] orders list error:', dirRes.status, t);
         updateCount(0);
         if(statusEl) statusEl.textContent = 'Son güncelleme: hata';
+        if(useModal && typeof finishRefreshError === 'function') finishRefreshError('Sipariş klasörü okunamadı: ' + String(dirRes.status));
         return;
       }
 
@@ -6795,8 +6809,14 @@ try {
         if(host) host.innerHTML = emptyStateHtml('Sipariş dosyası bulunamadı.');
         updateCount(0);
         if(statusEl) statusEl.textContent = 'Son güncelleme: ' + formatDateTr(Date.now());
+        if(useModal && typeof finishRefreshSuccess === 'function') finishRefreshSuccess('Sipariş yok');
         return;
       }
+
+      if(useModal && typeof updateRefreshProgress === 'function') updateRefreshProgress(25, 'Siparişler okunuyor...');
+
+      let done = 0;
+      const total = sorted.length || 1;
 
       const fetched = await mapLimit(sorted, 8, async (f)=>{
         const fileUrl = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodePath(f.path)}?ref=${encodeURIComponent(BRANCH)}&_=${Date.now()}`;
@@ -6807,6 +6827,12 @@ try {
         const txt = fromBase64(b64);
         const obj = JSON.parse(txt||'{}');
         return obj;
+      }, (countDone)=>{
+        done = countDone;
+        if(useModal && typeof updateRefreshProgress === 'function'){
+          const pct = 25 + Math.round((done / total) * 60);
+          updateRefreshProgress(Math.min(90, Math.max(25, pct)), `Siparişler okunuyor... (${done}/${total})`);
+        }
       });
 
       const ready = (fetched||[])
@@ -6815,6 +6841,10 @@ try {
 
       renderCards(ready);
       if(statusEl) statusEl.textContent = 'Son güncelleme: ' + formatDateTr(Date.now());
+
+      if(useModal && typeof finishRefreshSuccess === 'function'){
+        finishRefreshSuccess('Hazır siparişler yenilendi');
+      }
     }
 
     async function sendTracking(){
@@ -6871,7 +6901,7 @@ try {
       }
 
       const refreshBtn = document.getElementById('refreshShippingTrackingBtn');
-      if(refreshBtn) refreshBtn.addEventListener('click', loadReadyOrders);
+      if(refreshBtn) refreshBtn.addEventListener('click', function(){ loadReadyOrders(true); });
 
       const closeDetailBtn = document.getElementById('closeShippingDetailBtn');
       if(closeDetailBtn) closeDetailBtn.addEventListener('click', closeDetailModal);
@@ -7167,9 +7197,16 @@ try {
       const listEl = document.getElementById('emailLogsList');
       const statusEl = document.getElementById('emailLogsStatus');
       const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||localStorage.getItem('gh_token')||'');
+      const useModal = !!showModalProgress && typeof openRefreshModal === 'function';
+
+      if(useModal){
+        openRefreshModal({ title: '📧 E-posta Takibi', progressTitle: 'E-postalar yenileniyor...' });
+        if(typeof updateRefreshProgress === 'function') updateRefreshProgress(5, 'Başlatılıyor...');
+      }
       if(!token){
         if(listEl) listEl.innerHTML = emptyStateHtml('GitHub token bulunamadı. Lütfen admin panelde token tanımlayın.');
         updateEmailLogsCount(0);
+        if(useModal && typeof finishRefreshError === 'function') finishRefreshError('GitHub token bulunamadı');
         return;
       }
 
@@ -7177,6 +7214,7 @@ try {
       if(statusEl) statusEl.textContent = 'Son güncelleme: yükleniyor...';
 
       const dirUrl = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodePath('email-logs')}?ref=${encodeURIComponent(BRANCH)}&_=${Date.now()}`;
+      if(useModal && typeof updateRefreshProgress === 'function') updateRefreshProgress(15, 'Kayıt listesi alınıyor...');
       const dirRes = await ghFetch(dirUrl, token);
       if(!dirRes.ok){
         const t = await dirRes.text().catch(()=> '');
@@ -7185,12 +7223,14 @@ try {
           if(listEl) listEl.innerHTML = emptyStateHtml('Henüz e-posta kaydı bulunmuyor.');
           updateEmailLogsCount(0);
           if(statusEl) statusEl.textContent = 'Son güncelleme: ' + formatDateTr(Date.now());
+          if(useModal && typeof finishRefreshSuccess === 'function') finishRefreshSuccess('E-posta kaydı yok');
           return;
         }
         if(listEl) listEl.innerHTML = emptyStateHtml('E-posta kayıtları okunamadı: ' + safeInput(String(dirRes.status)));
         console.warn('[admin] email-logs list error:', dirRes.status, t);
         updateEmailLogsCount(0);
         if(statusEl) statusEl.textContent = 'Son güncelleme: hata';
+        if(useModal && typeof finishRefreshError === 'function') finishRefreshError('E-posta klasörü okunamadı: ' + String(dirRes.status));
         return;
       }
 
@@ -7214,10 +7254,15 @@ try {
         if(listEl) listEl.innerHTML = emptyStateHtml('Henüz e-posta kaydı bulunmuyor.');
         updateEmailLogsCount(0);
         if(statusEl) statusEl.textContent = 'Son güncelleme: ' + formatDateTr(Date.now());
+        if(useModal && typeof finishRefreshSuccess === 'function') finishRefreshSuccess('E-posta kaydı yok');
         return;
       }
 
       const logs = [];
+      const total = sorted.length || 1;
+      let done = 0;
+      if(useModal && typeof updateRefreshProgress === 'function') updateRefreshProgress(25, 'E-postalar okunuyor...');
+
       for(const f of sorted){
         try{
           const fileUrl = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodePath(f.path)}?ref=${encodeURIComponent(BRANCH)}&_=${Date.now()}`;
@@ -7231,11 +7276,21 @@ try {
         }catch(e){
           // ignore tekil bozuk kayıt
         }
+
+        done++;
+        if(useModal && typeof updateRefreshProgress === 'function'){
+          const pct = 25 + Math.round((done / total) * 60);
+          updateRefreshProgress(Math.min(90, Math.max(25, pct)), `E-postalar okunuyor... (${done}/${total})`);
+        }
       }
 
       logs.sort((a,b)=> Number(b?.sentAt||0) - Number(a?.sentAt||0));
       renderEmailLogCards(logs);
       if(statusEl) statusEl.textContent = 'Son güncelleme: ' + formatDateTr(Date.now());
+
+      if(useModal && typeof finishRefreshSuccess === 'function'){
+        finishRefreshSuccess('E-postalar yenilendi');
+      }
     }
 
     document.addEventListener('DOMContentLoaded', function(){
