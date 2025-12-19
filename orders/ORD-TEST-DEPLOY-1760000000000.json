@@ -8,10 +8,18 @@
   "iban": "",
   "note": "TEST KAYDI — sistem doğrulama için oluşturuldu.",
   "noteRead": true,
-  "status": "ready",
+  "status": "shipped",
   "items": [
-    { "name": "TEST ÜRÜN", "qty": 1, "price": 1 }
+    {
+      "name": "TEST ÜRÜN",
+      "qty": 1,
+      "price": 1
+    }
   ],
   "total": "1",
-  "isTest": true
+  "isTest": true,
+  "trackingNumber": "TEST-TRK-123",
+  "trackingNumberUpdatedAt": 1766175451093,
+  "shippedAt": 1766175451093,
+  "trackingEmailSentAt": 1766175451093
 }
