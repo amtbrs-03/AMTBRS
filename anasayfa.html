@@ -2104,26 +2104,41 @@
                                 // TEK OTURUM KONTROLÜ: sessionId karşılaştır
                                 const localSessionId = localStorage.getItem('sessionId_' + user.email);
                                 const remoteSessionId = remoteUser.sessionId;
-                                
+
                                 if (remoteSessionId && localSessionId && remoteSessionId !== localSessionId) {
-                                    console.log('checkSession: Başka cihazdan giriş yapılmış - çıkış yapılıyor');
-                                    console.log('checkSession: Yerel:', localSessionId, '| Uzak:', remoteSessionId);
-                                    
-                                    localStorage.removeItem('currentUser');
-                                    localStorage.removeItem('sessionId_' + user.email);
-                                    sessionStorage.removeItem('currentUser');
-                                    
-                                    // UI güncelle
-                                    document.getElementById('authContainer').classList.remove('hidden');
-                                    document.getElementById('userContainer').classList.add('hidden');
-                                    
-                                    showNotification('⚠️ Başka bir cihazdan giriş yapıldı. Bu oturum sonlandırıldı.', {type: 'warn', duration: 3000});
-                                    
-                                    // Sayfa yenile
-                                    setTimeout(function() {
-                                        window.location.reload();
-                                    }, 2000);
-                                    return;
+                                    const remoteIssuedAt = Number(remoteUser.sessionIdUpdatedAt || remoteUser.sessionIssuedAt || remoteUser.lastLogin || 0) || 0;
+                                    const RECENT_OTHER_LOGIN_MS = 15 * 60 * 1000; // 15 dk
+                                    const isRecentOtherLogin = remoteIssuedAt > 0 && (Date.now() - remoteIssuedAt) < RECENT_OTHER_LOGIN_MS;
+
+                                    if (isRecentOtherLogin) {
+                                        console.log('checkSession: Başka cihazdan yeni giriş tespit edildi - çıkış yapılıyor');
+                                        console.log('checkSession: Yerel:', localSessionId, '| Uzak:', remoteSessionId);
+
+                                        localStorage.removeItem('currentUser');
+                                        localStorage.removeItem('sessionId_' + user.email);
+                                        sessionStorage.removeItem('currentUser');
+
+                                        // UI güncelle
+                                        document.getElementById('authContainer').classList.remove('hidden');
+                                        document.getElementById('userContainer').classList.add('hidden');
+
+                                        showNotification('⚠️ Başka bir cihazdan giriş yapıldı. Bu oturum sonlandırıldı.', {type: 'warn', duration: 3000});
+
+                                        // Sayfa yenile
+                                        setTimeout(function() {
+                                            window.location.reload();
+                                        }, 2000);
+                                        return;
+                                    }
+
+                                    // Eski/stale session çakışması: kullanıcıyı durduk yere atma.
+                                    // Bu cihaz için session'ı yenileyip (best-effort) uzak kaydı güncelle.
+                                    console.log('checkSession: Stale session mismatch - session yenileniyor');
+                                    const refreshedSessionId = generateSessionId();
+                                    localStorage.setItem('sessionId_' + user.email, refreshedSessionId);
+                                    try {
+                                        await commitFullUserToRepo({ ...remoteUser, sessionId: refreshedSessionId, sessionIdUpdatedAt: Date.now() });
+                                    } catch (_) {}
                                 }
                                 
                                 console.log('checkSession: ✓ Oturum geçerli');
@@ -2160,26 +2175,40 @@
                                 const remoteSessionId = remoteUser.sessionId;
                                 
                                 if (remoteSessionId && localSessionId && remoteSessionId !== localSessionId) {
-                                    console.log('[SessionCheck] Başka cihazdan giriş yapılmış!');
-                                    
-                                    // Interval durdur
-                                    if (sessionCheckInterval) clearInterval(sessionCheckInterval);
-                                    
-                                    // Çıkış yap
-                                    localStorage.removeItem('currentUser');
-                                    localStorage.removeItem('sessionId_' + user.email);
-                                    sessionStorage.removeItem('currentUser');
-                                    
-                                    // UI güncelle
-                                    document.getElementById('authContainer').classList.remove('hidden');
-                                    document.getElementById('userContainer').classList.add('hidden');
-                                    
-                                    showNotification('⚠️ Başka bir cihazdan giriş yapıldı. Bu oturum sonlandırıldı.', {type: 'warn', duration: 3000});
-                                    
-                                    // Sayfa yenile
-                                    setTimeout(function() {
-                                        window.location.reload();
-                                    }, 2000);
+                                    const remoteIssuedAt = Number(remoteUser.sessionIdUpdatedAt || remoteUser.sessionIssuedAt || remoteUser.lastLogin || 0) || 0;
+                                    const RECENT_OTHER_LOGIN_MS = 15 * 60 * 1000; // 15 dk
+                                    const isRecentOtherLogin = remoteIssuedAt > 0 && (Date.now() - remoteIssuedAt) < RECENT_OTHER_LOGIN_MS;
+
+                                    if (isRecentOtherLogin) {
+                                        console.log('[SessionCheck] Başka cihazdan yeni giriş yapılmış!');
+
+                                        // Interval durdur
+                                        if (sessionCheckInterval) clearInterval(sessionCheckInterval);
+
+                                        // Çıkış yap
+                                        localStorage.removeItem('currentUser');
+                                        localStorage.removeItem('sessionId_' + user.email);
+                                        sessionStorage.removeItem('currentUser');
+
+                                        // UI güncelle
+                                        document.getElementById('authContainer').classList.remove('hidden');
+                                        document.getElementById('userContainer').classList.add('hidden');
+
+                                        showNotification('⚠️ Başka bir cihazdan giriş yapıldı. Bu oturum sonlandırıldı.', {type: 'warn', duration: 3000});
+
+                                        // Sayfa yenile
+                                        setTimeout(function() {
+                                            window.location.reload();
+                                        }, 2000);
+                                    } else {
+                                        // Stale mismatch: sessizce session yenile
+                                        console.log('[SessionCheck] Stale session mismatch - session yenileniyor');
+                                        const refreshedSessionId = generateSessionId();
+                                        localStorage.setItem('sessionId_' + user.email, refreshedSessionId);
+                                        try {
+                                            await commitFullUserToRepo({ ...remoteUser, sessionId: refreshedSessionId, sessionIdUpdatedAt: Date.now() });
+                                        } catch (_) {}
+                                    }
                                 }
                             } catch(e) {
                                 console.log('[SessionCheck] Kontrol hatası:', e.message);
@@ -3709,7 +3738,7 @@
                         
                         // update lastLogin and sessionId remotely (best-effort)
                         try{ 
-                            await commitFullUserToRepo({ ...userData, lastLogin: Date.now(), sessionId: newSessionId }); 
+                            await commitFullUserToRepo({ ...userData, lastLogin: Date.now(), sessionId: newSessionId, sessionIdUpdatedAt: Date.now() }); 
                             console.log('loginUser: ✓ lastLogin ve sessionId güncellendi');
                         }catch(e){
                             console.warn('loginUser: Could not update remotely', e);
