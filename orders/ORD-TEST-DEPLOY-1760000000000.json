@@ -1,0 +1,17 @@
+{
+  "id": "ORD-TEST-DEPLOY-1760000000000",
+  "date": 1760000000000,
+  "customerEmail": "amtbrs@icloud.com",
+  "customerName": "AMTBRS (Test)",
+  "customerPhone": "",
+  "address": "TEST ADRES — deploy doğrulama",
+  "iban": "",
+  "note": "TEST KAYDI — sistem doğrulama için oluşturuldu.",
+  "noteRead": true,
+  "status": "ready",
+  "items": [
+    { "name": "TEST ÜRÜN", "qty": 1, "price": 1 }
+  ],
+  "total": "1",
+  "isTest": true
+}
