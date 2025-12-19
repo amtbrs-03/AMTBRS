@@ -16,7 +16,7 @@
   },
   "phone": "+90 530 306 9081",
   "createdAt": 1765923894558,
-  "lastLogin": 1766179357348,
+  "lastLogin": 1766187069337,
   "addresses": [
     {
       "id": "default",
@@ -29,5 +29,5 @@
       "isDefault": true
     }
   ],
-  "sessionId": "5e8afde2616085a397b8dab1410e6a41"
+  "sessionId": "017b94f036a7a2f6f5e71ea499201874"
 }
