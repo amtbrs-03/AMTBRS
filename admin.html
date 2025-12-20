@@ -6546,6 +6546,7 @@ try {
     const BRANCH = 'site-release';
     let liveCartsData = [];
     let liveCartsInterval = null;
+    let liveCartsLoading = false;
 
     function encodeGitHubPath(path) {
       try {
@@ -6614,6 +6615,10 @@ try {
       const statusEl = document.getElementById('liveCartsStatus');
       
       if (!listEl) return;
+
+      // Prevent overlapping refresh cycles
+      if (liveCartsLoading && !showModal) return;
+      liveCartsLoading = true;
       
       const token = getToken();
       if (!token) {
@@ -6637,13 +6642,14 @@ try {
         // 1. carts/ klasöründeki dosyaları listele
         if (showModal) updateRefreshProgress(20, 'Sepet listesi alınıyor...');
         
-        const res = await fetch(`${GITHUB_API_BASE}?ref=${BRANCH}`, {
+        const res = await fetch(`${GITHUB_API_BASE}?ref=${encodeURIComponent(BRANCH)}&_=${Date.now()}`,
+          {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Accept': 'application/vnd.github.v3+json'
-          }
+          },
+          cache: 'no-store'
         });
-
         if (!res.ok) {
           throw new Error(`GitHub API: ${res.status}`);
         }
@@ -6673,7 +6679,8 @@ try {
               headers: {
                 'Authorization': `Bearer ${token}`,
                 'Accept': 'application/vnd.github.v3+json'
-              }
+              },
+              cache: 'no-store'
             });
             if (!cartRes.ok) return null;
             const meta = await cartRes.json();
@@ -6704,7 +6711,7 @@ try {
           listEl.innerHTML = '<div style="text-align:center;padding:2rem;color:#6b7280;">📭 Aktif sepet yok (tüm sepetler boş)</div>';
           updateCartsCount(0);
         } else {
-          listEl.innerHTML = activeCarts.map(cart => renderCartCard(cart)).join('');
+          renderLiveCartGroups(listEl, activeCarts);
           updateCartsCount(activeCarts.length);
         }
         
@@ -6722,6 +6729,8 @@ try {
         } else if (typeof showNotification === 'function') {
           showNotification('Sepet yükleme hatası: ' + e.message, {type: 'error'});
         }
+      } finally {
+        liveCartsLoading = false;
       }
     }
 
@@ -6797,6 +6806,116 @@ try {
           ${timeAgo ? `<div style="font-size:0.9rem;color:#9ca3af;margin-top:0.75rem;">🕐 ${timeAgo}</div>` : ''}
         </div>
       `;
+    }
+
+    function renderLiveCartGroups(hostEl, carts) {
+      if (!hostEl) return;
+      const list = Array.isArray(carts) ? carts : [];
+      if (list.length === 0) {
+        hostEl.innerHTML = '<div style="text-align:center;padding:2rem;color:#6b7280;">📭 Aktif sepet yok</div>';
+        return;
+      }
+
+      // Kartları isim altında grupla (isim tıklanınca aç/kapa)
+      const groupsMap = new Map();
+      for (const cart of list) {
+        const displayName = String((cart && (cart.name || cart.fullName || cart.adSoyad)) || (cart && cart.email) || 'Üye').trim() || 'Üye';
+        const key = displayName.toLowerCase();
+        if (!groupsMap.has(key)) groupsMap.set(key, { title: displayName, key, items: [] });
+        groupsMap.get(key).items.push(cart);
+      }
+
+      const groups = Array.from(groupsMap.values()).map(g => {
+        g.items.sort((a, b) => {
+          const at = Number((a && (a.updatedAt || a.createdAt)) || 0);
+          const bt = Number((b && (b.updatedAt || b.createdAt)) || 0);
+          return bt - at;
+        });
+        g.latest = Number((g.items[0] && (g.items[0].updatedAt || g.items[0].createdAt)) || 0);
+        return g;
+      }).sort((a, b) => (b.latest || 0) - (a.latest || 0));
+
+      const state = window.__liveCartGroupState || (window.__liveCartGroupState = {});
+
+      hostEl.innerHTML = '';
+      hostEl.style.display = 'flex';
+      hostEl.style.flexDirection = 'column';
+      hostEl.style.gap = '0.9rem';
+      hostEl.style.gridTemplateColumns = '';
+
+      for (const group of groups) {
+        const wrap = document.createElement('div');
+        wrap.style.border = '1px solid #e5e7eb';
+        wrap.style.borderRadius = '16px';
+        wrap.style.background = '#fff';
+        wrap.style.overflow = 'hidden';
+
+        const header = document.createElement('button');
+        header.type = 'button';
+        header.style.width = '100%';
+        header.style.display = 'flex';
+        header.style.alignItems = 'center';
+        header.style.gap = '0.75rem';
+        header.style.padding = '0.95rem 1.1rem';
+        header.style.border = 'none';
+        header.style.background = 'linear-gradient(135deg, rgba(16,185,129,0.10), rgba(5,150,105,0.06))';
+        header.style.cursor = 'pointer';
+        header.style.textAlign = 'left';
+
+        const title = document.createElement('div');
+        title.style.fontWeight = '800';
+        title.style.color = '#064e3b';
+        title.style.fontSize = '1.05rem';
+        title.style.flex = '1';
+        title.style.minWidth = '0';
+        title.style.wordBreak = 'break-word';
+        title.textContent = group.title;
+
+        const badge = document.createElement('span');
+        badge.style.background = 'rgba(16,185,129,0.14)';
+        badge.style.color = '#064e3b';
+        badge.style.padding = '4px 10px';
+        badge.style.borderRadius = '999px';
+        badge.style.fontSize = '0.9rem';
+        badge.style.fontWeight = '800';
+        badge.textContent = String(group.items.length);
+
+        const caret = document.createElement('span');
+        caret.style.color = '#065f46';
+        caret.style.fontWeight = '900';
+        caret.style.fontSize = '1.1rem';
+
+        header.appendChild(title);
+        header.appendChild(badge);
+        header.appendChild(caret);
+
+        const content = document.createElement('div');
+        content.style.padding = '1rem 1.1rem 1.2rem';
+
+        const grid = document.createElement('div');
+        grid.style.display = 'grid';
+        grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(320px, 1fr))';
+        grid.style.gap = '1.25rem';
+        grid.innerHTML = group.items.map(c => renderCartCard(c)).join('');
+        content.appendChild(grid);
+
+        const isOpen = (state[group.key] !== undefined) ? !!state[group.key] : true;
+        content.style.display = isOpen ? 'block' : 'none';
+        caret.textContent = isOpen ? '▾' : '▸';
+        header.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+
+        header.addEventListener('click', () => {
+          const next = !(content.style.display !== 'none');
+          state[group.key] = next;
+          content.style.display = next ? 'block' : 'none';
+          caret.textContent = next ? '▾' : '▸';
+          header.setAttribute('aria-expanded', next ? 'true' : 'false');
+        });
+
+        wrap.appendChild(header);
+        wrap.appendChild(content);
+        hostEl.appendChild(wrap);
+      }
     }
 
     // Sepet detay modalını göster
@@ -7114,6 +7233,7 @@ try {
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
         loadLiveCarts(); // Modal açılınca yenile
+        startLiveCartsAutoRefresh();
       }
     }
 
@@ -7123,6 +7243,7 @@ try {
         modal.style.display = 'none';
         modal.classList.remove('active');
         document.body.style.overflow = '';
+        stopLiveCartsAutoRefresh();
       }
     }
 
@@ -7134,10 +7255,17 @@ try {
       if (modalCount) modalCount.textContent = count;
     }
 
-    // Otomatik yenilemeyi başlat (2 dakikada bir)
+    function stopLiveCartsAutoRefresh() {
+      if (liveCartsInterval) {
+        clearInterval(liveCartsInterval);
+        liveCartsInterval = null;
+      }
+    }
+
+    // Otomatik yenilemeyi başlat (30 saniyede bir)
     function startLiveCartsAutoRefresh() {
-      if (liveCartsInterval) clearInterval(liveCartsInterval);
-      liveCartsInterval = setInterval(loadLiveCarts, 2 * 60 * 1000);
+      stopLiveCartsAutoRefresh();
+      liveCartsInterval = setInterval(loadLiveCarts, 30 * 1000);
     }
 
     // Event listener'ları bağla
@@ -7200,7 +7328,7 @@ try {
       // Sayfa yüklenince sepet sayısını çek (arka planda)
       loadLiveCarts();
       
-      // Otomatik yenilemeyi başlat
+      // Arka planda sepet sayısını güncel tut
       startLiveCartsAutoRefresh();
     });
 
@@ -7208,6 +7336,7 @@ try {
     window.loadLiveCarts = loadLiveCarts;
     window.openLiveCartsModal = openLiveCartsModal;
     window.closeLiveCartsModal = closeLiveCartsModal;
+    window.stopLiveCartsAutoRefresh = stopLiveCartsAutoRefresh;
     window.closeCartDetailModal = closeCartDetailModal;
     window.closeMemberInfoModal = closeMemberInfoModal;
   })();

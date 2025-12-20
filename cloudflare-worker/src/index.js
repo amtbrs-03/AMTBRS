@@ -342,7 +342,24 @@ https://ern-cicek.com.tr
             console.log('❌ Email exception:', emailError);
           }
         }
-        const body = JSON.stringify({ ok: true, orderId, commitOk, commitStatus, commitError, emailOk, emailError, customerEmailOk, customerEmailError, customerEmailLogOk, customerEmailLogError, order });
+
+        // Best-effort: Sipariş oluştuysa ilgili canlı sepet snapshot'ını temizle
+        // (müşteri ödeme sonrası sepetini yerelde temizlese bile admin canlı sepette görünmesin)
+        let cartClearedOk = null;
+        let cartClearedError = null;
+        try {
+          const emailForCart = (order && order.customerEmail) ? String(order.customerEmail).trim() : '';
+          if (commitOk && emailForCart && emailForCart !== 'misafir@ern-cicek.com') {
+            const r = await deleteCartFileForEmail(env, emailForCart);
+            cartClearedOk = !!(r && r.ok);
+            cartClearedError = r && r.ok ? null : (r && r.error ? r.error : null);
+          }
+        } catch (e) {
+          cartClearedOk = false;
+          cartClearedError = (e && e.message) ? e.message : String(e);
+        }
+
+        const body = JSON.stringify({ ok: true, orderId, commitOk, commitStatus, commitError, emailOk, emailError, customerEmailOk, customerEmailError, customerEmailLogOk, customerEmailLogError, cartClearedOk, cartClearedError, order });
         return new Response(body, { status: commitOk ? 201 : 200, headers: jsonHeaders(allowOrigin) });
       }
 
@@ -1550,6 +1567,63 @@ async function readJsonLoose(request) {
 
 async function safeText(res) {
   try { return await res.text(); } catch { return null; }
+}
+
+async function deleteCartFileForEmail(env, email) {
+  const owner = env.GITHUB_OWNER || 'amtbrs-03';
+  const repo = env.GITHUB_REPO || 'AMTBRS';
+  const branch = env.GITHUB_BRANCH || 'site-release';
+  const token = env.GITHUB_TOKEN || env.GH_TOKEN;
+
+  const normalizedEmail = String(email || '').toLowerCase().trim();
+  if (!normalizedEmail) return { ok: false, error: 'email eksik' };
+  if (!token) return { ok: false, error: 'GitHub token eksik' };
+
+  const safeEmail = normalizedEmail.replace(/[^a-z0-9._@-]/gi, '_');
+  const filePath = `carts/${safeEmail}.json`;
+  const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeGitHubPath(filePath)}`;
+
+  // 1) SHA al
+  const headRes = await fetch(apiUrl + `?ref=${branch}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github+json',
+      'User-Agent': 'Cloudflare-Worker'
+    }
+  });
+
+  if (headRes.status === 404) {
+    return { ok: true, alreadyMissing: true, path: filePath };
+  }
+  if (!headRes.ok) {
+    return { ok: false, status: headRes.status, error: await safeText(headRes), path: filePath };
+  }
+
+  const headData = await headRes.json();
+  const sha = headData && headData.sha;
+  if (!sha) return { ok: false, error: 'SHA bulunamadı', path: filePath };
+
+  // 2) Sil
+  const delRes = await fetch(apiUrl, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github+json',
+      'Content-Type': 'application/json',
+      'User-Agent': 'Cloudflare-Worker'
+    },
+    body: JSON.stringify({
+      message: `chore: cart cleared ${safeEmail}`,
+      sha,
+      branch
+    })
+  });
+
+  if (!delRes.ok) {
+    return { ok: false, status: delRes.status, error: await safeText(delRes), path: filePath };
+  }
+
+  return { ok: true, path: filePath };
 }
 
 async function writeEmailLogToGitHub({ env, log }) {
