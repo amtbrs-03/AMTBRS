@@ -6999,30 +6999,38 @@ try {
     };
 
       // Admin'den sepet silme fonksiyonu
-    window.deleteCartFromAdmin = async function(email) {
-      if (!confirm(`"${email}" sepetini silmek istediğinize emin misiniz?`)) {
-        return;
-      }
-      
+    window.deleteCartFromAdmin = function(email) {
+      openDeleteModal({
+        title: '🗑️ Sepet Silme',
+        icon: '🛒',
+        name: email,
+        desc: `"${escapeHtml(email)}" müşterisinin sepeti kalıcı olarak silinecektir.<br>Bu işlem geri alınamaz!`,
+        progressTitle: '🗑️ Sepet Siliniyor...',
+        type: 'cart',
+        data: { email },
+        onConfirm: performDeleteCartFromAdmin
+      });
+    };
+
+    async function performDeleteCartFromAdmin(data) {
+      const email = data && data.email;
+      if (!email) return;
+
       const token = getToken();
       if (!token) {
-        alert('GitHub token bulunamadı!');
+        finishDeleteError('GitHub token bulunamadı!');
         return;
       }
       
-      // Progress modal aç
-      openRefreshModal({
-        title: '🗑️ Sepet Siliniyor',
-        progressTitle: 'Sepet siliniyor...'
-      });
-      updateRefreshProgress(20, 'GitHub bağlantısı kuruluyor...');
+      showDeleteProgress();
+      updateDeleteProgress(20, 'GitHub bağlantısı kuruluyor...');
       
       try {
         const filePath = `carts/${email}.json`;
         const apiUrl = `https://api.github.com/repos/amtbrs-03/AMTBRS/contents/${encodeGitHubPath(filePath)}?ref=site-release`;
         
         // Önce SHA al
-        updateRefreshProgress(40, 'Dosya bilgisi alınıyor...');
+        updateDeleteProgress(40, 'Dosya bilgisi alınıyor...');
         const headRes = await fetch(apiUrl, {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -7038,7 +7046,7 @@ try {
         const sha = headData.sha;
         
         // Sil
-        updateRefreshProgress(70, 'Dosya siliniyor...');
+        updateDeleteProgress(70, 'Dosya siliniyor...');
         const delRes = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/${encodeGitHubPath(filePath)}`, {
           method: 'DELETE',
           headers: {
@@ -7057,8 +7065,8 @@ try {
           throw new Error('Silme işlemi başarısız: ' + delRes.status);
         }
         
-        updateRefreshProgress(100, 'Tamamlandı!');
-        finishRefreshSuccess('Sepet silindi: ' + email);
+        updateDeleteProgress(100, 'Tamamlandı!');
+        finishDeleteSuccess('Sepet silindi: ' + email);
         
         // Detay modalı kapat ve listeyi yenile
         closeCartDetailModal();
@@ -7066,10 +7074,9 @@ try {
         
       } catch (e) {
         console.error('Sepet silme hatası:', e);
-        finishRefreshError(e.message);
+        finishDeleteError(e.message);
       }
-    };
-
+    }
     // Modalı kapat
     function closeCartDetailModal() {
       const modal = document.getElementById('cartDetailModal');
