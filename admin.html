@@ -7647,13 +7647,12 @@ try {
 
       updateEmailLogsCount(logs.length);
 
-      // Müşteriye göre grupla: (isim + email)
+      // Kartları isim altında grupla (isim tıklanınca aç/kapa)
       const groupsMap = new Map();
       (logs||[]).forEach((entry)=>{
         const toName = String(entry?.toName || 'Müşteri').trim() || 'Müşteri';
-        const toEmail = String(entry?.toEmail || '').trim();
-        const key = (toName + '|' + toEmail).toLowerCase();
-        if(!groupsMap.has(key)) groupsMap.set(key, { toName, toEmail, items: [] });
+        const key = toName.toLowerCase();
+        if(!groupsMap.has(key)) groupsMap.set(key, { toName, items: [] });
         groupsMap.get(key).items.push(entry);
       });
 
@@ -7664,6 +7663,9 @@ try {
       }).sort((a,b)=> (b.latest||0) - (a.latest||0));
 
       host.innerHTML = '';
+      host.style.display = 'flex';
+      host.style.flexDirection = 'column';
+      host.style.gap = '0.9rem';
 
       function formatEmailLogTypeLabel(type){
         const t = String(type || '').trim();
@@ -7676,53 +7678,189 @@ try {
         return map[t] || t;
       }
 
-      function makeGroupHeader(group){
+      async function deleteEmailLogFile({ token, filePath, sha, fileName }){
+        if(!token) throw new Error('GitHub token bulunamadı');
+        if(!filePath) throw new Error('Dosya yolu eksik');
+        let fileSha = sha;
+        if(!fileSha){
+          const headUrl = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodePath(filePath)}?ref=${encodeURIComponent(BRANCH)}&_=${Date.now()}`;
+          const headRes = await ghFetch(headUrl, token);
+          if(!headRes.ok) throw new Error('SHA alınamadı: HTTP ' + headRes.status);
+          const meta = await headRes.json().catch(()=> ({}));
+          fileSha = meta?.sha || '';
+        }
+        if(!fileSha) throw new Error('SHA alınamadı');
+
+        const delUrl = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodePath(filePath)}`;
+        const res = await fetch(delUrl, {
+          method: 'DELETE',
+          headers: {
+            'Accept':'application/vnd.github.v3+json',
+            'Authorization': 'token ' + token,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: `chore(email-log): delete ${fileName || filePath}`,
+            sha: fileSha,
+            branch: BRANCH
+          })
+        });
+        if(!res.ok){
+          const t = await res.text().catch(()=> '');
+          throw new Error(`Silme başarısız: HTTP ${res.status} ${String(t||'').slice(0,180)}`);
+        }
+        return true;
+      }
+
+      async function performDeleteEmailLogGroup(group){
+        const token = (typeof getGitHubToken === 'function') ? getGitHubToken() : (localStorage.getItem('github_token')||localStorage.getItem('gh_token')||'');
+        if(!token){
+          finishDeleteError('GitHub token bulunamadı.');
+          return;
+        }
+        const items = Array.isArray(group?.items) ? group.items : [];
+        if(items.length === 0){
+          finishDeleteError('Silinecek kayıt bulunamadı.');
+          return;
+        }
+
+        showDeleteProgress();
+        updateDeleteProgress(5, 'Silme başlatılıyor...');
+
+        let okCount = 0;
+        let failCount = 0;
+        for(let i=0;i<items.length;i++){
+          const entry = items[i] || {};
+          const pct = 5 + Math.round(((i) / items.length) * 85);
+          updateDeleteProgress(pct, `Siliniyor... (${i+1}/${items.length})`);
+          try{
+            await deleteEmailLogFile({
+              token,
+              filePath: entry.__filePath,
+              sha: entry.__sha,
+              fileName: entry.__fileName
+            });
+            okCount++;
+          }catch(e){
+            failCount++;
+            console.warn('[admin] email-log delete failed:', e);
+          }
+        }
+
+        if(failCount === 0){
+          finishDeleteSuccess(`${okCount} e-posta kaydı silindi.`);
+        }else{
+          finishDeleteError(`${okCount} silindi, ${failCount} silinemedi. (Console'u kontrol edin)`);
+        }
+
+        // Listeyi tazele
+        setTimeout(()=>{ try{ loadEmailLogs(true); }catch(_){} }, 600);
+      }
+
+      function makeGroupSection(group){
+        const wrap = document.createElement('div');
+        wrap.style.border = '1px solid #e5e7eb';
+        wrap.style.borderRadius = '16px';
+        wrap.style.background = '#fff';
+        wrap.style.overflow = 'hidden';
+
         const header = document.createElement('div');
-        header.style.gridColumn = '1 / -1';
         header.style.display = 'flex';
         header.style.alignItems = 'center';
         header.style.justifyContent = 'space-between';
         header.style.gap = '0.75rem';
-        header.style.padding = '0.9rem 1.1rem';
-        header.style.border = '1px solid #e5e7eb';
-        header.style.borderRadius = '14px';
+        header.style.padding = '0.95rem 1.1rem';
+        header.style.cursor = 'pointer';
+        header.style.userSelect = 'none';
         header.style.background = 'linear-gradient(135deg,#eff6ff,#ffffff)';
 
         const left = document.createElement('div');
         left.style.minWidth = '0';
-        left.innerHTML = `
+        left.style.display = 'flex';
+        left.style.alignItems = 'center';
+        left.style.gap = '0.65rem';
+
+        const caret = document.createElement('div');
+        caret.textContent = '▸';
+        caret.style.fontWeight = '900';
+        caret.style.color = '#1e3a8a';
+        caret.style.transform = 'rotate(0deg)';
+        caret.style.transition = 'transform 140ms ease';
+
+        const nameBox = document.createElement('div');
+        nameBox.style.minWidth = '0';
+        nameBox.innerHTML = `
           <div style="font-weight:900;color:#0f172a;font-size:1.05rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeInput(group.toName||'Müşteri')}</div>
-          <div style="color:#64748b;font-size:0.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeInput(group.toEmail||'')}</div>
+          <div style="color:#64748b;font-size:0.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${group.items.length} e-posta • Son: ${safeInput(formatDateTr(group.latest || Date.now()))}</div>
         `.trim();
+
+        left.appendChild(caret);
+        left.appendChild(nameBox);
 
         const right = document.createElement('div');
         right.style.display = 'flex';
         right.style.alignItems = 'center';
         right.style.gap = '0.5rem';
 
-        const countPill = document.createElement('div');
-        countPill.style.background = 'rgba(37,99,235,0.10)';
-        countPill.style.color = '#1e3a8a';
-        countPill.style.padding = '4px 10px';
-        countPill.style.borderRadius = '999px';
-        countPill.style.fontSize = '0.9rem';
-        countPill.style.fontWeight = '900';
-        countPill.textContent = `${group.items.length} e-posta`;
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'btn btn-danger';
+        delBtn.textContent = '🗑️ Sil';
+        delBtn.style.padding = '0.5rem 0.9rem';
+        delBtn.style.fontSize = '0.95rem';
+        delBtn.addEventListener('click', (ev)=>{
+          ev.preventDefault();
+          ev.stopPropagation();
+          const name = group.toName || 'Müşteri';
+          openDeleteModal({
+            title: '🗑️ E-posta Kayıtlarını Sil',
+            icon: '⚠️',
+            name: name,
+            desc: `${safeInput(name)} adına bu listede görünen <b>${group.items.length}</b> e-posta kaydı silinecektir.<br>Bu işlem geri alınamaz!`,
+            progressTitle: '🗑️ E-posta kayıtları siliniyor...',
+            type: 'email-log-group',
+            data: { group },
+            onConfirm: () => performDeleteEmailLogGroup(group)
+          });
+        });
 
-        const lastPill = document.createElement('div');
-        lastPill.style.background = 'rgba(15,23,42,0.06)';
-        lastPill.style.color = '#334155';
-        lastPill.style.padding = '4px 10px';
-        lastPill.style.borderRadius = '999px';
-        lastPill.style.fontSize = '0.9rem';
-        lastPill.style.fontWeight = '800';
-        lastPill.textContent = `Son: ${formatDateTr(group.latest || Date.now())}`;
-
-        right.appendChild(countPill);
-        right.appendChild(lastPill);
+        right.appendChild(delBtn);
         header.appendChild(left);
         header.appendChild(right);
-        return header;
+        wrap.appendChild(header);
+
+        const grid = document.createElement('div');
+        grid.style.display = 'none';
+        grid.style.padding = '1rem';
+        grid.style.borderTop = '1px solid #e5e7eb';
+        grid.style.background = '#fff';
+        grid.style.display = 'none';
+        grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(360px, 1fr))';
+        grid.style.gap = '1.25rem';
+
+        // grid container for cards
+        const gridInner = document.createElement('div');
+        gridInner.style.display = 'grid';
+        gridInner.style.gridTemplateColumns = 'repeat(auto-fill, minmax(360px, 1fr))';
+        gridInner.style.gap = '1.25rem';
+        grid.appendChild(gridInner);
+        wrap.appendChild(grid);
+
+        let open = false;
+        const setOpen = (val) => {
+          open = !!val;
+          grid.style.display = open ? 'block' : 'none';
+          caret.style.transform = open ? 'rotate(90deg)' : 'rotate(0deg)';
+        };
+        setOpen(false);
+
+        header.addEventListener('click', ()=> setOpen(!open));
+
+        group.items.forEach((entry)=>{
+          gridInner.appendChild(makeEmailCard(entry));
+        });
+
+        return wrap;
       }
 
       function makeEmailCard(entry){
@@ -7772,10 +7910,7 @@ try {
       }
 
       groups.forEach((group)=>{
-        host.appendChild(makeGroupHeader(group));
-        group.items.forEach((entry)=>{
-          host.appendChild(makeEmailCard(entry));
-        });
+        host.appendChild(makeGroupSection(group));
       });
     }
 
@@ -7905,6 +8040,12 @@ try {
           const b64 = (meta && meta.content) ? String(meta.content).replace(/\n/g,'') : '';
           const txt = fromBase64(b64);
           const obj = JSON.parse(txt||'{}');
+          // Delete işlemleri için dosya meta
+          try{
+            obj.__filePath = f.path;
+            obj.__fileName = f.name;
+            obj.__sha = meta?.sha || null;
+          }catch(_){ /* ignore */ }
           logs.push(obj);
         }catch(e){
           // ignore tekil bozuk kayıt

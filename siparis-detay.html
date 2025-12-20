@@ -159,6 +159,62 @@
     .modal-btn.cancel{ background:#6b7280; color:#fff; }
     .modal-btn.primary{ background: linear-gradient(135deg, var(--green-primary) 0%, var(--green-dark) 100%); color:#fff; }
     .modal-btn.danger{ background:#dc2626; color:#fff; }
+
+    /* Full-page Invoice Panel */
+    .invoice-panel{
+      display:none;
+      position:fixed;
+      inset:0;
+      z-index:6500;
+      background:rgba(0,0,0,0.6);
+      -webkit-backdrop-filter:blur(6px);
+      backdrop-filter:blur(6px);
+    }
+    .invoice-panel.active{ display:flex; flex-direction:column; }
+    .invoice-panel-shell{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      margin:1rem;
+      background:#fff;
+      border-radius:16px;
+      overflow:hidden;
+      border:1px solid #e5e7eb;
+      box-shadow:0 18px 50px rgba(0,0,0,0.25);
+    }
+    .invoice-panel-header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:0.75rem;
+      padding:0.9rem 1.1rem;
+      border-bottom:1px solid #e5e7eb;
+      background:linear-gradient(135deg, var(--green-primary) 0%, var(--green-dark) 100%);
+      color:#fff;
+    }
+    .invoice-panel-title{
+      margin:0;
+      font-weight:900;
+      font-size:1rem;
+      letter-spacing:0.2px;
+    }
+    .invoice-panel-close{
+      cursor:pointer;
+      background:rgba(255,255,255,0.16);
+      border:1px solid rgba(255,255,255,0.22);
+      color:#fff;
+      border-radius:12px;
+      padding:0.55rem 0.85rem;
+      font-weight:900;
+    }
+    .invoice-panel-close:active{ transform:translateY(1px); }
+    .invoice-panel-body{ flex:1; background:#fff; }
+    .invoice-panel-iframe{
+      width:100%;
+      height:100%;
+      border:0;
+      background:#fff;
+    }
     
     /* Müşteri notu buton stilleri */
     #customerNoteBtn.has-unread-note {
@@ -220,6 +276,19 @@
     </div>
   </div>
 
+  <!-- Invoice Full Page Panel -->
+  <div id="invoicePanel" class="invoice-panel" role="dialog" aria-modal="true" aria-labelledby="invoicePanelTitle">
+    <div class="invoice-panel-shell">
+      <div class="invoice-panel-header">
+        <h3 id="invoicePanelTitle" class="invoice-panel-title">🧾 Bilgi Fişi</h3>
+        <button id="invoicePanelClose" class="invoice-panel-close" type="button">Kapat</button>
+      </div>
+      <div class="invoice-panel-body">
+        <iframe id="invoiceFrame" class="invoice-panel-iframe" title="Bilgi Fişi"></iframe>
+      </div>
+    </div>
+  </div>
+
   <script>
     function escapeHtml(s){ 
       if (typeof s !== 'string') {
@@ -231,6 +300,52 @@
     }
 
     let currentOrder = null;
+
+    // Invoice panel helpers
+    (function(){
+      const panel = document.getElementById('invoicePanel');
+      const frame = document.getElementById('invoiceFrame');
+      const titleEl = document.getElementById('invoicePanelTitle');
+      const closeBtn = document.getElementById('invoicePanelClose');
+
+      function openInvoicePanel(invoiceHTML, title){
+        if (!panel || !frame) {
+          // Fallback
+          const w = window.open('', '_blank');
+          if (w && w.document) {
+            w.document.write(invoiceHTML || '');
+            w.document.close();
+          }
+          return;
+        }
+        if (titleEl) titleEl.textContent = title || '🧾 Bilgi Fişi';
+        frame.srcdoc = String(invoiceHTML || '');
+        panel.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeInvoicePanel(){
+        if (!panel || !frame) return;
+        panel.classList.remove('active');
+        frame.srcdoc = '';
+        document.body.style.overflow = '';
+      }
+
+      window.openInvoicePanel = openInvoicePanel;
+      window.closeInvoicePanel = closeInvoicePanel;
+
+      if (closeBtn) closeBtn.addEventListener('click', closeInvoicePanel);
+      if (panel) {
+        panel.addEventListener('click', (ev) => {
+          if (ev && ev.target === panel) closeInvoicePanel();
+        });
+      }
+      document.addEventListener('keydown', (ev) => {
+        if (ev && ev.key === 'Escape' && panel && panel.classList.contains('active')) {
+          closeInvoicePanel();
+        }
+      });
+    })();
 
     // Framed modal dialog helpers (replace native alert/confirm)
     (function(){
@@ -638,6 +753,8 @@
         await appAlert('❌ Sipariş Hatası\n\nSipariş bilgisi yüklenemedi. Sayfayı yenileyip tekrar deneyin.');
         return;
       }
+
+      if (window._creatingInvoice) return;
       
       // Mojibake düzeltme fonksiyonu
       function normalizeText(s){
@@ -671,6 +788,23 @@
         }
       } catch (e) {
         console.warn('Bilgi Fişi mevcut mu kontrolü yapılamadı, devam ediliyor...', e);
+      }
+
+      const confirmMsg = `📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n📧 E-posta: ${currentOrder.customerEmail || '-'}\n\nBilgi fişi oluşturulursa:\n- Sipariş durumu \"Hazır\" konumuna geçecektir\n- Müşteriye bilgilendirme e-postası gönderilecektir\n\nDevam etmek istiyor musunuz?`;
+      const ok = await appConfirm(confirmMsg, {
+        title: '🧾 Bilgi Fişi Oluştur?',
+        type: 'danger',
+        confirmText: 'Evet, Oluştur',
+        cancelText: 'Vazgeç'
+      });
+      if (!ok) return;
+
+      window._creatingInvoice = true;
+      const createBtn = document.getElementById('createInvoiceBtn');
+      const prevBtnText = createBtn ? createBtn.textContent : '';
+      if (createBtn) {
+        createBtn.disabled = true;
+        createBtn.textContent = '🧾 Oluşturuluyor...';
       }
       
       // Create invoice HTML
@@ -802,16 +936,24 @@
 </body>
 </html>`;
       
-      // Open in new window
-      const invoiceWindow = window.open('', '_blank');
-      invoiceWindow.document.write(invoiceHTML);
-      invoiceWindow.document.close();
+      // Open in full-page panel
+      try {
+        window.openInvoicePanel && window.openInvoicePanel(invoiceHTML, `🧾 Bilgi Fişi - ${currentOrder.id}`);
+      } catch (_) {
+        // ignore; fallback handled in helper
+      }
       
       // Store invoice HTML for later use (e.g., sending with order-ready email)
       window._lastInvoiceHTML = invoiceHTML;
       
       // Save invoice to GitHub
-      saveInvoiceToGitHub(currentOrder.id, invoiceHTML);
+      const savedOk = await saveInvoiceToGitHub(currentOrder.id, invoiceHTML);
+      if (!savedOk && createBtn) {
+        createBtn.disabled = false;
+        createBtn.textContent = prevBtnText || '🧾 Bilgi Fişi Oluştur';
+      }
+
+      window._creatingInvoice = false;
     }
 
     // Check if invoice already exists in the repository
@@ -863,7 +1005,7 @@
         
         if (!statusUpdateResult) {
           await appAlert('⚠️ Sipariş durumu güncellenemedi. Lütfen console\'u kontrol edin.');
-          return;
+          return false;
         }
         
         const invoiceData = {
@@ -879,7 +1021,7 @@
         if (!token) {
           console.error('No GitHub token available');
           await appAlert('⚠️ Yetki bulunamadı. Admin panelinden yetkilendirme ayarını yapın.');
-          return;
+          return false;
         }
         
         // Save invoice directly using GitHub API (not dispatch)
@@ -896,7 +1038,7 @@
             btn.disabled = true;
             btn.textContent = '🧾 Bilgi Fişi Zaten Oluşturulmuş';
           }
-          return;
+          return true;
         }
 
         const response = await fetch(`https://api.github.com/repos/amtbrs-03/AMTBRS/contents/invoices/${invoiceFileName}`, {
@@ -926,14 +1068,16 @@
           currentOrder.status = 'ready';
           renderOrderDetail(currentOrder);
           await appAlert(`✅ Bilgi Fişi Kaydedildi\n\n📦 Sipariş: ${currentOrder.id}\n👤 Müşteri: ${currentOrder.customerName || currentOrder.customer || currentOrder.name || '-'}\n💰 Tutar: ${currentOrder.total || '-'} TL\n\nBilgi Fişi başarıyla sisteme kaydedildi.\nSipariş durumu "Hazır" olarak güncellendi.`);
+          return true;
         } else {
           const errorText = await response.text();
           console.error('❌ Invoice save failed:', response.status, errorText);
           await appAlert(`⚠️ Bilgi Fişi Kayıt Uyarısı\n\n📦 Sipariş: ${currentOrder.id}\n\nBilgi fişi kaydedilemedi ancak sipariş durumu güncellendi.\nDetaylar için console'u kontrol edin.`);
+          return false;
         }
       } catch(err) {
         console.error('Failed to save invoice to GitHub:', err);
-        // Don't show error to user, just log it
+        return false;
       }
     }
 

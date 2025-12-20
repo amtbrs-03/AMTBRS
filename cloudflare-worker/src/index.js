@@ -1,3 +1,5 @@
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -622,17 +624,33 @@ https://ern-cicek.com.tr
             `<tr><td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;">${item.name}</td><td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;text-align:center;">${item.qty || item.quantity || 1}</td><td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;text-align:right;">₺${item.price}</td></tr>`
           ).join('');
 
-          // Bilgi fişini ek (varsa) - Resend attachment base64(utf8)
+          // Bilgi fişini PDF olarak ekle
           const attachments = [];
-          if (invoiceHtml && String(invoiceHtml).trim()) {
-            try {
-              const safeInvoiceHtml = String(invoiceHtml);
-              attachments.push({
-                filename: `bilgi-fisi-${orderId}.html`,
-                content: btoa(unescape(encodeURIComponent(safeInvoiceHtml)))
-              });
-            } catch (e) {
-              console.log('⚠️ invoiceHtml attachment hazırlanamadı:', (e && e.message) ? e.message : String(e));
+          try {
+            const pdfBytes = await buildInvoicePdfBytes({
+              orderId,
+              customerName,
+              customerEmail,
+              address,
+              items,
+              total,
+              createdAt: Date.now()
+            });
+            attachments.push({
+              filename: `bilgi-fisi-${orderId}.pdf`,
+              content: uint8ToBase64(pdfBytes)
+            });
+          } catch (e) {
+            console.log('⚠️ PDF bilgi fişi üretilemedi (fallback deneniyor):', (e && e.message) ? e.message : String(e));
+            // Fallback: Eski davranış (HTML ek) — hiç ek yoksa da mail yine gider.
+            if (invoiceHtml && String(invoiceHtml).trim()) {
+              try {
+                const safeInvoiceHtml = String(invoiceHtml);
+                attachments.push({
+                  filename: `bilgi-fisi-${orderId}.html`,
+                  content: btoa(unescape(encodeURIComponent(safeInvoiceHtml)))
+                });
+              } catch (_) {}
             }
           }
           
@@ -694,7 +712,7 @@ https://ern-cicek.com.tr
       
       <div style="margin:25px 0;padding:20px;background:#f0fdf4;border:2px solid #10b981;border-radius:12px;text-align:center;">
         <h3 style="color:#064e3b;margin:0 0 12px 0;">📄 Bilgi Fişiniz</h3>
-        <p style="color:#475569;font-size:14px;margin:0;">Bilgi fişiniz bu e-postaya ek olarak iletilmiştir.</p>
+        <p style="color:#475569;font-size:14px;margin:0;">Bilgi fişiniz PDF olarak bu e-postaya eklenmiştir.</p>
       </div>
       
       <p style="color:#475569;margin-top:25px;">Sorularınız için bize ulaşabilirsiniz:</p>
@@ -730,7 +748,7 @@ ${address}
 
 Kargo takip numaranız e-posta ile iletilecektir.
 
-Bilgi fişiniz bu e-postaya ek olarak iletilmiştir.
+Bilgi fişiniz PDF olarak bu e-postaya eklenmiştir.
 
 Sorularınız için:
 📱 WhatsApp: +90 538 417 90 81
@@ -1284,6 +1302,168 @@ function corsHeaders(origin, request) {
 
 function jsonHeaders(origin) {
   return { ...corsHeaders(origin), 'Content-Type': 'application/json; charset=utf-8' };
+}
+
+function toAsciiTr(input) {
+  const s = String(input || '');
+  // PDF StandardFonts her ortamda Türkçe glyph setini garanti etmez.
+  // Bu yüzden PDF içinde güvenli ASCII karşılıkları kullanıyoruz.
+  return s
+    .replace(/ğ/g, 'g').replace(/Ğ/g, 'G')
+    .replace(/ş/g, 's').replace(/Ş/g, 'S')
+    .replace(/ı/g, 'i').replace(/İ/g, 'I')
+    .replace(/ö/g, 'o').replace(/Ö/g, 'O')
+    .replace(/ü/g, 'u').replace(/Ü/g, 'U')
+    .replace(/ç/g, 'c').replace(/Ç/g, 'C')
+    .replace(/â/g, 'a').replace(/Â/g, 'A')
+    .replace(/î/g, 'i').replace(/Î/g, 'I')
+    .replace(/û/g, 'u').replace(/Û/g, 'U');
+}
+
+function uint8ToBase64(u8) {
+  const bytes = u8 instanceof Uint8Array ? u8 : new Uint8Array(u8 || []);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+
+function formatMoneyTry(v) {
+  try {
+    const n = Number(String(v || '').replace(',', '.'));
+    if (Number.isFinite(n)) return n.toFixed(2);
+  } catch (_) {}
+  return String(v || '0');
+}
+
+function wrapText(text, font, size, maxWidth) {
+  const s = String(text || '').replace(/\s+/g, ' ').trim();
+  if (!s) return [''];
+  const words = s.split(' ');
+  const lines = [];
+  let current = '';
+  for (const w of words) {
+    const next = current ? (current + ' ' + w) : w;
+    const width = font.widthOfTextAtSize(next, size);
+    if (width <= maxWidth) {
+      current = next;
+      continue;
+    }
+    if (current) lines.push(current);
+    current = w;
+  }
+  if (current) lines.push(current);
+  return lines.length ? lines : [''];
+}
+
+async function buildInvoicePdfBytes({ orderId, customerName, customerEmail, address, items, total, createdAt }) {
+  const pdfDoc = await PDFDocument.create();
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  const pageSize = [595.28, 841.89]; // A4
+  const margin = 40;
+  const lineHeight = 14;
+  const tableRowH = 16;
+
+  let page = pdfDoc.addPage(pageSize);
+  let y = page.getHeight() - margin;
+
+  const draw = (text, opts = {}) => {
+    const {
+      size = 11,
+      bold = false,
+      color = rgb(0.1, 0.14, 0.2),
+      x = margin,
+      maxWidth = page.getWidth() - margin * 2
+    } = opts;
+    const usedFont = bold ? fontBold : font;
+    const raw = toAsciiTr(text);
+    const lines = wrapText(raw, usedFont, size, maxWidth);
+    for (const ln of lines) {
+      if (y < margin + 80) {
+        page = pdfDoc.addPage(pageSize);
+        y = page.getHeight() - margin;
+      }
+      page.drawText(ln, { x, y, size, font: usedFont, color });
+      y -= lineHeight;
+    }
+  };
+
+  // Header
+  draw('ERN Tropikal Cicek', { size: 18, bold: true, color: rgb(0.02, 0.3, 0.23) });
+  draw('Bilgi Fisi (PDF)', { size: 12, bold: true });
+  draw(`Siparis No: ${orderId || '-'}`, { bold: true });
+  draw(`Tarih: ${new Date(createdAt || Date.now()).toLocaleString('tr-TR')}`);
+  y -= 6;
+
+  // Customer
+  draw('Musteri Bilgileri', { bold: true, color: rgb(0.02, 0.3, 0.23) });
+  draw(`Ad Soyad: ${customerName || '-'}`);
+  draw(`E-posta: ${customerEmail || '-'}`);
+  draw(`Adres: ${address || '-'}`);
+  y -= 6;
+
+  // Items table
+  draw('Urun Listesi', { bold: true, color: rgb(0.02, 0.3, 0.23) });
+
+  const tableX = margin;
+  const tableW = page.getWidth() - margin * 2;
+  const col1 = Math.floor(tableW * 0.58);
+  const col2 = Math.floor(tableW * 0.12);
+  const col3 = tableW - col1 - col2;
+
+  const ensureSpaceFor = (px) => {
+    const minY = margin + 60;
+    if (y - px < minY) {
+      page = pdfDoc.addPage(pageSize);
+      y = page.getHeight() - margin;
+    }
+  };
+
+  ensureSpaceFor(80);
+  page.drawRectangle({ x: tableX, y: y - 4, width: tableW, height: tableRowH + 6, color: rgb(0.94, 0.98, 0.96) });
+  page.drawText('Urun', { x: tableX + 8, y: y + 4, size: 10, font: fontBold, color: rgb(0.02, 0.3, 0.23) });
+  page.drawText('Adet', { x: tableX + col1 + 8, y: y + 4, size: 10, font: fontBold, color: rgb(0.02, 0.3, 0.23) });
+  page.drawText('Tutar', { x: tableX + col1 + col2 + 8, y: y + 4, size: 10, font: fontBold, color: rgb(0.02, 0.3, 0.23) });
+  y -= (tableRowH + 10);
+
+  const safeItems = Array.isArray(items) ? items : [];
+  for (const it of safeItems) {
+    const qtyVal = (it?.qty || it?.quantity || 1);
+    const unitPrice = Number(it?.price || 0);
+    const lineTotal = Number.isFinite(unitPrice) ? (unitPrice * Number(qtyVal || 1)) : 0;
+
+    const name = toAsciiTr(it?.name || '-');
+    const qty = String(qtyVal || 1);
+    const price = formatMoneyTry(lineTotal || it?.price || 0);
+
+    const nameLines = wrapText(name, font, 10, col1 - 16);
+    const rowLines = Math.max(1, nameLines.length);
+    const rowH = Math.max(tableRowH, rowLines * 12);
+
+    ensureSpaceFor(rowH + 24);
+    page.drawLine({ start: { x: tableX, y: y + 6 }, end: { x: tableX + tableW, y: y + 6 }, thickness: 1, color: rgb(0.9, 0.91, 0.92) });
+
+    let nameY = y;
+    for (const ln of nameLines) {
+      page.drawText(ln, { x: tableX + 8, y: nameY, size: 10, font, color: rgb(0.1, 0.14, 0.2) });
+      nameY -= 12;
+    }
+    page.drawText(qty, { x: tableX + col1 + 8, y, size: 10, font, color: rgb(0.1, 0.14, 0.2) });
+    page.drawText(`TL ${price}`, { x: tableX + col1 + col2 + 8, y, size: 10, font, color: rgb(0.1, 0.14, 0.2) });
+
+    y -= (rowH + 8);
+  }
+
+  ensureSpaceFor(80);
+  page.drawLine({ start: { x: tableX, y }, end: { x: tableX + tableW, y }, thickness: 1.2, color: rgb(0.1, 0.7, 0.5) });
+  y -= 18;
+  page.drawText(`GENEL TOPLAM: TL ${toAsciiTr(String(total || '0'))}`, { x: tableX, y, size: 12, font: fontBold, color: rgb(0.02, 0.3, 0.23) });
+
+  y -= 30;
+  draw('Not: Bu belge bilgilendirme amaclidir. Fatura veya irsaliye yerine gecmez.', { size: 9, color: rgb(0.4, 0.45, 0.5) });
+
+  return await pdfDoc.save();
 }
 
 function encodeGitHubPath(path) {
