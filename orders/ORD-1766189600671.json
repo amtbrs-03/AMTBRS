@@ -8,7 +8,7 @@
   "iban": "TRXX 0006 1005 1978 6457 8413 26",
   "note": "",
   "noteRead": false,
-  "status": "ready",
+  "status": "shipped",
   "items": [
     {
       "id": "TEMP-1765831765562",
@@ -38,5 +38,9 @@
       "updatedAt": 1766179388865
     }
   ],
-  "total": "5060.00"
+  "total": "5060.00",
+  "trackingNumber": "KSRTY-45678932",
+  "trackingNumberUpdatedAt": 1766190445947,
+  "shippedAt": 1766190445947,
+  "trackingEmailSentAt": 1766190445947
 }
