@@ -115,6 +115,17 @@
       font-size:0.85rem;
     }
 
+    /* Action buttons in table: keep delete on the far right */
+    .invoice-actions{
+      display:flex;
+      align-items:center;
+      gap:0.6rem;
+      width:100%;
+    }
+    .invoice-actions .invoice-delete-btn{
+      margin-left:auto;
+    }
+
     .stats{
       display:grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -672,8 +683,10 @@
         html += `<td style="font-weight:500;">${escapeHtml(invoice.orderId || '-')}</td>`;
         html += `<td style="color:var(--muted);">${createdDate}</td>`;
         html += `<td>`;
+        html += `<div class="invoice-actions">`;
         html += `<button class="btn btn-inline" onclick="event.stopPropagation();viewInvoice('${escapeHtml(invoice.orderId)}')">👁️ Görüntüle</button>`;
-        html += ` <button class="btn btn-danger btn-inline" onclick="event.stopPropagation();deleteInvoiceConfirm('${escapeHtml(invoice.orderId)}')">🗑️ Sil</button>`;
+        html += `<button class="btn btn-danger btn-inline invoice-delete-btn" onclick="event.stopPropagation();deleteInvoiceConfirm('${escapeHtml(invoice.orderId)}')">🗑️ Sil</button>`;
+        html += `</div>`;
         html += `</td>`;
         html += '</tr>';
       });
