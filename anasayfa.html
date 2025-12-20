@@ -5644,10 +5644,14 @@
                     }
 
                     function updateCartCount() {
-                        const user = getCurrentUser();
+                        let user = null;
+                        try { user = getCurrentUser(); } catch(_e) { user = null; }
                         const badge = document.getElementById('cartCount');
-                        if (!user) {
+                        if (!badge) return;
+                        // Üye giriş yapmamışsa sayaç asla görünmesin (mobil/desktop)
+                        if (!user || !user.email) {
                             badge.classList.add('hidden');
+                            badge.style.display = 'none';
                             badge.textContent = '0';
                             return;
                         }
@@ -5656,6 +5660,7 @@
                         badge.textContent = totalQty;
                         // Üye giriş yaptıysa sayaç aktif/görünür olsun (sepet boş olsa bile 0 göster)
                         badge.classList.remove('hidden');
+                        badge.style.display = '';
                         // keep mini cart in sync
                         try{ renderMiniCart(); }catch(e){}
                     }
