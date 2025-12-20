@@ -3233,7 +3233,7 @@
               <button id="closeLiveCartsBtn" class="close-modal" type="button" style="font-size:1.8rem;background:none;border:none;cursor:pointer;color:#6b7280;padding:0.5rem;">&times;</button>
             </div>
           </div>
-          <div id="liveCartsList" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));gap:1.25rem;padding:2rem;">
+          <div id="liveCartsList" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:1.25rem;padding:2rem;">
             <div style="text-align:center;padding:2rem;color:#6b7280;font-size:1rem;">Sepetler yükleniyor...</div>
           </div>
         </div>
@@ -6894,7 +6894,7 @@ try {
 
         const grid = document.createElement('div');
         grid.style.display = 'grid';
-        grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(320px, 1fr))';
+        grid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(320px, 1fr))';
         grid.style.gap = '1.25rem';
         grid.innerHTML = group.items.map(c => renderCartCard(c)).join('');
         content.appendChild(grid);
