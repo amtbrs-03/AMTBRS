@@ -9,7 +9,10 @@ GITHUB_BRANCH = "site-release"
 TO_EMAIL = "amtbrs@icloud.com"
 FROM_EMAIL = "no-reply@ern-cicek.com.tr"
 
-# Optional (recommended): Unicode-capable TTF font for PDF invoices
-# - Put as a secret to avoid committing large base64 to the repo:
-#   wrangler secret put INVOICE_TTF_BASE64
-# - Value: base64-encoded .ttf (you can paste output of `base64`)
+# Unicode TTF font for invoice PDFs (Turkish characters)
+# NOTE: Base64 secrets are too small for full TTFs on Cloudflare (limit ~5KB).
+# Recommended: host a .ttf at a public URL and set it here.
+INVOICE_FONT_URL = "https://github.com/googlefonts/noto-fonts/raw/main/hinted/ttf/NotoSans/NotoSans-Regular.ttf"
+
+# Optional (not recommended): base64 TTF support exists for compatibility,
+# but most real TTF files exceed Cloudflare secret size limits.

@@ -1336,6 +1336,35 @@ function base64ToUint8Array(base64) {
   return u8;
 }
 
+let cachedInvoiceFontBytes = null;
+let cachedInvoiceFontUrl = null;
+
+async function getInvoiceTtfBytes(env) {
+  // 1) Base64 (usually too large for Cloudflare secrets; kept for compatibility)
+  try {
+    const ttfBase64 = env?.INVOICE_TTF_BASE64 || env?.INVOICE_FONT_TTF_BASE64;
+    const fromB64 = base64ToUint8Array(ttfBase64);
+    if (fromB64 && fromB64.length) return fromB64;
+  } catch (_) {}
+
+  // 2) URL fetch (recommended)
+  const url = String(env?.INVOICE_FONT_URL || '').trim();
+  if (!url) return null;
+  if (cachedInvoiceFontBytes && cachedInvoiceFontUrl === url) return cachedInvoiceFontBytes;
+
+  const res = await fetch(url, {
+    // Some hosts dislike default UA; provide a stable one.
+    headers: { 'User-Agent': 'ern-site-worker' }
+  });
+  if (!res.ok) throw new Error(`Font indirilemedi: ${res.status}`);
+  const buf = await res.arrayBuffer();
+  const u8 = new Uint8Array(buf);
+  if (!u8.length) throw new Error('Font indirildi ama bos');
+  cachedInvoiceFontBytes = u8;
+  cachedInvoiceFontUrl = url;
+  return u8;
+}
+
 function uint8ToBase64(u8) {
   const bytes = u8 instanceof Uint8Array ? u8 : new Uint8Array(u8 || []);
   let bin = '';
@@ -1375,14 +1404,13 @@ async function buildInvoicePdfBytes({ orderId, customerName, customerEmail, addr
   const pdfDoc = await PDFDocument.create();
 
   // Optional: Embed a Unicode-capable TTF font so Turkish characters render correctly.
-  // Set via Worker secret/var: INVOICE_TTF_BASE64 (base64 of .ttf file)
-  // If not provided, fall back to StandardFonts + ASCII normalization.
+  // Recommended config: INVOICE_FONT_URL (public URL to a .ttf)
+  // Base64 env keys are also supported but often exceed Cloudflare secret size limits.
   let canUseUnicode = false;
   let font;
   let fontBold;
   try {
-    const ttfBase64 = env?.INVOICE_TTF_BASE64 || env?.INVOICE_FONT_TTF_BASE64;
-    const fontBytes = base64ToUint8Array(ttfBase64);
+    const fontBytes = await getInvoiceTtfBytes(env);
     if (fontBytes && fontBytes.length) {
       font = await pdfDoc.embedFont(fontBytes);
       // Bold: reuse same font (keeps bundle smaller). If you want true bold, provide a bold TTF and extend this.
