@@ -3567,6 +3567,22 @@
                             return;
                         }
 
+                        // UX: Tıklandığı anda bekleme hissini azalt
+                        const __loginFormEl = document.getElementById('loginForm');
+                        const __loginBtn = __loginFormEl ? __loginFormEl.querySelector('button[type="submit"]') : null;
+                        const __btnPrevText = __loginBtn ? __loginBtn.textContent : '';
+                        try {
+                            if (__loginBtn) {
+                                __loginBtn.disabled = true;
+                                __loginBtn.textContent = 'Giriş yapılıyor...';
+                                __loginBtn.style.opacity = '0.85';
+                                __loginBtn.style.cursor = 'not-allowed';
+                            }
+                        } catch(_e) {}
+                        // Tarayıcının UI'ı çizmesine izin ver
+                        await new Promise(res => requestAnimationFrame(() => res()));
+
+                        try {
                         console.log('loginUser: ========== LOGIN ATTEMPT START ==========');
                         console.log('loginUser: Email:', email);
                         console.log('loginUser: Device:', navigator.userAgent);
@@ -3593,13 +3609,23 @@
                         
                         let userStr = null;
                         let userData = null;
+                        let cacheSource = '';
+
+                        // Önce sessionStorage (mobilde de hızlı) cache'i dene
+                        try {
+                            userStr = sessionStorage.getItem('user_' + email);
+                            if (userStr) cacheSource = 'sessionStorage';
+                        } catch(_e) {}
                         
-                        // On mobile, skip localStorage and go straight to GitHub
-                        if (!isMobile) {
-                            userStr = localStorage.getItem('user_' + email);
-                            console.log('loginUser: localStorage check:', userStr ? 'FOUND' : 'NOT FOUND');
-                        } else {
-                            console.log('loginUser: Mobile device - skipping localStorage, will fetch from GitHub');
+                        // Desktop'ta localStorage cache'i de dene (sessionStorage yoksa)
+                        if (!userStr) {
+                            if (!isMobile) {
+                                userStr = localStorage.getItem('user_' + email);
+                                if (userStr) cacheSource = 'localStorage';
+                                console.log('loginUser: localStorage check:', userStr ? 'FOUND' : 'NOT FOUND');
+                            } else {
+                                console.log('loginUser: Mobile device - skipping localStorage, will fetch from GitHub');
+                            }
                         }
                         
                         if (userStr) {
@@ -3607,25 +3633,11 @@
                             try {
                                 userData = JSON.parse(userStr);
                                 console.log('loginUser: ✓ Parse successful');
-                                
-                                // Kullanıcı silinmiş mi kontrol et (GitHub'dan doğrula)
-                                console.log('loginUser: Verifying user still exists in GitHub...');
-                                try {
-                                    const remoteUser = await fetchUserFromRepo(email);
-                                    if (!remoteUser) {
-                                        console.log('loginUser: ⚠️ User deleted from GitHub - blocking login');
-                                        localStorage.removeItem('user_' + email);
-                                        localStorage.removeItem('currentUser');
-                                        showNotification('❌ Bu hesap silinmiş veya devre dışı bırakılmış. Lütfen tekrar kayıt olun.', {type: 'error', duration: 4000});
-                                        // Kayıt formuna yönlendir
-                                        switchTab('register', document.querySelector('.form-tab'));
-                                        return;
-                                    }
-                                    // Remote'daki güncel veriyi kullan
-                                    userData = remoteUser;
-                                    console.log('loginUser: ✓ User verified in GitHub');
-                                } catch(e) {
-                                    console.log('loginUser: Could not verify with GitHub, using cached data');
+
+                                // Performans: Cache'i doğrulamayı login sonrasına bırak (best-effort)
+                                // Not: Silinmiş kullanıcı kontrolü zaten periyodik checkSession ile yakalanır.
+                                if (cacheSource === 'localStorage') {
+                                    console.log('loginUser: Cache source localStorage (verify later)');
                                 }
                                 
                                 console.log('loginUser: Data structure:', {
@@ -3641,7 +3653,10 @@
                             } catch(e) {
                                 console.error('loginUser: ⚠️ localStorage parse error', e);
                                 console.log('loginUser: Clearing corrupted data and fetching from remote');
-                                localStorage.removeItem('user_' + email);
+                                try {
+                                    if (cacheSource === 'sessionStorage') sessionStorage.removeItem('user_' + email);
+                                    else localStorage.removeItem('user_' + email);
+                                } catch(_e) {}
                                 userStr = null;
                             }
                         }
@@ -3671,6 +3686,9 @@
                                     } else {
                                         console.log('loginUser: Mobile device - skipping localStorage cache');
                                     }
+
+                                    // Her durumda sessionStorage cache (hız için)
+                                    try { sessionStorage.setItem('user_' + email, JSON.stringify(userData)); } catch(_e) {}
                                 } else {
                                     console.error('loginUser: ⚠️ User not found in remote repo');
                                     showNotification('👤 Kullanıcı bulunamadı. Lütfen önce kayıt olun.', {type: 'error', duration: 3500});
@@ -3775,17 +3793,19 @@
                         const newSessionId = generateSessionId();
                         setLocalSessionMeta(email, newSessionId, Date.now());
                         console.log('loginUser: ✓ Yeni sessionId oluşturuldu');
-                        
-                        // update lastLogin and sessionId remotely (best-effort)
-                        try{ 
-                            await commitFullUserToRepo({ ...userData, lastLogin: Date.now(), sessionId: newSessionId, sessionIdUpdatedAt: Date.now() }); 
-                            console.log('loginUser: ✓ lastLogin ve sessionId güncellendi');
-                        }catch(e){
-                            console.warn('loginUser: Could not update remotely', e);
-                        }
 
-                        // En yeni oturum: sepeti sistemden çek (best-effort)
-                        try { await syncCartFromSystem(email); } catch(_e) {}
+                        // Performans: remote update + sepet çekme işlemlerini arka plana at (UI beklemesin)
+                        try {
+                            commitFullUserToRepo({ ...userData, lastLogin: Date.now(), sessionId: newSessionId, sessionIdUpdatedAt: Date.now() })
+                                .then(() => console.log('loginUser: ✓ lastLogin ve sessionId güncellendi'))
+                                .catch(e => console.warn('loginUser: Could not update remotely', e));
+                        } catch(_e) {}
+
+                        try {
+                            syncCartFromSystem(email)
+                                .then(() => {})
+                                .catch(() => {});
+                        } catch(_e) {}
                         
                         console.log('loginUser: ✓ LOGIN SUCCESS - updating UI');
                         closeAuthModal();
@@ -3793,6 +3813,16 @@
                         updateCartCount();
                         document.getElementById('loginEmail').value = '';
                         document.getElementById('loginPassword').value = '';
+
+                        // login butonu eski haline gelsin
+                        try {
+                            if (__loginBtn) {
+                                __loginBtn.disabled = false;
+                                __loginBtn.textContent = __btnPrevText || 'Giriş Yap';
+                                __loginBtn.style.opacity = '';
+                                __loginBtn.style.cursor = '';
+                            }
+                        } catch(_e) {}
                         
                         console.log('loginUser: ========== LOGIN ATTEMPT END (SUCCESS) ==========');
                         
@@ -3801,6 +3831,19 @@
                         
                         // Periyodik sepet senkronizasyonunu başlat
                         startPeriodicSync();
+                        } finally {
+                            // Her durumda buton durumunu düzelt (erken return'lerde stuck kalmasın)
+                            try {
+                                if (__loginBtn) {
+                                    __loginBtn.disabled = false;
+                                    if (__loginBtn.textContent === 'Giriş yapılıyor...') {
+                                        __loginBtn.textContent = __btnPrevText || 'Giriş Yap';
+                                    }
+                                    __loginBtn.style.opacity = '';
+                                    __loginBtn.style.cursor = '';
+                                }
+                            } catch(_e) {}
+                        }
                     }
 
                     function updateUIAfterLogin(name) {
