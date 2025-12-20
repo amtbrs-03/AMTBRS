@@ -78,8 +78,9 @@ export default {
               const headRes = await fetch(apiUrl + `?ref=${branch}`, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'Cloudflare-Worker' } });
               if (headRes.ok) { const j = await headRes.json(); existingSha = j.sha; }
             } catch (_) {}
-            const content = btoa(unescape(encodeURIComponent(JSON.stringify(order, null, 2))));
-            const body = { message: `feat(order): create ${orderId}`, content, branch };
+            const jsonStr = JSON.stringify(order, null, 2);
+            const contentBase64 = btoa(new TextEncoder().encode(jsonStr).reduce((a, b) => a + String.fromCharCode(b), ''));
+            const body = { message: `feat(order): create ${orderId}`, content: contentBase64, branch };
             if (existingSha) body.sha = existingSha;
             const putRes = await fetch(apiUrl, { method: 'PUT', headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json', 'User-Agent': 'Cloudflare-Worker' }, body: JSON.stringify(body) });
             commitStatus = putRes.status;
@@ -665,7 +666,7 @@ https://ern-cicek.com.tr
                 const safeInvoiceHtml = String(invoiceHtml);
                 attachments.push({
                   filename: `bilgi-fisi-${orderId}.html`,
-                  content: btoa(unescape(encodeURIComponent(safeInvoiceHtml)))
+                  content: btoa(new TextEncoder().encode(safeInvoiceHtml).reduce((a, b) => a + String.fromCharCode(b), ''))
                 });
               } catch (_) {}
             }
@@ -1083,7 +1084,7 @@ https://ern-cicek.com.tr
             updated.trackingEmailSentAt = Date.now();
           }
 
-          const content = btoa(unescape(encodeURIComponent(JSON.stringify(updated, null, 2))));
+          const content = btoa(new TextEncoder().encode(JSON.stringify(updated, null, 2)).reduce((a, b) => a + String.fromCharCode(b), ''));
           const message = emailOk
             ? `feat(order): mark shipped ${orderId}`
             : `chore(order): add trackingNumber ${orderId}`;
@@ -1183,7 +1184,7 @@ https://ern-cicek.com.tr
                 if (headRes.ok) { const j = await headRes.json(); existingSha = j.sha; }
               } catch (_) {}
               
-              const content = btoa(unescape(encodeURIComponent(JSON.stringify(user, null, 2))));
+              const content = btoa(new TextEncoder().encode(JSON.stringify(user, null, 2)).reduce((a, b) => a + String.fromCharCode(b), ''));
               const body = { message: `feat(user): update ${safeEmail}`, content, branch };
               if (existingSha) body.sha = existingSha;
               
@@ -1641,7 +1642,7 @@ async function writeEmailLogToGitHub({ env, log }) {
 
   const filePath = `email-logs/${sentAtMs}_${type}_${orderId}_${safeEmail}.json`;
   const contentJson = JSON.stringify(log, null, 2);
-  const content = btoa(unescape(encodeURIComponent(contentJson)));
+  const content = btoa(new TextEncoder().encode(contentJson).reduce((a, b) => a + String.fromCharCode(b), ''));
   const message = `chore(email-log): ${type} ${orderId} -> ${safeEmail}`;
 
   const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeGitHubPath(filePath)}`;
