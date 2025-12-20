@@ -4,6 +4,12 @@
   <meta charset="utf-8" />
   <title>Admin - ERN-ÇİÇEK</title>
   <script>
+    // Sayfa yenilendiğinde her zaman en üstten başlat
+    try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch(_e) {}
+    function __forceTop(){ try { window.scrollTo(0, 0); } catch(_e) {} }
+    window.addEventListener('pageshow', __forceTop);
+    window.addEventListener('load', __forceTop);
+
     // Admin erişimi - süresiz oturum (çıkış butonuna basılmadığı sürece açık kalır)
     // Token girilmemişse modal açılacak, girilmişse direkt erişim
     try {
