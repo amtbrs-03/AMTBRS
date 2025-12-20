@@ -635,7 +635,7 @@ https://ern-cicek.com.tr
               items,
               total,
               createdAt: Date.now()
-            });
+            }, env);
             attachments.push({
               filename: `bilgi-fisi-${orderId}.pdf`,
               content: uint8ToBase64(pdfBytes)
@@ -1307,7 +1307,7 @@ function jsonHeaders(origin) {
 function toAsciiTr(input) {
   const s = String(input || '');
   // PDF StandardFonts her ortamda Türkçe glyph setini garanti etmez.
-  // Bu yüzden PDF içinde güvenli ASCII karşılıkları kullanıyoruz.
+  // Bu yüzden (TTF font embed edilmediyse) PDF içinde güvenli ASCII karşılıkları kullanıyoruz.
   return s
     .replace(/ğ/g, 'g').replace(/Ğ/g, 'G')
     .replace(/ş/g, 's').replace(/Ş/g, 'S')
@@ -1318,6 +1318,22 @@ function toAsciiTr(input) {
     .replace(/â/g, 'a').replace(/Â/g, 'A')
     .replace(/î/g, 'i').replace(/Î/g, 'I')
     .replace(/û/g, 'u').replace(/Û/g, 'U');
+}
+
+function normalizeBase64(input) {
+  return String(input || '')
+    .trim()
+    .replace(/^data:.*?;base64,/, '')
+    .replace(/\s+/g, '');
+}
+
+function base64ToUint8Array(base64) {
+  const clean = normalizeBase64(base64);
+  if (!clean) return null;
+  const bin = atob(clean);
+  const u8 = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  return u8;
 }
 
 function uint8ToBase64(u8) {
@@ -1355,10 +1371,30 @@ function wrapText(text, font, size, maxWidth) {
   return lines.length ? lines : [''];
 }
 
-async function buildInvoicePdfBytes({ orderId, customerName, customerEmail, address, items, total, createdAt }) {
+async function buildInvoicePdfBytes({ orderId, customerName, customerEmail, address, items, total, createdAt }, env) {
   const pdfDoc = await PDFDocument.create();
-  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  // Optional: Embed a Unicode-capable TTF font so Turkish characters render correctly.
+  // Set via Worker secret/var: INVOICE_TTF_BASE64 (base64 of .ttf file)
+  // If not provided, fall back to StandardFonts + ASCII normalization.
+  let canUseUnicode = false;
+  let font;
+  let fontBold;
+  try {
+    const ttfBase64 = env?.INVOICE_TTF_BASE64 || env?.INVOICE_FONT_TTF_BASE64;
+    const fontBytes = base64ToUint8Array(ttfBase64);
+    if (fontBytes && fontBytes.length) {
+      font = await pdfDoc.embedFont(fontBytes);
+      // Bold: reuse same font (keeps bundle smaller). If you want true bold, provide a bold TTF and extend this.
+      fontBold = font;
+      canUseUnicode = true;
+    }
+  } catch (_) {}
+
+  if (!font) {
+    font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  }
 
   const pageSize = [595.28, 841.89]; // A4
   const margin = 40;
@@ -1377,7 +1413,7 @@ async function buildInvoicePdfBytes({ orderId, customerName, customerEmail, addr
       maxWidth = page.getWidth() - margin * 2
     } = opts;
     const usedFont = bold ? fontBold : font;
-    const raw = toAsciiTr(text);
+    const raw = canUseUnicode ? String(text || '') : toAsciiTr(text);
     const lines = wrapText(raw, usedFont, size, maxWidth);
     for (const ln of lines) {
       if (y < margin + 80) {
@@ -1390,21 +1426,21 @@ async function buildInvoicePdfBytes({ orderId, customerName, customerEmail, addr
   };
 
   // Header
-  draw('ERN Tropikal Cicek', { size: 18, bold: true, color: rgb(0.02, 0.3, 0.23) });
-  draw('Bilgi Fisi (PDF)', { size: 12, bold: true });
+  draw('ERN Tropikal Çiçek', { size: 18, bold: true, color: rgb(0.02, 0.3, 0.23) });
+  draw('Bilgi Fişi (PDF)', { size: 12, bold: true });
   draw(`Siparis No: ${orderId || '-'}`, { bold: true });
   draw(`Tarih: ${new Date(createdAt || Date.now()).toLocaleString('tr-TR')}`);
   y -= 6;
 
   // Customer
-  draw('Musteri Bilgileri', { bold: true, color: rgb(0.02, 0.3, 0.23) });
+  draw('Müşteri Bilgileri', { bold: true, color: rgb(0.02, 0.3, 0.23) });
   draw(`Ad Soyad: ${customerName || '-'}`);
   draw(`E-posta: ${customerEmail || '-'}`);
   draw(`Adres: ${address || '-'}`);
   y -= 6;
 
   // Items table
-  draw('Urun Listesi', { bold: true, color: rgb(0.02, 0.3, 0.23) });
+  draw('Ürün Listesi', { bold: true, color: rgb(0.02, 0.3, 0.23) });
 
   const tableX = margin;
   const tableW = page.getWidth() - margin * 2;
@@ -1433,7 +1469,7 @@ async function buildInvoicePdfBytes({ orderId, customerName, customerEmail, addr
     const unitPrice = Number(it?.price || 0);
     const lineTotal = Number.isFinite(unitPrice) ? (unitPrice * Number(qtyVal || 1)) : 0;
 
-    const name = toAsciiTr(it?.name || '-');
+    const name = canUseUnicode ? String(it?.name || '-') : toAsciiTr(it?.name || '-');
     const qty = String(qtyVal || 1);
     const price = formatMoneyTry(lineTotal || it?.price || 0);
 
@@ -1458,10 +1494,10 @@ async function buildInvoicePdfBytes({ orderId, customerName, customerEmail, addr
   ensureSpaceFor(80);
   page.drawLine({ start: { x: tableX, y }, end: { x: tableX + tableW, y }, thickness: 1.2, color: rgb(0.1, 0.7, 0.5) });
   y -= 18;
-  page.drawText(`GENEL TOPLAM: TL ${toAsciiTr(String(total || '0'))}`, { x: tableX, y, size: 12, font: fontBold, color: rgb(0.02, 0.3, 0.23) });
+  page.drawText(`GENEL TOPLAM: TL ${canUseUnicode ? String(total || '0') : toAsciiTr(String(total || '0'))}`, { x: tableX, y, size: 12, font: fontBold, color: rgb(0.02, 0.3, 0.23) });
 
   y -= 30;
-  draw('Not: Bu belge bilgilendirme amaclidir. Fatura veya irsaliye yerine gecmez.', { size: 9, color: rgb(0.4, 0.45, 0.5) });
+  draw('Not: Bu belge bilgilendirme amaçlıdır. Fatura veya irsaliye yerine geçmez.', { size: 9, color: rgb(0.4, 0.45, 0.5) });
 
   return await pdfDoc.save();
 }

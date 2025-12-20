@@ -8,3 +8,8 @@ GITHUB_REPO = "AMTBRS"
 GITHUB_BRANCH = "site-release"
 TO_EMAIL = "amtbrs@icloud.com"
 FROM_EMAIL = "no-reply@ern-cicek.com.tr"
+
+# Optional (recommended): Unicode-capable TTF font for PDF invoices
+# - Put as a secret to avoid committing large base64 to the repo:
+#   wrangler secret put INVOICE_TTF_BASE64
+# - Value: base64-encoded .ttf (you can paste output of `base64`)
