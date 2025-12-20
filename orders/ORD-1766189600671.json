@@ -1,0 +1,42 @@
+{
+  "id": "ORD-1766189600671",
+  "date": 1766189600671,
+  "customerEmail": "amtbrs@icloud.com",
+  "customerName": "AHMET BURSA",
+  "customerPhone": "+90 530 306 9081",
+  "address": "Fevziçakmak Caddesi No:47 Kısmet Apt., Çağlayan Mahallesi, Kağıthane, İstanbul, Çağlayan Mahallesi, Kağıthane, İstanbul, Posta Kodu 34403",
+  "iban": "TRXX 0006 1005 1978 6457 8413 26",
+  "note": "",
+  "noteRead": false,
+  "status": "pending",
+  "items": [
+    {
+      "id": "TEMP-1765831765562",
+      "name": "PHİLODENDRON FELİX",
+      "price": 1100,
+      "qty": 2,
+      "image": "images/gallery/IMG_2037.JPG",
+      "addedAt": 1766179375599,
+      "updatedAt": 1766179375599
+    },
+    {
+      "id": "TEMP-1765832775690",
+      "name": "PHİLODENDRON FELİX",
+      "price": 620,
+      "qty": 2,
+      "image": "images/gallery/IMG_2038.JPG",
+      "addedAt": 1766179380598,
+      "updatedAt": 1766179380598
+    },
+    {
+      "id": "TEMP-1765833593053",
+      "name": "PHİLODENDRON DOMESTİCUM VERİAGATA",
+      "price": 750,
+      "qty": 2,
+      "image": "images/gallery/IMG_2040.JPG",
+      "addedAt": 1766179388865,
+      "updatedAt": 1766179388865
+    }
+  ],
+  "total": "5060.00"
+}
