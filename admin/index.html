@@ -16,6 +16,9 @@
     (function(){
       try {
         document.addEventListener('DOMContentLoaded', function() {
+          // Initialize CSRF token
+          generateCSRFToken();
+          
           // Fresh token read on page load
           var token = sessionStorage.getItem('admin_gh_token');
           var adminUI = document.getElementById('adminUI');
@@ -86,7 +89,30 @@
     function adminLogout() {
       sessionStorage.removeItem('admin_gh_token');
       sessionStorage.removeItem('admin_user');
+      sessionStorage.removeItem('admin_csrf_token');
       location.reload();
+    }
+    
+    // CSRF Token generation and validation
+    function generateCSRFToken() {
+      const token = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+      sessionStorage.setItem('admin_csrf_token', token);
+      return token;
+    }
+    
+    function getCSRFToken() {
+      let token = sessionStorage.getItem('admin_csrf_token');
+      if (!token) {
+        token = generateCSRFToken();
+      }
+      return token;
+    }
+    
+    function validateCSRFToken(token) {
+      const stored = sessionStorage.getItem('admin_csrf_token');
+      return stored && stored === token;
     }
   // Mojibake düzeltici - Türkçe karakterleri düzelt
   (function(){
@@ -4476,7 +4502,11 @@ try {
 
       // helper: commit files to repo via serverless endpoints
       async function commitFilesToRepo(files, message){
-        const payload = { files, message: message || 'admin: admin panelinden güncelle' };
+        const payload = { 
+          files, 
+          message: message || 'admin: admin panelinden güncelle',
+          csrf_token: getCSRFToken()
+        };
         const endpoints = ['/.netlify/functions/commit-file', '/api/commit-file', '/functions/commit-file'];
         let lastErr = null;
         for (const ep of endpoints){
