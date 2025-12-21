@@ -7,15 +7,14 @@ export default {
     const origin = request.headers.get('Origin') || '';
 
     // Allow only our site in production; adjust as needed
-    // CORS: yelpaze genişlet — origin geldiyse geri yansıt, yoksa * kullan
-    // Bilinen barındırmalar için regex tutulmaya devam ediliyor ancak izin verici politika öncelikli.
+    // CORS: whitelist check - only allow origins that match regex
     const allowed = [
       /^https?:\/\/(www\.)?ern-cicek\.com\.tr$/i,
       /^https?:\/\/amtbrs-03\.github\.io(?:\/.*)?$/i,
       /^https?:\/\/ern-site\.amtbrs-03\.workers\.dev$/i,
       /^https?:\/\/localhost(?::\d+)?$/i
     ];
-    const allowOrigin = origin || '*';
+    const allowOrigin = (origin && allowed.some(r => r.test(origin))) ? origin : ''; // ✅ Security Fix #1: Whitelist check
 
     // CORS Preflight - must handle ALL paths
     if (request.method === 'OPTIONS') {

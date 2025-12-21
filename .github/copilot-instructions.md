@@ -1,45 +1,150 @@
-## Quick repo summary
+## Quick Repo Summary
 
-This is a minimal static single-page site. The primary entry is `anasayfa.html` — a self-contained HTML file with CSS and (mostly) inline JavaScript. There is no build system, package manifest, or server code in the repository.
+**ERN Çiçek** is a Turkish florist e-commerce site with GitHub-based data storage and Cloudflare Workers serverless backend. The frontend is a vanilla JS single-page app; the backend uses GitHub commits for persistence and Cloudflare Workers for order processing and invoice generation.
 
-## What matters for edits
+### Architecture at a Glance
 
-- Entry file: `anasayfa.html` — contains layout, styles, markup and the main interactive hooks (modals, auth, cart, product cards).
-- Key IDs/classes to reference in changes:
-  - IDs: `authModal`, `authContainer`, `userContainer`, `cartBtn`, `cartCount`, `cartContainer`, `loginEmail`, `loginPassword`, `registerName`, `registerEmail`
-  - Classes: `.product-card`, `.product-image`, `.product-name`, `.product-price`, `.modal`, `.modal-content`, `.form-content`
-  - JS functions referenced in markup to search for before editing: `openAuthModal`, `closeAuthModal`, `switchTab`, `loginUser`, `logout`, `openCart`.
+```
+Frontend: anasayfa.html (6.8k+ lines) ←→ GitHub API (user data, cart, orders)
+                                    ↓
+          site-settings.json, products.json (local config)
+                                    ↓
+        Cloudflare Worker (index.js 1.6k lines)
+                ↓
+        Orders → /orders/*.json (GitHub)
+        Invoices → Nodemailer + PDF-lib
+        Users → /users/*_full.json (GitHub)
+```
 
-## Agent goals & constraints
+## Critical Files & Purposes
 
-- Keep the site static and client-side only unless the user explicitly asks to add a backend. Edits should not assume Node, npm, or build tools.
-- Prefer small, reversible edits: add a small inline `<script>` block or a new JS file placed next to `anasayfa.html` if needed — don't rework the whole layout.
-- When adding JS that touches auth/cart, persist state to `localStorage` only. Do not add network calls unless the user provides credentials or endpoints.
+| File | Role | Scope |
+|------|------|-------|
+| [anasayfa.html](anasayfa.html) | Main SPA — all UI, auth, cart, product rendering | Frontend |
+| [admin.html](admin.html) | Admin panel — order management, user list, settings | Backend UI |
+| [cloudflare-worker/src/index.js](cloudflare-worker/src/index.js) | Order processor, invoice generator, GitHub commit wrapper | Serverless |
+| [products.json](products.json) | Product catalog (id, name, price, images, stock, sortOrder) | Config |
+| [site-settings.json](site-settings.json) | Store contact, shipping, payment (IBAN) details | Config |
+| [scripts/normalize-{products,orders}.js](scripts) | Data normalization (sortOrder, encoding fixes) | DevOps |
 
-## How to test changes locally
+## Data Flow & Integration Points
 
-1. Open `anasayfa.html` in a browser (double-click or drag into the browser). No build required.
-2. Use the browser console to observe runtime errors and to call helper functions (e.g., `openAuthModal()`).
-3. Verify interactivity: opening the auth modal, switching tabs, adding items (if product JS exists), and cart count updates.
+### 1. **Auth & User State** (`anasayfa.html` → GitHub)
+- **localStorage keys**: `currentUser`, `user_${email}`, `sessionId_${email}`
+- **Remote storage**: `/users/${email}_full.json` (GitHub API, `commitFullUserToRepo()`)
+- **Session sync**: `checkSessionValidity()`, `checkDeletedUser()` run on page load
+- **SSH/HTTPS encoding**: Early mojibake fix at document load to handle Turkish chars (Ü, ü, ç, ş, ğ, etc.)
 
-## Example edits (concrete, copyable)
+### 2. **Cart Management** (in-memory + localStorage → GitHub when ordered)
+- **localStorage**: `cart_${email}` (line 2001 in `anasayfa.html`)
+- **Sync on login**: `syncCartFromSystem(email)` fetches remote cart from `/carts/${email}.json`
+- **On checkout**: POST to `site-settings.json:commitEndpoint` (defaults to Cloudflare Worker)
 
-- To wire a new login handler in-page, find `loginUser()` in the file and update it to set `localStorage.setItem('user', JSON.stringify({name:..., email:...}))` and then call a helper `updateAuthUI()` that toggles `authContainer`/`userContainer` visibility.
-- To add an external script file instead of inline JS, create `site.js` next to `anasayfa.html` and add before `</body>`: `<script src="site.js"></script>`; keep changes minimal and reference DOM IDs listed above.
+### 3. **Order Processing** (Frontend → Worker → GitHub)
+- **Trigger**: User submits `/odeme.html` form → `fetch(site-settings.json.commitEndpoint, {POST order})`
+- **Worker**: `POST /send-order` → GitHub commit to `/orders/${orderId}.json` + email notification
+- **Invoice**: Worker generates PDF using `pdf-lib` + Noto Sans font
+- **Workflows**: GitHub Actions auto-triggers on order commits (`.github/workflows/save-order.yml`)
 
-## Patterns and conventions observed
+### 4. **Product Updates** (Catalog Sync)
+- **File**: [products.json](products.json) (items array with `{id, name, price, stock, sortOrder, images}`)
+- **Normalization**: `npm run normalize:products` or task runner—ensures deterministic sort order
+- **Frontend load**: `loadProducts()` (line 1826) fetches and caches to localStorage via `fetchSiteSettings()`
+- **Badge**: `"badge": "Yeni"` marks new products; CSS renders via `.product-image::before`
 
-- Single-file SPA: styling is in `<style>` inside `anasayfa.html`, markup references vanilla JS functions — prefer DOM-first edits.
-- Progressive enhancement: interactive elements are plain HTML with JS hooks; ensure accessibility attributes are preserved when changing buttons/links.
-- Animation and 3D transforms are applied via CSS classes on `.product-card` and `.product-image` — preserve these classes when refactoring product markup.
+## Key Development Workflows
 
-## If you merge existing agent instructions
+### Normalize & Deploy
 
-- If a `.github/copilot-instructions.md` already exists, merge by preserving any custom rules and append the "What matters" and "How to test" sections above. I did not find an existing file in this repo.
+```bash
+# Normalize products and orders to fix sorting/encoding
+npm run normalize:products
+npm run normalize:orders
 
-## Questions for the maintainer
+# Auto-deploy Worker on cloudflare-worker/** changes
+git push origin site-release  # triggers CI/CD → wrangler deploy
+```
 
-- When you said "kodu bu siteye entegre et" — which code should be integrated? (a script file, a widget, a payment/cart backend?)
-- Should new JavaScript be inline or kept as a separate `site.js` file next to `anasayfa.html`?
+### Local Testing
 
-Please review this and tell me which code you want integrated or whether you want me to proceed by adding a specific script file and wiring it into `anasayfa.html`.
+1. **Frontend**: Double-click `anasayfa.html` in Finder or drag into browser. No build needed.
+2. **Worker**: Use `npx wrangler dev cloudflare-worker/` or test via curl
+3. **Admin**: Open `admin.html` in browser; click "Admin Panel" button if visible
+4. **Browser console**: Call `loginUser()`, `loadProducts()`, `openCart()` directly
+
+### Key GitHub Secrets (for CI/CD)
+
+- `CF_API_TOKEN`, `CF_ACCOUNT_ID` → Cloudflare deploy
+- `GITHUB_TOKEN` (auto-provided) → GitHub API commits
+
+## Code Patterns & Conventions
+
+### localStorage Naming
+- **User session**: `currentUser` → `{name, email}` (JSON)
+- **User auth**: `user_${email}` → full user object with salt/iterations (for PBKDF2 validation)
+- **Session ID**: `sessionId_${email}`, `sessionIdUpdatedAt_${email}` → track login freshness
+- **Cart**: `cart_${email}` → array of `{id, name, price, quantity}`
+- **Products**: `products` → full catalog cache
+
+### Async Patterns
+- **fetch caching**: `cache: 'no-store'` to bypass CDN on data endpoints (line 1817)
+- **Error handling**: Wrapped in try/catch; failures log to console, UI shows fallback
+- **Mojibake fix**: Early normalize script runs in `<head>`, sweeps DOM 3× on load (line 30–60 in `anasayfa.html`)
+
+### DOM References (Validate Before Edits)
+```javascript
+// Auth modal
+#authModal, #authContainer, #userContainer
+#loginEmail, #loginPassword, #registerName, #registerEmail, #switchToRegister, #switchToLogin
+
+// Cart UI
+#cartBtn, #cartCount, #cartContainer, .cart-item, .cart-item-remove
+
+// Products
+.product-card, .product-image, .product-name, .product-price, .product-badge
+
+// General
+.modal, .modal-content, .form-content
+```
+
+### Function Entry Points (Search Before Editing)
+- `openAuthModal()` → show login/register modal
+- `closeAuthModal()` → hide and reset form
+- `switchTab(tabName)` → swap login ↔ register UI
+- `loginUser()` → validate credentials, set localStorage, sync session
+- `logout()` → clear session, hide user menu
+- `openCart()` → fetch remote cart, update UI
+- `loadProducts()` → fetch products.json, hydrate gallery
+- `checkSessionValidity()` → validate login freshness on page load
+
+## Editor Directives
+
+### Goal: Keep It Static-First
+- Prefer small, non-breaking edits: inline `<script>` blocks or new `.js` files next to `anasayfa.html`
+- Do **not** introduce build steps (webpack, esbuild) unless user explicitly requests it
+- Do **not** assume Node server; GitHub API is the persistent store
+
+### When Adding Backend Features
+- Use Cloudflare Worker (already configured in `wrangler.toml`)
+- Commit data to GitHub API (see `cloudflare-worker/src/index.js` for patterns)
+- Store secrets in GitHub Actions or Cloudflare env vars, **not** in code
+- **No** new npm dependencies without user approval
+
+### Auth & Data Edits
+- Before changing `loginUser()`, search for all `localStorage.setItem` / `getItem` calls to ensure consistency
+- Before modifying product schema, update both `anasayfa.html` render logic AND `normalize-products.js` sorting
+- Before removing a localStorage key, check admin.html, scripts/, and all workflows for references
+
+## Testing & Validation
+
+### Before Commit
+1. Open `anasayfa.html` in browser → test auth flow (register, login, logout)
+2. Add items to cart → verify localStorage `cart_${email}`
+3. Check admin panel → verify order appears in `/orders/` folder
+4. Run `npm run normalize:products` → ensure no formatting breaks JSON
+
+### Troubleshooting
+- **Mojibake (Ç → Ã§)**: Check if UTF-8 encoding is correct on save; early fix script should handle it
+- **Cart not syncing**: Verify `site-settings.json` `commitEndpoint` matches Worker deployment
+- **Orders not appearing**: Check GitHub API token in Cloudflare env, verify `GITHUB_OWNER/GITHUB_REPO`
+- **Worker deploy fails**: Run `npm run deploy-worker` or check CF_API_TOKEN and account_id in wrangler.toml

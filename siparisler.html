@@ -597,6 +597,18 @@
     }
 
     function renderOrdersTable(orders) {
+      // UTF-8 safe base64 decode (handles mojibake from GitHub API)
+      function byteReDecode(str) {
+        try {
+          const bytes = new Uint8Array(str.length);
+          for (let i = 0; i < str.length; i++) {
+            bytes[i] = str.charCodeAt(i) & 0xFF;
+          }
+          return new TextDecoder().decode(bytes);
+        } catch (e) {
+          return str;
+        }
+      }
       function normalizeText(s){
         s = String(s || '').trim();
         if (!s) return s;
@@ -623,6 +635,12 @@
         // Mojibake karakterlerini düzelt
         for (const [broken, fixed] of Object.entries(mojibakeMap)) {
           s = s.split(broken).join(fixed);
+        }
+        
+        // Byte-level re-decode for stubborn cases
+        if (/Ã|Ä|Å/.test(s)) {
+          const redecoded = byteReDecode(s);
+          if (!(/Ã|Ä|Å/.test(redecoded))) s = redecoded;
         }
         
         try {

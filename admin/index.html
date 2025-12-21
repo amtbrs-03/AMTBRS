@@ -797,6 +797,19 @@
     }catch(e){ /* diagnostics should never break page */ }
   })();
   </script>
+  <script type="module">
+    // Load shared utilities from /lib/
+    import { getCached, setCached, initMojibakeFix } from '../lib/index.js';
+    // Initialize Turkish character fix on load
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initMojibakeFix);
+    } else {
+      initMojibakeFix();
+    }
+    // Export to global scope for backward compatibility
+    window.getCached = getCached;
+    window.setCached = setCached;
+  </script>
 
 </head>
 <body>
@@ -2257,7 +2270,7 @@
         </div>
       </div>
       <div style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;">
-        <a href="anasayfa.html" class="btn btn-ghost" title="Siteyi yeni sekmede aç">🏠 Siteyi Görüntüle</a>
+        <a href="../anasayfa.html" class="btn btn-ghost" title="Siteyi yeni sekmede aç">🏠 Siteyi Görüntüle</a>
         <!-- Küçük Token butonu: başlık ile aksiyon bar arasındaki bölgeye, sol tarafa yerleştirildi -->
         <button id="openTokenModalBtn" class="btn btn-ghost" type="button" title="GitHub Token Ayarı">🔑 Token</button>
         <button id="pageRefreshBtn" class="btn btn-ghost" type="button" title="Admin sayfasını yenile" onclick="refreshPageWithModal()">🔄 Yenile</button>
