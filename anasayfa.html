@@ -1337,7 +1337,53 @@
                                     <input type="password" id="loginPassword" placeholder="Şifreniz" autocomplete="current-password">
                                 </div>
                                 <button type="submit" style="width: 100%; margin-top: 1rem;">Giriş Yap</button>
+                                <div style="text-align:center;margin-top:0.75rem;">
+                                    <a href="#" id="forgotPasswordLink" style="color:#2563eb;font-size:0.9rem;text-decoration:none;">Şifremi Unuttum</a>
+                                </div>
                             </form>
+                        </div>
+
+                        <!-- Şifre Sıfırlama Formu -->
+                        <div id="resetPassword" class="form-content" style="display:none;">
+                            <div id="resetStep1">
+                                <div style="text-align:center;margin-bottom:1rem;">
+                                    <div style="font-size:2rem;">🔐</div>
+                                    <div style="color:#334155;font-size:0.95rem;">Email adresinize 6 haneli kod göndereceğiz</div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Email</label>
+                                    <input type="email" id="resetEmail" placeholder="Kayıtlı email adresiniz">
+                                </div>
+                                <button type="button" id="sendResetCodeBtn" style="width:100%;margin-top:0.5rem;">Kod Gönder</button>
+                                <div id="resetStep1Msg" style="text-align:center;margin-top:0.75rem;font-size:0.9rem;"></div>
+                                <div style="text-align:center;margin-top:1rem;">
+                                    <a href="#" id="backToLoginLink" style="color:#6b7280;font-size:0.9rem;">← Giriş'e Dön</a>
+                                </div>
+                            </div>
+                            <div id="resetStep2" style="display:none;">
+                                <div style="text-align:center;margin-bottom:1rem;">
+                                    <div style="font-size:2rem;">✉️</div>
+                                    <div style="color:#334155;font-size:0.95rem;">Email'inize gönderilen kodu girin</div>
+                                    <div style="color:#ef4444;font-weight:600;font-size:0.85rem;margin-top:0.5rem;">⏱️ Kod 3 dakika geçerlidir</div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Doğrulama Kodu</label>
+                                    <input type="text" id="resetCode" placeholder="6 haneli kod" maxlength="6" style="text-align:center;font-size:1.3rem;letter-spacing:4px;">
+                                </div>
+                                <div class="form-group">
+                                    <label>Yeni Şifre</label>
+                                    <input type="password" id="resetNewPassword" placeholder="Yeni şifreniz">
+                                </div>
+                                <div class="form-group">
+                                    <label>Yeni Şifre Tekrar</label>
+                                    <input type="password" id="resetNewPassword2" placeholder="Yeni şifre tekrar">
+                                </div>
+                                <button type="button" id="verifyResetBtn" style="width:100%;margin-top:0.5rem;">Şifreyi Güncelle</button>
+                                <div id="resetStep2Msg" style="text-align:center;margin-top:0.75rem;font-size:0.9rem;"></div>
+                                <div style="text-align:center;margin-top:1rem;">
+                                    <a href="#" id="resendCodeLink" style="color:#2563eb;font-size:0.85rem;">Kodu tekrar gönder</a>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Kayıt Formu -->
@@ -3207,6 +3253,8 @@
                     function closeAuthModal() {
                         document.getElementById('authModal').style.display = 'none';
                         try{ const b = document.getElementById('authBtn'); if (b) b.setAttribute('aria-expanded','false'); }catch(e){}
+                        // Reset password reset form when closing
+                        hideResetPasswordForm();
                     }
 
                     function switchTab(tab, el) {
@@ -3214,7 +3262,225 @@
                         document.querySelectorAll('.form-tab').forEach(t => t.classList.remove('active'));
                         document.getElementById(tab).classList.add('active');
                         if (el) el.classList.add('active');
+                        // Hide reset form when switching tabs
+                        hideResetPasswordForm();
                     }
+
+                    /* --- Şifre Sıfırlama Fonksiyonları --- */
+                    function showResetPasswordForm() {
+                        const login = document.getElementById('login');
+                        const register = document.getElementById('register');
+                        const reset = document.getElementById('resetPassword');
+                        const tabs = document.getElementById('authTabs');
+                        const title = document.getElementById('authTitle');
+                        
+                        if (login) login.style.display = 'none';
+                        if (register) register.style.display = 'none';
+                        if (reset) { reset.style.display = 'block'; reset.classList.add('active'); }
+                        if (tabs) tabs.style.display = 'none';
+                        if (title) title.textContent = 'Şifre Sıfırlama';
+                        
+                        // Reset steps
+                        const step1 = document.getElementById('resetStep1');
+                        const step2 = document.getElementById('resetStep2');
+                        if (step1) step1.style.display = 'block';
+                        if (step2) step2.style.display = 'none';
+                        
+                        // Clear messages
+                        const msg1 = document.getElementById('resetStep1Msg');
+                        const msg2 = document.getElementById('resetStep2Msg');
+                        if (msg1) msg1.innerHTML = '';
+                        if (msg2) msg2.innerHTML = '';
+                    }
+                    
+                    function hideResetPasswordForm() {
+                        const login = document.getElementById('login');
+                        const register = document.getElementById('register');
+                        const reset = document.getElementById('resetPassword');
+                        const tabs = document.getElementById('authTabs');
+                        const title = document.getElementById('authTitle');
+                        
+                        if (login) login.style.display = '';
+                        if (register) register.style.display = '';
+                        if (reset) { reset.style.display = 'none'; reset.classList.remove('active'); }
+                        if (tabs) tabs.style.display = '';
+                        if (title) title.textContent = 'Hoşgeldiniz';
+                        
+                        // Clear inputs
+                        const resetEmail = document.getElementById('resetEmail');
+                        const resetCode = document.getElementById('resetCode');
+                        const resetNew1 = document.getElementById('resetNewPassword');
+                        const resetNew2 = document.getElementById('resetNewPassword2');
+                        if (resetEmail) resetEmail.value = '';
+                        if (resetCode) resetCode.value = '';
+                        if (resetNew1) resetNew1.value = '';
+                        if (resetNew2) resetNew2.value = '';
+                    }
+                    
+                    // Email'i saklayacak değişken
+                    let _resetEmail = '';
+                    
+                    async function sendResetCode() {
+                        const emailInput = document.getElementById('resetEmail');
+                        const btn = document.getElementById('sendResetCodeBtn');
+                        const msg = document.getElementById('resetStep1Msg');
+                        
+                        const email = (emailInput?.value || '').trim().toLowerCase();
+                        if (!email || !email.includes('@')) {
+                            if (msg) msg.innerHTML = '<span style="color:#ef4444;">Geçerli bir email adresi girin</span>';
+                            return;
+                        }
+                        
+                        btn.disabled = true;
+                        btn.textContent = 'Gönderiliyor...';
+                        if (msg) msg.innerHTML = '';
+                        
+                        try {
+                            const res = await fetch('https://ern-site.amtbrs-03.workers.dev/request-reset', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ email })
+                            });
+                            
+                            const data = await res.json();
+                            
+                            if (data.ok) {
+                                _resetEmail = email;
+                                // Step 2'ye geç
+                                const step1 = document.getElementById('resetStep1');
+                                const step2 = document.getElementById('resetStep2');
+                                if (step1) step1.style.display = 'none';
+                                if (step2) step2.style.display = 'block';
+                                showNotification('✅ Sıfırlama kodu email adresinize gönderildi', { type: 'success', duration: 4000 });
+                            } else {
+                                if (msg) msg.innerHTML = '<span style="color:#ef4444;">' + (data.error || 'Bir hata oluştu') + '</span>';
+                            }
+                        } catch (e) {
+                            console.error('sendResetCode error:', e);
+                            if (msg) msg.innerHTML = '<span style="color:#ef4444;">Bağlantı hatası</span>';
+                        } finally {
+                            btn.disabled = false;
+                            btn.textContent = 'Kod Gönder';
+                        }
+                    }
+                    
+                    async function verifyResetCode() {
+                        const codeInput = document.getElementById('resetCode');
+                        const pw1 = document.getElementById('resetNewPassword');
+                        const pw2 = document.getElementById('resetNewPassword2');
+                        const btn = document.getElementById('verifyResetBtn');
+                        const msg = document.getElementById('resetStep2Msg');
+                        
+                        const code = (codeInput?.value || '').trim();
+                        const password1 = (pw1?.value || '');
+                        const password2 = (pw2?.value || '');
+                        
+                        if (!code || code.length !== 6) {
+                            if (msg) msg.innerHTML = '<span style="color:#ef4444;">6 haneli kodu girin</span>';
+                            return;
+                        }
+                        if (!password1 || password1.length < 4) {
+                            if (msg) msg.innerHTML = '<span style="color:#ef4444;">Şifre en az 4 karakter olmalı</span>';
+                            return;
+                        }
+                        if (password1 !== password2) {
+                            if (msg) msg.innerHTML = '<span style="color:#ef4444;">Şifreler eşleşmiyor</span>';
+                            return;
+                        }
+                        
+                        btn.disabled = true;
+                        btn.textContent = 'Doğrulanıyor...';
+                        if (msg) msg.innerHTML = '';
+                        
+                        try {
+                            // Yeni şifreyi hash'le
+                            const salt = crypto.getRandomValues(new Uint8Array(16));
+                            const iterations = 100000;
+                            const enc = new TextEncoder();
+                            const pwKey = await crypto.subtle.importKey('raw', enc.encode(password1), 'PBKDF2', false, ['deriveBits']);
+                            const derived = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: salt, iterations, hash: 'SHA-256' }, pwKey, 256);
+                            
+                            // Base64 encode
+                            const saltB64 = btoa(String.fromCharCode(...salt));
+                            const hashB64 = btoa(String.fromCharCode(...new Uint8Array(derived)));
+                            
+                            const newPasswordHash = {
+                                algo: 'PBKDF2-SHA256',
+                                iterations: iterations,
+                                salt: saltB64,
+                                hash: hashB64
+                            };
+                            
+                            const res = await fetch('https://ern-site.amtbrs-03.workers.dev/verify-reset', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ email: _resetEmail, code, newPasswordHash })
+                            });
+                            
+                            const data = await res.json();
+                            
+                            if (data.ok) {
+                                showNotification('✅ Şifreniz başarıyla güncellendi! Giriş yapabilirsiniz.', { type: 'success', duration: 5000 });
+                                hideResetPasswordForm();
+                                switchTab('login', document.querySelector('.form-tab'));
+                                // Email'i giriş formuna doldur
+                                const loginEmail = document.getElementById('loginEmail');
+                                if (loginEmail) loginEmail.value = _resetEmail;
+                            } else {
+                                if (msg) msg.innerHTML = '<span style="color:#ef4444;">' + (data.error || 'Bir hata oluştu') + (data.attemptsLeft !== undefined ? ' (' + data.attemptsLeft + ' deneme kaldı)' : '') + '</span>';
+                            }
+                        } catch (e) {
+                            console.error('verifyResetCode error:', e);
+                            if (msg) msg.innerHTML = '<span style="color:#ef4444;">Bağlantı hatası</span>';
+                        } finally {
+                            btn.disabled = false;
+                            btn.textContent = 'Şifreyi Güncelle';
+                        }
+                    }
+                    
+                    // Event listeners for password reset
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const forgotLink = document.getElementById('forgotPasswordLink');
+                        if (forgotLink) {
+                            forgotLink.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                showResetPasswordForm();
+                            });
+                        }
+                        
+                        const backToLogin = document.getElementById('backToLoginLink');
+                        if (backToLogin) {
+                            backToLogin.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                hideResetPasswordForm();
+                                switchTab('login', document.querySelector('.form-tab'));
+                            });
+                        }
+                        
+                        const sendCodeBtn = document.getElementById('sendResetCodeBtn');
+                        if (sendCodeBtn) {
+                            sendCodeBtn.addEventListener('click', sendResetCode);
+                        }
+                        
+                        const verifyBtn = document.getElementById('verifyResetBtn');
+                        if (verifyBtn) {
+                            verifyBtn.addEventListener('click', verifyResetCode);
+                        }
+                        
+                        const resendLink = document.getElementById('resendCodeLink');
+                        if (resendLink) {
+                            resendLink.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                // Step 1'e geri dön ve kodu tekrar gönder
+                                const step1 = document.getElementById('resetStep1');
+                                const step2 = document.getElementById('resetStep2');
+                                if (step1) step1.style.display = 'block';
+                                if (step2) step2.style.display = 'none';
+                                const emailInput = document.getElementById('resetEmail');
+                                if (emailInput && _resetEmail) emailInput.value = _resetEmail;
+                            });
+                        }
+                    });
 
                     /* --- Contact panel toggle --- */
                     function toggleContact(e) {

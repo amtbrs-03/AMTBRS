@@ -53,6 +53,239 @@ export default {
         });
       }
 
+      // ========== ŞİFRE SIFIRLAMA: Kod İste ==========
+      if (path === '/request-reset' && request.method === 'POST') {
+        const payload = await readJsonLoose(request);
+        const email = (payload?.email || '').trim().toLowerCase();
+        
+        if (!email || !email.includes('@')) {
+          return new Response(JSON.stringify({ ok: false, error: 'Geçerli bir email adresi girin' }), { 
+            status: 400, headers: jsonHeaders(allowOrigin) 
+          });
+        }
+        
+        // GitHub'da kullanıcı var mı kontrol et
+        const owner = env.GITHUB_OWNER || 'amtbrs-03';
+        const repo = env.GITHUB_REPO || 'AMTBRS';
+        const branch = env.GITHUB_BRANCH || 'site-release';
+        const token = env.GITHUB_TOKEN || env.GH_TOKEN;
+        
+        if (!token) {
+          return new Response(JSON.stringify({ ok: false, error: 'Sunucu yapılandırma hatası' }), { 
+            status: 500, headers: jsonHeaders(allowOrigin) 
+          });
+        }
+        
+        // Kullanıcı dosyasını kontrol et
+        const userPath = `users/${email}_full.json`;
+        const userApiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeGitHubPath(userPath)}?ref=${branch}`;
+        
+        try {
+          const userRes = await fetch(userApiUrl, { 
+            headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'Cloudflare-Worker' } 
+          });
+          
+          if (!userRes.ok) {
+            // Kullanıcı bulunamadı - güvenlik için aynı mesajı ver
+            return new Response(JSON.stringify({ ok: true, message: 'Eğer bu email kayıtlıysa, sıfırlama kodu gönderildi.' }), { 
+              status: 200, headers: jsonHeaders(allowOrigin) 
+            });
+          }
+          
+          // 6 haneli kod oluştur
+          const resetCode = String(Math.floor(100000 + Math.random() * 900000));
+          const expiresAt = Date.now() + (3 * 60 * 1000); // 3 dakika
+          
+          // Kodu KV'ye kaydet
+          if (env.RATE_LIMIT_KV) {
+            await env.RATE_LIMIT_KV.put(
+              `reset:${email}`,
+              JSON.stringify({ code: resetCode, expiresAt, attempts: 0 }),
+              { expirationTtl: 180 } // 3 dakika sonra otomatik sil
+            );
+          }
+          
+          // Email gönder
+          const resendKey = env.RESEND_API_KEY || '';
+          const fromEmail = env.FROM_EMAIL || 'onboarding@resend.dev';
+          
+          if (resendKey) {
+            const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f8f6f3;margin:0;padding:20px;">
+  <div style="max-width:500px;margin:0 auto;background:white;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.1);">
+    <div style="background:linear-gradient(135deg,#0b2f1f,#1a4a35);color:white;padding:24px;text-align:center;">
+      <span style="font-size:28px;font-weight:800;">🌿 ERN ÇİÇEK</span>
+    </div>
+    <div style="padding:30px;text-align:center;">
+      <div style="font-size:18px;color:#334155;margin-bottom:20px;">Şifre Sıfırlama Kodunuz</div>
+      <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:2px solid #22c55e;border-radius:12px;padding:20px;margin:20px 0;">
+        <div style="font-size:36px;font-weight:800;letter-spacing:8px;color:#166534;">${resetCode}</div>
+      </div>
+      <div style="color:#ef4444;font-weight:600;margin:15px 0;">⏱️ Bu kod 3 dakika geçerlidir</div>
+      <div style="color:#6b7280;font-size:14px;margin-top:20px;">Eğer bu isteği siz yapmadıysanız, bu emaili görmezden gelin.</div>
+    </div>
+    <div style="background:#f1f5f9;padding:15px;text-align:center;color:#64748b;font-size:12px;">
+      © 2025 ERN Çiçek | ern-cicek.com.tr
+    </div>
+  </div>
+</body>
+</html>`;
+            
+            await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                from: fromEmail,
+                to: email,
+                subject: '🔐 ERN Çiçek - Şifre Sıfırlama Kodu',
+                html: emailHtml
+              })
+            });
+          }
+          
+          return new Response(JSON.stringify({ ok: true, message: 'Sıfırlama kodu email adresinize gönderildi.' }), { 
+            status: 200, headers: jsonHeaders(allowOrigin) 
+          });
+          
+        } catch (e) {
+          console.error('request-reset error:', e);
+          return new Response(JSON.stringify({ ok: false, error: 'Bir hata oluştu' }), { 
+            status: 500, headers: jsonHeaders(allowOrigin) 
+          });
+        }
+      }
+
+      // ========== ŞİFRE SIFIRLAMA: Kodu Doğrula ==========
+      if (path === '/verify-reset' && request.method === 'POST') {
+        const payload = await readJsonLoose(request);
+        const email = (payload?.email || '').trim().toLowerCase();
+        const code = (payload?.code || '').trim();
+        const newPasswordHash = payload?.newPasswordHash; // { algo, salt, hash, iterations }
+        
+        if (!email || !code || !newPasswordHash) {
+          return new Response(JSON.stringify({ ok: false, error: 'Eksik bilgi' }), { 
+            status: 400, headers: jsonHeaders(allowOrigin) 
+          });
+        }
+        
+        // KV'den kodu kontrol et
+        if (!env.RATE_LIMIT_KV) {
+          return new Response(JSON.stringify({ ok: false, error: 'Sunucu yapılandırma hatası' }), { 
+            status: 500, headers: jsonHeaders(allowOrigin) 
+          });
+        }
+        
+        const storedData = await env.RATE_LIMIT_KV.get(`reset:${email}`);
+        if (!storedData) {
+          return new Response(JSON.stringify({ ok: false, error: 'Kod bulunamadı veya süresi dolmuş' }), { 
+            status: 400, headers: jsonHeaders(allowOrigin) 
+          });
+        }
+        
+        const resetData = JSON.parse(storedData);
+        
+        // Süre kontrolü
+        if (Date.now() > resetData.expiresAt) {
+          await env.RATE_LIMIT_KV.delete(`reset:${email}`);
+          return new Response(JSON.stringify({ ok: false, error: 'Kodun süresi dolmuş. Yeni kod isteyin.' }), { 
+            status: 400, headers: jsonHeaders(allowOrigin) 
+          });
+        }
+        
+        // Deneme sayısı kontrolü (max 5)
+        if (resetData.attempts >= 5) {
+          await env.RATE_LIMIT_KV.delete(`reset:${email}`);
+          return new Response(JSON.stringify({ ok: false, error: 'Çok fazla yanlış deneme. Yeni kod isteyin.' }), { 
+            status: 400, headers: jsonHeaders(allowOrigin) 
+          });
+        }
+        
+        // Kod kontrolü
+        if (code !== resetData.code) {
+          resetData.attempts++;
+          await env.RATE_LIMIT_KV.put(
+            `reset:${email}`,
+            JSON.stringify(resetData),
+            { expirationTtl: Math.ceil((resetData.expiresAt - Date.now()) / 1000) }
+          );
+          return new Response(JSON.stringify({ ok: false, error: 'Yanlış kod', attemptsLeft: 5 - resetData.attempts }), { 
+            status: 400, headers: jsonHeaders(allowOrigin) 
+          });
+        }
+        
+        // Kod doğru - şifreyi güncelle
+        const owner = env.GITHUB_OWNER || 'amtbrs-03';
+        const repo = env.GITHUB_REPO || 'AMTBRS';
+        const branch = env.GITHUB_BRANCH || 'site-release';
+        const token = env.GITHUB_TOKEN || env.GH_TOKEN;
+        
+        try {
+          const userPath = `users/${email}_full.json`;
+          const userApiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeGitHubPath(userPath)}`;
+          
+          // Mevcut kullanıcı verisini al
+          const userRes = await fetch(userApiUrl + `?ref=${branch}`, { 
+            headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'Cloudflare-Worker' } 
+          });
+          
+          if (!userRes.ok) {
+            return new Response(JSON.stringify({ ok: false, error: 'Kullanıcı bulunamadı' }), { 
+              status: 404, headers: jsonHeaders(allowOrigin) 
+            });
+          }
+          
+          const userFile = await userRes.json();
+          const userData = JSON.parse(atob(userFile.content));
+          
+          // Şifreyi güncelle
+          userData.pw = newPasswordHash;
+          userData.passwordResetAt = Date.now();
+          
+          // GitHub'a kaydet
+          const jsonStr = JSON.stringify(userData, null, 2);
+          const contentBase64 = btoa(unescape(encodeURIComponent(jsonStr)));
+          
+          const putRes = await fetch(userApiUrl, {
+            method: 'PUT',
+            headers: { 
+              Authorization: `Bearer ${token}`, 
+              Accept: 'application/vnd.github+json', 
+              'Content-Type': 'application/json', 
+              'User-Agent': 'Cloudflare-Worker' 
+            },
+            body: JSON.stringify({
+              message: `feat(user): password reset for ${email}`,
+              content: contentBase64,
+              sha: userFile.sha,
+              branch
+            })
+          });
+          
+          if (!putRes.ok) {
+            const errText = await safeText(putRes);
+            return new Response(JSON.stringify({ ok: false, error: 'Şifre güncellenemedi', details: errText }), { 
+              status: 500, headers: jsonHeaders(allowOrigin) 
+            });
+          }
+          
+          // Kullanılan kodu sil
+          await env.RATE_LIMIT_KV.delete(`reset:${email}`);
+          
+          return new Response(JSON.stringify({ ok: true, message: 'Şifreniz başarıyla güncellendi' }), { 
+            status: 200, headers: jsonHeaders(allowOrigin) 
+          });
+          
+        } catch (e) {
+          console.error('verify-reset error:', e);
+          return new Response(JSON.stringify({ ok: false, error: 'Bir hata oluştu' }), { 
+            status: 500, headers: jsonHeaders(allowOrigin) 
+          });
+        }
+      }
+
       if (path === '/send-order' && request.method === 'POST') {
         const payload = await readJsonLoose(request);
         
