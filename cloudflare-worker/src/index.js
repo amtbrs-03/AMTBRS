@@ -297,6 +297,27 @@ export default {
           });
         }
         
+        // Önce mevcut bir doğrulama kodu var mı kontrol et (3 dk bekleme)
+        if (env.RATE_LIMIT_KV) {
+          const existingCode = await env.RATE_LIMIT_KV.get(`verify:${email}`);
+          if (existingCode) {
+            const existingData = JSON.parse(existingCode);
+            const remainingSeconds = Math.ceil((existingData.expiresAt - Date.now()) / 1000);
+            if (remainingSeconds > 0) {
+              const minutes = Math.floor(remainingSeconds / 60);
+              const seconds = remainingSeconds % 60;
+              const timeStr = minutes > 0 ? `${minutes} dk ${seconds} sn` : `${seconds} sn`;
+              return new Response(JSON.stringify({ 
+                ok: false, 
+                error: `Yeni kod için ${timeStr} beklemeniz gerekiyor`,
+                remainingSeconds: remainingSeconds
+              }), { 
+                status: 429, headers: jsonHeaders(allowOrigin) 
+              });
+            }
+          }
+        }
+        
         // GitHub'da kullanıcı zaten var mı kontrol et
         const owner = env.GITHUB_OWNER || 'amtbrs-03';
         const repo = env.GITHUB_REPO || 'AMTBRS';

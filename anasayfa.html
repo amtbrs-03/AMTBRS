@@ -3865,6 +3865,9 @@
                             document.getElementById('emailVerifyMsg').innerHTML = '';
                             document.getElementById('emailVerifyCode').focus();
                             
+                            // 3 dakika cooldown başlat
+                            startResendCooldown(180);
+                            
                             showNotification('✅ Doğrulama kodu email adresinize gönderildi', {type: 'success', duration: 3000});
                             return; // Doğrulama bekleniyor
                             
@@ -4031,6 +4034,11 @@
                             return;
                         }
                         
+                        const resendLink = document.getElementById('resendVerifyCodeLink');
+                        if (resendLink && resendLink.dataset.disabled === 'true') {
+                            return; // Zaten bekleniyor
+                        }
+                        
                         document.getElementById('emailVerifyMsg').innerHTML = '<span style="color:#6b7280;">Kod gönderiliyor...</span>';
                         
                         const siteSettings = JSON.parse(localStorage.getItem('site_settings') || '{}');
@@ -4049,12 +4057,45 @@
                                 document.getElementById('emailVerifyCode').value = '';
                                 document.getElementById('emailVerifyMsg').innerHTML = '<span style="color:#22c55e;">✓ Yeni kod gönderildi</span>';
                                 showNotification('✅ Yeni doğrulama kodu gönderildi', {type: 'success', duration: 3000});
+                                // 3 dakika cooldown başlat
+                                startResendCooldown(180);
                             } else {
+                                // Bekleme süresi varsa göster
+                                if (data.remainingSeconds) {
+                                    startResendCooldown(data.remainingSeconds);
+                                }
                                 document.getElementById('emailVerifyMsg').innerHTML = `<span style="color:#ef4444;">${data.error || 'Kod gönderilemedi'}</span>`;
                             }
                         } catch(e) {
                             document.getElementById('emailVerifyMsg').innerHTML = '<span style="color:#ef4444;">Bağlantı hatası</span>';
                         }
+                    }
+                    
+                    function startResendCooldown(seconds) {
+                        const resendLink = document.getElementById('resendVerifyCodeLink');
+                        if (!resendLink) return;
+                        
+                        resendLink.dataset.disabled = 'true';
+                        resendLink.style.opacity = '0.5';
+                        resendLink.style.pointerEvents = 'none';
+                        
+                        let remaining = seconds;
+                        const originalText = resendLink.textContent;
+                        
+                        const interval = setInterval(() => {
+                            const min = Math.floor(remaining / 60);
+                            const sec = remaining % 60;
+                            resendLink.textContent = `Yeni kod: ${min}:${sec.toString().padStart(2, '0')}`;
+                            remaining--;
+                            
+                            if (remaining < 0) {
+                                clearInterval(interval);
+                                resendLink.textContent = originalText;
+                                resendLink.dataset.disabled = 'false';
+                                resendLink.style.opacity = '1';
+                                resendLink.style.pointerEvents = 'auto';
+                            }
+                        }, 1000);
                     }
 
                     async function loginUser() {
