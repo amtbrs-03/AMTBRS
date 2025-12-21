@@ -1,20 +1,21 @@
 {
-  "name": "OZAN DEMİR",
+  "name": "OZAN DEMÄ°R",
   "email": "amtbrs.03@gmail.com",
   "pw": {
     "algo": "PBKDF2-SHA256",
-    "iterations": 200000,
-    "salt": "1K2r9texkqp+qNGBGCEcOA==",
-    "hash": "tZBl0Sa1X5A74f2CKvvn/sELjGGhFd88h15pI7Mwtk8="
+    "iterations": 100000,
+    "salt": "iTbrZZEbDE5st1gjldE0kw==",
+    "hash": "pc1NAQRPEpnoap0ACxYYFwQ/c5hFB2mkbf3NNeEqcCw="
   },
   "address": {
     "city": "Ankara",
-    "district": "Altındağ",
-    "neighborhood": "Altındağ",
-    "addressDetail": "Fevziçakmak Caddesi No:47 Kısmet Apt., Çağlayan Mahallesi, Kağıthane, İstanbul",
+    "district": "AltÄ±ndaÄ",
+    "neighborhood": "AltÄ±ndaÄ",
+    "addressDetail": "FevziÃ§akmak Caddesi No:47 KÄ±smet Apt., ÃaÄlayan Mahallesi, KaÄÄ±thane, Ä°stanbul",
     "postalCode": "34100"
   },
   "phone": "+90 538 417 9081",
   "createdAt": 1766341161814,
-  "emailVerified": true
+  "emailVerified": true,
+  "passwordResetAt": 1766341320798
 }
