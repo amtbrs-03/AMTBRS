@@ -1519,8 +1519,28 @@
                                         <input type="text" id="registerPostalCode" placeholder="Posta Kodu" style="width:100%; padding:0.8rem; border:1px solid rgba(10,12,30,0.1); border-radius:8px; font-size:1rem;">
                                     </div>
                                 </div>
-                                <button data-action="register" type="submit" style="width: 100%; margin-top: 1rem;">Kayıt Ol</button>
+                                <button data-action="register" type="submit" style="width: 100%; margin-top: 1rem;">Devam Et</button>
                             </form>
+                            <!-- Email Doğrulama Adımı -->
+                            <div id="emailVerifyStep" style="display:none;">
+                                <div style="text-align:center;margin-bottom:1rem;">
+                                    <div style="font-size:2rem;">✉️</div>
+                                    <div style="color:#334155;font-size:0.95rem;">Email adresinize 6 haneli doğrulama kodu gönderdik</div>
+                                    <div style="color:#1d4ed8;font-weight:600;font-size:0.9rem;margin-top:0.5rem;" id="verifyEmailDisplay"></div>
+                                    <div style="color:#ef4444;font-weight:600;font-size:0.85rem;margin-top:0.5rem;">⏱️ Kod 3 dakika geçerlidir</div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Doğrulama Kodu</label>
+                                    <input type="text" id="emailVerifyCode" placeholder="6 haneli kod" maxlength="6" style="text-align:center;font-size:1.3rem;letter-spacing:4px;">
+                                </div>
+                                <button type="button" id="confirmEmailVerifyBtn" style="width:100%;margin-top:0.5rem;">Kayıt Ol</button>
+                                <div id="emailVerifyMsg" style="text-align:center;margin-top:0.75rem;font-size:0.9rem;"></div>
+                                <div style="text-align:center;margin-top:1rem;">
+                                    <a href="#" id="resendVerifyCodeLink" style="color:#2563eb;font-size:0.85rem;">Kodu tekrar gönder</a>
+                                    <span style="color:#d1d5db;margin:0 0.5rem;">|</span>
+                                    <a href="#" id="backToRegisterLink" style="color:#6b7280;font-size:0.85rem;">← Geri Dön</a>
+                                </div>
+                            </div>
                         </div>
                         </div><!-- end authContent -->
 
@@ -3480,6 +3500,28 @@
                                 if (emailInput && _resetEmail) emailInput.value = _resetEmail;
                             });
                         }
+                        
+                        // Email doğrulama butonları (kayıt için)
+                        const confirmEmailVerifyBtn = document.getElementById('confirmEmailVerifyBtn');
+                        if (confirmEmailVerifyBtn) {
+                            confirmEmailVerifyBtn.addEventListener('click', completeRegistration);
+                        }
+                        
+                        const resendVerifyCodeLink = document.getElementById('resendVerifyCodeLink');
+                        if (resendVerifyCodeLink) {
+                            resendVerifyCodeLink.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                resendVerificationCode();
+                            });
+                        }
+                        
+                        const backToRegisterLink = document.getElementById('backToRegisterLink');
+                        if (backToRegisterLink) {
+                            backToRegisterLink.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                backToRegisterForm();
+                            });
+                        }
                     });
 
                     /* --- Contact panel toggle --- */
@@ -3773,134 +3815,241 @@
                             }
                         }
 
-                        // generate salt
-                        const salt = crypto.getRandomValues(new Uint8Array(SALT_BYTES));
-                        const hash = await deriveKey(password, salt.buffer, PW_ITERATIONS);
-
-                        const stored = {
-                            name,
-                            email,
-                            pw: {
-                                algo: 'PBKDF2-SHA256',
-                                iterations: PW_ITERATIONS,
-                                salt: toBase64(salt.buffer),
-                                hash: toBase64(hash.buffer)
-                            },
-                            address: {
+                        // ========== EMAIL DOĞRULAMA ADIMI ==========
+                        // Önce email doğrulama kodu gönder
+                        showNotification('📧 Email doğrulama kodu gönderiliyor...', {type: 'info', duration: 2000});
+                        
+                        // Site settings'den endpoint'i al
+                        const siteSettings = JSON.parse(localStorage.getItem('site_settings') || '{}');
+                        const commitEndpoint = siteSettings.commitEndpoint || 'https://ern-site.amtbrs-03.workers.dev';
+                        
+                        try {
+                            const verifyRes = await fetch(`${commitEndpoint}/send-verification`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ email })
+                            });
+                            
+                            const verifyData = await verifyRes.json();
+                            
+                            if (!verifyData.ok) {
+                                showNotification('❌ ' + (verifyData.error || 'Email gönderilemedi'), {type: 'error', duration: 4000});
+                                return;
+                            }
+                            
+                            // Başarılı - email doğrulama adımını göster
+                            console.log('registerUser: Verification code sent, showing verify step');
+                            
+                            // Form verilerini geçici olarak sakla (doğrulamadan sonra kullanılacak)
+                            window._pendingRegistration = {
+                                name,
+                                email,
+                                password,
+                                phone,
                                 city,
                                 district,
                                 neighborhood,
                                 addressDetail,
                                 postalCode
-                            },
-                            phone,
-                            createdAt: Date.now()
-                        };
-
-                        // MOBILE FIX: Save to localStorage only on desktop
-                        if (!isMobile) {
-                            try {
-                                const storedStr = JSON.stringify(stored);
-                                localStorage.setItem('user_' + email, storedStr);
-                                console.log('registerUser: ✓ Saved to localStorage for', email);
-                                console.log('registerUser: Data structure check:', {
-                                    hasName: !!stored.name,
-                                    hasEmail: !!stored.email,
-                                    hasPw: !!stored.pw,
-                                    hasSalt: !!(stored.pw && stored.pw.salt),
-                                    hasHash: !!(stored.pw && stored.pw.hash),
-                                    hasIterations: !!(stored.pw && stored.pw.iterations)
-                                });
-                                
-                                // Verify we can read it back immediately
-                                const readBack = localStorage.getItem('user_' + email);
-                                if (!readBack) {
-                                    console.error('registerUser: ⚠️ localStorage verification FAILED - data not readable immediately after write');
-                                } else {
-                                    const parsed = JSON.parse(readBack);
-                                    if (!parsed.pw || !parsed.pw.salt || !parsed.pw.hash) {
-                                        console.error('registerUser: ⚠️ localStorage verification FAILED - parsed data missing password fields');
-                                    } else {
-                                        console.log('registerUser: ✓ localStorage verification passed');
-                                    }
-                                }
-                            } catch(e) {
-                                console.error('registerUser: localStorage save error', e);
-                                // Don't fail registration on mobile if localStorage fails
-                                console.warn('registerUser: Continuing without localStorage cache');
-                            }
-                        } else {
-                            console.log('registerUser: Mobile device - skipping localStorage, using GitHub only');
-                        }
-                        
-                        // GitHub'a tam kullanıcı verisiyle kaydet (Contents API) - ZORUNLU
-                        console.log('registerUser: GitHub içeriklerine kaydediliyor...');
-                        showProgress('Hesap Oluşturuluyor...', 20);
-                        let remoteSuccess = false;
-                        try{
-                            updateProgress(50, 'Sunucuya Gönderiliyor...');
-                            remoteSuccess = await commitFullUserToRepo(stored);
-                            if (remoteSuccess) {
-                                updateProgress(100, '✅ Tamamlandı!');
-                                hideProgress(true, '✅ Hesap Oluşturuldu!');
-                                console.log('registerUser: ✓ GitHub kaydı başarılı');
-                                // Kayıt başarılı - formu temizle
-                                document.getElementById('registerName').value = '';
-                                document.getElementById('registerEmail').value = '';
-                                document.getElementById('registerPassword').value = '';
-                                document.getElementById('registerPassword2').value = '';
-                                document.getElementById('registerPhone').value = '';
-                                document.getElementById('registerCity').value = '';
-                                document.getElementById('registerDistrict').innerHTML = '<option value="">Önce il seçiniz</option>';
-                                document.getElementById('registerNeighborhood').value = '';
-                                document.getElementById('registerAddressDetail').value = '';
-                                document.getElementById('registerPostalCode').value = '';
-                                // Tüm ikonları temizle
-                                document.querySelectorAll('#registerForm .validation-icon').forEach(icon => icon.remove());
-                                document.querySelectorAll('#registerForm input, #registerForm select, #registerForm textarea').forEach(el => {
-                                    el.style.borderColor = '';
-                                    el.style.boxShadow = '';
-                                });
-                                
-                                // Giriş sekmesine geç ve email'i doldur
-                                showNotification('✅ Kayıt başarıyla tamamlandı! Şimdi giriş yapabilirsiniz.', {type: 'success', duration: 3000});
-                                switchTab('login', document.querySelector('.form-tab'));
-                                document.getElementById('loginEmail').value = email;
-                                return;
-                            } else {
-                                const errDetail = 'GitHub API yanıt vermedi.\nZaman: ' + new Date().toLocaleString('tr-TR');
-                                hideProgress(false, '❌ Kayıt Başarısız!', errDetail);
-                                console.error('registerUser: GitHub kayıt başarısız oldu');
-                                showNotification('Kayıt tamamlanamadı. Lütfen internet bağlantınızı kontrol edip tekrar deneyin.', {type: 'error', duration: 4000});
-                                return;
-                            }
-                        }catch(e){
-                            console.error('registerUser: GitHub kayıt hatası', e);
-                            const errorMsg = e.message || 'Bilinmeyen hata';
-                            let userFriendlyMsg = '❌ Kayıt sırasında hata oluştu!\n\n';
+                            };
                             
-                            // Hata tipine göre özelleştirilmiş mesajlar
-                            if (errorMsg.includes('network') || errorMsg.includes('fetch')) {
-                                userFriendlyMsg += 'Ağ bağlantısı hatası tespit edildi.\n\nLütfen internet bağlantınızı kontrol edin ve tekrar deneyin.';
-                            } else if (errorMsg.includes('401') || errorMsg.includes('403')) {
-                                userFriendlyMsg += 'Yetkilendirme hatası.\n\nSistem geçici olarak kullanılamıyor olabilir.\nLütfen daha sonra tekrar deneyin.';
-                            } else if (errorMsg.includes('422') || errorMsg.includes('409')) {
-                                userFriendlyMsg += 'Bu email adresi zaten kayıtlı olabilir.\n\nLütfen giriş yapmayı deneyin veya farklı bir email kullanın.';
-                            } else if (errorMsg.includes('500') || errorMsg.includes('503')) {
-                                userFriendlyMsg += 'Sunucu geçici olarak hizmet veremiyor.\n\nLütfen birkaç dakika bekleyip tekrar deneyin.';
-                            } else {
-                                userFriendlyMsg += 'Teknik Hata: ' + errorMsg + '\n\nLütfen daha sonra tekrar deneyin veya destek ile iletişime geçin.';
-                            }
+                            // Kayıt formunu gizle, doğrulama adımını göster
+                            document.getElementById('registerForm').style.display = 'none';
+                            document.getElementById('emailVerifyStep').style.display = 'block';
+                            document.getElementById('verifyEmailDisplay').textContent = email;
+                            document.getElementById('emailVerifyCode').value = '';
+                            document.getElementById('emailVerifyMsg').innerHTML = '';
+                            document.getElementById('emailVerifyCode').focus();
                             
-                            const errDetail = 'Hata: ' + errorMsg + '\n\nDetay: ' + (e.stack || String(e)) + '\n\nZaman: ' + new Date().toLocaleString('tr-TR');
-                            hideProgress(false, '❌ Kayıt Hatası!', errDetail);
+                            showNotification('✅ Doğrulama kodu email adresinize gönderildi', {type: 'success', duration: 3000});
+                            return; // Doğrulama bekleniyor
                             
-                            showNotification(userFriendlyMsg.replace(/\n/g, ' '), {type: 'error', duration: 4500});
+                        } catch(e) {
+                            console.error('registerUser: send-verification error', e);
+                            showNotification('❌ Email gönderilemedi. Lütfen tekrar deneyin.', {type: 'error', duration: 4000});
                             return;
                         }
-                        } catch(unexpectedError) {
-                            console.error('registerUser: Beklenmeyen hata:', unexpectedError);
-                            showNotification('❌ Beklenmeyen bir hata oluştu. Lütfen sayfayı yenileyip tekrar deneyin.', {type: 'error', duration: 4000});
+
+                        } catch (registerError) {
+                            console.error('registerUser critical error:', registerError);
+                            showNotification('❌ Beklenmeyen bir hata oluştu', {type: 'error', duration: 4000});
+                        }
+                    }
+
+                    // ========== EMAIL DOĞRULAMA TAMAMLAMA ==========
+                    async function completeRegistration() {
+                        const pending = window._pendingRegistration;
+                        if (!pending) {
+                            showNotification('❌ Kayıt bilgileri bulunamadı. Lütfen tekrar deneyin.', {type: 'error', duration: 3000});
+                            backToRegisterForm();
+                            return;
+                        }
+                        
+                        const email = pending.email;
+                        const code = document.getElementById('emailVerifyCode').value.trim();
+                        
+                        if (!code || code.length !== 6) {
+                            document.getElementById('emailVerifyMsg').innerHTML = '<span style="color:#ef4444;">6 haneli kodu giriniz</span>';
+                            return;
+                        }
+                        
+                        document.getElementById('emailVerifyMsg').innerHTML = '<span style="color:#6b7280;">Kod kontrol ediliyor...</span>';
+                        
+                        const siteSettings = JSON.parse(localStorage.getItem('site_settings') || '{}');
+                        const commitEndpoint = siteSettings.commitEndpoint || 'https://ern-site.amtbrs-03.workers.dev';
+                        
+                        try {
+                            const res = await fetch(`${commitEndpoint}/check-verification`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ email, code })
+                            });
+                            
+                            const data = await res.json();
+                            
+                            if (!data.ok) {
+                                let errMsg = data.error || 'Doğrulama başarısız';
+                                if (data.attemptsLeft !== undefined) {
+                                    errMsg += ` (${data.attemptsLeft} deneme hakkı kaldı)`;
+                                }
+                                document.getElementById('emailVerifyMsg').innerHTML = `<span style="color:#ef4444;">${errMsg}</span>`;
+                                return;
+                            }
+                            
+                            // Email doğrulandı - kayıt işlemini tamamla
+                            document.getElementById('emailVerifyMsg').innerHTML = '<span style="color:#22c55e;">✓ Email doğrulandı, hesap oluşturuluyor...</span>';
+                            
+                            const { name, password, phone, city, district, neighborhood, addressDetail, postalCode } = pending;
+                            
+                            // generate salt and hash
+                            const salt = crypto.getRandomValues(new Uint8Array(SALT_BYTES));
+                            const hash = await deriveKey(password, salt.buffer, PW_ITERATIONS);
+                            
+                            const stored = {
+                                name,
+                                email,
+                                pw: {
+                                    algo: 'PBKDF2-SHA256',
+                                    iterations: PW_ITERATIONS,
+                                    salt: toBase64(salt.buffer),
+                                    hash: toBase64(hash.buffer)
+                                },
+                                address: {
+                                    city,
+                                    district,
+                                    neighborhood,
+                                    addressDetail,
+                                    postalCode
+                                },
+                                phone,
+                                createdAt: Date.now(),
+                                emailVerified: true
+                            };
+                            
+                            // MOBILE FIX: Detect mobile device
+                            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                            
+                            // Save to localStorage only on desktop
+                            if (!isMobile) {
+                                try {
+                                    localStorage.setItem('user_' + email, JSON.stringify(stored));
+                                    console.log('completeRegistration: ✓ Saved to localStorage');
+                                } catch(e) {
+                                    console.warn('completeRegistration: localStorage save failed', e);
+                                }
+                            }
+                            
+                            // GitHub'a kaydet
+                            showProgress('Hesap Oluşturuluyor...', 20);
+                            let remoteSuccess = false;
+                            try {
+                                updateProgress(50, 'Sunucuya Gönderiliyor...');
+                                remoteSuccess = await commitFullUserToRepo(stored);
+                                if (remoteSuccess) {
+                                    updateProgress(100, '✅ Tamamlandı!');
+                                    hideProgress(true, '✅ Hesap Oluşturuldu!');
+                                    console.log('completeRegistration: ✓ GitHub kaydı başarılı');
+                                    
+                                    // Temizle
+                                    window._pendingRegistration = null;
+                                    clearRegisterForm();
+                                    backToRegisterForm();
+                                    
+                                    showNotification('✅ Kayıt başarıyla tamamlandı! Şimdi giriş yapabilirsiniz.', {type: 'success', duration: 3000});
+                                    switchTab('login', document.querySelector('.form-tab'));
+                                    document.getElementById('loginEmail').value = email;
+                                    return;
+                                } else {
+                                    hideProgress(false, '❌ Kayıt Başarısız!');
+                                    document.getElementById('emailVerifyMsg').innerHTML = '<span style="color:#ef4444;">Kayıt tamamlanamadı. Lütfen tekrar deneyin.</span>';
+                                }
+                            } catch(e) {
+                                console.error('completeRegistration: GitHub error', e);
+                                hideProgress(false, '❌ Hata!');
+                                document.getElementById('emailVerifyMsg').innerHTML = '<span style="color:#ef4444;">Sunucu hatası. Lütfen tekrar deneyin.</span>';
+                            }
+                            
+                        } catch(e) {
+                            console.error('completeRegistration: check-verification error', e);
+                            document.getElementById('emailVerifyMsg').innerHTML = '<span style="color:#ef4444;">Bağlantı hatası</span>';
+                        }
+                    }
+                    
+                    function backToRegisterForm() {
+                        document.getElementById('emailVerifyStep').style.display = 'none';
+                        document.getElementById('registerForm').style.display = 'block';
+                    }
+                    
+                    function clearRegisterForm() {
+                        document.getElementById('registerName').value = '';
+                        document.getElementById('registerEmail').value = '';
+                        document.getElementById('registerPassword').value = '';
+                        document.getElementById('registerPassword2').value = '';
+                        document.getElementById('registerPhone').value = '';
+                        document.getElementById('registerCity').value = '';
+                        document.getElementById('registerDistrict').innerHTML = '<option value="">Önce il seçiniz</option>';
+                        document.getElementById('registerNeighborhood').value = '';
+                        document.getElementById('registerAddressDetail').value = '';
+                        document.getElementById('registerPostalCode').value = '';
+                        // Tüm ikonları temizle
+                        document.querySelectorAll('#registerForm .validation-icon').forEach(icon => icon.remove());
+                        document.querySelectorAll('#registerForm input, #registerForm select, #registerForm textarea').forEach(el => {
+                            el.style.borderColor = '';
+                            el.style.boxShadow = '';
+                        });
+                    }
+                    
+                    async function resendVerificationCode() {
+                        const pending = window._pendingRegistration;
+                        if (!pending) {
+                            showNotification('❌ Kayıt bilgileri bulunamadı', {type: 'error', duration: 3000});
+                            backToRegisterForm();
+                            return;
+                        }
+                        
+                        document.getElementById('emailVerifyMsg').innerHTML = '<span style="color:#6b7280;">Kod gönderiliyor...</span>';
+                        
+                        const siteSettings = JSON.parse(localStorage.getItem('site_settings') || '{}');
+                        const commitEndpoint = siteSettings.commitEndpoint || 'https://ern-site.amtbrs-03.workers.dev';
+                        
+                        try {
+                            const res = await fetch(`${commitEndpoint}/send-verification`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ email: pending.email })
+                            });
+                            
+                            const data = await res.json();
+                            
+                            if (data.ok) {
+                                document.getElementById('emailVerifyCode').value = '';
+                                document.getElementById('emailVerifyMsg').innerHTML = '<span style="color:#22c55e;">✓ Yeni kod gönderildi</span>';
+                                showNotification('✅ Yeni doğrulama kodu gönderildi', {type: 'success', duration: 3000});
+                            } else {
+                                document.getElementById('emailVerifyMsg').innerHTML = `<span style="color:#ef4444;">${data.error || 'Kod gönderilemedi'}</span>`;
+                            }
+                        } catch(e) {
+                            document.getElementById('emailVerifyMsg').innerHTML = '<span style="color:#ef4444;">Bağlantı hatası</span>';
                         }
                     }
 
