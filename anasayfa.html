@@ -2241,6 +2241,13 @@
                         
                         // ===== SİLİNMİŞ KULLANICI VE TEK OTURUM KONTROLÜ =====
                         (async function checkDeletedUser() {
+                            // Logout sonrası kontrolü atla
+                            const urlParams = new URLSearchParams(window.location.search);
+                            if (urlParams.get('logout') === '1') {
+                                console.log('checkDeletedUser: logout parametresi var - kontrol atlanıyor');
+                                return;
+                            }
+                            
                             const currentUser = getCached('currentUser');
                             if (!currentUser) return;
                             
@@ -2376,8 +2383,9 @@
                             }
                         }
                         
-                        // Periyodik kontrolü başlat
-                        if (getCached('currentUser')) {
+                        // Periyodik kontrolü başlat (logout sonrası hariç)
+                        const _urlParamsCheck = new URLSearchParams(window.location.search);
+                        if (getCached('currentUser') && _urlParamsCheck.get('logout') !== '1') {
                             sessionCheckInterval = setInterval(checkSessionValidity, 30000); // 30 saniye
                             console.log('[SessionCheck] Periyodik oturum kontrolü başlatıldı');
                         }
