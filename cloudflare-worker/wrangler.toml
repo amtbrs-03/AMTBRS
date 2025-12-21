@@ -6,17 +6,18 @@ compatibility_date = "2024-11-21"
 # If not set automatically, uncomment and add your account ID:
 # account_id = "your-account-id-here"
 
-# KV Namespace for rate limiting and verification codes
-[[kv_namespaces]]
-binding = "RATE_LIMIT_KV"
-id = "c1456321088b4d8799c24cd0f9954c9e"
-
 # Uncomment and set if you bind secrets/vars later
 # [vars]
 # GITHUB_TOKEN = ""
 
+# Routes
 routes = []
 # You can later add a custom route like:
 # routes = [
 #   { pattern = "api.ern-cicek.com.tr/send-order", custom_domain = true }
 # ]
+
+# KV Namespace for rate limiting and verification codes
+[[kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "c1456321088b4d8799c24cd0f9954c9e"
