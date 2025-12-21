@@ -3363,6 +3363,9 @@
                         btn.textContent = 'Gönderiliyor...';
                         if (msg) msg.innerHTML = '';
                         
+                        const step1 = document.getElementById('resetStep1');
+                        const step2 = document.getElementById('resetStep2');
+                        
                         try {
                             const res = await fetch('https://ern-site.amtbrs-03.workers.dev/request-reset', {
                                 method: 'POST',
@@ -3372,15 +3375,15 @@
                             
                             const data = await res.json();
                             
+                            // Güvenlik: Worker her durumda ok:true döner (kullanıcı yoksa bile)
+                            // Bu email enumeration saldırılarını önler
                             if (data.ok) {
                                 _resetEmail = email;
-                                // Step 2'ye geç
-                                const step1 = document.getElementById('resetStep1');
-                                const step2 = document.getElementById('resetStep2');
                                 if (step1) step1.style.display = 'none';
                                 if (step2) step2.style.display = 'block';
-                                showNotification('✅ Sıfırlama kodu email adresinize gönderildi', { type: 'success', duration: 4000 });
+                                showNotification('✅ Eğer bu email kayıtlıysa, sıfırlama kodu gönderildi', { type: 'success', duration: 4000 });
                             } else {
+                                // Sadece gerçek sunucu hataları (500, network error vb)
                                 if (msg) msg.innerHTML = '<span style="color:#ef4444;">' + (data.error || 'Bir hata oluştu') + '</span>';
                             }
                         } catch (e) {

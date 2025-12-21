@@ -143,7 +143,7 @@ export default {
                 subject: '🔐 ERN Çiçek - Şifre Sıfırlama Kodu',
                 html: emailHtml
               })
-            });
+            }).catch(e => console.error('Email send error:', e)); // Fire and forget - beklemeden devam et
           }
           
           return new Response(JSON.stringify({ ok: true, message: 'Sıfırlama kodu email adresinize gönderildi.' }), { 
