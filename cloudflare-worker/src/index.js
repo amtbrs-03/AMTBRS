@@ -229,10 +229,11 @@ export default {
         // Kod kontrolü
         if (code !== resetData.code) {
           resetData.attempts++;
+          const remainingTtl = Math.max(1, Math.ceil((resetData.expiresAt - Date.now()) / 1000));
           await env.RATE_LIMIT_KV.put(
             `reset:${email}`,
             JSON.stringify(resetData),
-            { expirationTtl: Math.ceil((resetData.expiresAt - Date.now()) / 1000) }
+            { expirationTtl: remainingTtl }
           );
           return new Response(JSON.stringify({ ok: false, error: 'Yanlış kod', attemptsLeft: 5 - resetData.attempts }), { 
             status: 400, headers: jsonHeaders(allowOrigin) 
@@ -522,10 +523,11 @@ export default {
         if (code !== verifyData.code) {
           verifyData.attempts++;
           const attemptsLeft = 5 - verifyData.attempts;
+          const ttl = Math.max(1, Math.ceil(remainingMs / 1000));
           await env.RATE_LIMIT_KV.put(
             `verify:${email}`,
             JSON.stringify(verifyData),
-            { expirationTtl: Math.ceil(remainingMs / 1000) }
+            { expirationTtl: ttl }
           );
           return new Response(JSON.stringify({ 
             ok: false, 
