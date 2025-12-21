@@ -3407,10 +3407,14 @@
                             if (msg) msg.innerHTML = '<span style="color:#ef4444;">6 haneli kodu girin</span>';
                             return;
                         }
-                        if (!password1 || password1.length < 4) {
-                            if (msg) msg.innerHTML = '<span style="color:#ef4444;">Şifre en az 4 karakter olmalı</span>';
+                        
+                        // Şifre politikası kontrolü
+                        const pwError = validatePasswordPolicy(password1);
+                        if (pwError) {
+                            if (msg) msg.innerHTML = '<span style="color:#ef4444;">' + pwError + '</span>';
                             return;
                         }
+                        
                         if (password1 !== password2) {
                             if (msg) msg.innerHTML = '<span style="color:#ef4444;">Şifreler eşleşmiyor</span>';
                             return;
@@ -3493,6 +3497,36 @@
                         const verifyBtn = document.getElementById('verifyResetBtn');
                         if (verifyBtn) {
                             verifyBtn.addEventListener('click', verifyResetCode);
+                        }
+                        
+                        // Şifre sıfırlama alanlarına canlı doğrulama ekle
+                        const resetPw1 = document.getElementById('resetNewPassword');
+                        const resetPw2 = document.getElementById('resetNewPassword2');
+                        const resetMsg = document.getElementById('resetStep2Msg');
+                        
+                        function checkResetPasswordOnInput() {
+                            const pw = resetPw1?.value || '';
+                            const pw2 = resetPw2?.value || '';
+                            const error = validatePasswordPolicy(pw);
+                            
+                            if (error) {
+                                if (resetMsg) resetMsg.innerHTML = '<span style="color:#f59e0b;font-size:0.85rem;">' + error + '</span>';
+                            } else if (pw2 && pw !== pw2) {
+                                if (resetMsg) resetMsg.innerHTML = '<span style="color:#ef4444;font-size:0.85rem;">Şifreler eşleşmiyor</span>';
+                            } else if (pw2 && pw === pw2) {
+                                if (resetMsg) resetMsg.innerHTML = '<span style="color:#22c55e;font-size:0.85rem;">✅ Şifre uygun</span>';
+                            } else {
+                                if (resetMsg) resetMsg.innerHTML = '';
+                            }
+                        }
+                        
+                        if (resetPw1) {
+                            resetPw1.addEventListener('input', checkResetPasswordOnInput);
+                            resetPw1.addEventListener('focus', checkResetPasswordOnInput);
+                        }
+                        if (resetPw2) {
+                            resetPw2.addEventListener('input', checkResetPasswordOnInput);
+                            resetPw2.addEventListener('focus', checkResetPasswordOnInput);
                         }
                         
                         const resendLink = document.getElementById('resendCodeLink');
@@ -5942,6 +5976,29 @@
                             }
                         }
                     });
+
+                    // Şifre politikası doğrulama fonksiyonu (kayıt ve şifre sıfırlama için ortak)
+                    function validatePasswordPolicy(password) {
+                        if (!password) {
+                            return 'Şifre alanı boş bırakılamaz';
+                        }
+                        if (password.length < 7) {
+                            return 'Şifre en az 7 karakter olmalıdır';
+                        }
+                        if (!/[A-Z]/.test(password)) {
+                            return 'Şifre en az bir büyük harf içermelidir (A-Z)';
+                        }
+                        if (!/[a-z]/.test(password)) {
+                            return 'Şifre en az bir küçük harf içermelidir (a-z)';
+                        }
+                        if (!/[0-9]/.test(password)) {
+                            return 'Şifre en az bir rakam içermelidir (0-9)';
+                        }
+                        if (!/[!@#$%^&*()_+\-=\[\]{};:'"<>,.?/\\|`~]/.test(password)) {
+                            return 'Şifre en az bir özel karakter içermelidir (!@#$%...)';
+                        }
+                        return null; // Geçerli şifre
+                    }
 
                     // Estetik bildirim sistemi - alert yerine kullanılacak
                     function showNotification(msg, opts) {
