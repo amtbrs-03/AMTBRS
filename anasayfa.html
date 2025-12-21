@@ -3529,6 +3529,33 @@
                             resetPw2.addEventListener('focus', checkResetPasswordOnInput);
                         }
                         
+                        // Şifre sıfırlama kodu alanına canlı doğrulama ekle
+                        const resetCodeInput = document.getElementById('resetCode');
+                        if (resetCodeInput) {
+                            resetCodeInput.addEventListener('input', function() {
+                                const code = this.value.replace(/\D/g, ''); // Sadece rakam
+                                this.value = code; // Rakam olmayan karakterleri temizle
+                                
+                                const codeStatus = document.getElementById('resetCodeStatus');
+                                if (!codeStatus) {
+                                    // Status elementi yoksa oluştur
+                                    const statusEl = document.createElement('div');
+                                    statusEl.id = 'resetCodeStatus';
+                                    statusEl.style.cssText = 'text-align:center;margin-top:0.5rem;font-size:0.85rem;';
+                                    this.parentNode.appendChild(statusEl);
+                                }
+                                
+                                const statusDiv = document.getElementById('resetCodeStatus');
+                                if (code.length === 0) {
+                                    statusDiv.innerHTML = '';
+                                } else if (code.length < 6) {
+                                    statusDiv.innerHTML = '<span style="color:#f59e0b;">❌ ' + (6 - code.length) + ' rakam daha giriniz</span>';
+                                } else if (code.length === 6) {
+                                    statusDiv.innerHTML = '<span style="color:#22c55e;">✅ Kod hazır</span>';
+                                }
+                            });
+                        }
+                        
                         const resendLink = document.getElementById('resendCodeLink');
                         if (resendLink) {
                             resendLink.addEventListener('click', function(e) {
@@ -3547,6 +3574,26 @@
                         const confirmEmailVerifyBtn = document.getElementById('confirmEmailVerifyBtn');
                         if (confirmEmailVerifyBtn) {
                             confirmEmailVerifyBtn.addEventListener('click', completeRegistration);
+                        }
+                        
+                        // Kayıt doğrulama kodu alanına canlı doğrulama ekle
+                        const emailVerifyCodeInput = document.getElementById('emailVerifyCode');
+                        if (emailVerifyCodeInput) {
+                            emailVerifyCodeInput.addEventListener('input', function() {
+                                const code = this.value.replace(/\D/g, ''); // Sadece rakam
+                                this.value = code; // Rakam olmayan karakterleri temizle
+                                
+                                const msgDiv = document.getElementById('emailVerifyMsg');
+                                if (msgDiv) {
+                                    if (code.length === 0) {
+                                        msgDiv.innerHTML = '';
+                                    } else if (code.length < 6) {
+                                        msgDiv.innerHTML = '<span style="color:#f59e0b;">❌ ' + (6 - code.length) + ' rakam daha giriniz</span>';
+                                    } else if (code.length === 6) {
+                                        msgDiv.innerHTML = '<span style="color:#22c55e;">✅ Kod hazır - "Kayıt Ol" butonuna basın</span>';
+                                    }
+                                }
+                            });
                         }
                         
                         const resendVerifyCodeLink = document.getElementById('resendVerifyCodeLink');
