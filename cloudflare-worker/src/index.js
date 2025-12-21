@@ -57,11 +57,34 @@ export default {
       if (path === '/request-reset' && request.method === 'POST') {
         const payload = await readJsonLoose(request);
         const email = (payload?.email || '').trim().toLowerCase();
+        const turnstileToken = payload?.turnstileToken || '';
         
         if (!email || !email.includes('@')) {
           return new Response(JSON.stringify({ ok: false, error: 'Geçerli bir email adresi girin' }), { 
             status: 400, headers: jsonHeaders(allowOrigin) 
           });
+        }
+        
+        // 🔒 GÜVENLİK: IP bazlı email denemesi rate limiting
+        const emailRateCheck = await checkEmailRateLimit(clientIp, env);
+        if (!emailRateCheck.allowed) {
+          return new Response(JSON.stringify({ 
+            ok: false, 
+            error: 'Çok fazla şifre sıfırlama denemesi. ' + emailRateCheck.waitMinutes + ' dakika sonra tekrar deneyin.',
+            retryAfter: emailRateCheck.waitMinutes * 60
+          }), { 
+            status: 429, headers: jsonHeaders(allowOrigin) 
+          });
+        }
+        
+        // 🤖 GÜVENLİK: Turnstile CAPTCHA doğrulaması (eğer token gönderilmişse)
+        if (env.TURNSTILE_SECRET_KEY && turnstileToken) {
+          const turnstileResult = await verifyTurnstile(turnstileToken, clientIp, env);
+          if (!turnstileResult.success) {
+            return new Response(JSON.stringify({ ok: false, error: 'Güvenlik doğrulaması başarısız. Sayfayı yenileyip tekrar deneyin.' }), { 
+              status: 400, headers: jsonHeaders(allowOrigin) 
+            });
+          }
         }
         
         // GitHub'da kullanıcı var mı kontrol et
@@ -290,11 +313,34 @@ export default {
       if (path === '/send-verification' && request.method === 'POST') {
         const payload = await readJsonLoose(request);
         const email = (payload?.email || '').trim().toLowerCase();
+        const turnstileToken = payload?.turnstileToken || '';
         
         if (!email || !email.includes('@')) {
           return new Response(JSON.stringify({ ok: false, error: 'Geçerli bir email adresi girin' }), { 
             status: 400, headers: jsonHeaders(allowOrigin) 
           });
+        }
+        
+        // 🔒 GÜVENLİK: IP bazlı email denemesi rate limiting
+        const emailRateCheck = await checkEmailRateLimit(clientIp, env);
+        if (!emailRateCheck.allowed) {
+          return new Response(JSON.stringify({ 
+            ok: false, 
+            error: 'Çok fazla kayıt denemesi. ' + emailRateCheck.waitMinutes + ' dakika sonra tekrar deneyin.',
+            retryAfter: emailRateCheck.waitMinutes * 60
+          }), { 
+            status: 429, headers: jsonHeaders(allowOrigin) 
+          });
+        }
+        
+        // 🤖 GÜVENLİK: Turnstile CAPTCHA doğrulaması (eğer token gönderilmişse)
+        if (env.TURNSTILE_SECRET_KEY && turnstileToken) {
+          const turnstileResult = await verifyTurnstile(turnstileToken, clientIp, env);
+          if (!turnstileResult.success) {
+            return new Response(JSON.stringify({ ok: false, error: 'Güvenlik doğrulaması başarısız. Sayfayı yenileyip tekrar deneyin.' }), { 
+              status: 400, headers: jsonHeaders(allowOrigin) 
+            });
+          }
         }
         
         // Önce mevcut bir doğrulama kodu var mı kontrol et (3 dk bekleme)
@@ -2162,6 +2208,82 @@ async function writeEmailLogToGitHub({ env, log }) {
   }
 
   return { ok: false, error: 'GitHub commit retry limit reached', path: filePath };
+}
+
+// ✅ SECURITY: IP bazlı email denemesi rate limiting
+// Aynı IP'den 15 dakikada max 5 farklı email denemesi
+async function checkEmailRateLimit(clientIp, env) {
+  const maxEmails = 5; // Max email attempts per window
+  const windowMinutes = 15;
+  const windowSeconds = windowMinutes * 60;
+  
+  try {
+    if (!env.RATE_LIMIT_KV) return { allowed: true };
+    
+    const key = `email_rate:${clientIp}`;
+    const data = await env.RATE_LIMIT_KV.get(key);
+    
+    let attempts = 0;
+    let firstAttempt = Date.now();
+    
+    if (data) {
+      const parsed = JSON.parse(data);
+      const age = Date.now() - parsed.firstAttempt;
+      
+      if (age < windowSeconds * 1000) {
+        attempts = parsed.attempts + 1;
+        firstAttempt = parsed.firstAttempt;
+      } else {
+        attempts = 1;
+        firstAttempt = Date.now();
+      }
+    } else {
+      attempts = 1;
+    }
+    
+    // Store updated count
+    await env.RATE_LIMIT_KV.put(
+      key,
+      JSON.stringify({ attempts, firstAttempt }),
+      { expirationTtl: windowSeconds + 60 }
+    );
+    
+    if (attempts > maxEmails) {
+      const elapsed = Date.now() - firstAttempt;
+      const remainingMs = (windowSeconds * 1000) - elapsed;
+      const waitMinutes = Math.ceil(remainingMs / 60000);
+      return { allowed: false, attempts, waitMinutes };
+    }
+    
+    return { allowed: true, attempts, remaining: maxEmails - attempts };
+  } catch (e) {
+    console.error('Email rate limit check error:', e);
+    return { allowed: true };
+  }
+}
+
+// ✅ SECURITY: Cloudflare Turnstile CAPTCHA doğrulaması
+async function verifyTurnstile(token, clientIp, env) {
+  try {
+    const secretKey = env.TURNSTILE_SECRET_KEY;
+    if (!secretKey) return { success: true }; // Skip if not configured
+    
+    const formData = new FormData();
+    formData.append('secret', secretKey);
+    formData.append('response', token);
+    formData.append('remoteip', clientIp);
+    
+    const result = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      body: formData
+    });
+    
+    const outcome = await result.json();
+    return { success: outcome.success, errorCodes: outcome['error-codes'] };
+  } catch (e) {
+    console.error('Turnstile verification error:', e);
+    return { success: true }; // Fail open on error
+  }
 }
 
 // ✅ SECURITY: Rate Limiting with Durable Objects

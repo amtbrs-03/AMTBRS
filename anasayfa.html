@@ -1135,6 +1135,23 @@
         window.getCached = getCached;
         window.setCached = setCached;
     </script>
+    
+    <!-- Cloudflare Turnstile CAPTCHA (Bot Koruması) -->
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <script>
+        // Turnstile site key - Cloudflare Dashboard'dan alınır
+        window.TURNSTILE_SITE_KEY = ''; // Boş bırakılırsa captcha devre dışı
+        
+        // Turnstile token'ı al
+        window.getTurnstileToken = function() {
+            if (!window.TURNSTILE_SITE_KEY) return Promise.resolve('');
+            const widget = document.querySelector('.cf-turnstile iframe');
+            if (widget && window.turnstile) {
+                return Promise.resolve(window.turnstile.getResponse());
+            }
+            return Promise.resolve('');
+        };
+    </script>
   </head>
   <body>
                 <!-- Test Yayını Alert -->
@@ -1354,6 +1371,8 @@
                                     <label>Email</label>
                                     <input type="email" id="resetEmail" placeholder="Kayıtlı email adresiniz">
                                 </div>
+                                <!-- Turnstile CAPTCHA (site key yoksa gizli kalır) -->
+                                <div id="resetTurnstile" class="cf-turnstile" data-callback="onResetTurnstileSuccess" style="margin:0.5rem 0;display:none;"></div>
                                 <button type="button" id="sendResetCodeBtn" style="width:100%;margin-top:0.5rem;">Kod Gönder</button>
                                 <div id="resetStep1Msg" style="text-align:center;margin-top:0.75rem;font-size:0.9rem;"></div>
                                 <div style="text-align:center;margin-top:1rem;">
@@ -1519,6 +1538,8 @@
                                         <input type="text" id="registerPostalCode" placeholder="Posta Kodu" style="width:100%; padding:0.8rem; border:1px solid rgba(10,12,30,0.1); border-radius:8px; font-size:1rem;">
                                     </div>
                                 </div>
+                                <!-- Turnstile CAPTCHA (site key yoksa gizli kalır) -->
+                                <div id="registerTurnstile" class="cf-turnstile" data-callback="onRegisterTurnstileSuccess" style="margin:0.5rem 0;display:none;"></div>
                                 <button data-action="register" type="submit" style="width: 100%; margin-top: 1rem;">Devam Et</button>
                             </form>
                             <!-- Email Doğrulama Adımı -->
@@ -3348,6 +3369,49 @@
                     // Email'i saklayacak değişken
                     let _resetEmail = '';
                     
+                    // Turnstile token'larını saklayacak değişkenler
+                    let _resetTurnstileToken = '';
+                    let _registerTurnstileToken = '';
+                    
+                    // Turnstile callback fonksiyonları
+                    window.onResetTurnstileSuccess = function(token) { _resetTurnstileToken = token; };
+                    window.onRegisterTurnstileSuccess = function(token) { _registerTurnstileToken = token; };
+                    
+                    // Turnstile widget'larını initialize et
+                    function initTurnstile() {
+                        if (!window.TURNSTILE_SITE_KEY || !window.turnstile) return;
+                        
+                        const resetWidget = document.getElementById('resetTurnstile');
+                        const registerWidget = document.getElementById('registerTurnstile');
+                        
+                        if (resetWidget) {
+                            resetWidget.style.display = 'block';
+                            window.turnstile.render('#resetTurnstile', {
+                                sitekey: window.TURNSTILE_SITE_KEY,
+                                callback: window.onResetTurnstileSuccess
+                            });
+                        }
+                        
+                        if (registerWidget) {
+                            registerWidget.style.display = 'block';
+                            window.turnstile.render('#registerTurnstile', {
+                                sitekey: window.TURNSTILE_SITE_KEY,
+                                callback: window.onRegisterTurnstileSuccess
+                            });
+                        }
+                    }
+                    
+                    // Sayfa yüklendiğinde Turnstile'ı bekle
+                    if (window.TURNSTILE_SITE_KEY) {
+                        const checkTurnstile = setInterval(() => {
+                            if (window.turnstile) {
+                                clearInterval(checkTurnstile);
+                                initTurnstile();
+                            }
+                        }, 100);
+                        setTimeout(() => clearInterval(checkTurnstile), 10000); // 10 sn sonra vazgeç
+                    }
+                    
                     async function sendResetCode() {
                         const emailInput = document.getElementById('resetEmail');
                         const btn = document.getElementById('sendResetCodeBtn');
@@ -3370,7 +3434,7 @@
                             const res = await fetch('https://ern-site.amtbrs-03.workers.dev/request-reset', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ email })
+                                body: JSON.stringify({ email, turnstileToken: _resetTurnstileToken })
                             });
                             
                             const data = await res.json();
@@ -3908,7 +3972,7 @@
                             const verifyRes = await fetch(`${commitEndpoint}/send-verification`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ email })
+                                body: JSON.stringify({ email, turnstileToken: _registerTurnstileToken })
                             });
                             
                             const verifyData = await verifyRes.json();
@@ -4205,7 +4269,7 @@
                             const res = await fetch(`${commitEndpoint}/send-verification`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ email: pending.email })
+                                body: JSON.stringify({ email: pending.email, turnstileToken: _registerTurnstileToken })
                             });
                             
                             const data = await res.json();
