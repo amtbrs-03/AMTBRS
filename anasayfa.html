@@ -3792,22 +3792,7 @@
                         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
                         console.log('registerUser: Device type:', isMobile ? 'MOBILE' : 'DESKTOP');
 
-                        // Check if user exists in remote GitHub storage FIRST (most reliable)
-                        console.log('registerUser: Checking if user exists remotely...');
-                        try {
-                            const remoteUser = await fetchUserFromRepo(email);
-                            if (remoteUser) {
-                                console.log('registerUser: User already exists in GitHub');
-                                showNotification('Bu email ile kayıt bulunuyor. Lütfen giriş yapın.', {type: 'info', duration: 3000});
-                                switchTab('login', document.querySelector('.form-tab'));
-                                document.getElementById('loginEmail').value = email;
-                                return;
-                            }
-                        } catch(e) {
-                            console.log('registerUser: No remote user found (good), proceeding with registration');
-                        }
-
-                        // Check localStorage only on desktop (mobile localStorage is unreliable)
+                        // localStorage kontrolü (sadece desktop - Worker zaten GitHub kontrolü yapıyor)
                         if (!isMobile) {
                             const existingUser = localStorage.getItem('user_' + email);
                             if (existingUser) {
