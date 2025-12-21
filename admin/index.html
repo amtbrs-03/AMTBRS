@@ -12,17 +12,21 @@
 
     // Admin erişimi - GitHub token ile güvenli
     // sessionStorage'da token tutar, logout'ta silinir
+    var _adminPromptShown = false;
     (function(){
       try {
-        // Token check - sessionStorage'da varsa oturum açık
-        var token = sessionStorage.getItem('admin_gh_token');
-        
         document.addEventListener('DOMContentLoaded', function() {
+          // Fresh token read on page load
+          var token = sessionStorage.getItem('admin_gh_token');
           var adminUI = document.getElementById('adminUI');
+          
           if (adminUI) {
             if (!token) {
-              // Token yoksa prompt göster
-              promptForToken();
+              // Token yoksa sadece BİR KEZ prompt göster
+              if (!_adminPromptShown) {
+                _adminPromptShown = true;
+                promptForToken();
+              }
             } else {
               adminUI.style.display = 'block';
             }
@@ -33,10 +37,14 @@
     
     // GitHub token ile authentication
     function promptForToken() {
+      if (_adminPromptShown) return; // Sadece bir kez çalış
+      _adminPromptShown = true;
+      
       var token = prompt('Admin Paneli\n\nGitHub Personal Access Token girin:\n(repo + user scopes gerekli)', '');
       
       if (!token) {
         // Kullanıcı iptal etti
+        _adminPromptShown = false; // Sonra tekrar deneyebilsin
         if (document.getElementById('adminUI')) {
           document.getElementById('adminUI').style.display = 'none';
         }
@@ -68,6 +76,7 @@
         if (adminUI) adminUI.style.display = 'block';
       })
       .catch(err => {
+        _adminPromptShown = false; // Hata varsa tekrar soracak
         alert('❌ Token doğrulanamadı:\n' + err.message + '\n\nLütfen geçerli bir GitHub token girin.');
         promptForToken();
       });
