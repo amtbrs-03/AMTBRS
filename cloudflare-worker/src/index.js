@@ -426,14 +426,19 @@ export default {
         
         // KV'den kodu kontrol et
         if (!env.RATE_LIMIT_KV) {
-          return new Response(JSON.stringify({ ok: false, error: 'Sunucu yapılandırma hatası' }), { 
+          return new Response(JSON.stringify({ ok: false, error: 'Sunucu yapılandırma hatası', errorCode: 'KV_NOT_CONFIGURED' }), { 
             status: 500, headers: jsonHeaders(allowOrigin) 
           });
         }
         
         const storedData = await env.RATE_LIMIT_KV.get(`verify:${email}`);
         if (!storedData) {
-          return new Response(JSON.stringify({ ok: false, error: 'Kod bulunamadı veya süresi dolmuş' }), { 
+          return new Response(JSON.stringify({ 
+            ok: false, 
+            error: 'Doğrulama kodu bulunamadı. Email adresinize yeni bir kod gönderin.', 
+            errorCode: 'CODE_NOT_FOUND',
+            hint: 'Kod 3 dakika sonra otomatik olarak silinir. Lütfen yeni kod isteyin.'
+          }), { 
             status: 400, headers: jsonHeaders(allowOrigin) 
           });
         }
@@ -441,9 +446,15 @@ export default {
         const verifyData = JSON.parse(storedData);
         
         // Süre kontrolü
-        if (Date.now() > verifyData.expiresAt) {
+        const remainingMs = verifyData.expiresAt - Date.now();
+        if (remainingMs <= 0) {
           await env.RATE_LIMIT_KV.delete(`verify:${email}`);
-          return new Response(JSON.stringify({ ok: false, error: 'Kodun süresi dolmuş. Yeni kod isteyin.' }), { 
+          return new Response(JSON.stringify({ 
+            ok: false, 
+            error: 'Kodun süresi dolmuş.', 
+            errorCode: 'CODE_EXPIRED',
+            hint: 'Lütfen "Kodu tekrar gönder" butonuna tıklayarak yeni bir kod alın.'
+          }), { 
             status: 400, headers: jsonHeaders(allowOrigin) 
           });
         }
@@ -451,7 +462,12 @@ export default {
         // Deneme sayısı kontrolü (max 5)
         if (verifyData.attempts >= 5) {
           await env.RATE_LIMIT_KV.delete(`verify:${email}`);
-          return new Response(JSON.stringify({ ok: false, error: 'Çok fazla yanlış deneme. Yeni kod isteyin.' }), { 
+          return new Response(JSON.stringify({ 
+            ok: false, 
+            error: 'Çok fazla yanlış deneme.', 
+            errorCode: 'TOO_MANY_ATTEMPTS',
+            hint: '5 yanlış denemeden sonra kod iptal edildi. Yeni kod isteyin.'
+          }), { 
             status: 400, headers: jsonHeaders(allowOrigin) 
           });
         }
@@ -459,12 +475,19 @@ export default {
         // Kod kontrolü
         if (code !== verifyData.code) {
           verifyData.attempts++;
+          const attemptsLeft = 5 - verifyData.attempts;
           await env.RATE_LIMIT_KV.put(
             `verify:${email}`,
             JSON.stringify(verifyData),
-            { expirationTtl: Math.ceil((verifyData.expiresAt - Date.now()) / 1000) }
+            { expirationTtl: Math.ceil(remainingMs / 1000) }
           );
-          return new Response(JSON.stringify({ ok: false, error: 'Yanlış kod', attemptsLeft: 5 - verifyData.attempts }), { 
+          return new Response(JSON.stringify({ 
+            ok: false, 
+            error: `Yanlış kod girdiniz.`, 
+            errorCode: 'WRONG_CODE',
+            attemptsLeft: attemptsLeft,
+            hint: attemptsLeft <= 2 ? `Dikkat: ${attemptsLeft} deneme hakkınız kaldı!` : `${attemptsLeft} deneme hakkınız kaldı.`
+          }), { 
             status: 400, headers: jsonHeaders(allowOrigin) 
           });
         }

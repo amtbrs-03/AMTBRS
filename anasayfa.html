@@ -3942,11 +3942,37 @@
                                     verifyBtn.textContent = originalVerifyBtnText;
                                     verifyBtn.style.opacity = '1';
                                 }
+                                
+                                // Hata mesajı oluştur
                                 let errMsg = data.error || 'Doğrulama başarısız';
-                                if (data.attemptsLeft !== undefined) {
-                                    errMsg += ` (${data.attemptsLeft} deneme hakkı kaldı)`;
+                                let hintMsg = '';
+                                
+                                // Hata tipine göre özel mesaj ve ipucu
+                                if (data.errorCode === 'WRONG_CODE') {
+                                    errMsg = `❌ ${errMsg}`;
+                                    hintMsg = data.hint || '';
+                                } else if (data.errorCode === 'CODE_EXPIRED') {
+                                    errMsg = `⏱️ ${errMsg}`;
+                                    hintMsg = data.hint || 'Yeni kod isteyin.';
+                                } else if (data.errorCode === 'CODE_NOT_FOUND') {
+                                    errMsg = `📧 ${errMsg}`;
+                                    hintMsg = data.hint || '';
+                                } else if (data.errorCode === 'TOO_MANY_ATTEMPTS') {
+                                    errMsg = `🚫 ${errMsg}`;
+                                    hintMsg = data.hint || '';
                                 }
-                                document.getElementById('emailVerifyMsg').innerHTML = `<span style="color:#ef4444;">${errMsg}</span>`;
+                                
+                                // Deneme hakkı kaldıysa ekle
+                                if (data.attemptsLeft !== undefined && data.attemptsLeft > 0) {
+                                    hintMsg = data.hint || `${data.attemptsLeft} deneme hakkınız kaldı.`;
+                                }
+                                
+                                let htmlContent = `<span style="color:#ef4444;font-weight:600;">${errMsg}</span>`;
+                                if (hintMsg) {
+                                    htmlContent += `<br><span style="color:#6b7280;font-size:12px;margin-top:4px;display:block;">${hintMsg}</span>`;
+                                }
+                                
+                                document.getElementById('emailVerifyMsg').innerHTML = htmlContent;
                                 return;
                             }
                             
