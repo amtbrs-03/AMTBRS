@@ -10,23 +10,75 @@
     window.addEventListener('pageshow', __forceTop);
     window.addEventListener('load', __forceTop);
 
-    // Admin erişimi - süresiz oturum (çıkış butonuna basılmadığı sürece açık kalır)
-    // Token girilmemişse modal açılacak, girilmişse direkt erişim
-    try {
-      localStorage.setItem('admin_auth_ok', '1');
-      // Token'ı otomatik set etme - kullanıcı kendisi girsin
-    } catch(e){}
-  (function(){
-    try {
-      // Admin panel erişimi: çıkış yapılmadığı sürece oturum açık
-      var ok = localStorage.getItem('admin_auth_ok') === '1';
-      // YAPI SİLİNSE BİLE: Admin paneli her durumda açılır
-      document.addEventListener('DOMContentLoaded', function() {
+    // Admin erişimi - GitHub token ile güvenli
+    // sessionStorage'da token tutar, logout'ta silinir
+    (function(){
+      try {
+        // Token check - sessionStorage'da varsa oturum açık
+        var token = sessionStorage.getItem('admin_gh_token');
+        
+        document.addEventListener('DOMContentLoaded', function() {
+          var adminUI = document.getElementById('adminUI');
+          if (adminUI) {
+            if (!token) {
+              // Token yoksa prompt göster
+              promptForToken();
+            } else {
+              adminUI.style.display = 'block';
+            }
+          }
+        });
+      } catch(_){}
+    })();
+    
+    // GitHub token ile authentication
+    function promptForToken() {
+      var token = prompt('Admin Paneli\n\nGitHub Personal Access Token girin:\n(repo + user scopes gerekli)', '');
+      
+      if (!token) {
+        // Kullanıcı iptal etti
+        if (document.getElementById('adminUI')) {
+          document.getElementById('adminUI').style.display = 'none';
+        }
+        return;
+      }
+      
+      // Token'ı GitHub API ile doğrula
+      validateGitHubToken(token);
+    }
+    
+    function validateGitHubToken(token) {
+      fetch('https://api.github.com/user', {
+        headers: {
+          'Authorization': 'token ' + token,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      })
+      .then(r => {
+        if (r.status === 401) throw new Error('Invalid token');
+        if (!r.ok) throw new Error('Auth failed: ' + r.status);
+        return r.json();
+      })
+      .then(user => {
+        // Token geçerli - sessionStorage'a kaydet
+        sessionStorage.setItem('admin_gh_token', token);
+        sessionStorage.setItem('admin_user', user.login);
+        
         var adminUI = document.getElementById('adminUI');
         if (adminUI) adminUI.style.display = 'block';
+      })
+      .catch(err => {
+        alert('❌ Token doğrulanamadı:\n' + err.message + '\n\nLütfen geçerli bir GitHub token girin.');
+        promptForToken();
       });
-    } catch(_){}
-  })();
+    }
+    
+    // Logout fonksiyonu (daha sonra düğmeye bağlanacak)
+    function adminLogout() {
+      sessionStorage.removeItem('admin_gh_token');
+      sessionStorage.removeItem('admin_user');
+      location.reload();
+    }
   // Mojibake düzeltici - Türkçe karakterleri düzelt
   (function(){
     const root = document.documentElement;
@@ -1618,6 +1670,8 @@
       try { localStorage.removeItem('admin_logged_in'); } catch(_){}
       try { localStorage.removeItem('admin_passkey'); } catch(_){}
       try { sessionStorage.removeItem('admin_auth_ok'); } catch(_){}
+      try { sessionStorage.removeItem('admin_gh_token'); } catch(_){}
+      try { sessionStorage.removeItem('admin_user'); } catch(_){}
       try { sessionStorage.clear(); } catch(_){}
       
       await new Promise(r => setTimeout(r, 300));
