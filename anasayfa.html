@@ -1136,27 +1136,25 @@
         window.setCached = setCached;
     </script>
     
-    <!-- Cloudflare Turnstile CAPTCHA (Bot Koruması) -->
+    <!-- Cloudflare Turnstile CAPTCHA (Bot Koruması) - v2 cache bust -->
     <script>
         // Turnstile site key - Cloudflare Dashboard'dan alınır
         // Boş bırakılırsa captcha devre dışı kalır ve script yüklenmez
-        window.TURNSTILE_SITE_KEY = '';
+        window.TURNSTILE_SITE_KEY = null; // null = devre dışı
         
         // Script'i sadece site key varsa yükle
-        if (window.TURNSTILE_SITE_KEY) {
+        if (window.TURNSTILE_SITE_KEY && typeof window.TURNSTILE_SITE_KEY === 'string' && window.TURNSTILE_SITE_KEY.length > 0) {
             var turnstileScript = document.createElement('script');
-            turnstileScript.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+            turnstileScript.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
             turnstileScript.async = true;
-            turnstileScript.defer = true;
             document.head.appendChild(turnstileScript);
         }
         
         // Turnstile token'ı al
         window.getTurnstileToken = function() {
             if (!window.TURNSTILE_SITE_KEY) return Promise.resolve('');
-            const widget = document.querySelector('.cf-turnstile iframe');
-            if (widget && window.turnstile) {
-                return Promise.resolve(window.turnstile.getResponse());
+            if (window.turnstile) {
+                try { return Promise.resolve(window.turnstile.getResponse() || ''); } catch(e) { return Promise.resolve(''); }
             }
             return Promise.resolve('');
         };
