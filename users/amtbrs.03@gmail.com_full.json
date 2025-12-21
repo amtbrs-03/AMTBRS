@@ -1,0 +1,20 @@
+{
+  "name": "OZAN DEMİR",
+  "email": "amtbrs.03@gmail.com",
+  "pw": {
+    "algo": "PBKDF2-SHA256",
+    "iterations": 200000,
+    "salt": "1K2r9texkqp+qNGBGCEcOA==",
+    "hash": "tZBl0Sa1X5A74f2CKvvn/sELjGGhFd88h15pI7Mwtk8="
+  },
+  "address": {
+    "city": "Ankara",
+    "district": "Altındağ",
+    "neighborhood": "Altındağ",
+    "addressDetail": "Fevziçakmak Caddesi No:47 Kısmet Apt., Çağlayan Mahallesi, Kağıthane, İstanbul",
+    "postalCode": "34100"
+  },
+  "phone": "+90 538 417 9081",
+  "createdAt": 1766341161814,
+  "emailVerified": true
+}
