@@ -3725,33 +3725,9 @@
                                 document.getElementById('registerPassword').focus();
                                 return;
                             }
-                            // ✅ Security Fix #3: Password policy - minimum 12 characters + complexity
-                            if (password.length < 12) {
-                                showNotification('🔐 Şifre en az 12 karakter olmalıdır', {type: 'warn', duration: 3000});
-                                document.getElementById('registerPassword').focus();
-                                return;
-                            }
-                            // Check for uppercase letter
-                            if (!/[A-Z]/.test(password)) {
-                                showNotification('🔐 Şifre en az bir büyük harf içermelidir (A-Z)', {type: 'warn', duration: 3000});
-                                document.getElementById('registerPassword').focus();
-                                return;
-                            }
-                            // Check for lowercase letter
-                            if (!/[a-z]/.test(password)) {
-                                showNotification('🔐 Şifre en az bir küçük harf içermelidir (a-z)', {type: 'warn', duration: 3000});
-                                document.getElementById('registerPassword').focus();
-                                return;
-                            }
-                            // Check for number
-                            if (!/[0-9]/.test(password)) {
-                                showNotification('🔐 Şifre en az bir rakam içermelidir (0-9)', {type: 'warn', duration: 3000});
-                                document.getElementById('registerPassword').focus();
-                                return;
-                            }
-                            // Check for special character
-                            if (!/[!@#$%^&*()_+\-=\[\]{};:'"<>,.?/\\|`~]/.test(password)) {
-                                showNotification('🔐 Şifre en az bir özel karakter içermelidir (!@#$%...)', {type: 'warn', duration: 3000});
+                            // Şifre politikası - minimum 7 karakter
+                            if (password.length < 7) {
+                                showNotification('🔐 Şifre en az 7 karakter olmalıdır', {type: 'warn', duration: 3000});
                                 document.getElementById('registerPassword').focus();
                                 return;
                             }
