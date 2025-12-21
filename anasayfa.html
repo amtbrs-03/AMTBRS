@@ -110,6 +110,40 @@
 </script>
 
     <style>
+        /* 📱 CSS Variables - Responsive Design System */
+        :root {
+            /* Colors */
+            --primary: #0b2f1f;
+            --primary-light: #1e8f55;
+            --primary-dark: #082f1e;
+            --bg: #ffffff;
+            --text: #0b1220;
+            --text-light: #475569;
+            --border: rgba(10, 12, 30, 0.08);
+            
+            /* Spacing */
+            --spacing-xs: 0.25rem;
+            --spacing-sm: 0.5rem;
+            --spacing-md: 1rem;
+            --spacing-lg: 1.5rem;
+            --spacing-xl: 2rem;
+            
+            /* Touch Targets */
+            --touch: 44px;
+            
+            /* Transitions */
+            --transition: 0.25s ease;
+        }
+        
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #1a1a1a;
+                --text: #ffffff;
+                --text-light: #e2e8f0;
+                --border: rgba(255, 255, 255, 0.1);
+            }
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { height: 100%; }
         body {
