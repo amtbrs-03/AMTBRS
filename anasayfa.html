@@ -3821,7 +3821,15 @@
 
                         // ========== EMAIL DOĞRULAMA ADIMI ==========
                         // Önce email doğrulama kodu gönder
-                        showNotification('📧 Email doğrulama kodu gönderiliyor...', {type: 'info', duration: 2000});
+                        
+                        // Butonu disable et ve loading göster
+                        const registerBtn = document.querySelector('#registerForm button[type="submit"]');
+                        const originalBtnText = registerBtn ? registerBtn.textContent : 'Devam Et';
+                        if (registerBtn) {
+                            registerBtn.disabled = true;
+                            registerBtn.textContent = 'Gönderiliyor...';
+                            registerBtn.style.opacity = '0.7';
+                        }
                         
                         // Site settings'den endpoint'i al
                         const siteSettings = JSON.parse(localStorage.getItem('site_settings') || '{}');
@@ -3837,8 +3845,21 @@
                             const verifyData = await verifyRes.json();
                             
                             if (!verifyData.ok) {
+                                // Butonu resetle
+                                if (registerBtn) {
+                                    registerBtn.disabled = false;
+                                    registerBtn.textContent = originalBtnText;
+                                    registerBtn.style.opacity = '1';
+                                }
                                 showNotification('❌ ' + (verifyData.error || 'Email gönderilemedi'), {type: 'error', duration: 4000});
                                 return;
+                            }
+                            
+                            // Butonu resetle
+                            if (registerBtn) {
+                                registerBtn.disabled = false;
+                                registerBtn.textContent = originalBtnText;
+                                registerBtn.style.opacity = '1';
                             }
                             
                             // Başarılı - email doğrulama adımını göster
@@ -3873,6 +3894,12 @@
                             
                         } catch(e) {
                             console.error('registerUser: send-verification error', e);
+                            // Butonu resetle
+                            if (registerBtn) {
+                                registerBtn.disabled = false;
+                                registerBtn.textContent = originalBtnText;
+                                registerBtn.style.opacity = '1';
+                            }
                             showNotification('❌ Email gönderilemedi. Lütfen tekrar deneyin.', {type: 'error', duration: 4000});
                             return;
                         }
@@ -3900,7 +3927,16 @@
                             return;
                         }
                         
-                        document.getElementById('emailVerifyMsg').innerHTML = '<span style="color:#6b7280;">Kod kontrol ediliyor...</span>';
+                        // Butonu disable et ve loading göster
+                        const verifyBtn = document.getElementById('confirmEmailVerifyBtn');
+                        const originalVerifyBtnText = verifyBtn ? verifyBtn.textContent : 'Kayıt Ol';
+                        if (verifyBtn) {
+                            verifyBtn.disabled = true;
+                            verifyBtn.textContent = 'Kontrol ediliyor...';
+                            verifyBtn.style.opacity = '0.7';
+                        }
+                        
+                        document.getElementById('emailVerifyMsg').innerHTML = '';
                         
                         const siteSettings = JSON.parse(localStorage.getItem('site_settings') || '{}');
                         const commitEndpoint = siteSettings.commitEndpoint || 'https://ern-site.amtbrs-03.workers.dev';
@@ -3915,6 +3951,12 @@
                             const data = await res.json();
                             
                             if (!data.ok) {
+                                // Butonu resetle
+                                if (verifyBtn) {
+                                    verifyBtn.disabled = false;
+                                    verifyBtn.textContent = originalVerifyBtnText;
+                                    verifyBtn.style.opacity = '1';
+                                }
                                 let errMsg = data.error || 'Doğrulama başarısız';
                                 if (data.attemptsLeft !== undefined) {
                                     errMsg += ` (${data.attemptsLeft} deneme hakkı kaldı)`;
@@ -3924,7 +3966,9 @@
                             }
                             
                             // Email doğrulandı - kayıt işlemini tamamla
-                            document.getElementById('emailVerifyMsg').innerHTML = '<span style="color:#22c55e;">✓ Email doğrulandı, hesap oluşturuluyor...</span>';
+                            if (verifyBtn) {
+                                verifyBtn.textContent = 'Hesap oluşturuluyor...';
+                            }
                             
                             const { name, password, phone, city, district, neighborhood, addressDetail, postalCode } = pending;
                             
@@ -3987,17 +4031,35 @@
                                     document.getElementById('loginEmail').value = email;
                                     return;
                                 } else {
+                                    // Butonu resetle
+                                    if (verifyBtn) {
+                                        verifyBtn.disabled = false;
+                                        verifyBtn.textContent = originalVerifyBtnText;
+                                        verifyBtn.style.opacity = '1';
+                                    }
                                     hideProgress(false, '❌ Kayıt Başarısız!');
                                     document.getElementById('emailVerifyMsg').innerHTML = '<span style="color:#ef4444;">Kayıt tamamlanamadı. Lütfen tekrar deneyin.</span>';
                                 }
                             } catch(e) {
                                 console.error('completeRegistration: GitHub error', e);
+                                // Butonu resetle
+                                if (verifyBtn) {
+                                    verifyBtn.disabled = false;
+                                    verifyBtn.textContent = originalVerifyBtnText;
+                                    verifyBtn.style.opacity = '1';
+                                }
                                 hideProgress(false, '❌ Hata!');
                                 document.getElementById('emailVerifyMsg').innerHTML = '<span style="color:#ef4444;">Sunucu hatası. Lütfen tekrar deneyin.</span>';
                             }
                             
                         } catch(e) {
                             console.error('completeRegistration: check-verification error', e);
+                            // Butonu resetle
+                            if (verifyBtn) {
+                                verifyBtn.disabled = false;
+                                verifyBtn.textContent = originalVerifyBtnText;
+                                verifyBtn.style.opacity = '1';
+                            }
                             document.getElementById('emailVerifyMsg').innerHTML = '<span style="color:#ef4444;">Bağlantı hatası</span>';
                         }
                     }

@@ -397,7 +397,7 @@ export default {
                 subject: '✉️ ERN Çiçek - Email Doğrulama Kodu',
                 html: emailHtml
               })
-            });
+            }).catch(e => console.error('Email send error:', e)); // Fire and forget - beklemeden devam et
           }
           
           return new Response(JSON.stringify({ ok: true, message: 'Doğrulama kodu email adresinize gönderildi.' }), { 
