@@ -2080,14 +2080,61 @@ function encodeGitHubPath(path) {
     .join('/');
 }
 
+// Türkçe karakter mojibake düzeltme fonksiyonu
+function fixMojibake(str) {
+  if (typeof str !== 'string') return str;
+  // Double-encoded UTF-8 karakterleri düzelt
+  const replacements = [
+    [/Ã¼/g, 'ü'], [/Ãœ/g, 'Ü'],
+    [/Ã§/g, 'ç'], [/Ã‡/g, 'Ç'],
+    [/Ã¶/g, 'ö'], [/Ã–/g, 'Ö'],
+    [/ÄŸ/g, 'ğ'], [/Äž/g, 'Ğ'],
+    [/ÅŸ/g, 'ş'], [/Åž/g, 'Ş'],
+    [/Ä±/g, 'ı'], [/Ä°/g, 'İ'],
+    [/â‚º/g, '₺']
+  ];
+  let result = str;
+  for (const [pattern, replacement] of replacements) {
+    result = result.replace(pattern, replacement);
+  }
+  // Eğer hala bozuk görünüyorsa, byte-level decode dene
+  if (/[\xC3\xC4\xC5]/.test(result)) {
+    try {
+      const bytes = new Uint8Array(result.length);
+      for (let i = 0; i < result.length; i++) bytes[i] = result.charCodeAt(i) & 0xFF;
+      const decoded = new TextDecoder('utf-8').decode(bytes);
+      if (!/[\xC3\xC4\xC5]/.test(decoded)) result = decoded;
+    } catch(e) {}
+  }
+  return result;
+}
+
+// Objedeki tüm string değerlerini recursive olarak mojibake'den temizle
+function fixMojibakeDeep(obj) {
+  if (typeof obj === 'string') return fixMojibake(obj);
+  if (Array.isArray(obj)) return obj.map(fixMojibakeDeep);
+  if (obj && typeof obj === 'object') {
+    const result = {};
+    for (const key of Object.keys(obj)) {
+      result[key] = fixMojibakeDeep(obj[key]);
+    }
+    return result;
+  }
+  return obj;
+}
+
 async function readJsonLoose(request) {
   // Accept text/plain (no-preflight) and application/json
   const ct = (request.headers.get('Content-Type') || '').toLowerCase();
+  let data;
   if (ct.includes('application/json')) {
-    return await request.json();
+    data = await request.json();
+  } else {
+    const txt = await request.text();
+    try { data = JSON.parse(txt || '{}'); } catch { data = {}; }
   }
-  const txt = await request.text();
-  try { return JSON.parse(txt || '{}'); } catch { return {}; }
+  // Türkçe karakter mojibake'yi düzelt
+  return fixMojibakeDeep(data);
 }
 
 async function safeText(res) {
