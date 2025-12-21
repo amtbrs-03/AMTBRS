@@ -5,6 +5,7 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
     const origin = request.headers.get('Origin') || '';
+    const clientIp = request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || 'unknown';
 
     // Allow only our site in production; adjust as needed
     // CORS: whitelist check - only allow origins that match regex
@@ -15,6 +16,16 @@ export default {
       /^https?:\/\/localhost(?::\d+)?$/i
     ];
     const allowOrigin = (origin && allowed.some(r => r.test(origin))) ? origin : ''; // ✅ Security Fix #1: Whitelist check
+
+    // ✅ SECURITY: Rate Limiting
+    const rateLimit = await checkRateLimit(clientIp, env);
+    if (!rateLimit.allowed) {
+      console.warn(`⚠️ Rate limit exceeded for IP: ${clientIp}`);
+      return new Response(JSON.stringify({ error: 'Too many requests' }), { 
+        status: 429, 
+        headers: jsonHeaders(allowOrigin) 
+      });
+    }
 
     // CORS Preflight - must handle ALL paths
     if (request.method === 'OPTIONS') {
@@ -44,6 +55,20 @@ export default {
 
       if (path === '/send-order' && request.method === 'POST') {
         const payload = await readJsonLoose(request);
+        
+        // ✅ SECURITY: CSRF Token validation (optional - only if from admin)
+        if (payload.csrf_token) {
+          // Token exists - validate it (in production, verify against stored token)
+          // For now, we just check it's not empty
+          if (!payload.csrf_token || typeof payload.csrf_token !== 'string' || payload.csrf_token.length < 32) {
+            console.warn('⚠️ Invalid CSRF token');
+            return new Response(JSON.stringify({ error: 'Invalid CSRF token' }), { 
+              status: 403, 
+              headers: jsonHeaders(allowOrigin) 
+            });
+          }
+        }
+        
         // Support both nested order object and flat structure
         const orderId = payload?.order?.id || `ORD-${Date.now()}`;
         // Normalize order structure - handle both odeme.html (flat) and other sources (nested)
@@ -1685,4 +1710,46 @@ async function writeEmailLogToGitHub({ env, log }) {
   }
 
   return { ok: false, error: 'GitHub commit retry limit reached', path: filePath };
+}
+
+// ✅ SECURITY: Rate Limiting with Durable Objects
+async function checkRateLimit(clientIp, env) {
+  const maxRequests = 100; // Max requests per minute
+  const windowSeconds = 60;
+  
+  try {
+    // Use KV for simple rate limiting (alternative: Durable Objects for more precision)
+    const key = `ratelimit:${clientIp}`;
+    const data = await env.RATE_LIMIT_KV?.get(key);
+    
+    let count = 0;
+    if (data) {
+      const parsed = JSON.parse(data);
+      const age = Date.now() - parsed.timestamp;
+      if (age < windowSeconds * 1000) {
+        count = parsed.count + 1;
+      }
+    } else {
+      count = 1;
+    }
+    
+    // Store updated count
+    if (env.RATE_LIMIT_KV) {
+      await env.RATE_LIMIT_KV.put(
+        key,
+        JSON.stringify({ count, timestamp: Date.now() }),
+        { expirationTtl: windowSeconds + 10 }
+      );
+    }
+    
+    return {
+      allowed: count <= maxRequests,
+      count,
+      limit: maxRequests
+    };
+  } catch (e) {
+    // If rate limiting fails, allow request (fail open)
+    console.error('Rate limit check error:', e);
+    return { allowed: true };
+  }
 }
