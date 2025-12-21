@@ -3746,6 +3746,11 @@
                                 document.getElementById('registerPassword').focus();
                                 return;
                             }
+                            if (!/[!@#$%^&*()_+\-=\[\]{};:'"<>,.?/\\|`~]/.test(password)) {
+                                showNotification('🔐 Şifre en az bir özel karakter içermelidir (!@#$%...)', {type: 'warn', duration: 3000});
+                                document.getElementById('registerPassword').focus();
+                                return;
+                            }
                             if (!password2) {
                                 showNotification('⚠️ Şifre tekrar alanını doldurunuz', {type: 'warn', duration: 3000});
                                 document.getElementById('registerPassword2').focus();
