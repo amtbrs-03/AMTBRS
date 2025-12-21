@@ -1137,10 +1137,19 @@
     </script>
     
     <!-- Cloudflare Turnstile CAPTCHA (Bot Koruması) -->
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <script>
         // Turnstile site key - Cloudflare Dashboard'dan alınır
-        window.TURNSTILE_SITE_KEY = ''; // Boş bırakılırsa captcha devre dışı
+        // Boş bırakılırsa captcha devre dışı kalır ve script yüklenmez
+        window.TURNSTILE_SITE_KEY = '';
+        
+        // Script'i sadece site key varsa yükle
+        if (window.TURNSTILE_SITE_KEY) {
+            var turnstileScript = document.createElement('script');
+            turnstileScript.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+            turnstileScript.async = true;
+            turnstileScript.defer = true;
+            document.head.appendChild(turnstileScript);
+        }
         
         // Turnstile token'ı al
         window.getTurnstileToken = function() {
@@ -1372,7 +1381,7 @@
                                     <input type="email" id="resetEmail" placeholder="Kayıtlı email adresiniz">
                                 </div>
                                 <!-- Turnstile CAPTCHA (site key yoksa gizli kalır) -->
-                                <div id="resetTurnstile" class="cf-turnstile" data-callback="onResetTurnstileSuccess" style="margin:0.5rem 0;display:none;"></div>
+                                <div id="resetTurnstile" data-callback="onResetTurnstileSuccess" style="margin:0.5rem 0;display:none;"></div>
                                 <button type="button" id="sendResetCodeBtn" style="width:100%;margin-top:0.5rem;">Kod Gönder</button>
                                 <div id="resetStep1Msg" style="text-align:center;margin-top:0.75rem;font-size:0.9rem;"></div>
                                 <div style="text-align:center;margin-top:1rem;">
@@ -1539,7 +1548,7 @@
                                     </div>
                                 </div>
                                 <!-- Turnstile CAPTCHA (site key yoksa gizli kalır) -->
-                                <div id="registerTurnstile" class="cf-turnstile" data-callback="onRegisterTurnstileSuccess" style="margin:0.5rem 0;display:none;"></div>
+                                <div id="registerTurnstile" data-callback="onRegisterTurnstileSuccess" style="margin:0.5rem 0;display:none;"></div>
                                 <button data-action="register" type="submit" style="width: 100%; margin-top: 1rem;">Devam Et</button>
                             </form>
                             <!-- Email Doğrulama Adımı -->
