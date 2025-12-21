@@ -153,35 +153,37 @@
         header {
             background: rgba(30, 143, 85, 0.6);
             color: white;
-            padding: 1rem 0;
+            padding: var(--spacing-md) var(--spacing-lg);
             position: sticky;
             top: 10px;
             z-index: 10000;
             backdrop-filter: blur(6px);
             border-bottom: 1px solid rgba(255,255,255,0.04);
+            transition: var(--transition);
         }
         
-        /* Mobilde header fixed ve gizlenebilir - BU BLOK KULLANILMIYOR, alttaki @media bloğu geçerli */
-        /*
-        @media (max-width: 700px) {
+        @media (max-width: 640px) {
             header {
-                position: fixed !important;
-                top: 0 !important;
-                left: 0;
-                right: 0;
-                z-index: 1000 !important;
-                transition: transform 0.3s ease-out, opacity 0.3s ease-out !important;
+                padding: var(--spacing-md) var(--spacing-sm);
             }
         }
-        */
+        
         nav {
             display: flex;
             justify-content: space-between;
             align-items: center;
             max-width: 1200px;
             margin: 0 auto;
-            padding: 0 2rem;
+            padding: 0 var(--spacing-lg);
             position: relative;
+            gap: var(--spacing-md);
+        }
+        
+        @media (max-width: 640px) {
+            nav {
+                padding: 0 var(--spacing-md);
+                gap: var(--spacing-sm);
+            }
         }
         /* Modern 3D-styled compact logo with inline SVG */
         .logo { 
