@@ -268,9 +268,9 @@ export default {
           userData.pw = newPasswordHash;
           userData.passwordResetAt = Date.now();
           
-          // GitHub'a kaydet
+          // GitHub'a kaydet (UTF-8 için doğru encoding)
           const jsonStr = JSON.stringify(userData, null, 2);
-          const contentBase64 = btoa(unescape(encodeURIComponent(jsonStr)));
+          const contentBase64 = btoa(new TextEncoder().encode(jsonStr).reduce((a, b) => a + String.fromCharCode(b), ''));
           
           const putRes = await fetch(userApiUrl, {
             method: 'PUT',
