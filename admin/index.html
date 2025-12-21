@@ -3966,23 +3966,12 @@ try {
       // catch block removed; this was not inside a try
     // Kapanmamış IIFE kaldırıldı
 
-    // Get GitHub token (from localStorage or embedded)
+    // GitHub token - sadece localStorage veya sessionStorage'dan al (güvenlik için)
     function getGitHubToken() {
-      let token = localStorage.getItem('github_token');
+      // Admin paneli için önce sessionStorage'dan (admin_gh_token) kontrol et
+      let token = sessionStorage.getItem('admin_gh_token');
       if (!token) {
-        // XOR fallback devre dışı bırakıldıysa boş dön
-        if(localStorage.getItem('disable_xor_token') === '1') return '';
-        const encoded = '":>r3\x0e,\' bj@\x06\x07\t5\'K"\x0b4\x08\tYUJ[f\x11\x0b\rK0\x0cs\x0f\x1dupY';
-        const key = 'ERN-CICEK-2025';
-        try {
-          token = decodeToken(encoded, key);
-        } catch(e) {
-          console.error('GitHub token çözümlenemedi');
-        }
-
-        // Build commit marker (otomatik güncelleme tanımlayıcı) – son commit hash'i burada sabitlenir.
-        // Kullanıcı tarayıcı konsolunda window.__adminBuildCommit yazarak güncel sürümü görebilir.
-        window.__adminBuildCommit = '08a7809';
+        token = localStorage.getItem('github_token') || localStorage.getItem('gh_token') || '';
       }
       return token;
     }

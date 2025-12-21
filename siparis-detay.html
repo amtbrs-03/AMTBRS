@@ -991,27 +991,9 @@
       }
     }
     
-    // Token management functions (same as admin.html)
-    function decodeToken(encoded, key) {
-      let result = '';
-      for (let i = 0; i < encoded.length; i++) {
-        result += String.fromCharCode(encoded.charCodeAt(i) ^ key.charCodeAt(i % key.length));
-      }
-      return result;
-    }
-
+    // GitHub token - sadece localStorage'dan al (güvenlik için)
     function getGitHubToken() {
-      let token = localStorage.getItem('github_token');
-      if (!token) {
-        const encoded = '":>r3\x0e,\' bj@\x06\x07\t5\'K"\x0b4\x08\tYUJ[f\x11\x0b\rK0\x0cs\x0f\x1dupY';
-        const key = 'ERN-CICEK-2025';
-        try {
-          token = decodeToken(encoded, key);
-        } catch(e) {
-          console.error('Failed to decode GitHub token');
-        }
-      }
-      return token;
+      return localStorage.getItem('github_token') || localStorage.getItem('gh_token') || '';
     }
 
     async function saveInvoiceToGitHub(orderId, invoiceHTML) {

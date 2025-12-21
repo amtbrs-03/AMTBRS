@@ -4,6 +4,11 @@ Disallow: /admin.html
 Disallow: /admin-latest.html
 Disallow: /archive/
 Disallow: /functions/
+Disallow: /test-*.html
+Disallow: /email-logs/
+Disallow: /invoices/
+Disallow: /users/
+Disallow: /carts/
 
 Sitemap: https://ern-cicek.com.tr/sitemap.xml
 
