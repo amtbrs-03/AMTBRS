@@ -1,0 +1,20 @@
+{
+  "name": "FATİH TUNCER",
+  "email": "amtbrs.03@gmail.com",
+  "pw": {
+    "algo": "PBKDF2-SHA256",
+    "iterations": 200000,
+    "salt": "h8OeQaja4eYqVybT6l6+1Q==",
+    "hash": "Aoc1WNfJF3gjY0GxEsg6nXT+2Iwi/l7nzTP6ClfvG88="
+  },
+  "address": {
+    "city": "Ankara",
+    "district": "Haymana",
+    "neighborhood": "halidesultan",
+    "addressDetail": "Fevziçakmak Caddesi No:47 Kısmet Apt., Çağlayan Mahallesi, Kağıthane, İstanbul",
+    "postalCode": "34100"
+  },
+  "phone": "+90 538 417 9081",
+  "createdAt": 1766340670278,
+  "emailVerified": true
+}
