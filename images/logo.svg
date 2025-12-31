@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 100">
+  <defs>
+    <!-- Yaprak gradientleri - gerçekçi -->
+    <linearGradient id="leaf1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5a9955"/>
+      <stop offset="50%" stop-color="#3d7a3a"/>
+      <stop offset="100%" stop-color="#2d5a2d"/>
+    </linearGradient>
+    <linearGradient id="leaf2" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4d8a48"/>
+      <stop offset="50%" stop-color="#3a7035"/>
+      <stop offset="100%" stop-color="#285528"/>
+    </linearGradient>
+    <linearGradient id="leafDark" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#3d6b35"/>
+      <stop offset="100%" stop-color="#1d4520"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Turuncu arka plan - çerçeve kenardan başlıyor -->
+  <rect x="0" y="0" width="320" height="100" rx="50" fill="#e8a040"/>
+  <rect x="3" y="3" width="314" height="94" rx="47" fill="none" stroke="#4a7c45" stroke-width="4"/>
+  
+  <!-- SOL YAPRAK - Dal üzerinde gerçekçi tropikal yapraklar -->
+  <g transform="translate(55, 50)">
+    <!-- Ana dal - eğimli - odun rengi -->
+    <path d="M5,-40 C2,-25 -2,0 -10,38" stroke="#8B5A2B" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <!-- Sol yapraklar - gerçekçi palmiye -->
+    <path d="M2,-32 C-8,-36 -22,-38 -38,-32 C-32,-33 -18,-32 -8,-28 C-4,-26 0,-28 2,-30" fill="url(#leaf1)" stroke="#1d4018" stroke-width="0.8"/>
+    <path d="M0,-24 C-12,-27 -28,-28 -42,-20 C-34,-22 -18,-22 -8,-18 C-2,-16 0,-20 0,-22" fill="url(#leaf2)" stroke="#1d4018" stroke-width="0.8"/>
+    <path d="M-2,-14 C-14,-16 -30,-14 -44,-4 C-36,-8 -18,-10 -8,-6 C-2,-4 -2,-10 -2,-12" fill="url(#leaf1)" stroke="#1d4018" stroke-width="0.8"/>
+    <path d="M-4,-4 C-16,-4 -32,0 -44,12 C-36,6 -20,2 -10,4 C-4,5 -4,-1 -4,-3" fill="url(#leaf2)" stroke="#1d4018" stroke-width="0.8"/>
+    <path d="M-6,8 C-16,10 -30,16 -40,28 C-34,20 -20,14 -12,14 C-6,14 -6,10 -6,8" fill="url(#leaf1)" stroke="#1d4018" stroke-width="0.8"/>
+    <!-- Sağ yapraklar - gerçekçi palmiye -->
+    <path d="M4,-36 C12,-40 26,-42 40,-36 C34,-37 22,-36 14,-32 C10,-30 6,-32 4,-34" fill="url(#leaf2)" stroke="#1d4018" stroke-width="0.8"/>
+    <path d="M2,-28 C12,-32 28,-32 44,-24 C36,-26 22,-26 12,-22 C6,-20 4,-24 2,-26" fill="url(#leaf1)" stroke="#1d4018" stroke-width="0.8"/>
+    <path d="M0,-18 C12,-20 30,-18 46,-6 C38,-12 22,-14 12,-10 C4,-8 2,-14 0,-16" fill="url(#leaf2)" stroke="#1d4018" stroke-width="0.8"/>
+    <path d="M-2,-8 C10,-8 28,-2 44,12 C36,4 20,0 10,2 C2,3 0,-4 -2,-6" fill="url(#leaf1)" stroke="#1d4018" stroke-width="0.8"/>
+    <path d="M-4,4 C6,6 22,14 34,28 C28,18 16,12 8,10 C2,9 -2,6 -4,4" fill="url(#leaf2)" stroke="#1d4018" stroke-width="0.8"/>
+  </g>
+  
+  <!-- YAZILAR - ortada -->
+  <text x="160" y="42" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="36" font-weight="bold" fill="#f5f5dc" font-style="italic">ERN</text>
+  <text x="160" y="72" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="22" fill="#f5f5dc" font-style="italic">Tropikal Çiçek</text>
+  
+  <!-- SAĞ YAPRAK - Dal üzerinde gerçekçi tropikal yapraklar - yansıma -->
+  <g transform="translate(265, 50)">
+    <!-- Ana dal - eğimli - odun rengi -->
+    <path d="M-5,-40 C-2,-25 2,0 10,38" stroke="#8B5A2B" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <!-- Sağ yapraklar - gerçekçi palmiye -->
+    <path d="M-2,-32 C8,-36 22,-38 38,-32 C32,-33 18,-32 8,-28 C4,-26 0,-28 -2,-30" fill="url(#leaf1)" stroke="#1d4018" stroke-width="0.8"/>
+    <path d="M0,-24 C12,-27 28,-28 42,-20 C34,-22 18,-22 8,-18 C2,-16 0,-20 0,-22" fill="url(#leaf2)" stroke="#1d4018" stroke-width="0.8"/>
+    <path d="M2,-14 C14,-16 30,-14 44,-4 C36,-8 18,-10 8,-6 C2,-4 2,-10 2,-12" fill="url(#leaf1)" stroke="#1d4018" stroke-width="0.8"/>
+    <path d="M4,-4 C16,-4 32,0 44,12 C36,6 20,2 10,4 C4,5 4,-1 4,-3" fill="url(#leaf2)" stroke="#1d4018" stroke-width="0.8"/>
+    <path d="M6,8 C16,10 30,16 40,28 C34,20 20,14 12,14 C6,14 6,10 6,8" fill="url(#leaf1)" stroke="#1d4018" stroke-width="0.8"/>
+    <!-- Sol yapraklar - gerçekçi palmiye -->
+    <path d="M-4,-36 C-12,-40 -26,-42 -40,-36 C-34,-37 -22,-36 -14,-32 C-10,-30 -6,-32 -4,-34" fill="url(#leaf2)" stroke="#1d4018" stroke-width="0.8"/>
+    <path d="M-2,-28 C-12,-32 -28,-32 -44,-24 C-36,-26 -22,-26 -12,-22 C-6,-20 -4,-24 -2,-26" fill="url(#leaf1)" stroke="#1d4018" stroke-width="0.8"/>
+    <path d="M0,-18 C-12,-20 -30,-18 -46,-6 C-38,-12 -22,-14 -12,-10 C-4,-8 -2,-14 0,-16" fill="url(#leaf2)" stroke="#1d4018" stroke-width="0.8"/>
+    <path d="M2,-8 C-10,-8 -28,-2 -44,12 C-36,4 -20,0 -10,2 C-2,3 0,-4 2,-6" fill="url(#leaf1)" stroke="#1d4018" stroke-width="0.8"/>
+    <path d="M4,4 C-6,6 -22,14 -34,28 C-28,18 -16,12 -8,10 C-2,9 2,6 4,4" fill="url(#leaf2)" stroke="#1d4018" stroke-width="0.8"/>
+  </g>
+  
+</svg>

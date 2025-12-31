@@ -11,16 +11,35 @@
     <meta name="robots" content="index, follow" />
     <meta name="googlebot" content="index, follow" />
     <link rel="canonical" href="https://ern-cicek.com.tr/" />
-    <meta name="theme-color" content="#0b2f1f" />
+    <meta name="theme-color" content="#2d5a27" />
     
-    <!-- Open Graph -->
-    <meta property="og:title" content="Çiçekçi - Online Çiçek Siparişi | Gül Buketi | ERN Çiçek" />
+    <!-- Open Graph (Facebook, WhatsApp, LinkedIn) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ERN Çiçek" />
+    <meta property="og:title" content="ERN Çiçek - Tropik Bitkiler ve Çiçekler" />
+    <meta property="og:description" content="Tropik bitkiler, saksı çiçekleri ve daha fazlası. Online sipariş, güvenli ödeme." />
+    <meta property="og:url" content="https://ern-cicek.com.tr/" />
+    <meta property="og:image" content="https://ern-cicek.com.tr/images/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="tr_TR" />
+    
+    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Çiçekçi - Online Çiçek Siparişi | ERN Çiçek" />
-    <meta name="twitter:description" content="Gül, lilyum, orkide ve tüm çiçek çeşitleri. Aynı gün teslimat." />
-    <meta name="twitter:image" content="https://ern-cicek.com.tr/og-image.jpg" />
+    <meta name="twitter:site" content="@erncicek" />
+    <meta name="twitter:title" content="ERN Çiçek - Tropik Bitkiler ve Çiçekler" />
+    <meta name="twitter:description" content="Tropik bitkiler, saksı çiçekleri ve daha fazlası. Online sipariş." />
+    <meta name="twitter:image" content="https://ern-cicek.com.tr/images/og-image.png" />
     
-        <link rel="icon" href="/favicon.ico" />
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    
+    <!-- iOS PWA desteği -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="ERN Çiçek" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
         <!-- Erken mojibake düzeltme: ilk boyama öncesi bozuk karakterleri gizle ve düzelt -->
         <style>html.__fixing{visibility:hidden !important}</style>
@@ -48,66 +67,98 @@
     {
       "@context": "https://schema.org",
       "@type": "Florist",
-      "name": "ERN Çiçek - Online Çiçekçi",
-      "alternateName": "ERN Çiçekçi",
+      "@id": "https://ern-cicek.com.tr/#organization",
+      "name": "ERN Çiçek",
+      "alternateName": ["ERN Çiçekçi", "Ern Cicek"],
       "url": "https://ern-cicek.com.tr/",
-      "logo": "https://ern-cicek.com.tr/logo.png",
-      "image": "https://ern-cicek.com.tr/og-image.jpg",
-      "telephone": "+90-5XX-XXX-XXXX",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://ern-cicek.com.tr/images/logo.png",
+        "width": 512,
+        "height": 512
+      },
+      "image": [
+        "https://ern-cicek.com.tr/images/logo.png",
+        "https://ern-cicek.com.tr/og-image.jpg"
+      ],
+      "telephone": "+90-538-417-9081",
       "email": "amtbrs@icloud.com",
       "priceRange": "₺₺",
       "address": {
         "@type": "PostalAddress",
-        "streetAddress": "Adresiniz Caddesi 1",
-        "addressLocality": "Şehir",
+        "streetAddress": "Çağlayan Mah. Fevziçakmak Cad. No:47",
+        "addressLocality": "Kağıthane",
         "addressRegion": "İstanbul",
-        "postalCode": "34000",
+        "postalCode": "34403",
         "addressCountry": "TR"
       },
       "geo": {
         "@type": "GeoCoordinates",
-        "latitude": "41.0082",
-        "longitude": "28.9784"
+        "latitude": "41.0728",
+        "longitude": "28.9814"
       },
-      "description": "Online çiçek siparişi ve çiçekçi hizmeti. Gül buketi, lilyum, orkide ve tüm çiçek çeşitleri. Aynı gün teslimat. İstanbul çiçekçi.",
-      "openingHours": "Mo-Sa 09:00-19:00",
-      "paymentAccepted": "Havale, EFT, Nakit",
+      "description": "Tropik bitkiler ve çiçekler. Online sipariş, güvenli ödeme, hızlı teslimat. İstanbul çiçekçi.",
+      "openingHours": "Mo-Fr 09:00-19:00",
+      "paymentAccepted": ["Havale", "EFT", "Nakit"],
       "currenciesAccepted": "TRY",
       "areaServed": {
         "@type": "Country",
         "name": "Turkey"
       },
+      "sameAs": [
+        "https://www.instagram.com/erncicek",
+        "https://www.facebook.com/erncicek"
+      ],
       "hasOfferCatalog": {
         "@type": "OfferCatalog",
-        "name": "Çiçek Ürünleri",
+        "name": "Çiçek ve Tropik Bitki Ürünleri",
         "itemListElement": [
           {
             "@type": "Offer",
             "itemOffered": {
               "@type": "Product",
-              "name": "Gül Buketi",
-              "description": "Taze kırmızı gül buketi"
+              "name": "Tropik Bitkiler",
+              "description": "Philodendron, Monstera ve daha fazlası"
             }
           },
           {
             "@type": "Offer",
             "itemOffered": {
               "@type": "Product",
-              "name": "Lilyum Buketi",
-              "description": "Beyaz lilyum çiçeği"
-            }
-          },
-          {
-            "@type": "Offer",
-            "itemOffered": {
-              "@type": "Product",
-              "name": "Orkide",
-              "description": "Orkide saksı çiçeği"
+              "name": "Saksı Çiçekleri",
+              "description": "Dekoratif saksı bitkileri"
             }
           }
         ]
-  }
-</script>
+      }
+    }
+    </script>
+    
+    <!-- Google Arama Logo Desteği -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "ERN Çiçek",
+      "url": "https://ern-cicek.com.tr",
+      "logo": "https://ern-cicek.com.tr/images/logo.png"
+    }
+    </script>
+    
+    <!-- Web Sitesi Arama Kutusu -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "ERN Çiçek",
+      "url": "https://ern-cicek.com.tr",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://ern-cicek.com.tr/anasayfa.html?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
 
     <style>
         /* 📱 CSS Variables - Responsive Design System */
@@ -1220,35 +1271,7 @@
                 
                 <header>
                     <nav>
-                        <div class="logo"><a href="/" style="color:inherit;text-decoration:none;display:inline-flex;align-items:center;"><span class="logo-text" style="display:inline-flex;align-items:center;gap:8px;"><svg viewBox="0 0 40 36" width="24" height="22" style="flex-shrink:0;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.1));">
-                            <defs>
-                                <linearGradient id="leaf1" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" stop-color="#8bc34a"/>
-                                    <stop offset="100%" stop-color="#558b2f"/>
-                                </linearGradient>
-                                <linearGradient id="leaf2" x1="0%" y1="100%" x2="100%" y2="0%">
-                                    <stop offset="0%" stop-color="#7cb342"/>
-                                    <stop offset="100%" stop-color="#689f38"/>
-                                </linearGradient>
-                            </defs>
-                            <!-- Dal -->
-                            <path d="M38 32 Q30 28 22 20 Q18 16 16 12" stroke="#5d4037" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-                            <!-- Büyük yaprak (üst) -->
-                            <ellipse cx="14" cy="6" rx="5" ry="9" fill="url(#leaf1)" transform="rotate(-25 14 6)"/>
-                            <path d="M14 1 Q14 6 14 12" stroke="#33691e" stroke-width="0.7" fill="none"/>
-                            <!-- Orta yaprak (sol) -->
-                            <ellipse cx="8" cy="14" rx="4" ry="7" fill="url(#leaf2)" transform="rotate(-50 8 14)"/>
-                            <path d="M5 10 Q8 14 10 18" stroke="#33691e" stroke-width="0.6" fill="none"/>
-                            <!-- Orta yaprak (sağ) -->
-                            <ellipse cx="22" cy="12" rx="4" ry="7" fill="url(#leaf1)" transform="rotate(15 22 12)"/>
-                            <path d="M22 7 Q22 12 22 17" stroke="#33691e" stroke-width="0.6" fill="none"/>
-                            <!-- Alt yaprak (sol) -->
-                            <ellipse cx="14" cy="22" rx="3.5" ry="6" fill="url(#leaf2)" transform="rotate(-40 14 22)"/>
-                            <path d="M12 18 Q14 22 15 26" stroke="#33691e" stroke-width="0.5" fill="none"/>
-                            <!-- Alt yaprak (sağ) -->
-                            <ellipse cx="28" cy="20" rx="3.5" ry="6" fill="url(#leaf1)" transform="rotate(25 28 20)"/>
-                            <path d="M28 15 Q28 20 28 25" stroke="#33691e" stroke-width="0.5" fill="none"/>
-                        </svg> ERN Tropikal Çiçek</span></a></div>
+                        <div class="logo"><a href="/" style="color:inherit;text-decoration:none;display:inline-flex;align-items:center;"><img src="/images/logo.svg" alt="ERN Tropikal Çiçek" style="height:40px;width:auto;"></a></div>
                         <div class="nav-top" style="display:flex;align-items:center;gap:0.6rem;">
                             <ul class="nav-links" style="display:flex;gap:0.6rem;align-items:center;list-style:none;margin:0;padding:0;">
                                 <li><button id="homeBtn" class="contact-btn" aria-expanded="false" data-action="go-home">Ana Sayfa</button></li>
@@ -7668,6 +7691,67 @@ fetch('site-settings.json')
     }, {passive: true});
     
     console.log('Header: sadece sayfa başında göster');
+})();
+</script>
+
+<!-- Service Worker Kayıt -->
+<script>
+(function() {
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            navigator.serviceWorker.register('/sw.js')
+                .then(function(reg) {
+                    console.log('✅ Service Worker kayıtlı:', reg.scope);
+                    
+                    // Güncelleme kontrolü
+                    reg.addEventListener('updatefound', function() {
+                        const newWorker = reg.installing;
+                        newWorker.addEventListener('statechange', function() {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                console.log('🔄 Yeni versiyon mevcut!');
+                            }
+                        });
+                    });
+                })
+                .catch(function(err) {
+                    console.warn('❌ Service Worker hatası:', err);
+                });
+        });
+    }
+    
+    // PWA kurulum banner'ı
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        deferredPrompt = e;
+        
+        // Kurulum butonu göster (isteğe bağlı)
+        const installBtn = document.getElementById('pwa-install-btn');
+        if (installBtn) {
+            installBtn.style.display = 'block';
+            installBtn.addEventListener('click', function() {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then(function(choice) {
+                    if (choice.outcome === 'accepted') {
+                        console.log('✅ PWA kuruldu');
+                    }
+                    deferredPrompt = null;
+                    installBtn.style.display = 'none';
+                });
+            });
+        }
+    });
+    
+    // iOS için kurulum ipucu
+    function isIOS() {
+        return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    }
+    function isInStandaloneMode() {
+        return ('standalone' in navigator) && (navigator.standalone);
+    }
+    if (isIOS() && !isInStandaloneMode()) {
+        console.log('📱 iOS: Ana ekrana eklemek için paylaş → Ana Ekrana Ekle');
+    }
 })();
 </script>
 </html>
