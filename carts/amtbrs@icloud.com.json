@@ -1,8 +1,8 @@
 {
   "email": "amtbrs@icloud.com",
   "name": "AHMET BURSA",
-  "lastLoginAt": 1766330356092,
-  "updatedAt": 1766337090761,
+  "lastLoginAt": 1766868012513,
+  "updatedAt": 1767134950300,
   "firstAddedAt": 1766179375599,
   "cartCreatedAt": 1766179375599,
   "totalQty": 6,
@@ -33,6 +33,6 @@
       "addedAt": 1766179388865
     }
   ],
-  "lastReminderSentAt": 1766440814209,
+  "lastReminderSentAt": 1767160811609,
   "reminderCount": 3
 }
