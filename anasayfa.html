@@ -1290,7 +1290,7 @@
                             <ul class="nav-links" style="display:flex;gap:0.6rem;align-items:center;list-style:none;margin:0;padding:0;">
                                 <li><button id="homeBtn" class="contact-btn" aria-expanded="false" data-action="go-home">Ana Sayfa</button></li>
                                     <!-- Ürünler butonu kaldırıldı: tüm ürünler ana sayfada sergilenir -->
-                                <li style="position:relative;"><button id="favoritesBtn" class="contact-btn" aria-label="Favoriler" onclick="openFavoritesModal()" style="position:relative;">❤️ <span id="favoritesCount" class="cart-count" style="display:none;">0</span></button></li>
+                                <li id="favoritesContainer" style="position:relative;display:none;"><button id="favoritesBtn" class="contact-btn" aria-label="Favoriler" onclick="openFavoritesModal()" style="position:relative;">❤️ <span id="favoritesCount" class="cart-count" style="display:none;">0</span></button></li>
                                 <li id="cartContainer" style="position:relative;"><button id="cartBtn" class="cart-btn contact-btn" aria-controls="miniCart" aria-expanded="false" data-action="open-cart">🛒 Sepet <span id="cartCount" class="cart-count hidden">0</span></button>
                                     <!-- Mini cart dropdown (shown on click) -->
                                     <div id="miniCart" class="mini-cart hidden" role="region" aria-hidden="true" style="position:absolute;top:100%;right:0;margin-top:0.5rem;">
@@ -4748,6 +4748,10 @@
                                         document.getElementById('authContainer').classList.add('hidden');
                                         document.getElementById('userContainer').classList.remove('hidden');
                                         document.getElementById('userName').textContent = 'Hoşgeldiniz, ' + name;
+                                        // Show favorites button for logged-in users
+                                        const favContainer = document.getElementById('favoritesContainer');
+                                        if (favContainer) favContainer.style.display = '';
+                                        if (typeof updateFavoritesCount === 'function') updateFavoritesCount();
                     }
 
                     // Show a forced-reset UI inside the auth modal for a specific email
@@ -4906,6 +4910,9 @@
                         document.getElementById('authContainer').classList.remove('hidden');
                         document.getElementById('userContainer').classList.add('hidden');
                         updateCartCount();
+                        // Hide favorites button for logged-out users
+                        const favContainer = document.getElementById('favoritesContainer');
+                        if (favContainer) favContainer.style.display = 'none';
                         
                         // Reset auth button label and handler
                         try{
