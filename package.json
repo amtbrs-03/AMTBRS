@@ -18,5 +18,8 @@
     "nodemailer": "^7.0.11",
     "pdf-lib": "^1.17.1",
     "wrangler": "^4.55.0"
+  },
+  "devDependencies": {
+    "puppeteer": "^24.35.0"
   }
 }

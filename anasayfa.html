@@ -35,6 +35,20 @@
     <link rel="manifest" href="/manifest.json" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     
+    <!-- Google Analytics 4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XXXXXXXXXX');
+      
+      // E-ticaret event helpers
+      window.trackEvent = function(eventName, params) {
+        gtag('event', eventName, params);
+      };
+    </script>
+    
     <!-- iOS PWA desteği -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -1276,6 +1290,7 @@
                             <ul class="nav-links" style="display:flex;gap:0.6rem;align-items:center;list-style:none;margin:0;padding:0;">
                                 <li><button id="homeBtn" class="contact-btn" aria-expanded="false" data-action="go-home">Ana Sayfa</button></li>
                                     <!-- Ürünler butonu kaldırıldı: tüm ürünler ana sayfada sergilenir -->
+                                <li style="position:relative;"><button id="favoritesBtn" class="contact-btn" aria-label="Favoriler" onclick="openFavoritesModal()" style="position:relative;">❤️ <span id="favoritesCount" class="cart-count" style="display:none;">0</span></button></li>
                                 <li id="cartContainer" style="position:relative;"><button id="cartBtn" class="cart-btn contact-btn" aria-controls="miniCart" aria-expanded="false" data-action="open-cart">🛒 Sepet <span id="cartCount" class="cart-count hidden">0</span></button>
                                     <!-- Mini cart dropdown (shown on click) -->
                                     <div id="miniCart" class="mini-cart hidden" role="region" aria-hidden="true" style="position:absolute;top:100%;right:0;margin-top:0.5rem;">
@@ -1892,6 +1907,17 @@
                                         <label for="payerEmail" style="display:block; font-weight:600; margin-bottom:0.4rem;">E-posta Adresiniz (sipariş onayı için)</label>
                                         <input id="payerEmail" type="email" placeholder="you@example.com" style="width:100%; padding:0.6rem; border:1px solid #ddd; border-radius:6px;" />
                                     </div>
+                                    
+                                    <!-- Kupon Kodu Alanı -->
+                                    <div style="margin-top:1rem; padding:0.75rem; background:linear-gradient(135deg,#fef3c7,#fde68a); border-radius:8px; border:1px solid #f59e0b;">
+                                        <label style="display:block; font-weight:600; margin-bottom:0.4rem; color:#92400e;">🎫 Kupon Kodu</label>
+                                        <div style="display:flex; gap:0.5rem;">
+                                            <input id="couponInput" type="text" placeholder="Kupon kodunuz" style="flex:1; padding:0.5rem; border:1px solid #f59e0b; border-radius:6px; text-transform:uppercase;" />
+                                            <button onclick="applyCoupon()" style="padding:0.5rem 1rem; background:#16a34a; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600;">Uygula</button>
+                                            <button onclick="removeCoupon()" style="padding:0.5rem 0.75rem; background:#ef4444; color:white; border:none; border-radius:6px; cursor:pointer;">✕</button>
+                                        </div>
+                                        <div id="couponResult" style="margin-top:0.4rem; font-size:0.85rem;"></div>
+                                    </div>
 
                                     <div id="bankAmount" style="margin-top:0.75rem; font-weight:700; color:#0b1220;">Toplam: ₺0.00</div>
 
@@ -1919,6 +1945,17 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Favorites Modal -->
+                <div id="favoritesModal" class="modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:10000;align-items:center;justify-content:center;">
+                    <div class="modal-content" style="background:white;border-radius:16px;max-width:500px;width:90%;max-height:80vh;overflow:hidden;position:relative;">
+                        <span class="close" onclick="closeFavoritesModal()" style="position:absolute;top:12px;right:16px;font-size:1.5rem;cursor:pointer;color:#64748b;">&times;</span>
+                        <h2 style="margin:0;padding:1rem 1.5rem;border-bottom:1px solid #e5e7eb;color:#0b1220;display:flex;align-items:center;gap:0.5rem;">❤️ Favorilerim</h2>
+                        <div id="favoritesBody" style="padding:0;max-height:60vh;overflow-y:auto;">
+                            <!-- Favoriler dinamik olarak yüklenecek -->
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Hero section removed (big logo/title) per request -->
 
@@ -1939,6 +1976,24 @@
                                 onfocus="this.style.borderColor='#16a34a';this.style.boxShadow='0 0 0 2px rgba(22,163,74,0.15)'"
                                 onblur="this.style.borderColor='rgba(11,47,31,0.15)';this.style.boxShadow='none'"
                                 oninput="filterProducts()">
+                        </div>
+                        <!-- Fiyat Aralığı Filtresi -->
+                        <div style="max-width:500px;margin:0.5rem auto 0;display:flex;align-items:center;gap:0.5rem;justify-content:center;flex-wrap:wrap;">
+                            <span style="font-size:0.75rem;color:#64748b;">💰 Fiyat:</span>
+                            <input type="number" id="priceMin" placeholder="Min ₺" min="0" step="50"
+                                style="width:80px;padding:0.3rem 0.5rem;border:1.5px solid rgba(11,47,31,0.15);border-radius:8px;font-size:0.8rem;text-align:center;"
+                                oninput="filterProducts()">
+                            <span style="color:#94a3b8;">—</span>
+                            <input type="number" id="priceMax" placeholder="Max ₺" min="0" step="50"
+                                style="width:80px;padding:0.3rem 0.5rem;border:1.5px solid rgba(11,47,31,0.15);border-radius:8px;font-size:0.8rem;text-align:center;"
+                                oninput="filterProducts()">
+                            <select id="sortOrder" onchange="filterProducts()" style="padding:0.3rem 0.5rem;border:1.5px solid rgba(11,47,31,0.15);border-radius:8px;font-size:0.8rem;background:white;cursor:pointer;">
+                                <option value="default">Sırala</option>
+                                <option value="price-asc">Fiyat ↑</option>
+                                <option value="price-desc">Fiyat ↓</option>
+                                <option value="name-asc">A-Z</option>
+                                <option value="name-desc">Z-A</option>
+                            </select>
                         </div>
                     </div>
                     
@@ -2025,13 +2080,32 @@
                                 card.setAttribute('data-price', p.price || 0);
                                 card.setAttribute('data-badge', p.badge || '');
                                 card.style.position = 'relative';
-                                // Ürün görseli - Sol taraf
+                                // Ürün görseli - Sol taraf (WebP desteği)
                                 let imgSrc = Array.isArray(p.images) && p.images.length ? p.images[0] : (p.image || 'images/products/default.jpg');
-                                const img = document.createElement('img');
-                                img.src = imgSrc;
-                                img.alt = p.name || 'Ürün';
-                                img.className = 'product-image';
-                                card.appendChild(img);
+                                const getWebPSrc = (src) => /\.(jpe?g|png)$/i.test(src) ? src.replace(/\.(jpe?g|png)$/i, '.webp') : null;
+                                const webpSrc = getWebPSrc(imgSrc);
+                                
+                                let imgContainer;
+                                if (webpSrc) {
+                                    imgContainer = document.createElement('picture');
+                                    const source = document.createElement('source');
+                                    source.srcset = webpSrc;
+                                    source.type = 'image/webp';
+                                    imgContainer.appendChild(source);
+                                    const img = document.createElement('img');
+                                    img.src = imgSrc;
+                                    img.alt = p.name || 'Ürün';
+                                    img.className = 'product-image';
+                                    img.loading = 'lazy';
+                                    imgContainer.appendChild(img);
+                                } else {
+                                    imgContainer = document.createElement('img');
+                                    imgContainer.src = imgSrc;
+                                    imgContainer.alt = p.name || 'Ürün';
+                                    imgContainer.className = 'product-image';
+                                    imgContainer.loading = 'lazy';
+                                }
+                                card.appendChild(imgContainer);
                                 
                                 // Bilgi kolonu - Sağ taraf
                                 const infoColumn = document.createElement('div');
@@ -2469,13 +2543,42 @@
                         function filterProducts() {
                             const searchInput = document.getElementById('productSearchHeader') || document.getElementById('productSearch');
                             const resultCount = document.getElementById('searchResultCount');
+                            const priceMinInput = document.getElementById('priceMin');
+                            const priceMaxInput = document.getElementById('priceMax');
+                            const sortSelect = document.getElementById('sortOrder');
+                            
                             const searchTerm = (searchInput ? searchInput.value.toLowerCase().trim() : '');
-                            const cards = document.querySelectorAll('.product-card');
+                            const priceMin = priceMinInput ? parseFloat(priceMinInput.value) || 0 : 0;
+                            const priceMax = priceMaxInput ? parseFloat(priceMaxInput.value) || Infinity : Infinity;
+                            const sortOrder = sortSelect ? sortSelect.value : 'default';
+                            
+                            const cards = Array.from(document.querySelectorAll('.product-card'));
                             let visibleCount = 0;
+                            
+                            // Önce sırala
+                            if (sortOrder !== 'default') {
+                                const container = document.getElementById('products');
+                                cards.sort((a, b) => {
+                                    const priceA = parseFloat(a.getAttribute('data-price')) || 0;
+                                    const priceB = parseFloat(b.getAttribute('data-price')) || 0;
+                                    const nameA = (a.getAttribute('data-name') || '').toLowerCase();
+                                    const nameB = (b.getAttribute('data-name') || '').toLowerCase();
+                                    
+                                    switch(sortOrder) {
+                                        case 'price-asc': return priceA - priceB;
+                                        case 'price-desc': return priceB - priceA;
+                                        case 'name-asc': return nameA.localeCompare(nameB, 'tr');
+                                        case 'name-desc': return nameB.localeCompare(nameA, 'tr');
+                                        default: return 0;
+                                    }
+                                });
+                                cards.forEach(card => container.appendChild(card));
+                            }
                             
                             cards.forEach(card => {
                                 const name = (card.getAttribute('data-name') || '').toLowerCase();
                                 const badge = (card.getAttribute('data-badge') || '');
+                                const price = parseFloat(card.getAttribute('data-price')) || 0;
                                 
                                 // Arama filtresi
                                 const matchesSearch = !searchTerm || name.includes(searchTerm);
@@ -2483,7 +2586,10 @@
                                 // Kategori filtresi
                                 const matchesCategory = _activeCategory === 'all' || badge === _activeCategory;
                                 
-                                if (matchesSearch && matchesCategory) {
+                                // Fiyat filtresi
+                                const matchesPrice = price >= priceMin && price <= priceMax;
+                                
+                                if (matchesSearch && matchesCategory && matchesPrice) {
                                     card.style.display = '';
                                     visibleCount++;
                                 } else {
@@ -2493,7 +2599,7 @@
                             
                             // Sonuç sayısını göster
                             if (resultCount) {
-                                if (searchTerm || _activeCategory !== 'all') {
+                                if (searchTerm || _activeCategory !== 'all' || priceMin > 0 || priceMax < Infinity) {
                                     resultCount.style.display = 'block';
                                     if (visibleCount === 0) {
                                         resultCount.textContent = '😔 Sonuç bulunamadı';
@@ -5985,6 +6091,287 @@
                     function cartKeyForUser(email) {
                         return 'cart_' + email;
                     }
+                    
+                    // ===== FAVORİ LİSTESİ SİSTEMİ =====
+                    function favoritesKeyForUser(email) {
+                        return 'favorites_' + email;
+                    }
+                    
+                    function loadFavorites() {
+                        const user = getCurrentUser();
+                        if (!user) return [];
+                        const raw = localStorage.getItem(favoritesKeyForUser(user.email));
+                        return raw ? JSON.parse(raw) : [];
+                    }
+                    
+                    function saveFavorites(favorites) {
+                        const user = getCurrentUser();
+                        if (!user) return;
+                        localStorage.setItem(favoritesKeyForUser(user.email), JSON.stringify(favorites));
+                        updateFavoritesCount();
+                    }
+                    
+                    function toggleFavorite(productId, productName, productPrice, productImage) {
+                        const user = getCurrentUser();
+                        if (!user) {
+                            openAuthModal();
+                            return;
+                        }
+                        const favorites = loadFavorites();
+                        const idx = favorites.findIndex(f => f.id === productId);
+                        
+                        if (idx >= 0) {
+                            // Favorilerden çıkar
+                            favorites.splice(idx, 1);
+                            showToast('❌ ' + productName + ' favorilerden çıkarıldı');
+                            // GA4 tracking
+                            if (typeof trackEvent === 'function') {
+                                trackEvent('remove_from_wishlist', { item_id: productId, item_name: productName });
+                            }
+                        } else {
+                            // Favorilere ekle
+                            favorites.push({
+                                id: productId,
+                                name: productName,
+                                price: productPrice,
+                                image: productImage || '',
+                                addedAt: Date.now()
+                            });
+                            showToast('❤️ ' + productName + ' favorilere eklendi');
+                            // GA4 tracking
+                            if (typeof trackEvent === 'function') {
+                                trackEvent('add_to_wishlist', { item_id: productId, item_name: productName, value: productPrice });
+                            }
+                        }
+                        
+                        saveFavorites(favorites);
+                        updateFavoriteButtons();
+                    }
+                    
+                    function isFavorite(productId) {
+                        const favorites = loadFavorites();
+                        return favorites.some(f => f.id === productId);
+                    }
+                    
+                    function updateFavoritesCount() {
+                        const badge = document.getElementById('favoritesCount');
+                        if (!badge) return;
+                        const user = getCurrentUser();
+                        if (!user) {
+                            badge.style.display = 'none';
+                            return;
+                        }
+                        const count = loadFavorites().length;
+                        if (count > 0) {
+                            badge.textContent = count;
+                            badge.style.display = 'inline-flex';
+                        } else {
+                            badge.style.display = 'none';
+                        }
+                    }
+                    
+                    function updateFavoriteButtons() {
+                        const favorites = loadFavorites();
+                        const favoriteIds = new Set(favorites.map(f => f.id));
+                        
+                        document.querySelectorAll('.favorite-btn').forEach(btn => {
+                            const productId = btn.getAttribute('data-product-id');
+                            if (favoriteIds.has(productId)) {
+                                btn.innerHTML = '❤️';
+                                btn.classList.add('is-favorite');
+                                btn.title = 'Favorilerden çıkar';
+                            } else {
+                                btn.innerHTML = '🤍';
+                                btn.classList.remove('is-favorite');
+                                btn.title = 'Favorilere ekle';
+                            }
+                        });
+                    }
+                    
+                    function openFavoritesModal() {
+                        const user = getCurrentUser();
+                        if (!user) {
+                            openAuthModal();
+                            return;
+                        }
+                        const modal = document.getElementById('favoritesModal');
+                        const body = document.getElementById('favoritesBody');
+                        if (!modal || !body) return;
+                        
+                        const favorites = loadFavorites();
+                        
+                        if (favorites.length === 0) {
+                            body.innerHTML = '<div style="text-align:center;padding:2rem;color:#64748b;">💔 Henüz favori ürününüz yok</div>';
+                        } else {
+                            body.innerHTML = favorites.map(f => `
+                                <div class="favorite-item" style="display:flex;align-items:center;gap:1rem;padding:0.75rem;border-bottom:1px solid #e5e7eb;">
+                                    <img src="${f.image || 'images/icons/icon-96x96.png'}" alt="${f.name}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;">
+                                    <div style="flex:1;">
+                                        <div style="font-weight:600;color:#1e293b;">${f.name}</div>
+                                        <div style="color:#16a34a;font-weight:700;">${new Intl.NumberFormat('tr-TR', {style:'currency', currency:'TRY'}).format(f.price)}</div>
+                                    </div>
+                                    <button onclick="addFavoriteToCart('${f.id}', '${f.name.replace(/'/g, "\\'")}', ${f.price}, '${(f.image||'').replace(/'/g, "\\'")}')" style="padding:0.4rem 0.8rem;background:#16a34a;color:white;border:none;border-radius:6px;cursor:pointer;font-size:0.85rem;">🛒 Sepete</button>
+                                    <button onclick="toggleFavorite('${f.id}', '${f.name.replace(/'/g, "\\'")}')" style="padding:0.4rem 0.6rem;background:#ef4444;color:white;border:none;border-radius:6px;cursor:pointer;">🗑️</button>
+                                </div>
+                            `).join('');
+                        }
+                        
+                        modal.style.display = 'flex';
+                    }
+                    
+                    function closeFavoritesModal() {
+                        const modal = document.getElementById('favoritesModal');
+                        if (modal) modal.style.display = 'none';
+                    }
+                    
+                    function addFavoriteToCart(id, name, price, image) {
+                        addToCart({ id, name, price, image });
+                        closeFavoritesModal();
+                    }
+                    
+                    // Global erişim
+                    window.toggleFavorite = toggleFavorite;
+                    window.openFavoritesModal = openFavoritesModal;
+                    window.closeFavoritesModal = closeFavoritesModal;
+                    window.addFavoriteToCart = addFavoriteToCart;
+                    // ===== FAVORİ LİSTESİ SİSTEMİ SONU =====
+                    
+                    // ===== KUPON/İNDİRİM SİSTEMİ =====
+                    const COUPON_CODES = {
+                        'HOSGELDIN10': { type: 'percent', value: 10, minOrder: 0, maxUses: 1, description: '10% hoşgeldin indirimi' },
+                        'YAZ20': { type: 'percent', value: 20, minOrder: 500, maxUses: 999, description: 'Yaz kampanyası 20% indirim' },
+                        'KARGO': { type: 'fixed', value: 50, minOrder: 200, maxUses: 999, description: '50₺ kargo indirimi' },
+                        'ILKSIPARIS': { type: 'percent', value: 15, minOrder: 0, maxUses: 1, description: 'İlk sipariş 15% indirim' }
+                    };
+                    
+                    let _appliedCoupon = null;
+                    
+                    function getCouponUsageKey(email, code) {
+                        return `coupon_used_${email}_${code}`;
+                    }
+                    
+                    function hasCouponBeenUsed(email, code) {
+                        const key = getCouponUsageKey(email, code);
+                        return localStorage.getItem(key) === 'true';
+                    }
+                    
+                    function markCouponUsed(email, code) {
+                        const key = getCouponUsageKey(email, code);
+                        localStorage.setItem(key, 'true');
+                    }
+                    
+                    function validateCoupon(code, cartTotal) {
+                        const coupon = COUPON_CODES[code.toUpperCase()];
+                        if (!coupon) {
+                            return { valid: false, message: '❌ Geçersiz kupon kodu' };
+                        }
+                        
+                        const user = getCurrentUser();
+                        if (!user) {
+                            return { valid: false, message: '❌ Kupon kullanmak için giriş yapın' };
+                        }
+                        
+                        if (coupon.minOrder > 0 && cartTotal < coupon.minOrder) {
+                            return { valid: false, message: `❌ Minimum sipariş tutarı: ${coupon.minOrder}₺` };
+                        }
+                        
+                        if (coupon.maxUses === 1 && hasCouponBeenUsed(user.email, code.toUpperCase())) {
+                            return { valid: false, message: '❌ Bu kuponu daha önce kullandınız' };
+                        }
+                        
+                        return { valid: true, coupon };
+                    }
+                    
+                    function calculateDiscount(coupon, cartTotal) {
+                        if (coupon.type === 'percent') {
+                            return (cartTotal * coupon.value) / 100;
+                        } else if (coupon.type === 'fixed') {
+                            return Math.min(coupon.value, cartTotal);
+                        }
+                        return 0;
+                    }
+                    
+                    function applyCoupon() {
+                        const input = document.getElementById('couponInput');
+                        const resultEl = document.getElementById('couponResult');
+                        const code = (input?.value || '').trim().toUpperCase();
+                        
+                        if (!code) {
+                            if (resultEl) resultEl.innerHTML = '<span style="color:#ef4444;">Kupon kodu giriniz</span>';
+                            return;
+                        }
+                        
+                        const cart = loadCart();
+                        const cartTotal = cart.reduce((sum, item) => sum + (item.price * (item.qty || 1)), 0);
+                        
+                        const result = validateCoupon(code, cartTotal);
+                        
+                        if (!result.valid) {
+                            if (resultEl) resultEl.innerHTML = `<span style="color:#ef4444;">${result.message}</span>`;
+                            _appliedCoupon = null;
+                            updateBankModalTotal();
+                            return;
+                        }
+                        
+                        _appliedCoupon = { code, ...result.coupon };
+                        const discount = calculateDiscount(result.coupon, cartTotal);
+                        
+                        if (resultEl) {
+                            resultEl.innerHTML = `<span style="color:#16a34a;">✅ ${result.coupon.description} (-${new Intl.NumberFormat('tr-TR', {style:'currency', currency:'TRY'}).format(discount)})</span>`;
+                        }
+                        
+                        updateBankModalTotal();
+                        
+                        // GA4 tracking
+                        if (typeof trackEvent === 'function') {
+                            trackEvent('apply_coupon', { coupon_code: code, discount_value: discount });
+                        }
+                    }
+                    
+                    function removeCoupon() {
+                        _appliedCoupon = null;
+                        const input = document.getElementById('couponInput');
+                        const resultEl = document.getElementById('couponResult');
+                        if (input) input.value = '';
+                        if (resultEl) resultEl.innerHTML = '';
+                        updateBankModalTotal();
+                    }
+                    
+                    function getAppliedCoupon() {
+                        return _appliedCoupon;
+                    }
+                    
+                    function updateBankModalTotal() {
+                        const bankAmount = document.getElementById('bankAmount');
+                        const discountRow = document.getElementById('discountRow');
+                        if (!bankAmount) return;
+                        
+                        const cart = loadCart();
+                        const cartTotal = cart.reduce((sum, item) => sum + (item.price * (item.qty || 1)), 0);
+                        
+                        let finalTotal = cartTotal;
+                        let discountHtml = '';
+                        
+                        if (_appliedCoupon) {
+                            const discount = calculateDiscount(_appliedCoupon, cartTotal);
+                            finalTotal = cartTotal - discount;
+                            discountHtml = `<div style="color:#16a34a;font-size:0.9rem;">İndirim: -${new Intl.NumberFormat('tr-TR', {style:'currency', currency:'TRY'}).format(discount)}</div>`;
+                        }
+                        
+                        if (discountRow) {
+                            discountRow.innerHTML = discountHtml;
+                        }
+                        
+                        bankAmount.innerHTML = `<div>Ara Toplam: ${new Intl.NumberFormat('tr-TR', {style:'currency', currency:'TRY'}).format(cartTotal)}</div>
+                            ${discountHtml}
+                            <div style="font-size:1.1rem;margin-top:0.3rem;color:#0b1220;">Toplam: ${new Intl.NumberFormat('tr-TR', {style:'currency', currency:'TRY'}).format(finalTotal)}</div>`;
+                    }
+                    
+                    // Global erişim
+                    window.applyCoupon = applyCoupon;
+                    window.removeCoupon = removeCoupon;
+                    window.getAppliedCoupon = getAppliedCoupon;
+                    // ===== KUPON/İNDİRİM SİSTEMİ SONU =====
 
                     function loadCart() {
                         const user = getCurrentUser();
@@ -6450,6 +6837,14 @@
                         
                         saveCart(cart);
                         updateCartCount();
+                        // GA4 E-commerce tracking
+                        if (typeof trackEvent === 'function') {
+                            trackEvent('add_to_cart', {
+                                currency: 'TRY',
+                                value: item.price,
+                                items: [{ item_id: item.id, item_name: item.name, price: item.price, quantity: 1 }]
+                            });
+                        }
                         // Küçük bilgilendirme
                         const totalQty = cart.reduce((s,i) => s + (i.qty||0), 0);
                         try { showToast(item.name + ' sepete eklendi. (Toplam: ' + totalQty + ' adet)'); } catch(e){}
@@ -6896,9 +7291,9 @@
                             card.setAttribute('data-name', p.name);
                             card.setAttribute('data-price', (p.price||0).toString());
 
-                            // Image handling:
+                            // Image handling with WebP support:
                             // - data: URLs → render as background
-                            // - file/URL paths (e.g., images/products/..., .jpg/.png, http...) → render as background
+                            // - file/URL paths (e.g., images/products/..., .jpg/.png, http...) → render with picture/source for WebP
                             // - otherwise treat as emoji/text
                             let imageHTML = '';
                             const isDataUrl = !!(p.image && p.image.startsWith && p.image.startsWith('data:'));
@@ -6907,9 +7302,16 @@
                                 p.image.startsWith('http://') || p.image.startsWith('https://') ||
                                 p.image.startsWith('images/')
                             ));
-                            if (isDataUrl || isImagePath) {
-                                const url = p.image;
-                                imageHTML = `<div class="product-image" style="background-image:url('${url}'); background-size:cover; background-position:center; background-repeat:no-repeat;"></div>`;
+                            const getWebPPath = (src) => /\.(jpe?g|png)$/i.test(src) ? src.replace(/\.(jpe?g|png)$/i, '.webp') : null;
+                            if (isDataUrl) {
+                                imageHTML = `<div class="product-image" style="background-image:url('${p.image}'); background-size:cover; background-position:center; background-repeat:no-repeat;"></div>`;
+                            } else if (isImagePath) {
+                                const webpPath = getWebPPath(p.image);
+                                if (webpPath && !/\.webp$/i.test(p.image)) {
+                                    imageHTML = `<picture><source srcset="${webpPath}" type="image/webp"><img class="product-image" src="${p.image}" alt="${escapeHtml(p.name)}" loading="lazy"/></picture>`;
+                                } else {
+                                    imageHTML = `<img class="product-image" src="${p.image}" alt="${escapeHtml(p.name)}" loading="lazy"/>`;
+                                }
                             } else if (p.image) {
                                 imageHTML = `<div class="product-image">${escapeHtml(p.image)}</div>`;
                             } else {
@@ -7015,6 +7417,20 @@
 
                         if (sent){
                             console.log('Sipariş bildirimi gönderildi.');
+                            // GA4 Purchase tracking
+                            if (typeof trackEvent === 'function') {
+                                trackEvent('purchase', {
+                                    transaction_id: order.id,
+                                    currency: 'TRY',
+                                    value: total,
+                                    items: cart.map(item => ({
+                                        item_id: item.id,
+                                        item_name: item.name,
+                                        price: item.price,
+                                        quantity: item.qty || 1
+                                    }))
+                                });
+                            }
                             const u = getCurrentUser();
                             if (u && u.email) saveOrderForUser(u.email, order);
                             else if (body.email) saveOrderForUser(body.email, order);
@@ -7231,9 +7647,41 @@
                                 const badgeLabel = (p.badge||'').trim();
                                 const isOutOfStock = p.stock !== null && p.stock !== undefined && p.stock <= 0;
                                 const hasImg = !!(p.image && p.image.length);
-                                const imgHtml = hasImg
-                                    ? `<img class=\"product-image\" src=\"/${p.image.replace(/^\//,'')}\" alt=\"${(p.name||'Ürün').replace(/"/g,'')}\" loading=\"lazy\"/>`
-                                    : `<div class=\"product-image\">🛍️</div>`;
+                                // Responsive images with WebP support
+                                const getResponsivePaths = (imgPath) => {
+                                    if (!imgPath) return null;
+                                    const cleanPath = imgPath.replace(/^\//,'');
+                                    const ext = cleanPath.match(/\.(jpe?g|png)$/i);
+                                    if (!ext) return null;
+                                    const base = cleanPath.replace(/\.(jpe?g|png)$/i, '');
+                                    const extLower = ext[0].toLowerCase();
+                                    return {
+                                        small: `/${base}_small${extLower}`,
+                                        medium: `/${base}_medium${extLower}`,
+                                        large: `/${base}_large${extLower}`,
+                                        original: `/${cleanPath}`,
+                                        smallWebp: `/${base}_small.webp`,
+                                        mediumWebp: `/${base}_medium.webp`,
+                                        largeWebp: `/${base}_large.webp`,
+                                        webp: `/${base}.webp`
+                                    };
+                                };
+                                const imgSrc = '/' + (p.image||'').replace(/^\//,'');
+                                const responsive = getResponsivePaths(p.image);
+                                const imgAlt = (p.name||'Ürün').replace(/"/g,'');
+                                let imgHtml;
+                                if (hasImg && responsive) {
+                                    // Full responsive with WebP and srcset
+                                    imgHtml = `<picture>
+                                        <source type="image/webp" srcset="${responsive.smallWebp} 300w, ${responsive.mediumWebp} 600w, ${responsive.largeWebp} 900w" sizes="(max-width: 480px) 300px, (max-width: 768px) 600px, 900px">
+                                        <source srcset="${responsive.small} 300w, ${responsive.medium} 600w, ${responsive.large} 900w" sizes="(max-width: 480px) 300px, (max-width: 768px) 600px, 900px">
+                                        <img class="product-image" src="${responsive.medium}" alt="${imgAlt}" loading="lazy"/>
+                                    </picture>`;
+                                } else if (hasImg) {
+                                    imgHtml = `<img class="product-image" src="${imgSrc}" alt="${imgAlt}" loading="lazy"/>`;
+                                } else {
+                                    imgHtml = `<div class="product-image">🛍️</div>`;
+                                }
                                 // Rozet: Önce stok tükendiyse "Tükendi", değilse normal rozet
                                 let badgeHtml = '';
                                 if (isOutOfStock) {
@@ -7243,6 +7691,10 @@
                                 }
                                 card.innerHTML = `
                                     ${badgeHtml}
+                                    <button class="favorite-btn" data-product-id="${p.id || String(i+1)}" 
+                                        onclick="toggleFavorite('${p.id || String(i+1)}', '${(p.name||'').replace(/'/g, "\\'")}', ${p.price || 0}, '${(p.image||'').replace(/'/g, "\\'")}')"
+                                        title="Favorilere ekle"
+                                        style="position:absolute;top:8px;right:8px;width:32px;height:32px;border:none;background:rgba(255,255,255,0.9);border-radius:50%;cursor:pointer;font-size:1.1rem;z-index:5;box-shadow:0 2px 8px rgba(0,0,0,0.15);transition:all 0.2s;">🤍</button>
                                     ${imgHtml}
                                     <div class=\"product-info\">
                                         <div class=\"product-name\">${p.name||''}</div>
@@ -7255,6 +7707,9 @@
                                 }
                                 container.appendChild(card);
                             });
+                            // Favori butonlarını güncelle
+                            if (typeof updateFavoriteButtons === 'function') updateFavoriteButtons();
+                            if (typeof updateFavoritesCount === 'function') updateFavoritesCount();
                         }catch(e){ console.error('applyProducts error', e); }
                     }
 
@@ -7753,5 +8208,67 @@ fetch('site-settings.json')
         console.log('📱 iOS: Ana ekrana eklemek için paylaş → Ana Ekrana Ekle');
     }
 })();
+</script>
+
+<!-- WhatsApp Floating Button -->
+<style>
+#whatsapp-float {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #25D366, #128C7E);
+    color: white;
+    padding: 12px 18px;
+    border-radius: 50px;
+    box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    animation: whatsapp-pulse 2s infinite;
+}
+#whatsapp-float:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 30px rgba(37, 211, 102, 0.6);
+}
+#whatsapp-float svg {
+    width: 24px;
+    height: 24px;
+    fill: white;
+}
+#whatsapp-float .wa-text {
+    display: inline;
+}
+@media (max-width: 480px) {
+    #whatsapp-float {
+        padding: 14px;
+        border-radius: 50%;
+        bottom: 15px;
+        right: 15px;
+    }
+    #whatsapp-float .wa-text {
+        display: none;
+    }
+}
+@keyframes whatsapp-pulse {
+    0%, 100% { box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4); }
+    50% { box-shadow: 0 4px 30px rgba(37, 211, 102, 0.7); }
+}
+</style>
+<a id="whatsapp-float" href="https://wa.me/905384179081?text=Merhaba%2C%20%C3%BCr%C3%BCnleriniz%20hakk%C4%B1nda%20bilgi%20almak%20istiyorum." target="_blank" rel="noopener" aria-label="WhatsApp ile iletişim">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+    <span class="wa-text">WhatsApp</span>
+</a>
+<script>
+// GA4 WhatsApp click tracking
+document.getElementById('whatsapp-float')?.addEventListener('click', function() {
+    if (typeof trackEvent === 'function') {
+        trackEvent('contact', { method: 'whatsapp' });
+    }
+});
 </script>
 </html>

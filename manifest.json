@@ -66,7 +66,14 @@
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Ana Sayfa"
+      "label": "Ana Sayfa - Mobil"
+    },
+    {
+      "src": "images/screenshots/home-wide.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Ana Sayfa - Masaüstü"
     }
   ],
   "shortcuts": [
