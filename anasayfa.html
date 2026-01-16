@@ -3234,8 +3234,10 @@
                             if (isOutOfStock) {
                                 html += `<div style='text-align:center;margin-bottom:0.5rem;padding:0.5rem;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;color:#dc2626;font-size:0.9rem;font-weight:600;'>❌ Bu ürün şu an stokta yok</div>`;
                                 html += `<button id='panelAddToCartBtn' style='width:100%;background:#9ca3af;color:#fff;padding:0.7rem;border:none;border-radius:10px;font-size:1.05rem;cursor:not-allowed;font-weight:700;opacity:0.6;' disabled>Stok Tükendi</button>`;
+                                html += `<button id='panelAddToFavBtn' data-id='${id}' data-name='${name}' data-price='${price}' data-image='${mainImg}' style='width:100%;margin-top:0.5rem;background:#fff;color:#ef4444;padding:0.6rem;border:2px solid #fecaca;border-radius:10px;font-size:0.95rem;cursor:pointer;font-weight:600;transition:all 0.2s ease;'>❤️ Favorilere Ekle</button>`;
                             } else {
                                 html += `<button id='panelAddToCartBtn' style='width:100%;background:#16a34a;color:#fff;padding:0.7rem;border:none;border-radius:10px;font-size:1.05rem;cursor:pointer;font-weight:700;box-shadow:0 4px 12px rgba(22,163,74,0.25);transition:all 0.2s ease;'>Sepete Ekle</button>`;
+                                html += `<button id='panelAddToFavBtn' data-id='${id}' data-name='${name}' data-price='${price}' data-image='${mainImg}' style='width:100%;margin-top:0.5rem;background:#fff;color:#ef4444;padding:0.6rem;border:2px solid #fecaca;border-radius:10px;font-size:0.95rem;cursor:pointer;font-weight:600;transition:all 0.2s ease;'>❤️ Favorilere Ekle</button>`;
                             }
                             html += `</div>`;
                             document.getElementById('productDetailContent').innerHTML = html;
@@ -3358,6 +3360,42 @@
                                         } else {
                                             // Kullanıcı giriş yapmamış, auth modal aç
                                             showNotification('Sepete ürün eklemek için giriş yapın', {type: 'info', duration: 2500});
+                                            setTimeout(function(){ if(typeof openAuthModal==='function') openAuthModal(); }, 800);
+                                        }
+                                    };
+                                }
+                                
+                                // Favorilere ekle butonu
+                                var favBtn = document.getElementById('panelAddToFavBtn');
+                                if (favBtn) {
+                                    // Favori durumunu kontrol et ve butonu güncelle
+                                    function updateFavBtnState() {
+                                        if (typeof isFavorite === 'function' && isFavorite(id)) {
+                                            favBtn.innerHTML = '❤️ Favorilerde';
+                                            favBtn.style.background = '#fef2f2';
+                                            favBtn.style.borderColor = '#ef4444';
+                                        } else {
+                                            favBtn.innerHTML = '🤍 Favorilere Ekle';
+                                            favBtn.style.background = '#fff';
+                                            favBtn.style.borderColor = '#fecaca';
+                                        }
+                                    }
+                                    updateFavBtnState();
+                                    
+                                    favBtn.onclick = function(e) {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        
+                                        var user = null;
+                                        try { user = JSON.parse(localStorage.getItem('currentUser')); } catch(ex){}
+                                        
+                                        if (user && user.email) {
+                                            if (typeof toggleFavorite === 'function') {
+                                                toggleFavorite(id, name, price, mainImg);
+                                                updateFavBtnState();
+                                            }
+                                        } else {
+                                            showNotification('Favorilere eklemek için giriş yapın', {type: 'info', duration: 2500});
                                             setTimeout(function(){ if(typeof openAuthModal==='function') openAuthModal(); }, 800);
                                         }
                                     };
