@@ -22,7 +22,9 @@ Modern, statik e-ticaret sitesi. Cloudflare Workers ile serverless backend deste
 
 ## Deployment
 
-Cloudflare Worker otomatik olarak deploy edilir (`cloudflare-worker/**` değişikliklerinde).
+- GitHub Pages ve Netlify, npm run build:site komutuyla oluşturulan public-site klasörünü yayımlar.
+- Bu paket açıkça izin verilen site dosyalarından oluşturulur; kullanıcı, sipariş, sepet ve fatura kayıtları pakete alınmaz.
+- Cloudflare Worker, cloudflare-worker klasöründeki değişikliklerde otomatik olarak deploy edilir.
 
 ## Lisans
 

@@ -50,6 +50,10 @@
           
           // Fresh token read on page load
           var token = sessionStorage.getItem('admin_gh_token');
+          if (token === 'BYPASS') {
+            sessionStorage.removeItem('admin_gh_token');
+            token = null;
+          }
           var adminUI = document.getElementById('adminUI');
           
           if (adminUI) {
@@ -88,16 +92,22 @@
     }
     
     function validateGitHubToken(token) {
-      fetch('https://api.github.com/user', {
-        headers: {
-          'Authorization': 'token ' + token,
-          'Accept': 'application/vnd.github.v3+json'
+      const headers = {
+        'Authorization': 'Bearer ' + token,
+        'Accept': 'application/vnd.github+json'
+      };
+      fetch('https://api.github.com/user', { headers })
+      .then(async r => {
+        if (r.status === 401) throw new Error('Token geçersiz veya süresi dolmuş');
+        if (!r.ok) throw new Error('GitHub doğrulaması başarısız: ' + r.status);
+        const user = await r.json();
+        const repoResponse = await fetch('https://api.github.com/repos/amtbrs-03/AMTBRS', { headers });
+        if (!repoResponse.ok) throw new Error('Depo erişimi doğrulanamadı: ' + repoResponse.status);
+        const repo = await repoResponse.json();
+        if (!repo.permissions || repo.permissions.push !== true) {
+          throw new Error('Bu hesap ERN deposuna yazma yetkisine sahip değil');
         }
-      })
-      .then(r => {
-        if (r.status === 401) throw new Error('Invalid token');
-        if (!r.ok) throw new Error('Auth failed: ' + r.status);
-        return r.json();
+        return user;
       })
       .then(user => {
         // Token geçerli - sessionStorage'a kaydet
@@ -1008,18 +1018,22 @@
               msg.textContent = 'Token kaydedildi, tam erişim sağlandı.';
               setTimeout(function(){ gate.style.display='none'; location.reload(); }, 800);
             } else {
-              localStorage.setItem('github_token', 'BYPASS');
-              msg.textContent = 'Token girilmedi, admin işlemleri kısıtlı. Sayfa açılıyor.';
-              setTimeout(function(){ gate.style.display='none'; }, 800);
+              localStorage.removeItem('github_token');
+              msg.textContent = 'Yönetim paneli için ERN deposuna yazma yetkili bir GitHub tokenı gerekli.';
+              input.focus();
             }
           };
         }
       }
       // Sayfa ilk açıldığında token yoksa tekrar sor, varsa direkt erişim
-      // BYPASS değeri de kabul ediliyor - admin her zaman erişebilir
       document.addEventListener('DOMContentLoaded', function() {
         var token = localStorage.getItem('github_token');
-        // Token varsa (BYPASS dahil) gate'i gösterme
+        if (token === 'BYPASS') {
+          localStorage.removeItem('github_token');
+          localStorage.removeItem('gh_token');
+          token = '';
+        }
+        // Token varsa gate'i gösterme
         if (token) {
           var gate = document.getElementById('tokenGate');
           if (gate) gate.style.display = 'none';
@@ -1146,8 +1160,7 @@
           const alert = document.getElementById('tokenMissingAlert');
           if (!alert) return;
           
-          // Token yoksa veya BYPASS ise uyarı göster
-          if (!token || token === '' || token === 'BYPASS') {
+          if (!token) {
             alert.classList.add('active');
             document.body.classList.add('token-alert-active');
           } else {
@@ -1791,126 +1804,6 @@
   window.closeLogoutConfirmModal = closeLogoutConfirmModal;
   window.performLogoutNow = performLogoutWithProgress; // Eski fonksiyon adı uyumluluğu
   window.performLogoutWithProgress = performLogoutWithProgress;
-  // Parola doğrulama ve GitHub'dan config çekme
-  async function sha256Hex(str){
-    const enc = new TextEncoder();
-    const buf = await crypto.subtle.digest('SHA-256', enc.encode(str));
-    const arr = Array.from(new Uint8Array(buf));
-    return arr.map(b=>b.toString(16).padStart(2,'0')).join('');
-  }
-  async function fetchAdminConfig(){
-    const owner='amtbrs-03'; const repo='AMTBRS'; const branch='site-release';
-    const url = `https://api.github.com/repos/${owner}/${repo}/contents/admin-config.json?ref=${branch}`;
-    const token = (typeof getGitHubToken==='function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
-    const headers = { 'Accept':'application/vnd.github.v3+json' };
-    if(token) headers['Authorization'] = 'token ' + token;
-    // Önce Contents API ile dene (token varsa yetkili okuma), olmazsa raw/jsDelivr fallback
-    try {
-      const res = await fetch(url, { headers });
-      if(res.ok){
-        const j = await res.json();
-        const cfg = JSON.parse(atob((j.content||'').replace(/\n/g,'')));
-        return { cfg, sha: j.sha };
-      }
-      // 401/403 vb. durumlarda aşağıya geç
-    } catch(_){ /* fallback */ }
-    // Public fallback: raw.githubusercontent veya jsDelivr üzerinden okunur (SHA olmaz)
-    const fallbacks = [
-      `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/admin-config.json?_=${Date.now()}`,
-      `https://cdn.jsdelivr.net/gh/${owner}/${repo}@${branch}/admin-config.json`
-    ];
-    for(const u of fallbacks){
-      try{
-        const r = await fetch(u, { cache:'no-store' });
-        if(r.ok){
-          const txt = await r.text();
-          try{
-            const cfg = JSON.parse(txt);
-            return { cfg, sha: null };
-          }catch(e){ /* try next */ }
-        }
-      }catch(_){ /* continue */ }
-    }
-    throw new Error('admin-config.json alınamadı (401/403 veya public fallback başarısız)');
-  }
-  async function verifyAdminPassword(pass){
-    const { cfg } = await fetchAdminConfig();
-    const expected = (cfg && (cfg.adminPasswordHash||cfg.passwordHash||cfg.admin_password_hash)) || '';
-    if(!expected) throw new Error('Yapılandırmada parola hash bulunamadı');
-    const actual = await sha256Hex(pass);
-    return actual === expected;
-  }
-  function bindAdminGate(){
-    const gate = document.getElementById('adminAuthGate');
-    const btn = document.getElementById('adminPassSubmit');
-    const inp = document.getElementById('adminPassInput');
-    const msg = document.getElementById('adminPassMsg');
-    if(!gate||!btn||!inp) return;
-    // Brute force koruması: 5 hatalı denemede 5 dk kilit; 10 dk pencere
-    function getAttemptInfo(){ try{return JSON.parse(sessionStorage.getItem('admin_pass_attempts')||'{}');}catch(_){return {};}}
-    function saveAttemptInfo(o){ sessionStorage.setItem('admin_pass_attempts', JSON.stringify(o)); }
-    function resetAttempts(){ sessionStorage.removeItem('admin_pass_attempts'); }
-    const MAX_ATTEMPTS = 5, WINDOW_MS = 10*60*1000, LOCK_MS = 5*60*1000;
-    btn.addEventListener('click', async ()=>{
-      let info = getAttemptInfo();
-      const now = Date.now();
-      if(info.lockUntil && now < info.lockUntil){
-        const remainingMin = Math.ceil((info.lockUntil - now)/60000);
-        msg.textContent = `🔒 Çok fazla yanlış deneme. ${remainingMin} dk sonra tekrar deneyin.`;
-        return;
-      }
-      if(!info.windowStart || now - info.windowStart > WINDOW_MS){ info = { count:0, windowStart: now }; }
-      msg.textContent='Doğrulanıyor...';
-      const v = (inp.value||'').trim();
-      try {
-        const ok = await verifyAdminPassword(v);
-        if(ok){
-          localStorage.setItem('admin_auth_ok','1');
-          // Oturum kalıcı - logout yapılana kadar devam eder
-          gate.classList.remove('active'); gate.style.display='none';
-          const adminUI = document.getElementById('adminUI'); if (adminUI) adminUI.style.display = 'block';
-          msg.textContent='';
-          resetAttempts();
-        } else {
-          info.count = (info.count||0)+1;
-            if(info.count >= MAX_ATTEMPTS){
-              info.lockUntil = now + LOCK_MS;
-              msg.textContent='🔒 Çok fazla yanlış deneme. 5 dk kilitlendi.';
-            } else {
-              const kalan = MAX_ATTEMPTS - info.count;
-              msg.textContent='❌ Parola yanlış. ' + (kalan>0 ? `${kalan} deneme kaldı.` : '');
-            }
-          saveAttemptInfo(info);
-        }
-      } catch(e){ msg.textContent='❌ Hata: ' + (e.message||e); }
-    });
-    // Enter tuşu ile giriş
-    inp.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        btn.click();
-      }
-    });
-  }
-  document.addEventListener('DOMContentLoaded', bindAdminGate);
-  // Parola güncelleme: GitHub’a yeni hash yaz (isteğe bağlı kullanım için global yap)
-  async function updateAdminPassword(newPass){
-    const owner='amtbrs-03'; const repo='AMTBRS'; const branch='site-release';
-    const token = (typeof getGitHubToken==='function') ? getGitHubToken() : (localStorage.getItem('github_token')||'');
-    if(!token) throw new Error('GitHub token gerekli');
-    const { cfg, sha } = await fetchAdminConfig();
-    const newHash = await sha256Hex(newPass);
-    const nextCfg = { ...(cfg||{}), adminPasswordHash: newHash };
-
-
-    const putUrl = `https://api.github.com/repos/${owner}/${repo}/contents/admin-config.json`;
-    const payload = { message: 'chore(admin): admin parolası güncellendi', content: toBase64(JSON.stringify(nextCfg, null, 2)), branch, sha };
-    const res = await fetch(putUrl, { method:'PUT', headers:{ 'Content-Type':'application/json', 'Authorization':'token '+token }, body: JSON.stringify(payload) });
-    if(!res.ok){ const t=await res.text().catch(()=> ''); throw new Error('GitHub güncelleme başarısız: '+res.status+' '+t); }
-    return true;
-  }
-  window.updateAdminPassword = updateAdminPassword;
-  // (Giriş butonu kaldırıldı; modal otomatik açılıyor)
   // Oturum kapatma ve tarayıcı verilerini temizleme
   function logoutAdminSession(){
     // Eski confirm yerine özel modal aç
@@ -1949,11 +1842,14 @@
     }
     async function validateGitHubToken(tok){
       if(!tok) return false;
-      // BYPASS token her zaman geçerli kabul edilir
-      if(tok === 'BYPASS') return true;
       try {
-        const res = await fetch('https://api.github.com/user', { headers: { 'Authorization': 'token '+tok } });
-        return res.ok;
+        const headers = { 'Authorization': 'Bearer '+tok, 'Accept':'application/vnd.github+json' };
+        const userRes = await fetch('https://api.github.com/user', { headers });
+        if(!userRes.ok) return false;
+        const repoRes = await fetch('https://api.github.com/repos/amtbrs-03/AMTBRS', { headers });
+        if(!repoRes.ok) return false;
+        const repo = await repoRes.json();
+        return !!(repo.permissions && repo.permissions.push === true);
       } catch(_){ return false; }
     }
     // Sayfa yüklendiğinde token'ı bellekten al, geçerliyse kullan; değilse sadece uyarı ver (token'ı silme).
@@ -2416,7 +2312,7 @@
     (async function showAdminUser(){
       try {
         const token = localStorage.getItem('github_token');
-        if(token && token !== 'BYPASS'){
+        if(token){
           const res = await fetch('https://api.github.com/user', { headers: { 'Authorization': 'token '+token } });
           if(res.ok){
             const user = await res.json();
@@ -4023,16 +3919,17 @@ try {
     // Validate GitHub token with a lightweight authenticated request
     async function validateGitHubToken(token){
       if(!token) return { valid:false, status:0, reason:'Token bulunamadı' };
-      // BYPASS token her zaman geçerli kabul edilir
-      if(token === 'BYPASS') return { valid:true, status:200, reason:'BYPASS token' };
       try {
-        const res = await fetch('https://api.github.com/rate_limit', {
-          headers: { 'Accept':'application/vnd.github.v3+json', 'Authorization': 'token ' + token }
-        });
-        if(res.status === 401) return { valid:false, status:401, reason:'Geçersiz veya süresi dolmuş token (401)' };
-        if(res.status === 403) return { valid:false, status:403, reason:'Yetki reddedildi (403) – kapsamları kontrol edin' };
-        if(!res.ok) return { valid:false, status:res.status, reason:'Doğrulama başarısız (' + res.status + ')' };
-        return { valid:true, status:res.status };
+        const headers = { 'Accept':'application/vnd.github+json', 'Authorization': 'Bearer ' + token };
+        const userRes = await fetch('https://api.github.com/user', { headers });
+        if(!userRes.ok) return { valid:false, status:userRes.status, reason:'Token geçersiz veya süresi dolmuş' };
+        const repoRes = await fetch('https://api.github.com/repos/amtbrs-03/AMTBRS', { headers });
+        if(!repoRes.ok) return { valid:false, status:repoRes.status, reason:'ERN deposuna erişilemiyor' };
+        const repo = await repoRes.json();
+        if(!repo.permissions || repo.permissions.push !== true) {
+          return { valid:false, status:403, reason:'Bu hesap ERN deposuna yazma yetkisine sahip değil' };
+        }
+        return { valid:true, status:repoRes.status };
       } catch(e){
         return { valid:false, status:0, reason:'Ağ hatası: ' + (e.message||e) };
       }
@@ -4081,134 +3978,6 @@ try {
     }
 
     // toBase64 duplicate removed; canonical version defined earlier near product edit panel.
-
-    // Save admin credentials to GitHub (Contents API - real time)
-    async function saveAdminToGitHub(adminData) {
-      const token = getGitHubToken();
-      if (!token) return { ok: false, error: 'Token yapılandırılmadı' };
-
-      const owner = 'amtbrs-03';
-      const repo = 'AMTBRS';
-      const path = 'admin-config.json';
-      const branch = 'site-release';
-      const getUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`;
-      const putUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}`;
-
-      // Prepare base64 content (ensure legacy unlockHash is not persisted)
-      const cleanAdmin = { ...adminData };
-      if ('unlockHash' in cleanAdmin) {
-        try { delete cleanAdmin.unlockHash; } catch(_) {}
-      }
-      const json = JSON.stringify(cleanAdmin, null, 2);
-      const contentBase64 = toBase64(json);
-
-      let sha = undefined;
-      try {
-        const resGet = await fetch(getUrl, { headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }, cache: 'no-store' });
-        if (resGet.ok) {
-          const data = await resGet.json();
-          if (data && data.sha) sha = data.sha;
-        } else if (resGet.status !== 404) {
-          const txt = await resGet.text().catch(()=> '');
-          return { ok: false, error: `İçerik alınamadı: Durum ${resGet.status} ${txt}` };
-        }
-      } catch(err) {
-        return { ok: false, error: 'İçerik sorgusu hatası: ' + (err && err.message ? err.message : err) };
-      }
-
-      const body = {
-        message: 'chore(admin): admin-config.json güncelle (panelden)'
-          + (sha ? '' : ' [yeni dosya]'),
-        content: contentBase64,
-        branch
-      };
-      if (sha) body.sha = sha;
-
-      try {
-        const resPut = await fetch(putUrl, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `token ${token}`,
-            'Accept': 'application/vnd.github.v3+json',
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(body)
-        });
-        if (!resPut.ok) {
-          const txt = await resPut.text().catch(()=> '');
-          return { ok: false, error: `Kaydetme hatası: Durum ${resPut.status} ${txt}` };
-        }
-        return { ok: true };
-      } catch(err) {
-        return { ok: false, error: 'İstek hatası: ' + (err && err.message ? err.message : err) };
-      }
-    }
-
-    // Fetch admin credentials from GitHub with multiple fallbacks
-    async function fetchAdminFromGitHub() {
-      const urls = [
-        `https://raw.githubusercontent.com/amtbrs-03/AMTBRS/site-release/admin-config.json?t=${Date.now()}`,
-        `https://cdn.jsdelivr.net/gh/amtbrs-03/AMTBRS@site-release/admin-config.json`,
-      ];
-
-      console.log('🔍 Admin yapılandırması GitHub’dan çekiliyor (önce raw/CDN, sonra API)...');
-
-      // Try raw and CDN first (simple JSON)
-      for (let url of urls) {
-        try {
-          console.log('Deneme URL’si:', url);
-          const res = await fetch(url, { cache: 'no-store' });
-          console.log('Yanıt durumu:', res.status, res.statusText);
-
-          if (res.ok) {
-            try {
-              const data = await res.json();
-              console.log('✅ Admin yapılandırması başarıyla alındı (raw/CDN):', data);
-              return data;
-            } catch (parseErr) {
-              console.warn('⚠️ İçerik alındı ancak JSON.parse başarısız oldu:', url, parseErr.message);
-              // continue to next fallback
-            }
-          } else {
-            console.warn('❌ Buradan alınamadı:', url, 'Durum:', res.status);
-          }
-        } catch (e) {
-          console.error('❌ Çekme sırasında istisna:', url, 'Hata:', e && e.message ? e.message : e);
-        }
-      }
-
-      // Fallback: use GitHub Contents API to retrieve file and decode base64
-      try {
-        const apiUrl = `https://api.github.com/repos/amtbrs-03/AMTBRS/contents/admin-config.json?ref=site-release`;
-        console.log('GitHub Contents API yedeği deneniyor:', apiUrl);
-        const apiRes = await fetch(apiUrl, { headers: { 'Accept': 'application/vnd.github.v3+json' } });
-        console.log('API yanıt durumu:', apiRes.status, apiRes.statusText);
-        if (apiRes.ok) {
-          const apiData = await apiRes.json();
-          if (apiData && apiData.content) {
-            try {
-              const decoded = atob(apiData.content.replace(/\n/g, ''));
-              const parsed = JSON.parse(decoded);
-              console.log('✅ Admin yapılandırması API ile alındı ve çözüldü:', parsed);
-              return parsed;
-            } catch (e) {
-              console.error('❌ API içeriğinden admin-config çözümlenemedi/parse edilemedi:', e.message);
-            }
-          } else {
-            console.warn('⚠️ API admin-config.json için içerik döndürmedi', apiData);
-          }
-        } else {
-          console.warn('❌ GitHub Contents API çekimi başarısız:', apiRes.status, apiRes.statusText);
-          const txt = await apiRes.text().catch(()=>'');
-          console.warn('API yanıt gövdesi:', txt);
-        }
-      } catch (e) {
-        console.error('❌ API ile admin-config çekilirken istisna:', e && e.message ? e.message : e);
-      }
-
-      console.error('❌ Tüm admin yapılandırma çekme denemeleri başarısız. null dönülüyor.');
-      return null;
-    }
 
     // Admin panel always visible - no password auth required
   </script>

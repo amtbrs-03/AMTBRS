@@ -9,6 +9,7 @@
   },
   "scripts": {
     "start": "netlify dev",
+    "build:site": "node scripts/build-pages.js",
     "normalize:products": "node scripts/normalize-products.js",
     "test": "node scripts/test-user-update.js"
   },

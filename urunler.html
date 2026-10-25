@@ -466,7 +466,7 @@
       grid.innerHTML = '';
       errorMsg.textContent = '';
       try {
-        const res = await fetch('https://raw.githubusercontent.com/amtbrs-03/AMTBRS/site-release/products.json');
+        const res = await fetch('/products.json', { cache: 'no-store' });
         if (!res.ok) throw new Error('products.json alınamadı!');
         const data = await res.json();
         const products = (data.items || []);
